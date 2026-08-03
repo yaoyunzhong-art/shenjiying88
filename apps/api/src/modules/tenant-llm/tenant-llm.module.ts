@@ -7,7 +7,6 @@ import { TenantLLMController } from './llm-config.controller'
 import { TenantLLMService } from './llm-config.service'
 import { TenantLLMGateway } from './llm-gateway'
 import { I18nGeoService } from './i18n-geo.service'
-// @ts-ignore
 import { TenantGuard } from '../../agent/tenant.guard'
 
 @Module({

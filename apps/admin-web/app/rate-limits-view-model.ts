@@ -7,7 +7,7 @@ import {
   type RateLimitWorkspaceQuery,
   buildRateLimitsHref
 } from '@m5/types';
-import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { ApiClient, buildActorHeaders, getDefaultApiBaseUrl } from '@m5/sdk';
 
 export interface RateLimitSnapshotDelivery {
   deliveryMode: 'api' | 'fallback';
@@ -17,6 +17,14 @@ export interface RateLimitSnapshotDelivery {
 }
 
 const FALLBACK_TENANT_ID = 'tenant-demo';
+const RATE_LIMIT_WORKSPACE_ACTOR = {
+  actorId: 'admin-rate-limit-workspace',
+  actorType: 'employee-user',
+  actorName: 'Admin Rate Limit Workspace',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['foundation.governance.read'],
+  authenticated: true
+} as const;
 
 function createClient(): ApiClient {
   return new ApiClient({
@@ -24,7 +32,13 @@ function createClient(): ApiClient {
     tenantId: FALLBACK_TENANT_ID,
     brandId: 'brand-demo',
     storeId: 'store-001',
-    marketCode: 'cn-mainland'
+    marketCode: 'cn-mainland',
+    headers: buildActorHeaders({
+      ...RATE_LIMIT_WORKSPACE_ACTOR,
+      tenantId: FALLBACK_TENANT_ID,
+      brandId: 'brand-demo',
+      storeId: 'store-001'
+    })
   });
 }
 

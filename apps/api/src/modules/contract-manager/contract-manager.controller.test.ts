@@ -8,6 +8,11 @@ import assert from 'node:assert/strict'
 import { ContractManagerController } from './contract-manager.controller'
 import { ContractManagerService } from './contract-manager.service'
 import { ContractStatus, ContractType } from './contract-manager.entity'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 
 describe('ContractManagerController', () => {
   let controller: InstanceType<typeof ContractManagerController>
@@ -27,9 +32,85 @@ describe('ContractManagerController', () => {
   // ── Route metadata ──
 
   describe('route metadata', () => {
+    const readHandlers = [
+      ContractManagerController.prototype.listContracts,
+      ContractManagerController.prototype.getContract,
+      ContractManagerController.prototype.getExpiringContracts,
+      ContractManagerController.prototype.getExpiredContracts,
+      ContractManagerController.prototype.listClauses,
+    ]
+
+    const createHandlers = [
+      ContractManagerController.prototype.createContract,
+      ContractManagerController.prototype.seedMockData,
+    ]
+
+    const updateHandlers = [ContractManagerController.prototype.updateContract]
+    const terminateHandlers = [ContractManagerController.prototype.updateContractStatus]
+    const clauseHandlers = [
+      ContractManagerController.prototype.addClause,
+      ContractManagerController.prototype.bulkAddClauses,
+      ContractManagerController.prototype.updateClause,
+      ContractManagerController.prototype.deleteClause,
+    ]
+
+    const resolvePermissions = (handler: Function) =>
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler) ??
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, ContractManagerController)
+
+    const resolveTenantScope = (handler: Function) =>
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler) ??
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, ContractManagerController)
+
     it('controller path should be contracts', () => {
       const path = Reflect.getMetadata('path', ContractManagerController)
       assert.equal(path, 'contracts')
+    })
+
+    it('controller 不应继续保持 Public', () => {
+      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, ContractManagerController), undefined)
+    })
+
+    it('全部端点应要求 tenant scope', () => {
+      ;[
+        ...readHandlers,
+        ...createHandlers,
+        ...updateHandlers,
+        ...terminateHandlers,
+        ...clauseHandlers,
+      ].forEach((handler) => {
+        assert.deepStrictEqual(resolveTenantScope(handler), {})
+      })
+    })
+
+    it('读接口应复用 contracts:read', () => {
+      readHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['contracts:read'])
+      })
+    })
+
+    it('创建接口应复用 contract:create', () => {
+      createHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['contract:create'])
+      })
+    })
+
+    it('更新接口应复用 contract:update', () => {
+      updateHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['contract:update'])
+      })
+    })
+
+    it('状态终止接口应复用 contract:terminate', () => {
+      terminateHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['contract:terminate'])
+      })
+    })
+
+    it('条款管理接口应复用 contract:clause:manage', () => {
+      clauseHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['contract:clause:manage'])
+      })
     })
 
     it('createContract should be POST /', () => {

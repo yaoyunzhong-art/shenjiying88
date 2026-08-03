@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { CurrentActor, RequirePermissions, RequireRoles, RequireTenantScope, type CurrentActorValue } from './identity-access/identity-access.decorator'
 import { FoundationService } from './foundation.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation')
+@UseGuards(TenantGuard)
 export class FoundationController {
   constructor(private readonly foundationService: FoundationService) {}
 
@@ -22,21 +24,25 @@ export class FoundationController {
   }
 
   @Get('overview')
+  @RequireTenantScope()
   async getOperationsOverview(@TenantContext() tenantContext: RequestTenantContext | undefined) {
     return this.foundationService.getOperationsOverview(tenantContext)
   }
 
   @Get('overview/alerts')
+  @RequireTenantScope()
   async getOperationsAlerts(@TenantContext() tenantContext: RequestTenantContext | undefined) {
     return this.foundationService.getOperationsAlerts(tenantContext)
   }
 
   @Get('overview/alerts/catalog')
+  @RequireTenantScope()
   async getOperationsAlertsCatalog(@TenantContext() tenantContext: RequestTenantContext | undefined) {
     return this.foundationService.getOperationsAlertsCatalog(tenantContext)
   }
 
   @Get('overview/alerts/:code/drilldown')
+  @RequireTenantScope()
   async getOperationsAlertDrilldown(
     @Param('code') code: string,
     @TenantContext() tenantContext: RequestTenantContext | undefined
@@ -84,6 +90,7 @@ export class FoundationController {
   }
 
   @Get('overview/modules/:moduleKey')
+  @RequireTenantScope()
   async getOperationsModuleDetail(
     @Param('moduleKey') moduleKey: string,
     @TenantContext() tenantContext: RequestTenantContext | undefined

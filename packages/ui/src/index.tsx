@@ -1,4 +1,8 @@
 // --------------- @m5/ui shared component library ---------------
+// Note: antd v6.5 uses ESM-first exports (Col/Form/Row/message are objects in CJS),
+// making them incompatible with re-export from a CJS package used via transpilePackages.
+// Consumers should import directly from 'antd'.
+export { Descriptions } from 'antd';
 export { ArcadeRevenueCard } from './components/ArcadeRevenueCard';
 export type { ArcadeRevenueCardProps, MachineStats, MachineStatus } from './components/ArcadeRevenueCard';
 
@@ -394,6 +398,7 @@ export {
   GovernanceQuickViewSection,
 } from './components/FoundationConsumerSections';
 export { PortalConsumerGovernanceSection } from './components/PortalConsumerGovernanceSection';
+export { PortalDomainGovernanceCard } from './components/PortalDomainGovernanceCard';
 export {
   createFoundationAlertLinkedOverviewStats,
   FoundationAlertLinkedOverviewSection,
@@ -541,6 +546,7 @@ export type {
   GovernanceQuickViewSectionProps,
 } from './components/FoundationConsumerSections';
 export type { PortalConsumerGovernanceSectionProps } from './components/PortalConsumerGovernanceSection';
+export type { PortalDomainGovernanceCardProps } from './components/PortalDomainGovernanceCard';
 export type { ProcurementManagerDashboardProps, ProcurementSummary, PurchaseOrderSnapshot, SupplierOverview } from './components/ProcurementManagerDashboard';
 export type {
   FoundationAlertLinkedOverviewCardDefinition,
@@ -1450,3 +1456,6 @@ export type {
   PrizeCategory,
   RedemptionRecord,
 } from './components/PrizeRedemptionCounter';
+
+// ── XSS 安全工具 ──
+export { sanitizeHtml, sanitizeJsonLd } from './sanitize/index'

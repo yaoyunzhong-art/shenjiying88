@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
-  Switch,
   TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Switch,
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAppContext } from '../../context/AppContext';
@@ -20,9 +21,22 @@ type SettingsNavProp = NativeStackNavigationProp<SettingsStackParamList>;
 export function SettingsScreen() {
   const navigation = useNavigation<SettingsNavProp>();
   const { state, dispatch, logout } = useAppContext();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [offlineMode, setOfflineMode] = React.useState(state.isOfflineMode);
   const [pushNotifications, setPushNotifications] = React.useState(state.pushNotificationsEnabled);
   const [biometric, setBiometric] = React.useState(state.biometricEnabled);
+  const domainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    state.bootstrap.domainSource,
+    state.bootstrap.domainGovernance,
+    state.bootstrap.domainGovernanceWorkspaceHref,
+  );
+  const domainGovernanceSubtitle = [
+    domainGovernanceDisplayModel.summaryText,
+    domainGovernanceDisplayModel.title,
+  ]
+    .filter(Boolean)
+    .join(' / ');
 
   const handleOfflineModeChange = (value: boolean) => {
     setOfflineMode(value);
@@ -49,6 +63,10 @@ export function SettingsScreen() {
 
   const handleLanguagePress = () => {
     navigation.navigate('LanguageSettings');
+  };
+
+  const handleDomainGovernancePress = () => {
+    Alert.alert(domainGovernanceDisplayModel.eyebrow, domainGovernanceDisplayModel.workspaceHref);
   };
 
   const handleClearCache = () => {
@@ -116,6 +134,21 @@ export function SettingsScreen() {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>数据获取失败: {error}</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.section}>
@@ -170,6 +203,14 @@ export function SettingsScreen() {
             '简体中文',
             <Text style={styles.settingArrow}>›</Text>,
             handleLanguagePress
+          )}
+          <View style={styles.divider} />
+          {renderSettingItem(
+            '🌍',
+            domainGovernanceDisplayModel.eyebrow,
+            domainGovernanceSubtitle,
+            <Text style={styles.settingArrow}>›</Text>,
+            handleDomainGovernancePress
           )}
         </Card>
       </View>
@@ -311,5 +352,11 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 100,
+  },
+  permissionText: {
+    color: '#333333',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 100,
   },
 });

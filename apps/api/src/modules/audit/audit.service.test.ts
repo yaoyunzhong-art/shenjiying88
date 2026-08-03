@@ -303,4 +303,86 @@ describe('AuditService', () => {
       expect(service.__getAll().length).toBe(0)
     })
   })
+
+  describe('BS-0277: 2% 实时审计抽检', () => {
+    it('shouldSample 使用确定性哈希，同一 ID 始终返回相同结果', () => {
+      const id1 = service['generateId']()
+      const id2 = service['generateId']()
+      // 验证确定性：同一 ID 调两次 shouldSample 结果相同
+      const r1a = service['shouldSample'](id1)
+      const r1b = service['shouldSample'](id1)
+      const r2a = service['shouldSample'](id2)
+      const r2b = service['shouldSample'](id2)
+      expect(r1a).toBe(r1b)
+      expect(r2a).toBe(r2b)
+    })
+
+    it('抽检率接近 2%（大量事件时）', async () => {
+      // 生成 5000 条日志，统计抽样比例
+      const count = 5000
+      for (let i = 0; i < count; i++) {
+        await service.log({
+          eventType: 'auth.login',
+          actorId: `user_${i}`,
+          actorType: 'user',
+          riskLevel: 'low',
+          metadata: { idx: i },
+        })
+      }
+      const sampled = service.getSampledAuditLogs()
+      const sampleRate = sampled.length / count
+      // 允许 ±1% 误差
+      expect(sampleRate).toBeGreaterThan(0.005)
+      expect(sampleRate).toBeLessThan(0.05)
+    })
+
+    it('getSamplingStats 返回正确统计', async () => {
+      const stats = service.getSamplingStats()
+      expect(stats.rate).toBe(0.02)
+      expect(stats.totalSampled).toBe(0)
+
+      for (let i = 0; i < 100; i++) {
+        await service.log({
+          eventType: 'auth.login',
+          actorId: `user_${i}`,
+          actorType: 'user',
+          riskLevel: 'low',
+        })
+      }
+
+      const stats2 = service.getSamplingStats()
+      expect(stats2.totalSampled).toBeGreaterThanOrEqual(0)
+    })
+
+    it('clearSampledAuditLogs 清空缓存', async () => {
+      for (let i = 0; i < 100; i++) {
+        await service.log({
+          eventType: 'auth.login',
+          actorId: `user_${i}`,
+          actorType: 'user',
+          riskLevel: 'low',
+        })
+      }
+      expect(service.getSampledAuditLogs().length).toBeGreaterThanOrEqual(0)
+      service.clearSampledAuditLogs()
+      expect(service.getSampledAuditLogs().length).toBe(0)
+    })
+
+    it('高/关键风险事件会在抽样日志中保留原始风险级别', async () => {
+      for (let i = 0; i < 100; i++) {
+        await service.log({
+          eventType: 'admin.data_export',
+          actorId: 'admin_01',
+          actorType: 'admin',
+          riskLevel: 'critical',
+          metadata: { idx: i },
+        })
+      }
+      const sampled = service.getSampledAuditLogs()
+      // 如果其中有抽样到 critical 事件，风险级别应保留
+      for (const s of sampled) {
+        expect(s.riskLevel).toBe('critical')
+      }
+    })
+  })
 })

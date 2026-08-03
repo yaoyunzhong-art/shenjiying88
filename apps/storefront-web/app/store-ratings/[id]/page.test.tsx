@@ -96,22 +96,22 @@ test('正例: 每条评价数据包含所有必需字段', () => {
 });
 
 test('正例: 每条评价 ID 唯一', () => {
-  const ids = Object.values(MOCK_RATINGS).map((r: any) => r.id);
+  const ids = Object.values(MOCK_RATINGS).map((r) => (r as Record<string, unknown>).id);
   assert.equal(new Set(ids).size, ids.length);
 });
 
 test('正例: overallScore 是 service / environment / product 的综合反映', () => {
   // 仅为格式检查，不做数值断言
-  for (const item of Object.values(MOCK_RATINGS) as any[]) {
-    assert.ok(item.overallScore >= 1 && item.overallScore <= 5, 'overallScore 应在 1-5 之间');
-    assert.ok(item.serviceScore >= 1 && item.serviceScore <= 5, 'serviceScore 应在 1-5 之间');
-    assert.ok(item.environmentScore >= 1 && item.environmentScore <= 5, 'environmentScore 应在 1-5 之间');
-    assert.ok(item.productScore >= 1 && item.productScore <= 5, 'productScore 应在 1-5 之间');
+  for (const item of Object.values(MOCK_RATINGS) as Record<string, unknown>[]) {
+    assert.ok(typeof item.overallScore === 'number' && (item.overallScore as number) >= 1 && (item.overallScore as number) <= 5, 'overallScore 应在 1-5 之间');
+    assert.ok(typeof item.serviceScore === 'number' && (item.serviceScore as number) >= 1 && (item.serviceScore as number) <= 5, 'serviceScore 应在 1-5 之间');
+    assert.ok(typeof item.environmentScore === 'number' && (item.environmentScore as number) >= 1 && (item.environmentScore as number) <= 5, 'environmentScore 应在 1-5 之间');
+    assert.ok(typeof item.productScore === 'number' && (item.productScore as number) >= 1 && (item.productScore as number) <= 5, 'productScore 应在 1-5 之间');
   }
 });
 
 test('正例: 各状态分布完整 (unreplied / replied / hidden / visible)', () => {
-  const statuses = Object.values(MOCK_RATINGS).map((r: any) => r.status);
+  const statuses = Object.values(MOCK_RATINGS).map((r: Record<string, unknown>) => r.status);
   const unique = new Set(statuses);
   assert.ok(unique.has('unreplied'));
   assert.ok(unique.has('replied'));
@@ -121,27 +121,27 @@ test('正例: 各状态分布完整 (unreplied / replied / hidden / visible)', (
 
 /* ── 类型检查 ── */
 test('正例: 评分值应为整数在 1-5 范围内', () => {
-  for (const item of Object.values(MOCK_RATINGS) as any[]) {
-    assert.ok(Number.isInteger(item.overallScore), 'overallScore 应为整数');
-    assert.ok(Number.isInteger(item.serviceScore), 'serviceScore 应为整数');
-    assert.ok(Number.isInteger(item.environmentScore), 'environmentScore 应为整数');
-    assert.ok(Number.isInteger(item.productScore), 'productScore 应为整数');
-    assert.ok(item.overallScore >= 1 && item.overallScore <= 5);
-    assert.ok(item.serviceScore >= 1 && item.serviceScore <= 5);
-    assert.ok(item.environmentScore >= 1 && item.environmentScore <= 5);
-    assert.ok(item.productScore >= 1 && item.productScore <= 5);
+  for (const item of Object.values(MOCK_RATINGS) as Record<string, unknown>[]) {
+    assert.ok(Number.isInteger(item.overallScore as number), 'overallScore 应为整数');
+    assert.ok(Number.isInteger(item.serviceScore as number), 'serviceScore 应为整数');
+    assert.ok(Number.isInteger(item.environmentScore as number), 'environmentScore 应为整数');
+    assert.ok(Number.isInteger(item.productScore as number), 'productScore 应为整数');
+    assert.ok((item.overallScore as number) >= 1 && (item.overallScore as number) <= 5);
+    assert.ok((item.serviceScore as number) >= 1 && (item.serviceScore as number) <= 5);
+    assert.ok((item.environmentScore as number) >= 1 && (item.environmentScore as number) <= 5);
+    assert.ok((item.productScore as number) >= 1 && (item.productScore as number) <= 5);
   }
 });
 
 test('反例: 评价状态不应包含未知值', () => {
   const validStatuses = ['unreplied', 'replied', 'hidden', 'visible'];
-  for (const item of Object.values(MOCK_RATINGS) as any[]) {
-    assert.ok(validStatuses.includes(item.status), `状态 ${item.status} 不在有效列表中`);
+  for (const item of Object.values(MOCK_RATINGS) as Record<string, unknown>[]) {
+    assert.ok(validStatuses.includes(item.status as string), `状态 ${item.status} 不在有效列表中`);
   }
 });
 
 test('边界: 最高分评价与最低分评价', () => {
-  const scores = Object.values(MOCK_RATINGS).map((r: any) => r.overallScore);
+  const scores = Object.values(MOCK_RATINGS).map((r: Record<string, unknown>) => r.overallScore as number);
   const max = Math.max(...scores);
   const min = Math.min(...scores);
   assert.equal(max, 5, '最高分应为 5');

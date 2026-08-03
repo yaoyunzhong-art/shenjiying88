@@ -55,10 +55,10 @@ describe('transactions.entity', () => {
         orderId: 'order-1',
         paymentId: 'pay-1',
         memberId: 'mem-1',
-        status: LoyaltySettlementStatus.Succeeded as LoyaltySettlementStatus,
+        status: 'succeeded' as any,
         awardedPoints: 50,
         createdAt: '2026-06-14T00:00:00.000Z',
-        updatedAt: '2026-06-14T00:00:00.000Z'
+        updatedAt: '2026-06-14T00:00:00.000Z',
       },
       pointsLedger: [
         {

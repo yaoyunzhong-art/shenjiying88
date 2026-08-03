@@ -10,9 +10,11 @@
  */
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { DeviceDetailClient } from './device-detail-client';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -33,39 +35,34 @@ export { generateDeviceMetadata as generateMetadata };
 function DeviceDetailLoadingFallback() {
   return (
     <div style={{ padding: 32, maxWidth: 1000, margin: '0 auto' }}>
-      {/* 标题区 */}
       <LoadingSkeleton variant="default" rows={1} label="加载设备标题..." />
       <div style={{ height: 24 }} />
 
-      {/* 信息卡片 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         <LoadingSkeleton variant="card" rows={4} label="加载设备基本信息" />
         <LoadingSkeleton variant="card" rows={4} label="加载运行状态" />
       </div>
 
-      {/* 事件时间线 */}
       <LoadingSkeleton variant="card" rows={5} label="加载事件时间线..." />
     </div>
   );
 }
 
-/** 设备未找到空状态 — 返回 404 */
 function DeviceNotFoundState({ deviceId }: { deviceId: string }) {
   return (
     <EmptyState
       title="设备未找到"
-      description={`设备 ${deviceId} 不存在或已被移除。请检查设备 ID 是否正确，或返回设备列表重新选择。`}
+      description={`设备 ${deviceId} 不存在或已被移除。`}
       action={<a href="/devices">返回设备列表</a>}
     />
   );
 }
 
-/** 错误回退 */
 function DeviceDetailErrorFallback() {
   return (
     <EmptyState
       title="设备数据加载异常"
-      description="无法加载设备详情数据。可能原因：设备离线、网络中断或后端服务不可用。"
+      description="无法加载设备详情数据。"
       action={<a href="/devices">重试</a>}
     />
   );
@@ -76,33 +73,17 @@ export default async function DeviceDetailPage({ params }: PageProps) {
 
   // 基本 ID 合法性校验
   if (!id || typeof id !== 'string' || id.length < 1 || id.length > 64) {
-    notFound();
+    return <DeviceNotFoundState deviceId={id || 'unknown'} />;
   }
 
   return (
     <>
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Product',
-            name: `设备 ${id}`,
-            description: '门店设备在线状态监控与固件管理',
-            category: 'IoT Device',
-          }),
-        }}
-      />
-
-      {/* 主内容区 */}
-      <ErrorBoundary fallback={() => <DeviceDetailErrorFallback />}>
+      <ErrorBoundary fallback={<DeviceDetailErrorFallback />}>
         <Suspense fallback={<DeviceDetailLoadingFallback />}>
           <DeviceDetailClient deviceId={id} />
         </Suspense>
       </ErrorBoundary>
 
-      {/* 操作提示区 */}
       <div
         style={{
           marginTop: 24,

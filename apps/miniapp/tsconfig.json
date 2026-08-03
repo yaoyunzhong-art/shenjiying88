@@ -5,7 +5,8 @@
     "module": "ESNext",
     "baseUrl": ".",
     "paths": {
-      "@m5/sdk": ["../../packages/sdk/src/index.ts"]
+      "@m5/sdk": ["../../packages/sdk/src/index.ts"],
+      "@m5/types": ["../../packages/types/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "config/**/*.ts"]

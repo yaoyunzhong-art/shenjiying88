@@ -1,9 +1,9 @@
+'use client';
 /**
  * 供应商 — Suppliers (storefront-web)
  * 角色视角: 👔店长 / 👤管理员
  * 功能: 供应商列表、合作状态管理、联系方式、商品类别、近期采购统计、搜索/筛选、详情面板、空/错/加载态
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

@@ -162,14 +162,18 @@ describe(`${ROLES.Safety} Auth`, () => {
     })
   })
 
-  it('brute force detection: wrong pw many times does not lock', async () => {
+  it('brute force detection: wrong pw 5 次后应触发锁定', async () => {
     const { as } = makeSvc()
+    let last
     for (let i = 0; i < 5; i++) {
-      await as.loginByPassword('13800138000', undefined, 'wrong'+i, LoginType.MOBILE_PASSWORD, { deviceId: 'a'+i, deviceType: 'mobile' })
+      last = await as.loginByPassword('13800138000', undefined, 'wrong'+i, LoginType.MOBILE_PASSWORD, { deviceId: 'a'+i, deviceType: 'mobile' })
     }
-    // correct password still works (mock doesn't lock)
-    const r = await as.loginByPassword('13800138000', undefined, 'password123', LoginType.MOBILE_PASSWORD, { deviceId: 'legit', deviceType: 'mobile' })
-    assert.ok(r.success)
+    assert.equal(last!.success, false)
+    assert.equal(last!.error!.code, AuthErrorCode.ACCOUNT_LOCKED)
+
+    const blocked = await as.loginByPassword('13800138000', undefined, 'password123', LoginType.MOBILE_PASSWORD, { deviceId: 'legit', deviceType: 'mobile' })
+    assert.equal(blocked.success, false)
+    assert.equal(blocked.error!.code, AuthErrorCode.ACCOUNT_LOCKED)
   })
 
   it('安监监控会话过期检测', async () => {

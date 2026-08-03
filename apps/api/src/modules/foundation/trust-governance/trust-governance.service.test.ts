@@ -239,4 +239,34 @@ void describe('TrustGovernanceService', () => {
       assert.ok(descriptor.outboundContracts.length > 0)
     })
   })
+
+  void describe('getOperationsOverview()', () => {
+    it('falls back to empty overview when prisma tables are unavailable', async () => {
+      const prismaUnavailable = Object.assign(new Error('missing table'), { code: 'P2021' })
+      const prisma = {
+        governanceApproval: {
+          findMany: vi.fn().mockRejectedValue(prismaUnavailable),
+        },
+        auditLog: {
+          findMany: vi.fn().mockRejectedValue(prismaUnavailable),
+        },
+        rateLimitPolicy: {
+          findMany: vi.fn().mockRejectedValue(prismaUnavailable),
+        },
+        quotaLedger: {
+          findMany: vi.fn().mockRejectedValue(prismaUnavailable),
+        },
+      } as never
+      const degradedService = new TrustGovernanceService(prisma)
+
+      const overview = await degradedService.getOperationsOverview()
+
+      assert.equal(overview.approvals.total, 0)
+      assert.equal(overview.audits.total, 0)
+      assert.equal(overview.rateLimit.policies.total, 0)
+      assert.equal(overview.rateLimit.ledgers.total, 0)
+      assert.equal(overview.rateLimit.ledgers.blocked, 0)
+      assert.equal(overview.audits.byRiskLevel.high, 0)
+    })
+  })
 })

@@ -48,14 +48,6 @@ const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: str
   refunded: { label: '已退款', color: '#ef4444', bg: '#ef444420' },
 };
 
-const MOCK_ORDERS: Order[] = [
-  { id: 'o1', orderNo: 'SJY20260701001', storeName: '神机营旗舰店', totalAmount: 299.00, status: 'completed', itemCount: 3, createdAt: '2026-07-01 14:30', items: [{ name: '夏季T恤', quantity: 1, price: 199 }, { name: '运动短裤', quantity: 1, price: 100 }] },
-  { id: 'o2', orderNo: 'SJY20260702002', storeName: '神机营社区店', totalAmount: 159.00, status: 'paid', itemCount: 2, createdAt: '2026-07-02 10:15', items: [{ name: '休闲帽', quantity: 1, price: 59 }, { name: '袜子套装', quantity: 1, price: 100 }] },
-  { id: 'o3', orderNo: 'SJY20260703003', storeName: '神机营旗舰店', totalAmount: 499.00, status: 'pending', itemCount: 1, createdAt: '2026-07-03 09:00', items: [{ name: '运动背包', quantity: 1, price: 499 }] },
-  { id: 'o4', orderNo: 'SJY20260628004', storeName: '神机营社区店', totalAmount: 89.00, status: 'cancelled', itemCount: 1, createdAt: '2026-06-28 16:45', items: [{ name: '护腕', quantity: 1, price: 89 }] },
-  { id: 'o5', orderNo: 'SJY20260625005', storeName: '神机营旗舰店', totalAmount: 799.00, status: 'refunded', itemCount: 2, createdAt: '2026-06-25 11:20', items: [{ name: '运动鞋', quantity: 1, price: 599 }, { name: '鞋垫', quantity: 1, price: 200 }] },
-];
-
 export class OrderService {
   private baseUrl: string;
 
@@ -96,10 +88,14 @@ export class OrderService {
         return { success: false, error: { code: data.code ?? 'FETCH_ERROR', message: data.message ?? '获取订单列表失败' } };
       }
 
-      return { success: true, data: data.data ?? this.generateMockData() };
+      if (!data?.data || !Array.isArray(data.data.orders)) {
+        return { success: false, error: { code: 'INVALID_RESPONSE', message: '订单列表响应格式不合法' } };
+      }
+
+      return { success: true, data: data.data };
     } catch (error) {
       console.error('Get orders error:', error);
-      return { success: true, data: this.generateMockData() };
+      return { success: false, error: { code: 'NETWORK_ERROR', message: '网络错误' } };
     }
   }
 
@@ -119,7 +115,11 @@ export class OrderService {
         return { success: false, error: { code: data.code ?? 'FETCH_ERROR', message: data.message ?? '获取订单详情失败' } };
       }
 
-      return { success: true, data: data.data ?? MOCK_ORDERS[0] };
+      if (!data?.data) {
+        return { success: false, error: { code: 'INVALID_RESPONSE', message: '订单详情响应格式不合法' } };
+      }
+
+      return { success: true, data: data.data };
     } catch (error) {
       console.error('Get order detail error:', error);
       return { success: false, error: { code: 'NETWORK_ERROR', message: '网络错误' } };
@@ -149,13 +149,6 @@ export class OrderService {
     }
   }
 
-  private generateMockData() {
-    return {
-      orders: MOCK_ORDERS,
-      total: MOCK_ORDERS.length,
-      pendingCount: MOCK_ORDERS.filter((o) => o.status === 'pending').length,
-    };
-  }
 }
 
 export const orderService = new OrderService();

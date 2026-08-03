@@ -1,15 +1,9 @@
 // sandbox.controller.ts - T116-2
 // 沙箱环境 + ISV 应用商店控制器
 
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { SandboxService, ISVAppStore, SDKMultiLangService } from './sandbox-isv.service';
+import { TenantGuard } from '../agent/tenant.guard';
 import type {
   SandboxInstance,
   CodeExecutionResult,
@@ -35,6 +29,7 @@ import {
 } from './sandbox.dto';
 
 @Controller('sandbox')
+@UseGuards(TenantGuard)
 export class SandboxController {
   constructor(
     private readonly sandboxService: SandboxService,

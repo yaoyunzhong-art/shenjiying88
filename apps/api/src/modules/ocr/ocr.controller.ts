@@ -4,14 +4,17 @@
 
 import {
   Controller, Get, Post, Delete, Param, Body, Query, HttpCode, HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { OcrService } from './ocr.service'
 import type {
   CreateOcrTaskDto, ParseDocumentDto,
   ListOcrTasksQuery, ListDocumentsQuery,
 } from './ocr.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ocr')
+@UseGuards(TenantGuard)
 export class OcrController {
   constructor(private readonly service: OcrService) {}
 

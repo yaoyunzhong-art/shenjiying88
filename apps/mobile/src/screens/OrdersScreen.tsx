@@ -12,7 +12,7 @@ interface Order {
   createdAt: string;
 }
 
-// TODO: T54 接 useQuery + api.get('/orders')
+// TODO(T54): 接 useQuery + api.get('/orders')
 const MOCK_ORDERS: Order[] = [];
 
 export const OrdersScreen: React.FC = () => {

@@ -21,11 +21,22 @@ import {
   type ConfigResponse,
   type EffectiveConfigResponse,
 } from './tenant-config.dto'
-import type { ConfigInstance, ConfigItemDefinition, ConfigLevel } from './tenant-config.entity'
+import type { ConfigInstance, ConfigItemDefinition, ConfigLevel, WorkbenchCode } from './tenant-config.entity'
 import { BUILTIN_CONFIG_DEFINITIONS, LEVEL_TO_WORKBENCH } from './tenant-config.entity'
 import { requireTenantContext } from '../../common/context/tenant-context'
+import { TenantGuard } from '../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const TENANT_CONFIG_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const TENANT_CONFIG_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('tenant-config')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(TENANT_CONFIG_GOVERNANCE_READ_PERMISSION)
 export class TenantConfigController {
   constructor(private readonly service: TenantConfigService) {}
 
@@ -86,7 +97,7 @@ export class TenantConfigController {
     if (!['W-S', 'W-T', 'W-B'].includes(code)) {
       throw new BadRequestException(`Invalid workbench code: ${code}`)
     }
-    const items = await this.service.getWorkbenchConfigs(code as any, category)
+    const items = await this.service.getWorkbenchConfigs(code as WorkbenchCode, category)
     return {
       workbench: code,
       items,
@@ -111,6 +122,7 @@ export class TenantConfigController {
    * 批量设置配置
    */
   @Post('batch')
+  @RequirePermissions(TENANT_CONFIG_GOVERNANCE_WRITE_PERMISSION)
   async batch(@Body() body: SetConfigBatchDto): Promise<{
     items: ConfigResponse[]
     total: number
@@ -129,6 +141,7 @@ export class TenantConfigController {
    * 回滚配置到指定版本
    */
   @Post('rollback')
+  @RequirePermissions(TENANT_CONFIG_GOVERNANCE_WRITE_PERMISSION)
   async rollback(@Body() body: RollbackConfigDto): Promise<ConfigResponse> {
     const instance = await this.service.rollback(body.targetVersion, body.configId)
     const def = BUILTIN_CONFIG_DEFINITIONS.find((d) => d.key === instance.key)

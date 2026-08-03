@@ -8,6 +8,7 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+UseGuards,
 } from '@nestjs/common'
 import { TeamBuildingReportGenerator, ContentModerationService, VideoDeduplicationService, ProgressAnalyzer } from './ai-content.service'
 import {
@@ -21,9 +22,11 @@ import {
   RecordMetricDto,
   ReviewActionDto,
 } from './ai-content.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-content')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiContentController {
   constructor(
     private readonly reportGenerator: TeamBuildingReportGenerator,

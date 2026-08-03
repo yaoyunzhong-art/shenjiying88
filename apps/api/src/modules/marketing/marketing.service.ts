@@ -19,6 +19,7 @@ import type {
   ABResult,
   CouponIssueRequest,
   CouponIssueRecord,
+  CouponSegment,
   FrequencyCapStatus,
   CampaignROI,
   TouchPoint,
@@ -140,7 +141,7 @@ export class MarketingService {
     memberIds: string[]
     variantNameA: string
     variantNameB: string
-    couponSegment: string
+    couponSegment: CouponSegment
     expiryDays: number
     costCents: number
   }): {
@@ -166,7 +167,7 @@ export class MarketingService {
         tenantId: input.tenantId,
         memberId,
         campaignId: input.campaignId,
-        couponSegment: input.couponSegment as any,
+        couponSegment: input.couponSegment as CouponSegment,
         rewardAmount: 500,
         discountPercent: 10,
         expiryDays: input.expiryDays,
@@ -232,7 +233,7 @@ export class MarketingService {
     const recentTouches: TouchPoint[] = []
     // 从 attribution engine 获取最近 touch points
     try {
-      const history = (this.attribution as any).getHistory?.(input.memberId)
+      const history = (this.attribution as unknown as { getHistory?: (memberId: string) => TouchPoint[] }).getHistory?.(input.memberId)
       if (Array.isArray(history)) {
         recentTouches.push(...history.slice(-20))
       }

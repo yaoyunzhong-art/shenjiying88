@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { SvipService } from './svip.service';
 import { SVIPPlan, SVIPSubscription, SVIPBenefit, SVIPBenefitType } from './svip.entity';
+import { TenantGuard } from '../agent/tenant.guard';
 
 interface CreatePlanDto {
   name: string;
@@ -21,6 +22,7 @@ interface UseBenefitDto {
 }
 
 @Controller('svip')
+@UseGuards(TenantGuard)
 export class SvipController {
   constructor(private readonly svipService: SvipService) {}
 

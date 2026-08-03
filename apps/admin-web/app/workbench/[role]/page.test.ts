@@ -58,7 +58,7 @@ describe('[role] 正例 (positive)', () => {
     // Server component returns a Promise (async)
     const result = mod.default({ params: Promise.resolve({ role: 'store_manager' }) });
     // Cannot render in Node env, but it should be a Promise (thenable)
-    assert.ok(result instanceof Promise || (result && typeof (result as any).then === 'function'),
+    assert.ok(result instanceof Promise || (result && typeof (result as Promise<unknown>).then === 'function'),
       'server component call should return a Promise');
   });
 
@@ -121,6 +121,16 @@ describe('[role] 正例 (positive)', () => {
     assert.ok(typeof snapshot.consumerDescriptor.responsibility === 'string');
     assert.ok(Array.isArray(snapshot.consumerDescriptor.dependsOn));
     assert.ok(Array.isArray(snapshot.governance.alerts));
+  });
+
+  it('page source should include visible workbench source evidence', async () => {
+    const source = await import('node:fs/promises').then((fs) =>
+      fs.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
+    );
+    assert.ok(source.includes('workbenchDeliveryMode'));
+    assert.ok(source.includes('workbenchSource'));
+    assert.ok(source.includes('fallbackWorkbenchMap'));
+    assert.ok(source.includes('tenant-config 角色映射'));
   });
 
   it('fallback workbench data has 10 role entries', () => {
@@ -216,8 +226,8 @@ describe('[role] 边界 (boundary)', () => {
     const accessKeys = Object.keys(accessMeta);
     const readinessKeys = Object.keys(readinessMeta);
     for (const e of entries) {
-      assert.ok(accessKeys.includes(e.access as any), `access ${e.access} is valid`);
-      assert.ok(readinessKeys.includes(e.readiness as any), `readiness ${e.readiness} is valid`);
+      assert.ok(accessKeys.includes(e.access as string), `access ${e.access} is valid`);
+      assert.ok(readinessKeys.includes(e.readiness as string), `readiness ${e.readiness} is valid`);
     }
   });
 

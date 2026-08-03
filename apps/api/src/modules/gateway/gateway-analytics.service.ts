@@ -24,7 +24,7 @@ export class GatewayAnalyticsService {
    */
   setLogSource(source: { getRequestLogs(limit?: number): GatewayLogEntry[] }): void {
     this.logSource = source
-    this.logger.log('GatewayAnalyticsService: log source connected')
+    this.logger.debug('GatewayAnalyticsService: log source connected')
   }
 
   /**

@@ -1,10 +1,10 @@
+'use client';
 /**
  * coupons/new/page.tsx — ToB 新建优惠券页面
  *
  * 使用 FormPageScaffold 构建包含验证的优惠券创建表单
  * 支持选择类型、设置面值、有效期、发放总量等
  */
-'use client';
 
 import React from 'react';
 

@@ -55,6 +55,7 @@ export interface ReconciliationTransaction {
 export interface ReconciliationBatch {
   id: string
   tenantId: string
+  storeId?: string
   batchNo: string
   channel: 'WECHAT' | 'ALIPAY' | 'BANK' | 'CASH' | 'CARD'
   date: string

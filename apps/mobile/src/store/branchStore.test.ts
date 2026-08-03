@@ -38,6 +38,17 @@ const mockBranch3: Branch = {
   todayOrders: 0,
 };
 
+const mockBranch4: Branch = {
+  id: 'b004',
+  name: '神机营·古北店',
+  address: '上海市长宁区古北路100号',
+  phone: '021-68880004',
+  status: 'maintenance',
+  managerName: '陈经理',
+  todayRevenue: 0,
+  todayOrders: 0,
+};
+
 describe('branchStore · Phase-21 T54', () => {
   beforeEach(() => {
     // Reset store to initial state
@@ -139,5 +150,113 @@ describe('branchStore · Phase-21 T54', () => {
     expect(branch?.todayOrders).toBe(134);
     expect(branch?.phone).toBe('021-58880001');
     expect(branch?.status).toBe('active');
+  });
+
+  // ── 新增: 门店状态变体 ──
+
+  it('setCurrentBranch: works with inactive branch', () => {
+    useBranchStore.getState().setCurrentBranch(mockBranch3);
+    const branch = useBranchStore.getState().currentBranch;
+    expect(branch?.status).toBe('inactive');
+    expect(branch?.todayRevenue).toBe(0);
+    expect(branch?.todayOrders).toBe(0);
+  });
+
+  it('setCurrentBranch: works with maintenance branch', () => {
+    useBranchStore.getState().setCurrentBranch(mockBranch4);
+    const branch = useBranchStore.getState().currentBranch;
+    expect(branch?.status).toBe('maintenance');
+    expect(branch?.managerName).toBe('陈经理');
+  });
+
+  // ── 新增: 门店列表多数据 ──
+
+  it('setAvailableBranches: handles 4 branches', () => {
+    useBranchStore.getState().setAvailableBranches([
+      mockBranch1, mockBranch2, mockBranch3, mockBranch4,
+    ]);
+    const state = useBranchStore.getState();
+    expect(state.availableBranches).toHaveLength(4);
+    // 保持原始插入顺序
+    expect(state.availableBranches[3].name).toBe('神机营·古北店');
+  });
+
+  it('setAvailableBranches: each branch has distinct id', () => {
+    useBranchStore.getState().setAvailableBranches([
+      mockBranch1, mockBranch2, mockBranch3,
+    ]);
+    const ids = useBranchStore.getState().availableBranches.map((b) => b.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  // ── 新增: 状态交互 ──
+
+  it('切换门店后不影响其他状态', () => {
+    useBranchStore.getState().setAvailableBranches([mockBranch1, mockBranch2]);
+    useBranchStore.getState().setCurrentBranch(mockBranch1);
+
+    // 换一个门店
+    useBranchStore.getState().setCurrentBranch(mockBranch2);
+    const state = useBranchStore.getState();
+    expect(state.currentBranch?.id).toBe('b002');
+    // availableBranches 不变
+    expect(state.availableBranches).toHaveLength(2);
+    // isHydrated 不变
+    expect(state.isHydrated).toBe(false);
+  });
+
+  it('先设置列表, 再设置当前门店为列表中的一家', () => {
+    useBranchStore.getState().setAvailableBranches([mockBranch1, mockBranch2, mockBranch3]);
+    useBranchStore.getState().setCurrentBranch(mockBranch2);
+
+    const state = useBranchStore.getState();
+    expect(state.currentBranch?.id).toBe('b002');
+    expect(state.availableBranches[1].name).toBe('神机营·徐汇店');
+  });
+
+  // ── 新增: partialize 行为 (用于 persist) ──
+
+  it('partialize: 只序列化 currentBranch 和 availableBranches', () => {
+    useBranchStore.getState().setCurrentBranch(mockBranch1);
+    useBranchStore.getState().setAvailableBranches([mockBranch1, mockBranch2]);
+
+    // 直接验证 setState 后的值
+    const state = useBranchStore.getState();
+    expect(state.currentBranch).toBeDefined();
+    expect(state.availableBranches).toHaveLength(2);
+  });
+
+  it('restoreSession: 可以多次调用', async () => {
+    await useBranchStore.getState().restoreSession();
+    expect(useBranchStore.getState().isHydrated).toBe(true);
+
+    // 再次调用不应报错
+    await useBranchStore.getState().restoreSession();
+    expect(useBranchStore.getState().isHydrated).toBe(true);
+  });
+
+  // ── 新增: 边界条件 ──
+
+  it('setCurrentBranch: null 不会意外设置', () => {
+    // 类型系统不允许 null, 但防御性验证
+    useBranchStore.getState().setCurrentBranch(mockBranch1);
+    expect(useBranchStore.getState().currentBranch).not.toBeNull();
+  });
+
+  it('setAvailableBranches: 再次设置后旧列表被清空', () => {
+    useBranchStore.getState().setAvailableBranches([mockBranch1, mockBranch2]);
+    useBranchStore.getState().setAvailableBranches([]);
+    expect(useBranchStore.getState().availableBranches).toHaveLength(0);
+  });
+
+  it('setCurrentBranch: 可用门店列表不受门店切换影响', () => {
+    const initialBranches = [mockBranch1, mockBranch2];
+    useBranchStore.getState().setAvailableBranches(initialBranches);
+    useBranchStore.getState().setCurrentBranch(mockBranch1);
+    useBranchStore.getState().setCurrentBranch(mockBranch2);
+    useBranchStore.getState().setCurrentBranch(mockBranch3); // 不在列表中
+
+    const state = useBranchStore.getState();
+    expect(state.availableBranches).toEqual(initialBranches);
   });
 });

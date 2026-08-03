@@ -90,7 +90,7 @@ const STATUS_TRANSITIONS: Record<OrderStatus, Array<{ action: string; label: str
   refunded: [],
 };
 
-// TODO: T55 替换为真实 useQuery 数据
+// TODO(T55): 替换为真实 useQuery 数据
 const DEFAULT_ORDER: OrderDetail = {
   id: 'ord-001',
   orderNo: 'ORD202607080001',

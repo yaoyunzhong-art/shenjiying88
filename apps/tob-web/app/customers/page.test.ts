@@ -1,212 +1,106 @@
-/**
- * customers page unit tests — tob-web
- */
-
-import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-import {
-  MOCK_CUSTOMERS,
-  CUSTOMER_STATUS_MAP,
-  CUSTOMER_TIER_MAP,
-  CUSTOMER_INDUSTRY_MAP,
-  CUSTOMER_STATUSES,
-  CUSTOMER_TIERS,
-  CUSTOMER_INDUSTRIES,
-  type CustomerItem,
-  type CustomerStatus,
-  type CustomerTier,
-  type CustomerIndustry,
-} from '../customers-data';
+let PAGE_SRC = '';
+let CLIENT_SRC = '';
+let DATA_SRC = '';
 
-describe('customers-data', () => {
-  it('MOCK_CUSTOMERS should have at least 10 items', () => {
-    assert.ok(MOCK_CUSTOMERS.length >= 10, `expected >=10, got ${MOCK_CUSTOMERS.length}`);
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'customers-client.tsx'), 'utf-8');
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, '../customers-data.ts'), 'utf-8');
+});
+
+describe('CustomersPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function CustomersPage()'));
+    assert.ok(!PAGE_SRC.includes("'use client'"));
   });
 
-  it('every customer should have required fields', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(typeof c.id === 'string' && c.id.length > 0, `customer ${c.id}: missing id`);
-      assert.ok(typeof c.companyName === 'string' && c.companyName.length > 0, `customer ${c.id}: missing companyName`);
-      assert.ok(typeof c.contactName === 'string' && c.contactName.length > 0, `customer ${c.id}: missing contactName`);
-      assert.ok(typeof c.industry === 'string' && c.industry.length > 0, `customer ${c.id}: missing industry`);
-      assert.ok(typeof c.monthlySpend === 'number' && c.monthlySpend >= 0, `customer ${c.id}: invalid monthlySpend ${c.monthlySpend}`);
-      assert.ok(typeof c.totalSpend === 'number' && c.totalSpend >= 0, `customer ${c.id}: invalid totalSpend ${c.totalSpend}`);
-      assert.ok(typeof c.totalContracts === 'number' && c.totalContracts >= 0, `customer ${c.id}: invalid totalContracts`);
-      assert.ok(typeof c.activeContracts === 'number' && c.activeContracts >= c.activeContracts, `customer ${c.id}: invalid activeContracts`);
-    }
-  });
-
-  it('every customer status should be valid', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(
-        CUSTOMER_STATUSES.includes(c.status),
-        `customer ${c.id}: invalid status ${c.status}`
-      );
-    }
-  });
-
-  it('every customer tier should be valid', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(
-        CUSTOMER_TIERS.includes(c.tier),
-        `customer ${c.id}: invalid tier ${c.tier}`
-      );
-    }
-  });
-
-  it('every customer industry should be valid', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(
-        CUSTOMER_INDUSTRIES.includes(c.industry),
-        `customer ${c.id}: invalid industry ${c.industry}`
-      );
-    }
-  });
-
-  it('activeContracts should never exceed totalContracts', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(
-        c.activeContracts <= c.totalContracts,
-        `customer ${c.id}: activeContracts ${c.activeContracts} > totalContracts ${c.totalContracts}`
-      );
-    }
-  });
-
-  it('churned customers should have 0 activeContracts', () => {
-    const churned = MOCK_CUSTOMERS.filter((c) => c.status === 'churned');
-    for (const c of churned) {
-      assert.equal(c.activeContracts, 0, `customer ${c.id}: churned but has ${c.activeContracts} active contracts`);
-    }
-  });
-
-  it('suspended customers should have 0 activeContracts', () => {
-    const suspended = MOCK_CUSTOMERS.filter((c) => c.status === 'suspended');
-    for (const c of suspended) {
-      assert.equal(c.activeContracts, 0, `customer ${c.id}: suspended but has ${c.activeContracts} active contracts`);
-    }
+  it('页面应加载企业客户快照并导出动态配置', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadCustomersSnapshot()'));
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic';"));
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0;'));
   });
 });
 
-describe('customer status map coverage', () => {
-  it('CUSTOMER_STATUS_MAP should cover all statuses', () => {
-    for (const s of CUSTOMER_STATUSES) {
-      assert.ok(s in CUSTOMER_STATUS_MAP, `missing status ${s} in map`);
-      const entry = CUSTOMER_STATUS_MAP[s];
-      assert.ok(typeof entry.label === 'string' && entry.label.length > 0, `status ${s}: missing label`);
-      assert.ok(
-        ['success', 'warning', 'danger', 'neutral'].includes(entry.variant),
-        `status ${s}: invalid variant ${entry.variant}`
-      );
-    }
+describe('CustomersPage — 来源态证据', () => {
+  it('页面应展示来源态证据字段', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
   });
 
-  it('CUSTOMER_TIER_MAP should cover all tiers', () => {
-    for (const t of CUSTOMER_TIERS) {
-      assert.ok(t in CUSTOMER_TIER_MAP, `missing tier ${t} in map`);
-      const entry = CUSTOMER_TIER_MAP[t];
-      assert.ok(typeof entry.label === 'string' && entry.label.length > 0, `tier ${t}: missing label`);
-      assert.ok(
-        ['success', 'warning', 'danger', 'neutral', 'info'].includes(entry.variant),
-        `tier ${t}: invalid variant ${entry.variant}`
-      );
-    }
-  });
-
-  it('CUSTOMER_INDUSTRY_MAP should cover all industries', () => {
-    for (const i of CUSTOMER_INDUSTRIES) {
-      assert.ok(i in CUSTOMER_INDUSTRY_MAP, `missing industry ${i} in map`);
-      assert.ok(
-        typeof CUSTOMER_INDUSTRY_MAP[i] === 'string' && CUSTOMER_INDUSTRY_MAP[i].length > 0,
-        `industry ${i}: empty label`
-      );
-    }
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> api/crm/customers + api/crm/stats'));
+    assert.ok(PAGE_SRC.includes('loadCustomersSnapshot -> MOCK_CUSTOMERS mapped fallback'));
+    assert.ok(PAGE_SRC.includes('mapped local enterprise customer samples'));
+    assert.ok(PAGE_SRC.includes('不可作为闭环复签证据'));
   });
 });
 
-describe('customer filtering partition', () => {
-  it('status filter should partition correctly', () => {
-    const sum = CUSTOMER_STATUSES.reduce(
-      (acc, s) => acc + MOCK_CUSTOMERS.filter((c) => c.status === s).length,
-      0
-    );
-    assert.equal(sum, MOCK_CUSTOMERS.length,
-      `status partition sum ${sum} !== total ${MOCK_CUSTOMERS.length}`);
+describe('CustomersData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构与统计字段', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"));
+    assert.ok(DATA_SRC.includes('customers: CustomerListItem[]'));
+    assert.ok(DATA_SRC.includes('stats: CustomerStatsSnapshot;'));
+    assert.ok(DATA_SRC.includes('generatedAt: string'));
   });
 
-  it('tier filter should partition correctly', () => {
-    const sum = CUSTOMER_TIERS.reduce(
-      (acc, t) => acc + MOCK_CUSTOMERS.filter((c) => c.tier === t).length,
-      0
-    );
-    assert.equal(sum, MOCK_CUSTOMERS.length,
-      `tier partition sum ${sum} !== total ${MOCK_CUSTOMERS.length}`);
+  it('应尝试读取上游 CRM 列表与统计接口，并附带租户头', () => {
+    assert.ok(DATA_SRC.includes("new URL('api/crm/customers', resolveCustomersApiBaseUrl())"));
+    assert.ok(DATA_SRC.includes("new URL('api/crm/stats', resolveCustomersApiBaseUrl())"));
+    assert.ok(DATA_SRC.includes("'x-tenant-id': resolveTenantId()"));
   });
 
-  it('industry filter should partition correctly', () => {
-    const sum = CUSTOMER_INDUSTRIES.reduce(
-      (acc, i) => acc + MOCK_CUSTOMERS.filter((c) => c.industry === i).length,
-      0
-    );
-    assert.equal(sum, MOCK_CUSTOMERS.length,
-      `industry partition sum ${sum} !== total ${MOCK_CUSTOMERS.length}`);
+  it('失败时应回退到 fallback 样本并返回错误提示', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"));
+    assert.ok(DATA_SRC.includes('CRM 列表/统计接口不可达，已切换到 fallback 样本数据。'));
   });
 });
 
-describe('customer spend analysis', () => {
-  it('totalSpend should be non-negative and accumulate correctly', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(c.totalSpend >= 0, `customer ${c.id}: negative totalSpend ${c.totalSpend}`);
-      assert.ok(c.monthlySpend >= 0, `customer ${c.id}: negative monthlySpend ${c.monthlySpend}`);
-    }
+describe('CustomersClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client 并接收 snapshot', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"));
+    assert.ok(CLIENT_SRC.includes('snapshot: CustomersSnapshotDelivery'));
   });
 
-  it('platinum customers should have highest average monthly spend', () => {
-    const tiers = ['platinum', 'gold', 'silver', 'standard'] as const;
-    const avgSpend: Record<string, number> = {};
-
-    for (const t of tiers) {
-      const group = MOCK_CUSTOMERS.filter((c) => c.tier === t);
-      if (group.length > 0) {
-        avgSpend[t] = group.reduce((s, c) => s + c.monthlySpend, 0) / group.length;
-      }
-    }
-
-    // Platinum should have highest average
-    assert.ok(avgSpend.platinum! > 0, 'platinum average spend should be > 0');
-    if (avgSpend.gold !== undefined) {
-      assert.ok(avgSpend.platinum! >= avgSpend.gold,
-        `platinum avg ${avgSpend.platinum!.toFixed(0)} < gold avg ${avgSpend.gold!.toFixed(0)}`);
-    }
+  it('客户端组件应支持刷新并透出 fallback 错误', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'));
+    assert.ok(CLIENT_SRC.includes('useTransition'));
+    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"));
+    assert.ok(CLIENT_SRC.includes('snapshot.error'));
   });
 
-  it('region distribution breakdown should exist', () => {
-    const regions = new Set(MOCK_CUSTOMERS.map((c) => c.region));
-    assert.ok(regions.size >= 3, `expected at least 3 regions, got ${regions.size}`);
-    for (const r of regions) {
-      assert.ok(typeof r === 'string' && r.length > 0, `invalid region: ${r}`);
-    }
+  it('客户端组件应保留筛选、分页和统计卡片', () => {
+    assert.ok(CLIENT_SRC.includes('SearchFilterInput'));
+    assert.ok(CLIENT_SRC.includes('setStatusFilter'));
+    assert.ok(CLIENT_SRC.includes('Pagination'));
+    assert.ok(CLIENT_SRC.includes('StatCard label="总客户数"'));
+  });
+
+  it('客户端组件应保留空态与表格展示', () => {
+    assert.ok(CLIENT_SRC.includes('当前筛选条件下没有企业客户记录'));
+    assert.ok(CLIENT_SRC.includes('当前快照暂无企业客户数据'));
+    assert.ok(CLIENT_SRC.includes('DataTable columns={columns} rows={paged}'));
   });
 });
 
-describe('customer city & since validation', () => {
-  it('every customer should have a valid city', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(typeof c.city === 'string' && c.city.length > 0, `customer ${c.id}: missing city`);
-    }
+describe('CustomersPage — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'));
+    assert.ok(!CLIENT_SRC.includes('describe.skip'));
+    assert.ok(!DATA_SRC.includes('describe.skip'));
   });
 
-  it('every customer should have a valid since date', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(typeof c.since === 'string' && c.since.length > 0, `customer ${c.id}: missing since`);
-      assert.ok(!isNaN(Date.parse(c.since)), `customer ${c.id}: invalid since date ${c.since}`);
-    }
-  });
-
-  it('every customer should have a valid lastActivity date', () => {
-    for (const c of MOCK_CUSTOMERS) {
-      assert.ok(typeof c.lastActivity === 'string' && c.lastActivity.length > 0, `customer ${c.id}: missing lastActivity`);
-      assert.ok(!isNaN(Date.parse(c.lastActivity)), `customer ${c.id}: invalid lastActivity date ${c.lastActivity}`);
-    }
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'));
+    assert.ok(!CLIENT_SRC.includes('as any'));
+    assert.ok(!DATA_SRC.includes('as any'));
   });
 });

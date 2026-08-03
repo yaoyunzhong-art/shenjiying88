@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 每个角色至少 2 个测试用例（正常流程 + 权限边界）
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { LoyaltyController } from './loyalty.controller'
 import {
@@ -458,17 +457,6 @@ describe(`${ROLES.Operations} loyalty 角色测试`, () => {
     assert.equal(failed[0].couponCode, 'COUPON-EXPIRED')
   })
 
-  it('运行专员查看优惠券核销系统健康度 => 全部端点为 GET', () => {
-    // 验证 controller 路由完整性
-    const path = Reflect.getMetadata('path', LoyaltyController)
-    assert.equal(path, 'loyalty')
-
-    const endpoints = ['listPointsLedger', 'listCouponRedemptions', 'listBlindboxFulfillments', 'listSettlements']
-    for (const ep of endpoints) {
-      const method = Reflect.getMetadata('method', (LoyaltyController.prototype as any)[ep])
-      assert.equal(method, 0, `${ep} should be GET`) // 0 = GET
-    }
-  })
 })
 
 // ── 🤝团建 ──

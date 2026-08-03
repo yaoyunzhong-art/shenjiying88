@@ -1,0 +1,51 @@
+=== preflight online ===
+timestamp=2026-07-18 04:55:49
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/preflight-prod-public-cutover.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example --allow-missing-tls 
+
+bash: no job control in this shell
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Checking namespace access
+==> Checking live resources
+==> Current ingress hosts
+api.m5.local
+admin.m5.local
+store.m5.local
+tob.m5.local
+
+==> Current runtime public URLs
+NEXT_PUBLIC_API_URL=https://api.m5.local/api/v1
+NEXT_PUBLIC_WS_URL=wss://api.m5.local
+CORS_ORIGIN=https://admin.m5.local,https://store.m5.local,https://tob.m5.local
+
+==> Target public URLs from env file
+API_HOST=api.m5-platform.com
+ADMIN_HOST=admin.m5-platform.com
+STOREFRONT_HOST=store.m5-platform.com
+TOB_HOST=tob.m5-platform.com
+NEXT_PUBLIC_API_URL=https://api.m5-platform.com/api/v1
+NEXT_PUBLIC_WS_URL=wss://api.m5-platform.com
+CORS_ORIGIN=https://admin.m5-platform.com,https://store.m5-platform.com,https://tob.m5-platform.com
+
+==> Deployment readiness
+m5-api ready=1/1 available=1 updated=1
+m5-admin-web ready=2/2 available=2 updated=2
+m5-storefront-web ready=2/2 available=2 updated=2
+m5-tob-web ready=1/1 available=1 updated=1
+
+==> TLS status
+WARN: TLS secret is missing: m5-tls
+
+==> Rendering manifests to /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+Rendered files:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-ingress-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-config-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-public-dns-records.csv
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-tls-secret.template.yaml
+==> Running kubectl server dry-run
+WARN: Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
+==> Preflight finished
+Rendered dir: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+
+Warnings:
+  - TLS secret is missing: m5-tls
+  - Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover

@@ -10,6 +10,11 @@ import {
   type AnnouncementStatus,
   type AnnouncementCategory,
 } from '../../lib/announcement-service';
+import {
+  getCachedEnterpriseUser,
+  getEnterpriseAccessToken,
+  hasEnterprisePermission,
+} from '../enterprise/lib/enterprise-session';
 
 const CATEGORY_LABELS: Record<AnnouncementCategory, string> = {
   system: '系统',
@@ -42,6 +47,7 @@ const STATUS_VARIANTS: Record<AnnouncementStatus, 'warning' | 'success' | 'error
 export default function AnnouncementsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Announcement[]>([]);
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof getCachedEnterpriseUser>>(null);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [keyword, setKeyword] = useState('');
@@ -70,13 +76,21 @@ export default function AnnouncementsPage() {
   }, [page, keyword, categoryFilter, statusFilter]);
 
   useEffect(() => {
-    const token = localStorage.getItem('enterprise_access_token');
-    if (!token) {
+    const token = getEnterpriseAccessToken();
+    const cachedUser = getCachedEnterpriseUser();
+    if (!token || !cachedUser) {
       router.push('/enterprise/login');
       return;
     }
+    if (!hasEnterprisePermission(cachedUser, 'announcement:read')) {
+      router.push('/enterprise/console?denied=announcement.read');
+      return;
+    }
+    setCurrentUser(cachedUser);
     fetchData();
   }, [router, fetchData]);
+
+  const canCreateAnnouncement = hasEnterprisePermission(currentUser, 'announcement:create');
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -93,22 +107,26 @@ export default function AnnouncementsPage() {
       title="公告管理"
       subtitle={`共 ${total} 条公告`}
       actions={
-        <Link
-          href="/announcements/new"
-          style={{
-            padding: '10px 20px',
-            borderRadius: 8,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            color: '#fff',
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: 'pointer',
-            textDecoration: 'none',
-          }}
-        >
-          + 发布公告
-        </Link>
+        canCreateAnnouncement ? (
+          <Link
+            href="/announcements/new"
+            style={{
+              padding: '10px 20px',
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+              textDecoration: 'none',
+            }}
+          >
+            + 发布公告
+          </Link>
+        ) : (
+          <span style={{ fontSize: 13, color: '#64748b' }}>缺少 announcement:create 权限</span>
+        )
       }
     >
       {/* 搜索与筛选栏 */}

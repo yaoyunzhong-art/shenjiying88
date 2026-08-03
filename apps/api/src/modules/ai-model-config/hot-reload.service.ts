@@ -9,6 +9,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common'
+import { isRecordError } from '../../common/error-handler.utils'
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
 import { EventEmitter2 } from '@nestjs/event-emitter'
@@ -144,9 +145,10 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
       const healthCheckOk = await this.healthCheck(result.config)
       
       // 4. 如果健康检查失败,自动回滚
-      if (!healthCheckOk && (result as any).previousConfigId) {
+      const resultWithRef = result as unknown as { previousConfigId: string }
+      if (!healthCheckOk && resultWithRef.previousConfigId) {
         this.logger.warn(`Health check failed for config ${configId}, auto-rollback...`)
-        await this.repo.switchConfig((result as any).previousConfigId, 'system', 'Auto-rollback: health check failed')
+        await this.repo.switchConfig(resultWithRef.previousConfigId, 'system', 'Auto-rollback: health check failed')
         await this.refreshCache(storeId)
         
         return {
@@ -186,15 +188,15 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
         healthCheckOk,
       }
       
-    } catch(error: any){
+    } catch (error: unknown){
       const latencyMs = Date.now() - startTime
-      this.logger.error(`Hot reload failed: ${error.message}`, error.stack)
+      this.logger.error(`Hot reload failed: ${(error as Error).message}`, isRecordError(error)?.stack)
       
       return {
         success: false,
         latencyMs,
         healthCheckOk: false,
-        error: error.message,
+        error: (error as Error).message,
       }
     }
   }
@@ -262,7 +264,7 @@ export class HotReloadService implements OnGatewayConnection, OnGatewayDisconnec
       // 只要返回了响应(无论状态码)就认为 endpoint 可访问
       return true
       
-    } catch(error: any){
+    } catch (error: unknown){
       // HEAD 请求失败,尝试更宽松的检查
       try {
         // 验证 API key 格式

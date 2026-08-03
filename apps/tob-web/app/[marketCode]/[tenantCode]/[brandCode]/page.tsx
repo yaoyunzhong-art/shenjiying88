@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PortalConsumerGovernanceSection } from '@m5/ui';
+import { PortalConsumerGovernanceSection, PortalDomainGovernanceCard } from '@m5/ui';
+import { buildDomainGovernanceDisplayModel, resolveDomainGovernanceDisplayPreset } from '@m5/types';
 import { getBrandPortalConsumerSnapshot } from '../../../bootstrap';
 import { GovernanceLinkedSection } from '../../../components/governance-linked-overview';
 
@@ -47,6 +48,15 @@ export default async function BrandPortalPage({
   const { marketCode, tenantCode, brandCode } = await params;
   const snapshot = await getBrandPortalConsumerSnapshot(marketCode, tenantCode, brandCode);
   const { portal, market } = snapshot;
+  const domainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    portal.domainSource,
+    snapshot.domainGovernance,
+    snapshot.domainGovernanceWorkspaceHref,
+  );
+  const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+    'TOB_BRAND',
+    domainGovernanceDisplayModel.requiresAttention,
+  );
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
@@ -73,6 +83,12 @@ export default async function BrandPortalPage({
             <div style={{ marginTop: 6, color: '#ddd6fe' }}>{market.social.primaryPlatforms.join(' / ')}</div>
           </article>
         </div>
+
+        <PortalDomainGovernanceCard
+          model={domainGovernanceDisplayModel}
+          preset={domainGovernanceDisplayPreset}
+          style={{ marginTop: 20 }}
+        />
 
         <PortalConsumerGovernanceSection
           titleColor="#f0abfc"

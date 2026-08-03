@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { Suspense } from 'react';
+import Link from 'next/link'
+import { Suspense } from 'react'
 import {
   PageShell,
   StatCard,
@@ -7,28 +7,29 @@ import {
   Badge,
   LoadingSkeleton,
   QuickStats,
-} from '@m5/ui';
+} from '@m5/ui'
 import {
   loadAgentDashboardSnapshot,
   loadAgentConfigs,
   loadAgentTools,
   loadAgentEvaluations,
-} from './agent-view-model';
+} from './agent-view-model'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 /* ── 数字格式化 ── */
 function fmt(num: number): string {
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
-  return String(num);
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M'
+  if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K'
+  return String(num)
 }
 
 /* ── 功能卡片数据 ── */
 interface ModuleCard {
-  title: string;
-  href: string;
-  description: string;
+  title: string
+  href: string
+  description: string
 }
 
 const MODULES: ModuleCard[] = [
@@ -62,7 +63,7 @@ const MODULES: ModuleCard[] = [
     href: '/agents/studio',
     description: '在线编排 Agent 工作流，实时测试与调试 Agent 行为。',
   },
-];
+]
 
 /* ── 概览统计区域 (服务端组件) ── */
 async function OverviewStats() {
@@ -71,23 +72,23 @@ async function OverviewStats() {
     loadAgentConfigs({ cache: 'no-store' }).catch(() => null),
     loadAgentTools({ cache: 'no-store' }).catch(() => null),
     loadAgentEvaluations({ cache: 'no-store' }).catch(() => null),
-  ]);
+  ])
 
-  const running = dashSnap?.runningCount ?? 0;
-  const completed = dashSnap?.completedCount ?? 0;
-  const failed = dashSnap?.failedCount ?? 0;
-  const totalExec = dashSnap?.totalExecutions ?? 0;
-  const configCount = configSnap?.configs.length ?? 0;
-  const toolCount = toolSnap?.tools.length ?? 0;
-  const evalCount = evalSnap?.evaluations.length ?? 0;
-  const avgDuration = dashSnap?.avgDurationMs ?? 0;
-  const avgSteps = dashSnap?.avgSteps ?? 0;
+  const running = dashSnap?.runningCount ?? 0
+  const completed = dashSnap?.completedCount ?? 0
+  const failed = dashSnap?.failedCount ?? 0
+  const totalExec = dashSnap?.totalExecutions ?? 0
+  const configCount = configSnap?.configs.length ?? 0
+  const toolCount = toolSnap?.tools.length ?? 0
+  const evalCount = evalSnap?.evaluations.length ?? 0
+  const avgDuration = dashSnap?.avgDurationMs ?? 0
+  const avgSteps = dashSnap?.avgSteps ?? 0
   const passRate =
     evalCount > 0
       ? Math.round(
           (evalSnap!.evaluations.filter((e) => e.overallScore >= 0.6).length / evalCount) * 100,
         )
-      : 0;
+      : 0
 
   return (
     <div style={{ marginBottom: 28 }} data-testid="agents-overview-stats">
@@ -129,7 +130,7 @@ async function OverviewStats() {
         ]}
       />
     </div>
-  );
+  )
 }
 
 /* ── 功能模块网格 ── */
@@ -162,29 +163,29 @@ function ModuleGrid() {
         </Link>
       ))}
     </div>
-  );
+  )
 }
 
 /* ── 主页面 ── */
 export default async function AgentsPage() {
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="Agent 管理中心"
-        subtitle="AI Agent 全生命周期管理 — 配置、运行、监控、评估与编排。"
-      >
-        <Suspense
-          fallback={<LoadingSkeleton variant="card" rows={2} label="加载概览统计..." />}
+        <PageShell
+          title="Agent 管理中心"
+          subtitle="AI Agent 全生命周期管理 — 配置、运行、监控、评估与编排。"
         >
-          <OverviewStats />
-        </Suspense>
+          <Suspense
+            fallback={<LoadingSkeleton variant="card" rows={2} label="加载概览统计..." />}
+          >
+            <OverviewStats />
+          </Suspense>
 
-        <Suspense
-          fallback={<LoadingSkeleton variant="card" rows={3} label="加载功能模块..." />}
-        >
-          <ModuleGrid />
-        </Suspense>
-      </PageShell>
+          <Suspense
+            fallback={<LoadingSkeleton variant="card" rows={3} label="加载功能模块..." />}
+          >
+            <ModuleGrid />
+          </Suspense>
+        </PageShell>
     </main>
-  );
+  )
 }

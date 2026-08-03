@@ -516,13 +516,21 @@ export class RuntimeGovernanceService {
   }
 
   private async listActionReceiptEntries(tenantId?: string) {
-    const events = await this.prisma.domainEvent.findMany({
-      where: {
-        aggregateType: 'runtime-governance'
-      },
-      orderBy: [{ createdAt: 'asc' }],
-      take: 500
-    })
+    let events: PersistedRuntimeEvent[]
+    try {
+      events = (await this.prisma.domainEvent.findMany({
+        where: {
+          aggregateType: 'runtime-governance'
+        },
+        orderBy: [{ createdAt: 'asc' }],
+        take: 500
+      })) as PersistedRuntimeEvent[]
+    } catch (error) {
+      if (!this.shouldUseRuntimeFallback(error)) {
+        throw error
+      }
+      events = []
+    }
 
     const receiptMap = new Map<
       string,
@@ -566,6 +574,11 @@ export class RuntimeGovernanceService {
 
     const scopeTenantId = receipt.rateLimit.scopeKey.split(':')[2]
     return (scopeTenantId ?? 'tenant-demo') === tenantId
+  }
+
+  private shouldUseRuntimeFallback(error: unknown) {
+    const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
   }
 
   private isBacklogReceipt(receipt: RuntimeGovernanceReceipt) {

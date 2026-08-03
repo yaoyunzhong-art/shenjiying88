@@ -1,34 +1,44 @@
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+const CLIENT_SRC = readFileSync(resolve(DIR, 'logistics-client.tsx'), 'utf-8')
+const DATA_SRC = readFileSync(resolve(DIR, 'logistics-data.ts'), 'utf-8')
 
-describe('后勤 — 正例', () => {
-  it('应导出默认组件', () => assert.ok(SRC.includes('export default function')));
-  it('应包含 "use client"', () => assert.ok(SRC.includes("'use client'")));
-  it('应包含hook', () => assert.ok(SRC.includes('useState') || SRC.includes('useEffect') || SRC.includes('useCallback')));
-});
+describe('stores/%5Bid%5D/logistics 结构固证', () => {
+  it('page 应切为 server wrapper 并加载快照', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export const dynamic = \'force-dynamic\''))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+    assert.ok(PAGE_SRC.includes('export default async function LogisticsPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadLogisticsSnapshot()'))
+    assert.ok(PAGE_SRC.includes('<LogisticsClient snapshot={snapshot} />'))
+  })
 
-describe('后勤 — 防御', () => {
-  it('无dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-  it('无any类型', () => assert.ok(!/:\s*any\b/.test(SRC)));
-});
+  it('page 应显式透出来源态证据与权限边界', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除')
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'store:read'"))
+  })
 
-describe('后勤 — 业务', () => {
-  it('包含业务数据引用', () => assert.ok(SRC.includes('MOCK_') || SRC.includes('const ') || SRC.includes('useState')));
-});
+  it('client 应保留 router.refresh 刷新链路', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
+    assert.ok(CLIENT_SRC.includes('刷新快照'))
+    assert.ok(CLIENT_SRC.includes('snapshot.sourceLabel'))
+  })
 
-describe('Stores / Logistics — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
-});
+  it('data 应定义 mock 快照合同', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'mock'"))
+    assert.ok(DATA_SRC.includes('generatedAt'))
+    assert.ok(DATA_SRC.includes('refreshPath'))
+    assert.ok(DATA_SRC.includes('loadLogisticsSnapshot'))
+  })
+})

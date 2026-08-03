@@ -1,11 +1,11 @@
+'use client';
 /**
  * 新建库存商品 — New Stock Item Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 表单验证、提交、错误处理
  */
-'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -270,6 +270,12 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
 export default function NewStockItemPage(): React.ReactElement {
   const router = useRouter();
   const toast = useToast();
+
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
 
   const handleSubmit = async (
     data: Record<string, unknown>,

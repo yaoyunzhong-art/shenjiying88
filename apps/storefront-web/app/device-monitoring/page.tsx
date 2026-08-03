@@ -1,10 +1,10 @@
+'use client';
 /**
  * 设备监控页 — Device Monitoring
  * 角色视角: 👔店长 / 🛠️技术
  * 功能: 设备实时状态监控、分类统计、状态筛选、搜索、告警汇总、维护记录
  * 状态: loading/error/empty 三态
  */
-'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {

@@ -73,7 +73,7 @@ export class SandboxService {
   /**
    * 数据脱敏 (与 event-tracking 反模式联动)
    */
-  maskData(data: Record<string, any>): Record<string, any> {
+  maskData(data: Record<string, unknown>): Record<string, unknown> {
     if (!data) return data
     const result = { ...data }
     const piiKeys = ['email', 'phone', 'idCard', 'password', 'token', 'ssn', 'creditCard']

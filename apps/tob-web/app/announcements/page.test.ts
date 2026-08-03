@@ -88,7 +88,8 @@ describe('announcements 列表页 — 边界', () => {
 describe('announcements 列表页 — 防御', () => {
   it('11. 未登录跳转 /enterprise/login', () => {
     const src = readSource();
-    assert.ok(src.includes('enterprise_access_token'), '缺少 token 检查');
+    assert.ok(src.includes('getEnterpriseAccessToken'), '缺少 token helper 检查');
+    assert.ok(src.includes('getCachedEnterpriseUser'), '缺少 cached user 检查');
     assert.ok(src.includes('router.push'), '缺少 router.push');
   });
 
@@ -111,5 +112,17 @@ describe('announcements 列表页 — 防御', () => {
   it('15. 分页保护页码最小值', () => {
     const src = readSource();
     assert.ok(src.includes('Math.max'), '缺少 Math.max 边界');
+  });
+
+  it('16. 缺少 announcement:read 权限时跳转控制台', () => {
+    const src = readSource();
+    assert.ok(src.includes("hasEnterprisePermission(cachedUser, 'announcement:read')"), '缺少 announcement:read 权限校验');
+    assert.ok(src.includes('/enterprise/console?denied=announcement.read'), '缺少 announcement.read 拒绝跳转');
+  });
+
+  it('17. 发布按钮受 announcement:create 权限控制', () => {
+    const src = readSource();
+    assert.ok(src.includes("hasEnterprisePermission(currentUser, 'announcement:create')"), '缺少 announcement:create 权限校验');
+    assert.ok(src.includes('缺少 announcement:create 权限'), '缺少无创建权限提示');
   });
 });

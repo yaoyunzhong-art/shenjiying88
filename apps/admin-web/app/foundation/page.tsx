@@ -1,38 +1,23 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell } from '@m5/ui';
-import { loadFoundationWorkspace } from '../foundation-view-model';
-import FoundationWorkspaceClient from './foundation-workspace-client';
+import { headers } from 'next/headers'
+import {
+  pickForwardedRequestHeaders,
+} from '../lib/server-request-context'
+import FoundationWorkspaceClient from './foundation-workspace-client'
+import { loadFoundationPageSnapshot, normalizeFoundationQuery } from './foundation-data'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface FoundationPageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}
-
-function readQueryParam(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default async function FoundationPage({ searchParams }: FoundationPageProps) {
-  const params = await searchParams;
-  const query = {
-    moduleKey: readQueryParam(params.moduleKey),
-    consumer: readQueryParam(params.consumer)
-  };
-
-  const snapshot = await loadFoundationWorkspace(query, { cache: 'no-store' });
-
-  return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="Foundation 总览"
-        subtitle="统一展示模块目录、消费者依赖、治理基线与模块 drilldown，作为各治理工作台的总入口。"
-      >
-        <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载 Foundation 总览..." />}>
-          <FoundationWorkspaceClient workspace={snapshot.workspace} query={snapshot.query} />
-        </Suspense>
-      </PageShell>
-    </main>
-  );
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const requestHeaders = pickForwardedRequestHeaders(await headers())
+  const snapshot = await loadFoundationPageSnapshot(
+    normalizeFoundationQuery(resolvedSearchParams),
+    { headers: requestHeaders, cache: 'no-store' },
+  )
+  return <FoundationWorkspaceClient workspace={snapshot.workspace} query={snapshot.query} />
 }

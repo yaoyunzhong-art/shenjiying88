@@ -64,7 +64,7 @@ export interface Candidate {
   score: number           // 0..1 归一化分数
   reasoning: string       // 推荐理由
   strategy: StrategyType  // 来源策略
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface RecommendationRequest {

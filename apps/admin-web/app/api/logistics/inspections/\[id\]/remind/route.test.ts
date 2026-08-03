@@ -27,6 +27,11 @@ describe('inspections/[id]/remind — 正例', () => {
     assert.ok(SRC.includes('x-tenant-id'), '缺少 x-tenant-id');
   });
 
+  it('应通过 buildLogisticsForwardHeaders 白名单透传 actor headers', () => {
+    assert.ok(SRC.includes('buildLogisticsForwardHeaders'), '缺少统一 logistics header helper');
+    assert.ok(SRC.includes('contentType'), '应显式设置 contentType');
+  });
+
   it('应使用 LOGISTICS_API_BASE 构建上游 URL', () => {
     assert.ok(SRC.includes('LOGISTICS_API_BASE'), '缺少 LOGISTICS_API_BASE');
     assert.ok(SRC.includes('/remind'), '应包含 remind 路径');
@@ -42,6 +47,7 @@ describe('inspections/[id]/remind — 防御', () => {
 
   it('应使用 POST 方法转发请求', () => {
     assert.ok(SRC.includes("method: 'POST'"), '应使用 POST');
+    assert.ok(SRC.includes('application/json'), 'Content-Type');
   });
 
   it('无危险 HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });

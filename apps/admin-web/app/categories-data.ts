@@ -6,19 +6,20 @@ export interface CategoryItem {
   code: string;
   parentName: string | null;
   productCount: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending';
   sortOrder: number;
   createdAt: string;
 }
 
-export type CategoryStatus = 'active' | 'inactive';
-export type CategoryStatusVariant = 'success' | 'neutral';
+export type CategoryStatus = 'active' | 'inactive' | 'pending';
+export type CategoryStatusVariant = 'success' | 'neutral' | 'warning';
 
-export const CATEGORY_STATUSES: CategoryStatus[] = ['active', 'inactive'];
+export const CATEGORY_STATUSES: CategoryStatus[] = ['active', 'inactive', 'pending'];
 
 export const CATEGORY_STATUS_MAP: Record<CategoryStatus, { label: string; variant: CategoryStatusVariant }> = {
   active: { label: '启用', variant: 'success' },
   inactive: { label: '停用', variant: 'neutral' },
+  pending: { label: '待审核', variant: 'warning' },
 };
 
 export function getCategoryStatusLabel(status: CategoryStatus): string {
@@ -47,7 +48,7 @@ export const MOCK_CATEGORIES: CategoryItem[] = [
   { id: 'cat-010', name: '卫浴清洁', code: 'BATHROOM', parentName: '家居清洁', productCount: 94, status: 'active', sortOrder: 2, createdAt: '2025-02-01T09:00:00Z' },
   { id: 'cat-011', name: '食品饮料', code: 'FOOD_BEV', parentName: null, productCount: 289, status: 'active', sortOrder: 4, createdAt: '2025-02-10T08:00:00Z' },
   { id: 'cat-012', name: '休闲零食', code: 'SNACKS', parentName: '食品饮料', productCount: 176, status: 'active', sortOrder: 1, createdAt: '2025-02-10T08:30:00Z' },
-  { id: 'cat-013', name: '健康养生', code: 'HEALTH', parentName: null, productCount: 98, status: 'pending' as any, sortOrder: 5, createdAt: '2025-03-01T08:00:00Z' },
+  { id: 'cat-013', name: '健康养生', code: 'HEALTH', parentName: null, productCount: 98, status: 'pending', sortOrder: 5, createdAt: '2025-03-01T08:00:00Z' },
 ];
 
 export function getCategoryUniqueParents(items: CategoryItem[]): string[] {

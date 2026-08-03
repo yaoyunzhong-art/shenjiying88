@@ -1,0 +1,7 @@
+host,type,value_1,value_2,ttl,comment
+__API_HOST__,A,__NLB_IP_1__,__NLB_IP_2__,600,production-api
+__ADMIN_HOST__,A,__NLB_IP_1__,__NLB_IP_2__,600,production-admin
+__STOREFRONT_HOST__,A,__NLB_IP_1__,__NLB_IP_2__,600,production-storefront
+__TOB_HOST__,A,__NLB_IP_1__,__NLB_IP_2__,600,production-tob
+__ROOT_HOST__,A,__NLB_IP_1__,__NLB_IP_2__,600,production-root
+__WWW_HOST__,A,__NLB_IP_1__,__NLB_IP_2__,600,production-www

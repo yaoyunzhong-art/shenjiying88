@@ -85,7 +85,7 @@ export class TenantLLMGateway {
       await this.llmService.logCall({
         configId: request.configId,
         tenantId,
-        sessionId: (request as any).sessionId,
+        sessionId: (request as unknown as { sessionId?: string }).sessionId,
         promptTokens: result.usage?.promptTokens || 0,
         completionTokens: result.usage?.completionTokens || 0,
         totalTokens: result.usage?.totalTokens || 0,
@@ -104,7 +104,7 @@ export class TenantLLMGateway {
       await this.llmService.logCall({
         configId: request.configId,
         tenantId,
-        sessionId: (request as any).sessionId,
+        sessionId: (request as unknown as { sessionId?: string }).sessionId,
         promptTokens: 0,
         completionTokens: 0,
         totalTokens: 0,

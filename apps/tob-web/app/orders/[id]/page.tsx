@@ -1,10 +1,10 @@
+'use client';
 /**
  * orders/[id]/page.tsx — 订单详情页 (ToB 订单管理)
  *
  * DetailShell + InfoSection / InfoRow 结构展示订单信息
  * 支持状态流转 + 编辑弹窗 + 删除确认 + 付款备注
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

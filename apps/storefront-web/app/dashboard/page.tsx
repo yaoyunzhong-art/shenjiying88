@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 
 import {
@@ -15,6 +15,8 @@ import {
   Button,
   type SparklineDataPoint,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -193,6 +195,20 @@ function StatSection({ stat }: { stat: DashboardStat }) {
 // ---- 主页面 ----
 
 export default function DashboardPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 300);
+      }),
+    ).then(() => {
+      setPageReady(true);
+    });
+  }, []);
+
   const [period, setPeriod] = useState<Period>('today');
 
   const stats = useMemo(() => {
@@ -220,6 +236,20 @@ export default function DashboardPage() {
         </div>
       }
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={false}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<void>((resolve) => {
+              setTimeout(() => resolve(), 300);
+            }),
+          ).then(() => {
+            setPageReady(true);
+          })
+        }
+      >
       {/* 时间维度切换 */}
       <Tabs
         items={[
@@ -406,6 +436,7 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

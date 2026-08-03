@@ -562,7 +562,7 @@ export default function DataInsights() {
             { name: '射击游戏', icon: '🔫', usage: 65, idle: 20, repair: 15, color: '#ef4444' },
             { name: 'VR体验', icon: '🥽', usage: 60, idle: 25, repair: 15, color: '#3b82f6' },
             { name: '台球桌', icon: '🎱', usage: 55, idle: 30, repair: 15, color: '#f97316' },
-          ].map(function(d, i) {
+          ].map((d, i) => {
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)', fontSize: 12 }}>
                 <span style={{ fontSize: 14, minWidth: 22 }}>{d.icon}</span>
@@ -598,7 +598,7 @@ export default function DataInsights() {
             { hour: '17-19', pct: 15, color: '#6d28d9' },
             { hour: '19-22', pct: 35, color: '#5b21b6' },
             { hour: '22-6', pct: 5, color: '#4c1d95' },
-          ].map(function(s, i) {
+          ].map((s, i) => {
             return (
               <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '70%', height: (s.pct * 2) + 'px', borderRadius: '4px 4px 0 0', background: s.color, opacity: 0.8 }} />
@@ -619,7 +619,7 @@ export default function DataInsights() {
             { store: '广州天河店', revenue: 9.2, visitors: 1450, satisfaction: 0.90 },
             { store: '深圳南山店', revenue: 8.6, visitors: 1380, satisfaction: 0.89 },
             { store: '成都锦江店', revenue: 7.9, visitors: 1220, satisfaction: 0.88 },
-          ].map(function(st, i) {
+          ].map((st, i) => {
             return (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', borderRadius: 6, background: '#1e293b', border: '1px solid rgba(148,163,184,0.15)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -638,27 +638,27 @@ export default function DataInsights() {
       </div>
 
       {/* 会员来源渠道质量分析 */}
-      {function(ChannelQualityPanel: void) {
+      {(() => {
         /* 会员来源渠道质量分析 — 各渠道(扫码/推荐/广告/自然流量)的留存率和消费力评分 */
         interface ChannelQuality { name: string; icon: string; retentionRate: number; spendScore: number; color: string; description: string; }
-        var channels: ChannelQuality[] = [
+        const channels: ChannelQuality[] = [
           { name: '扫码注册', icon: '📱', retentionRate: 82, spendScore: 78, color: '#60a5fa', description: '扫码渠道留存率高·消费力稳定' },
           { name: '老客推荐', icon: '🤝', retentionRate: 91, spendScore: 88, color: '#34d399', description: '推荐渠道质量最优·高价值会员来源' },
           { name: '线上广告', icon: '📢', retentionRate: 52, spendScore: 45, color: '#fbbf24', description: '广告渠道获客量大·但留存偏低' },
           { name: '自然流量', icon: '🚶', retentionRate: 65, spendScore: 60, color: '#a78bfa', description: '自然流量质量中等·随机性较强' },
         ];
         /* 综合健康评分 = 加权平均 */
-        var healthScore = Math.round(channels.reduce(function(acc, c) { return acc + (c.retentionRate + c.spendScore) / 2; }, 0) / channels.length);
-        var healthLabel = healthScore >= 80 ? '优秀' : healthScore >= 65 ? '良好' : '需关注';
-        var healthColor = healthScore >= 80 ? '#34d399' : healthScore >= 65 ? '#fbbf24' : '#f87171';
+        const healthScore = Math.round(channels.reduce((acc, c) => acc + (c.retentionRate + c.spendScore) / 2, 0) / channels.length);
+        const healthLabel = healthScore >= 80 ? '优秀' : healthScore >= 65 ? '良好' : '需关注';
+        const healthColor = healthScore >= 80 ? '#34d399' : healthScore >= 65 ? '#fbbf24' : '#f87171';
         return (
           <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
             <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>📊 会员来源渠道质量分析</h3>
             <p style={{ margin: '0 0 12px', fontSize: 11, color: '#64748b' }}>各渠道会员的留存率和消费力评分，识别最有价值的获客渠道</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 12 }}>
-              {channels.map(function(c, i) {
-                var barColorR = c.retentionRate >= 80 ? '#34d399' : c.retentionRate >= 60 ? '#fbbf24' : '#f87171';
-                var barColorS = c.spendScore >= 80 ? '#34d399' : c.spendScore >= 60 ? '#fbbf24' : '#f87171';
+              {channels.map((c, i) => {
+                const barColorR = c.retentionRate >= 80 ? '#34d399' : c.retentionRate >= 60 ? '#fbbf24' : '#f87171';
+                const barColorS = c.spendScore >= 80 ? '#34d399' : c.spendScore >= 60 ? '#fbbf24' : '#f87171';
                 return (
                   <div key={i} style={{ padding: 14, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -703,7 +703,7 @@ export default function DataInsights() {
             </div>
           </div>
         );
-      }(void 0)}
+      })()}
 
       {/* 会员来源渠道分布 */}
       <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
@@ -715,7 +715,7 @@ export default function DataInsights() {
             { channel: '线上广告', pct: 18, count: 102, color: '#fbbf24', icon: '📢', trend: 'down' },
             { channel: '自然流量', pct: 12, count: 68, color: '#a78bfa', icon: '🚶', trend: 'stable' },
             { channel: '活动导入', pct: 4, count: 24, color: '#f472b6', icon: '🎪', trend: 'up' },
-          ].map(function(src, i) {
+          ].map((src, i) => {
             return (
               <div key={i} style={{ padding: 12, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center' }}>
                 <div style={{ fontSize: 24 }}>{src.icon}</div>
@@ -746,7 +746,7 @@ export default function DataInsights() {
             { month: '5月', add: 38, lost: 15 },
             { month: '6月', add: 52, lost: 9 },
             { month: '7月', add: 48, lost: 11 },
-          ].map(function(m, i) {
+          ].map((m, i) => {
             const maxVal = 55;
             return (
               <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
@@ -786,7 +786,7 @@ export default function DataInsights() {
             { tier: '30天沉睡', days: '30-60天未到店', count: 68, pct: 22, color: '#fbbf24', desc: '轻度沉睡·唤醒容易' },
             { tier: '60天沉睡', days: '60-90天未到店', count: 45, pct: 14, color: '#f97316', desc: '中度沉睡·需优惠刺激' },
             { tier: '90天沉睡', days: '90天以上未到店', count: 32, pct: 10, color: '#ef4444', desc: '深度沉睡·高流失风险' },
-          ].map(function(st, i) {
+          ].map((st, i) => {
             return (
               <div key={i} style={{ flex: '1 1 140px', padding: 14, borderRadius: 8, background: 'rgba(148,163,184,0.06)', textAlign: 'center', border: '1px solid rgba(148,163,184,0.1)' }}>
                 <div style={{ fontSize: 11, color: '#64748b' }}>{st.tier}</div>
@@ -817,7 +817,7 @@ export default function DataInsights() {
             { stage: '活跃', count: 128, pct: 41, color: '#34d399', icon: '🔥', avgDays: '7-30天', desc: '近30天有到店', action: '定期推送新游+积分翻倍' },
             { stage: '沉默', count: 58, pct: 18, color: '#fbbf24', icon: '💤', avgDays: '31-60天', desc: '31-60天未到店', action: '推送召回优惠+发短信提醒' },
             { stage: '流失', count: 44, pct: 14, color: '#f87171', icon: '🚪', avgDays: '>60天', desc: '>60天未到店', action: '电话回访+大额优惠券刺激' },
-          ].map(function(s, i) {
+          ].map((s, i) => {
             return (
               <div key={i} style={{ padding: 14, borderRadius: 8, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)', textAlign: 'center' }}>
                 <div style={{ fontSize: 26 }}>{s.icon}</div>
@@ -848,9 +848,9 @@ export default function DataInsights() {
         <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>🏪 门店收益排行榜</h3>
         <p style={{ margin: '0 0 12px', fontSize: 11, color: '#64748b' }}>各门店月收益与利润对比，按收益降序排列</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-          {function(stores, idx) {
+          {((stores) => {
             const maxRevenue = Math.max(...stores.map(s => s.revenue));
-            return stores.map(function(s, i) {
+            return stores.map((s, i) => {
               const barPct = (s.revenue / maxRevenue) * 100;
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 6, background: '#1e293b', border: '1px solid rgba(148,163,184,0.15)' }}>
@@ -873,13 +873,13 @@ export default function DataInsights() {
                 </div>
               );
             });
-          }([
+          })([
             { store: '北京朝阳店', revenue: 12.5, profitPct: 32, visitors: 1850 },
             { store: '上海浦东店', revenue: 11.8, profitPct: 30, visitors: 1720 },
             { store: '广州天河店', revenue: 9.2, profitPct: 28, visitors: 1450 },
             { store: '深圳南山店', revenue: 8.6, profitPct: 26, visitors: 1380 },
             { store: '成都锦江店', revenue: 7.9, profitPct: 25, visitors: 1220 },
-          ], 0)}
+          ])}
         </div>
         <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'rgba(148,163,184,0.06)', fontSize: 11, color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
           <span>📊 总收益: <span style={{ color: '#fbbf24', fontWeight: 600 }}>¥{(12.5 + 11.8 + 9.2 + 8.6 + 7.9).toFixed(1)}w</span></span>
@@ -892,12 +892,12 @@ export default function DataInsights() {
       <div style={{ marginBottom: 24, padding: 16, borderRadius: 12, background: '#0f172a', border: '1px solid rgba(148,163,184,0.15)' }}>
         <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#e2e8f0' }}>⭐ 会员忠诚度指数</h3>
         <p style={{ margin: '0 0 12px', fontSize: 11, color: '#64748b' }}>各等级会员忠诚度评分（复购率/推荐率/活跃度综合）</p>
-        {function(members, i) {
-          var maxVal = Math.max.apply(null, members.map(function(m) { return m.score; }));
+        {((members) => {
+          const maxVal = Math.max.apply(null, members.map(m => m.score));
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {members.map(function(m, idx) {
-                var barPct = maxVal > 0 ? Math.round((m.score / maxVal) * 100) : 0;
+              {members.map((m, idx) => {
+                const barPct = maxVal > 0 ? Math.round((m.score / maxVal) * 100) : 0;
                 return (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.1)', fontSize: 12 }}>
                     <span style={{ width: 64, fontWeight: 600, color: '#e2e8f0' }}>{m.name}</span>
@@ -911,16 +911,16 @@ export default function DataInsights() {
               })}
             </div>
           );
-        }([
+        })([
           { name: '钻石会员', score: 95, color: '#a78bfa', repurchasePct: 92, referralPct: 88, activityPct: 90 },
           { name: '黄金会员', score: 82, color: '#f59e0b', repurchasePct: 78, referralPct: 72, activityPct: 80 },
           { name: '银卡会员', score: 68, color: '#94a3b8', repurchasePct: 62, referralPct: 58, activityPct: 70 },
           { name: '铜卡会员', score: 52, color: '#a0522d', repurchasePct: 48, referralPct: 42, activityPct: 55 },
           { name: '普通会员', score: 35, color: '#6b7280', repurchasePct: 30, referralPct: 22, activityPct: 40 },
-        ], 0)}
+        ])}
         <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(148,163,184,0.06)', fontSize: 11, color: '#94a3b8', display: 'flex', justifyContent: 'space-between' }}>
           <span>🏆 钻石会员忠诚度最高 (<span style={{ color: '#a78bfa', fontWeight: 600 }}>95分</span>)</span>
-          <span>📊 整体忠诚度均值: {Math.round([95, 82, 68, 52, 35].reduce(function(a, b) { return a + b; }) / 5)}分</span>
+          <span>📊 整体忠诚度均值: {Math.round([95, 82, 68, 52, 35].reduce((a, b) => a + b) / 5)}分</span>
           <span>💡 推荐提升铜卡/普通会员的复购激励</span>
         </div>
       </div>
@@ -929,12 +929,12 @@ export default function DataInsights() {
       <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fffbeb', border: '1px solid #fde68a' }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#92400e' }}>🔄 会员增长漏斗</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {function(s, i) {
-            var colors = ['#3b82f6','#8b5cf6','#f59e0b','#ef4444','#6b7280'];
-            var icons = ['👀','📝','🛒','🔄','📢'];
-            var stages = ['访问','注册','消费','复购','推荐'];
-            return s.map(function(e, idx) {
-              var fill = e.rate / e.maxRate * 100;
+          {((s, i) => {
+            const colors = ['#3b82f6','#8b5cf6','#f59e0b','#ef4444','#6b7280'];
+            const icons = ['👀','📝','🛒','🔄','📢'];
+            const stages = ['访问','注册','消费','复购','推荐'];
+            return s.map((e, idx) => {
+              const fill = e.rate / e.maxRate * 100;
               return (
                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 12 }}>{icons[idx]}</span>
@@ -947,7 +947,7 @@ export default function DataInsights() {
                 </div>
               );
             });
-          }([
+          })([
             { rate: 100, maxRate: 100, count: 5000 },
             { rate: 38, maxRate: 100, count: 1900 },
             { rate: 22, maxRate: 100, count: 1100 },
@@ -967,11 +967,11 @@ export default function DataInsights() {
       <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#166534' }}>🏪 门店会员转化率</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {function(data, idx) { var colors = ['#22c55e','#16a34a','#ca8a04','#dc2626','#9333ea']; var max = Math.max.apply(null, data.map(function(d) { return d.rate; })); return data.map(function(d, i) { var barPct = d.rate / max * 100; return (<div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 11, fontWeight: 600, color: '#374151', minWidth: 80 }}>{d.name}</span><div style={{ flex: 1, height: 14, borderRadius: 7, background: '#dcfce7', overflow: 'hidden' }}><div style={{ width: barPct + '%', height: '100%', borderRadius: 7, background: colors[i % colors.length], display: 'flex', alignItems: 'center', paddingLeft: 8 }}><span style={{ fontSize: 10, fontWeight: 600, color: '#fff' }}>{d.rate}%</span></div></div><span style={{ fontSize: 10, color: '#6b7280', minWidth: 24, textAlign: 'right' }}>{i === 0 ? '🏆' : (i === data.length - 1 ? '📉' : '')}</span></div>); }); }([{ name: '北京朝阳店', rate: 65 }, { name: '上海浦东店', rate: 72 }, { name: '广州天河店', rate: 58 }, { name: '深圳南山店', rate: 61 }, { name: '成都锦江店', rate: 55 }])}
+          {((data) => { const colors = ['#22c55e','#16a34a','#ca8a04','#dc2626','#9333ea']; const max = Math.max.apply(null, data.map(d => d.rate)); return data.map((d, i) => { const barPct = d.rate / max * 100; return (<div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 11, fontWeight: 600, color: '#374151', minWidth: 80 }}>{d.name}</span><div style={{ flex: 1, height: 14, borderRadius: 7, background: '#dcfce7', overflow: 'hidden' }}><div style={{ width: barPct + '%', height: '100%', borderRadius: 7, background: colors[i % colors.length], display: 'flex', alignItems: 'center', paddingLeft: 8 }}><span style={{ fontSize: 10, fontWeight: 600, color: '#fff' }}>{d.rate}%</span></div></div><span style={{ fontSize: 10, color: '#6b7280', minWidth: 24, textAlign: 'right' }}>{i === 0 ? '🏆' : (i === data.length - 1 ? '📉' : '')}</span></div>); }); })([{ name: '北京朝阳店', rate: 65 }, { name: '上海浦东店', rate: 72 }, { name: '广州天河店', rate: 58 }, { name: '深圳南山店', rate: 61 }, { name: '成都锦江店', rate: 55 }])}
         </div>
         <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(34,197,94,0.06)', fontSize: 11, color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
           <span>🥇 上海浦东店转化率最高 (72%)</span>
-          <span>📊 平均转化率: {Math.round([65,72,58,61,55].reduce(function(a,b){return a+b;})/5)}%</span>
+          <span>📊 平均转化率: {Math.round([65,72,58,61,55].reduce((a,b) => a+b)/5)}%</span>
           <span>💡 成都锦江店需重点优化注册引导</span>
         </div>
       </div>

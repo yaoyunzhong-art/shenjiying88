@@ -1,6 +1,12 @@
-import { ApiClient, getDefaultApiBaseUrl, loadFoundationGovernanceReadModel } from '@m5/sdk';
+import {
+  ApiClient,
+  buildActorHeaders,
+  getDefaultApiBaseUrl,
+  loadFoundationGovernanceReadModel,
+} from '@m5/sdk';
 import {
   advanceRuntimeGovernanceReplayPolicy,
+  buildDomainGovernanceWorkspaceHref,
   type FoundationAlertDrilldownResponse,
   type FoundationAlertMutationResponse,
   foundationAlertCatalogFallback,
@@ -10,9 +16,11 @@ import {
   type FoundationOperationsAlert,
   type FoundationOperationsOverviewSummary,
   type FoundationFrontendBootstrapState,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
   type RuntimeGovernanceReceipt
 } from '@m5/types';
+import { getAggregateOrderFinancialSnapshot } from './utils/order-finance';
 
 export interface NativeAppBootstrapSnapshot {
   deliveryMode: 'api' | 'fallback';
@@ -23,6 +31,9 @@ export interface NativeAppBootstrapSnapshot {
   socialPlatforms: string[];
   primaryDomain: string;
   supportedSurfaces: string[];
+  domainSource: string;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
 }
 
 export interface NativeAppBootstrapContext {
@@ -62,11 +73,14 @@ export interface NativeAppPaymentCallbackPayload {
   standardizedEventName: 'cashier.payment-succeeded' | 'cashier.payment-failed';
   aggregateId: string;
   orderId: string;
+  paymentId?: string;
   tenantId: string;
   externalPaymentId?: string;
   transactionNo?: string;
   channel?: string;
   amount?: number;
+  status?: string;
+  paidAt?: string;
   payload?: Record<string, unknown>;
 }
 
@@ -76,9 +90,26 @@ export interface NativeAppRefundPayload {
   operator?: string;
 }
 
+export interface NativeAppOrderPaymentSubmitPayload {
+  amount: number;
+  paymentChannel: string;
+  externalPaymentId?: string;
+  paidAt?: string;
+  source?: string;
+}
+
+export interface NativeAppTransactionOrderItem {
+  skuId: string;
+  title?: string;
+  quantity: number;
+  price: number;
+}
+
 export interface NativeAppTransactionOrder {
   orderId: string;
+  orderNo: string;
   memberId: string;
+  items?: NativeAppTransactionOrderItem[];
   currency: string;
   totalAmount: number;
   status: string;
@@ -119,6 +150,7 @@ export interface NativeAppTransactionRefund {
 
 export interface NativeAppTransactionAggregate {
   order: NativeAppTransactionOrder;
+  memberNickname?: string;
   payment?: NativeAppTransactionPayment;
   settlement?: {
     settlementId?: string;
@@ -129,6 +161,42 @@ export interface NativeAppTransactionAggregate {
   couponRedemptions: Array<Record<string, unknown>>;
   blindboxFulfillments: Array<Record<string, unknown>>;
   refunds: NativeAppTransactionRefund[];
+}
+
+export interface NativeAppOrderListItem {
+  orderId: string;
+  orderNo: string;
+  memberId: string;
+  status: string;
+  itemCount: number;
+  totalAmount: number;
+  paidAmount: number;
+  refundedAmount: number;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
+  paymentChannel?: string;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string;
+}
+
+export interface NativeAppOrderListQuery {
+  memberId?: string;
+  status?: string;
+  paymentStatus?: string;
+  limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface NativeAppOrderListPage {
+  items: NativeAppOrderListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface NativeAppTransactionRuntimeSnapshot {
@@ -338,6 +406,19 @@ const defaultNativeAppContext: Required<NativeAppBootstrapContext> = {
   marketCode: 'us-default'
 };
 
+const nativeAppBootstrapActor = {
+  actorId: 'native-app-bootstrap-operator',
+  actorType: 'employee-user',
+  actorName: 'Native App Bootstrap Operator',
+  roles: ['OPERATIONS'],
+  permissions: [
+    'foundation.governance.read',
+    'foundation.runtime-governance.read',
+    'foundation.runtime-governance.write',
+  ],
+  authenticated: true,
+} as const;
+
 const emptyGovernanceOverviewSummary: FoundationOperationsOverviewSummary = {
   approvalsPending: 0,
   approvalsWithFailures: 0,
@@ -371,6 +452,20 @@ const nativeAppCheckoutCatalog: NativeAppCheckoutItem[] = [
   }
 ];
 
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: []
+  };
+}
+
 export function createNativeAppFallbackSnapshot(
   context: NativeAppBootstrapContext = defaultNativeAppContext
 ): NativeAppBootstrapSnapshot {
@@ -384,11 +479,20 @@ export function createNativeAppFallbackSnapshot(
     emailProvider: resolvedContext.marketCode === 'cn-mainland' ? 'ALIYUN_DM' : 'SENDGRID',
     socialPlatforms: resolvedContext.marketCode === 'cn-mainland' ? ['WECHAT', 'XIAOHONGSHU'] : ['LINKEDIN', 'INSTAGRAM'],
     primaryDomain: `${resolvedContext.storeId}.${resolvedContext.brandId}.${resolvedContext.tenantId}.${resolvedContext.marketCode}.local`,
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: createFallbackDomainGovernanceSummary(),
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(
+      createFallbackDomainGovernanceSummary(),
+      resolvedContext.marketCode,
+    ),
   };
 }
 
-export function toNativeAppBootstrapSnapshot(bootstrap: PortalBootstrapResponse): NativeAppBootstrapSnapshot {
+export function toNativeAppBootstrapSnapshot(
+  bootstrap: PortalBootstrapResponse,
+  domainGovernance: PortalDomainGovernanceSummaryContract = createFallbackDomainGovernanceSummary()
+): NativeAppBootstrapSnapshot {
   return {
     deliveryMode: 'api',
     marketCode: bootstrap.marketProfile.marketCode,
@@ -397,7 +501,13 @@ export function toNativeAppBootstrapSnapshot(bootstrap: PortalBootstrapResponse)
     emailProvider: bootstrap.marketProfile.email.provider,
     socialPlatforms: bootstrap.marketProfile.social.primaryPlatforms,
     primaryDomain: bootstrap.storePortal.primaryDomain,
-    supportedSurfaces: bootstrap.storePortal.supportedSurfaces
+    supportedSurfaces: bootstrap.storePortal.supportedSurfaces,
+    domainSource: bootstrap.storePortal.domainSource ?? 'default',
+    domainGovernance,
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(
+      domainGovernance,
+      bootstrap.marketProfile.marketCode,
+    ),
   };
 }
 
@@ -409,7 +519,13 @@ function createNativeAppBootstrapClient(context: NativeAppBootstrapContext = def
     tenantId: resolvedContext.tenantId,
     brandId: resolvedContext.brandId,
     storeId: resolvedContext.storeId,
-    marketCode: resolvedContext.marketCode
+    marketCode: resolvedContext.marketCode,
+    headers: buildActorHeaders({
+      ...nativeAppBootstrapActor,
+      tenantId: resolvedContext.tenantId,
+      brandId: resolvedContext.brandId,
+      storeId: resolvedContext.storeId,
+    })
   });
 }
 
@@ -417,8 +533,14 @@ export async function loadNativeAppBootstrapSnapshot(
   context: NativeAppBootstrapContext = defaultNativeAppContext
 ): Promise<NativeAppBootstrapSnapshot> {
   try {
-    const bootstrap = await createNativeAppBootstrapClient(context).getPortalBootstrap();
-    return toNativeAppBootstrapSnapshot(bootstrap);
+    const client = createNativeAppBootstrapClient(context);
+    const [bootstrap, domainGovernance] = await Promise.all([
+      client.getPortalBootstrap(),
+      client
+        .getPortalDomainGovernanceSummary({ cache: 'no-store' })
+        .catch(() => createFallbackDomainGovernanceSummary())
+    ]);
+    return toNativeAppBootstrapSnapshot(bootstrap, domainGovernance);
   } catch {
     return createNativeAppFallbackSnapshot(context);
   }
@@ -683,14 +805,10 @@ export function createNativeAppCheckoutPayload(
 export function createNativeAppRefundPayload(
   aggregate: NativeAppTransactionAggregate
 ): NativeAppRefundPayload {
-  const paymentAmount = aggregate.payment?.amount ?? aggregate.order.totalAmount
-  const reservedAmount = aggregate.refunds
-    .filter((refund) => refund.status !== 'REJECTED')
-    .reduce((sum, refund) => sum + refund.refundAmount, 0)
-  const refundableAmount = Math.max(0, paymentAmount - reservedAmount)
+  const { paidAmount, refundableAmount } = getAggregateOrderFinancialSnapshot(aggregate)
 
   return {
-    refundAmount: refundableAmount > 0 ? Math.min(refundableAmount, paymentAmount) : undefined,
+    refundAmount: refundableAmount > 0 ? Math.min(refundableAmount, paidAmount) : undefined,
     reason: 'app-native-refund-rehearsal',
     operator: 'app-runtime'
   }
@@ -709,6 +827,7 @@ function createNativeAppTransactionFallbackSnapshot(
     aggregate: {
       order: {
         orderId,
+        orderNo: `ORD${now.slice(0, 10).replaceAll('-', '')}001`,
         memberId: checkoutPayload.memberId,
         currency: checkoutPayload.currency ?? 'USD',
         totalAmount: checkoutPayload.amount ?? computeNativeAppCheckoutAmount(checkoutPayload.items),
@@ -831,14 +950,21 @@ export async function requestNativeAppRefundToApi(
     return runtime
   }
 
-  const client = createNativeAppBootstrapClient(context)
   const refundPayload = createNativeAppRefundPayload(runtime.aggregate)
 
-  try {
-    const refundedAggregate = await client.postData<NativeAppTransactionAggregate>(
-      `/transactions/orders/${runtime.aggregate.order.orderId}/refunds`,
+  if (refundPayload.refundAmount === undefined || refundPayload.refundAmount <= 0) {
+    return {
+      ...runtime,
       refundPayload,
-      { cache: 'no-store' }
+      note: `当前订单 ${runtime.aggregate.order.orderId} 已无可退款金额，跳过退款申请。`
+    }
+  }
+
+  try {
+    const refundedAggregate = await submitNativeAppOrderRefund(
+      runtime.aggregate.order.orderId,
+      refundPayload,
+      context,
     )
 
     return {
@@ -874,6 +1000,185 @@ export async function requestNativeAppRefundToApi(
       note: '真实退款接口当前不可达，App 端回退为本地待审退款演示。'
     }
   }
+}
+
+function createNativeAppOrderPaymentFallbackAggregate(
+  orderId: string,
+  paymentPayload: NativeAppOrderPaymentSubmitPayload,
+  existingAggregate?: NativeAppTransactionAggregate,
+): NativeAppTransactionAggregate {
+  const paidAt = paymentPayload.paidAt ?? new Date().toISOString()
+  const paymentId = existingAggregate?.payment?.paymentId ?? `fallback-payment-${orderId}`
+  const fallbackOrderNo =
+    existingAggregate?.order.orderNo
+    ?? `ORD${paidAt.slice(0, 10).replaceAll('-', '')}001`
+
+  return {
+    order: {
+      orderId,
+      orderNo: fallbackOrderNo,
+      memberId: existingAggregate?.order.memberId ?? `fallback-member-${orderId}`,
+      currency: existingAggregate?.order.currency ?? 'CNY',
+      totalAmount: paymentPayload.amount,
+      status: 'PAID',
+      latestPaymentId: paymentId,
+      createdAt: existingAggregate?.order.createdAt ?? paidAt,
+      updatedAt: paidAt,
+      paidAt,
+    },
+    payment: {
+      paymentId,
+      orderId,
+      externalPaymentId: paymentPayload.externalPaymentId ?? existingAggregate?.payment?.externalPaymentId,
+      channel: paymentPayload.paymentChannel,
+      amount: paymentPayload.amount,
+      status: 'SUCCEEDED',
+      transactionNo: existingAggregate?.payment?.transactionNo ?? `fallback-${paymentId}`,
+      createdAt: existingAggregate?.payment?.createdAt ?? paidAt,
+      updatedAt: paidAt,
+      completedAt: paidAt,
+    },
+    settlement: existingAggregate?.settlement ?? {
+      settlementId: `fallback-settlement-${orderId}`,
+      pointsEarned: Math.round(paymentPayload.amount),
+      pointsBalance: Math.round(paymentPayload.amount),
+    },
+    pointsLedger: existingAggregate?.pointsLedger ?? [],
+    couponRedemptions: existingAggregate?.couponRedemptions ?? [],
+    blindboxFulfillments: existingAggregate?.blindboxFulfillments ?? [],
+    refunds: existingAggregate?.refunds ?? [],
+  }
+}
+
+export async function submitNativeAppOrderPayment(
+  orderId: string,
+  paymentPayload: NativeAppOrderPaymentSubmitPayload,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppTransactionAggregate> {
+  const client = createNativeAppBootstrapClient(context)
+
+  try {
+    const existingAggregate = await client.getData<NativeAppTransactionAggregate>(
+      `/transactions/orders/${orderId}`,
+      { cache: 'no-store' },
+    )
+
+    if (!existingAggregate.payment?.paymentId) {
+      return createNativeAppOrderPaymentFallbackAggregate(orderId, paymentPayload, existingAggregate)
+    }
+
+    const paidAt = paymentPayload.paidAt ?? new Date().toISOString()
+    const paymentCallback: NativeAppPaymentCallbackPayload = {
+      standardizedEventName: 'cashier.payment-succeeded',
+      aggregateId: existingAggregate.payment.paymentId,
+      paymentId: existingAggregate.payment.paymentId,
+      orderId,
+      tenantId: context.tenantId ?? defaultNativeAppContext.tenantId,
+      externalPaymentId: paymentPayload.externalPaymentId ?? existingAggregate.payment.externalPaymentId,
+      transactionNo: existingAggregate.payment.transactionNo ?? `native-txn-${existingAggregate.payment.paymentId}`,
+      channel: paymentPayload.paymentChannel,
+      amount: paymentPayload.amount,
+      status: 'SUCCEEDED',
+      paidAt,
+      payload: {
+        source: paymentPayload.source ?? 'app-cashier',
+      },
+    }
+
+    await client.postData<NativeAppTransactionAggregate>(
+      '/transactions/payments/standardized-callback',
+      paymentCallback,
+      { cache: 'no-store' },
+    )
+
+    return client.getData<NativeAppTransactionAggregate>(
+      `/transactions/orders/${orderId}`,
+      { cache: 'no-store' },
+    )
+  } catch {
+    return createNativeAppOrderPaymentFallbackAggregate(orderId, paymentPayload)
+  }
+}
+
+export async function getNativeAppOrderTransaction(
+  orderId: string,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppTransactionAggregate> {
+  const client = createNativeAppBootstrapClient(context)
+  return client.getData<NativeAppTransactionAggregate>(
+    `/transactions/orders/${orderId}`,
+    { cache: 'no-store' },
+  )
+}
+
+function buildNativeAppOrderListPath(query?: NativeAppOrderListQuery): string {
+  if (!query) {
+    return '/transactions/orders'
+  }
+
+  const params = new URLSearchParams()
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      params.set(key, String(value))
+    }
+  })
+
+  const search = params.toString()
+  return search ? `/transactions/orders?${search}` : '/transactions/orders'
+}
+
+function normalizeNativeAppOrderListPage(
+  payload: NativeAppOrderListItem[] | NativeAppOrderListPage,
+): NativeAppOrderListPage {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length,
+    }
+  }
+
+  return payload
+}
+
+export async function listNativeAppOrdersPage(
+  query?: NativeAppOrderListQuery,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppOrderListPage> {
+  const client = createNativeAppBootstrapClient(context)
+  const result = await client.getData<NativeAppOrderListItem[] | NativeAppOrderListPage>(
+    buildNativeAppOrderListPath(query),
+    {
+      cache: 'no-store',
+      headers: query ? {
+        'x-query-params': JSON.stringify(query),
+      } : undefined,
+    },
+  )
+
+  return normalizeNativeAppOrderListPage(result)
+}
+
+export async function listNativeAppOrders(
+  query?: NativeAppOrderListQuery,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppOrderListItem[]> {
+  const result = await listNativeAppOrdersPage(query, context)
+  return result.items
+}
+
+export async function submitNativeAppOrderRefund(
+  orderId: string,
+  refundPayload: NativeAppRefundPayload,
+  context: NativeAppBootstrapContext = defaultNativeAppContext,
+): Promise<NativeAppTransactionAggregate> {
+  const client = createNativeAppBootstrapClient(context)
+  return client.postData<NativeAppTransactionAggregate>(
+    `/transactions/orders/${orderId}/refunds`,
+    refundPayload,
+    { cache: 'no-store' },
+  )
 }
 
 export function resolveNativeAppBootstrapState(

@@ -1,3 +1,4 @@
+'use client';
 /**
  * 运营管理员 — Ops Manager (storefront-web)
  * 功能: 运营任务概览、进度汇总、任务筛选
@@ -10,7 +11,6 @@
  * - 时间分组 (今日/本周)
  * - 模拟动态加载效果
  */
-'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 
 /* ── 类型 ── */

@@ -1,7 +1,11 @@
 {
   "extends": "../config-typescript/base.json",
   "compilerOptions": {
-    "rootDir": "src"
+    "downlevelIteration": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]
 }

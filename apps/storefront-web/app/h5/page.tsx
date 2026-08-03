@@ -1,8 +1,8 @@
+'use client';
 /**
  * h5/page.tsx — H5移动端首页框架
  * Phase-FP T-FP-026 · 2026-07-02
  */
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

@@ -1,8 +1,8 @@
+'use client';
 /**
  * suppliers/[id]/page.tsx — 供应商详情页路由 (ToB Next.js App Router)
  * 角色视角: 👔品牌运营 / 💳采购经理
  */
-'use client';
 
 import React, { use, Suspense } from 'react';
 import Link from 'next/link';

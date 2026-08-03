@@ -1,10 +1,10 @@
+'use client';
 /**
  * 排班详情页 — Scheduling Detail Page (Next.js App Router)
  * 角色视角: 👔店长 / 🛒前台主管
  * 类型: B-详情页 (含编辑/状态流转)
  * 功能: 查看单日排班详情、调整排班、员工替换
  */
-'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

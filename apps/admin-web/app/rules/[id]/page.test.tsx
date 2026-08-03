@@ -1,233 +1,65 @@
-/**
- * 规则详情页测试 — Rule Detail Page Tests
- */
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-// Mock next/navigation
-const mockPush = jest.fn();
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, back: jest.fn(), refresh: jest.fn() }),
-  notFound: jest.fn(),
-}));
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'rule-detail-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'rule-detail-data.ts'), 'utf-8')
+})
 
-// Mock useToast
-const mockToast = jest.fn();
-jest.mock('@m5/ui', () => {
-  const actual = jest.requireActual('@m5/ui');
-  return {
-    ...actual,
-    useToast: () => ({ toast: mockToast }),
-  };
-});
+describe('RuleDetailPage — 服务端壳层', () => {
+  it('应为 async server component 并加载快照', () => {
+    assert.ok(PAGE_SRC.includes('export default async function RuleDetailPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadRuleDetailSnapshot(id)'))
+    assert.ok(PAGE_SRC.includes("import RuleDetailClient from './rule-detail-client'"))
+  })
 
-// Import after mocks
-import RuleDetailPage from './page';
+  it('应渲染权限门禁、来源态证据和客户端组件', () => {
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'rules:id:read'"))
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(PAGE_SRC.includes('<RuleDetailClient snapshot={snapshot} />'))
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"))
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'))
+  })
+})
 
-describe('RuleDetailPage', () => {
-  const params = Promise.resolve({ id: 'rule-1' });
-  const searchParams = Promise.resolve({});
+describe('RuleDetailData — 快照合同', () => {
+  it('应定义 mock 快照合同与加载器', () => {
+    assert.ok(DATA_SRC.includes("sourceLabel: 'rules-detail-mock'"))
+    assert.ok(DATA_SRC.includes('export interface RuleDetailSnapshotDelivery'))
+    assert.ok(DATA_SRC.includes('export function buildRuleDetail'))
+    assert.ok(DATA_SRC.includes('export async function loadRuleDetailSnapshot'))
+  })
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  it('应保留规则约束、信号和时间线样本', () => {
+    assert.ok(DATA_SRC.includes('guardrails: string[]'))
+    assert.ok(DATA_SRC.includes('recentSignals: string[]'))
+    assert.ok(DATA_SRC.includes('timeline: RuleTimelineItem[]'))
+    assert.ok(DATA_SRC.includes('信用评分规则'))
+  })
+})
 
-  it('renders the rule detail page with basic info', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    // Wrap in a Suspense since the page uses use(params)
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
+describe('RuleDetailClient — 客户端渲染层', () => {
+  it('应声明 use client 并支持 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes('"use client"'))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
+  })
 
-    // Wait for rendering to complete
-    await waitFor(() => {
-      // The page renders with CombinedDetailPage which uses the rule name
-      expect(screen.getByText(/信用评分规则|风控拦截规则|会员升级规则/)).toBeInTheDocument();
-    });
-  });
-
-  it('has a back link to rules list', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/返回规则列表/)).toBeInTheDocument();
-    });
-  });
-
-  it('displays the category and version in subtitle', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      // Should show a version indicator or category
-      const subtitleEl = screen.queryByText(/v\d+/);
-      expect(subtitleEl).toBeInTheDocument();
-    });
-  });
-
-  it('shows detail tabs with correct labels', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('概览')).toBeInTheDocument();
-      expect(screen.getByText('条件与动作')).toBeInTheDocument();
-      expect(screen.getByText('执行记录')).toBeInTheDocument();
-    });
-  });
-
-  it('navigates to execution history from the history tab', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      const historyLink = screen.getByText(/查看完整执行记录/);
-      expect(historyLink).toBeInTheDocument();
-      expect(historyLink.closest('a')).toHaveAttribute('href', '/rules/executions/rule-1');
-    });
-  });
-
-  it('opens edit modal when edit action is triggered', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    // Click the edit button (look for "编辑" trigger)
-    await waitFor(async () => {
-      // Try to find the edit button
-      const editBtn = screen.queryByText('编辑');
-      if (editBtn) {
-        fireEvent.click(editBtn);
-      }
-    });
-
-    // The modal should show up with the edit title
-    await waitFor(() => {
-      const modalTitle = screen.queryByText('编辑规则');
-      // The modal may or may not be visible depending on the CombinedDetailPage structure
-      // This is a soft check - the CombinedDetailPage might handle edit differently
-    });
-  });
-
-  it('displays status badge for the rule', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      // One of the status labels should be visible
-      const statusLabels = ['已启用', '已停用', '草稿', '已归档'];
-      const found = statusLabels.some((label) => screen.queryByText(label) !== null);
-      expect(found).toBe(true);
-    });
-  });
-
-  it('shows execution statistics', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      // Numeric values should render
-      expect(screen.getByText('触发次数')).toBeInTheDocument();
-      expect(screen.getByText('成功率')).toBeInTheDocument();
-      expect(screen.getByText('最近触发')).toBeInTheDocument();
-    });
-  });
-
-  it('shows rule condition and action in logic tab', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    // Switch to logic tab
-    await waitFor(() => {
-      const logicTab = screen.getByText('条件与动作');
-      fireEvent.click(logicTab);
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('触发条件')).toBeInTheDocument();
-      expect(screen.getByText('执行动作')).toBeInTheDocument();
-    });
-  });
-
-  it('handles different rule IDs', async () => {
-    const params2 = Promise.resolve({ id: 'rule-5' });
-    const PageComponent = () => <RuleDetailPage params={params2} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      // Should render without error for a different rule ID
-      expect(screen.getByText(/返回规则列表/)).toBeInTheDocument();
-    });
-  });
-
-  it('displays priority with correct color', async () => {
-    const PageComponent = () => <RuleDetailPage params={params} searchParams={searchParams} />;
-    render(
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <PageComponent />
-      </React.Suspense>,
-    );
-
-    await waitFor(() => {
-      // The priority labels should exist somewhere
-      const priorities = ['严重', '高', '中', '低'];
-      const found = priorities.some((p) => screen.queryByText(p) !== null);
-      expect(found).toBe(true);
-    });
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe('Rules — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
-});
+  it('应保留规则配置、近期信号和时间线区块', () => {
+    assert.ok(CLIENT_SRC.includes('规则配置'))
+    assert.ok(CLIENT_SRC.includes('防呆约束'))
+    assert.ok(CLIENT_SRC.includes('近期信号'))
+    assert.ok(CLIENT_SRC.includes('时间线'))
+  })
+})

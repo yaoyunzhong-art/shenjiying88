@@ -10,6 +10,7 @@ import { PIIMaskerService } from './pii-masker.service';
 import { GDPRErasureService } from './gdpr-erasure.service';
 import { AuditLogService } from './audit-log.service';
 import { AuditQueryService } from './audit-query.service';
+import { ComplianceGateService } from './compliance-gate.service';
 
 describe('ComplianceModule', () => {
   it('should be defined', () => {
@@ -55,6 +56,8 @@ describe('ComplianceModule', () => {
       expect(exportNames).toContain('GDPRErasureService');
       expect(exportNames).toContain('AuditLogService');
       expect(exportNames).toContain('AuditQueryService');
+    // ComplianceGateService 在 providers 中, 通过 controller 暴露,
+    // 不需要强制 exports (其他模块不直接引用)
     }
   });
 
@@ -114,6 +117,12 @@ describe('ComplianceModule', () => {
     // AuditQueryService
     const queryProto = AuditQueryService.prototype;
     expect(typeof queryProto.export).toBe('function');
+
+    // ComplianceGateService
+    const gateProto = ComplianceGateService.prototype;
+    expect(typeof gateProto.checkGates).toBe('function');
+    expect(typeof gateProto.getConfig).toBe('function');
+    expect(typeof gateProto.updateConfig).toBe('function');
   });
 
   it('controller and services can be instantiated together', async () => {
@@ -123,8 +132,9 @@ describe('ComplianceModule', () => {
     const auditLog = new AuditLogService();
     const auditQuery = new AuditQueryService(auditLog);
 
+    const gateService = new ComplianceGateService(auditLog);
     const controller = new ComplianceController(
-      piiDetector, piiMasker, gdprErasure, auditLog, auditQuery
+      piiDetector, piiMasker, gdprErasure, auditLog, auditQuery, gateService
     );
 
     expect(controller).toBeDefined();
@@ -144,6 +154,9 @@ describe('ComplianceModule', () => {
 
     const piiService = app.get(PIIDetectorService);
     expect(piiService).toBeInstanceOf(PIIDetectorService);
+
+    const gateService2 = app.get(ComplianceGateService);
+    expect(gateService2).toBeInstanceOf(ComplianceGateService);
 
     await app.close();
   });

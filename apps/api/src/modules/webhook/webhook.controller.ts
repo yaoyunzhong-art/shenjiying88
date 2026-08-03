@@ -17,6 +17,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
 import { WebhookService } from './webhook.service'
 import {
@@ -26,13 +27,25 @@ import {
 } from './webhook.dto'
 import { BUILTIN_WEBHOOK_EVENTS, type WebhookEventType } from './webhook.entity'
 import { webhookEventBus } from './webhook.eventbus'
+import { TenantGuard } from '../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const WEBHOOK_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const WEBHOOK_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('webhook')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(WEBHOOK_GOVERNANCE_READ_PERMISSION)
 export class WebhookController {
   constructor(private readonly service: WebhookService) {}
 
   @Post('endpoints')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(WEBHOOK_GOVERNANCE_WRITE_PERMISSION)
   async create(@Body() body: CreateWebhookRequest) {
     // 服务层 WebhookEventType 是更窄的子集, 强转以兼容 DTO.
     return this.service.registerEndpoint(
@@ -53,6 +66,7 @@ export class WebhookController {
   }
 
   @Patch('endpoints/:id')
+  @RequirePermissions(WEBHOOK_GOVERNANCE_WRITE_PERMISSION)
   async update(@Param('id') id: string, @Body() body: UpdateWebhookRequest) {
     return this.service.updateEndpoint(
       id,
@@ -62,12 +76,14 @@ export class WebhookController {
 
   @Delete('endpoints/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(WEBHOOK_GOVERNANCE_WRITE_PERMISSION)
   async delete(@Param('id') id: string) {
     await this.service.deleteEndpoint(id)
   }
 
   @Post('endpoints/:id/test')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(WEBHOOK_GOVERNANCE_WRITE_PERMISSION)
   async test(@Param('id') id: string, @Body() body: TestWebhookRequest) {
     const endpoint = await this.service.getById(id)
     if (!endpoint) {
@@ -95,6 +111,7 @@ export class WebhookController {
 
   @Post('internal/emit')
   @HttpCode(HttpStatus.ACCEPTED)
+  @RequirePermissions(WEBHOOK_GOVERNANCE_WRITE_PERMISSION)
   async emitInternal(@Body() body: { eventType: WebhookEventType; data?: Record<string, unknown> }) {
     const tenantId = body.data?.tenantId as string | undefined
     if (!tenantId) {

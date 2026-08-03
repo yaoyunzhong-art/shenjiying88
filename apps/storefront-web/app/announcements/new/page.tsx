@@ -1,9 +1,9 @@
+'use client';
 /**
  * 新建公告 — Announcement Create Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 📢运营
  * 功能: 表单验证、提交、错误处理
  */
-'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

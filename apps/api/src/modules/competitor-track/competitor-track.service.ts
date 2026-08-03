@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { CompetitorCategory, type Competitor } from './competitor-track.entity'
-import type { CompetitorDto, TrackSummaryDto, CreateCompetitorDto } from './competitor-track.dto'
+import type { CompetitorDto, TrackSummaryDto, CreateCompetitorDto, UpdateCompetitorDto } from './competitor-track.dto'
 
 /** Mock 竞品数据 8条（不同城市） */
 const MOCK_COMPETITORS: Competitor[] = [
@@ -226,6 +226,40 @@ export class CompetitorTrackService {
         mostVisited
       }
     }
+  }
+
+  /** 更新竞品 */
+  async update(id: string, dto: UpdateCompetitorDto): Promise<CompetitorDto> {
+    const index = this.competitors.findIndex(c => c.id === id)
+    if (index === -1) {
+      throw new NotFoundException(`Competitor with id "${id}" not found`)
+    }
+
+    const existing = this.competitors[index]
+    const updated: Competitor = {
+      ...existing,
+      ...(dto.competitorName !== undefined && { competitorName: dto.competitorName }),
+      ...(dto.city !== undefined && { city: dto.city }),
+      ...(dto.category !== undefined && { category: dto.category as CompetitorCategory }),
+      ...(dto.priceLevel !== undefined && { priceLevel: dto.priceLevel }),
+      ...(dto.rating !== undefined && { rating: dto.rating }),
+      ...(dto.visitorCount !== undefined && { visitorCount: dto.visitorCount }),
+      ...(dto.advantage !== undefined && { advantage: dto.advantage }),
+      ...(dto.weakness !== undefined && { weakness: dto.weakness }),
+      lastUpdated: new Date().toISOString()
+    }
+
+    this.competitors[index] = updated
+    return this.toDto(updated)
+  }
+
+  /** 删除竞品 */
+  async delete(id: string): Promise<void> {
+    const index = this.competitors.findIndex(c => c.id === id)
+    if (index === -1) {
+      throw new NotFoundException(`Competitor with id "${id}" not found`)
+    }
+    this.competitors.splice(index, 1)
   }
 
   /** 转换为 DTO */

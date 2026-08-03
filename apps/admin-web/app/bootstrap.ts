@@ -1,5 +1,6 @@
 import {
   ApiClient,
+  buildActorHeaders,
   createFoundationBootstrapWiringMeta,
   createFoundationGovernanceReadModelLoader,
   getDefaultApiBaseUrl,
@@ -25,6 +26,15 @@ const fallbackTenantContext: TenantContextContract = {
   storeId: 'store-001',
   marketCode: 'cn-mainland'
 };
+
+const workbenchBootstrapActor = {
+  actorId: 'admin-workbench-bootstrap',
+  actorType: 'employee-user',
+  actorName: 'Admin Workbench Bootstrap',
+  roles: ['OPERATIONS', 'TENANT_ADMIN'],
+  permissions: ['workbench.read', 'foundation.governance.read'],
+  authenticated: true,
+} as const;
 
 export interface AdminWorkbenchConsumerSnapshot {
   deliveryMode: 'api' | 'fallback';
@@ -60,7 +70,13 @@ function createWorkbenchClient() {
     tenantId: 'tenant-demo',
     brandId: 'brand-demo',
     storeId: 'store-001',
-    marketCode: 'cn-mainland'
+    marketCode: 'cn-mainland',
+    headers: buildActorHeaders({
+      ...workbenchBootstrapActor,
+      tenantId: 'tenant-demo',
+      brandId: 'brand-demo',
+      storeId: 'store-001',
+    })
   });
 }
 

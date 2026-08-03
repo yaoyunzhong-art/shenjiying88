@@ -16,7 +16,7 @@ test('正例: 默认从 page.tsx 导出一个函数组件 HelpCenterPage (源码
   const src = await import('fs').then((fs) =>
     fs.promises.readFile(new URL('./page.tsx', import.meta.url), 'utf-8'),
   );
-  assert.ok(src.includes('export default function HelpCenterPage'),
+  assert.ok(/export default (async )?function HelpCenterPage/.test(src),
     '页面应使用 export default function HelpCenterPage 声明');
   assert.ok(src.includes('HelpCenterPage'), '组件名应为 HelpCenterPage');
 });

@@ -21,6 +21,9 @@ import {
   HttpStatus,
   HttpCode,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { LicensePackageService } from './license-package.service'
 import {
@@ -34,6 +37,7 @@ import {
 
 @ApiTags('License 套餐管理')
 @ApiBearerAuth()
+@UseGuards(TenantGuard)
 @Controller('api/license-packages')
 export class LicensePackageController {
   constructor(private readonly packageService: LicensePackageService) {}

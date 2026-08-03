@@ -140,7 +140,7 @@ describe('RealtimeController', () => {
       const session = controller.createCollabSession({ docId: 'doc-1', ownerId: 'user-A' })
       const result = controller.joinCollabSession({ sessionId: session.data.id, userId: 'user-B' })
       expect(result.success).toBe(true)
-      expect(result.data.participants).toContain('user-B')
+      expect(result.data!.participants).toContain('user-B')
     })
 
     it('should return error for non-existent session', () => {

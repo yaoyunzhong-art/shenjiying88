@@ -10,8 +10,19 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
+import { Public } from '../foundation/identity-access/public.decorator'
+import {
+  CurrentActor,
+  RequirePermissions,
+  RequireRoles,
+  type CurrentActorValue,
+} from '../foundation/identity-access/identity-access.decorator'
 import { AuthService } from './auth.service'
+import { TenantGuard } from '../agent/tenant.guard'
+import { UnlockPasswordLockDto } from './auth.dto'
 import {
   LoginBySmsDto,
   LoginByPasswordDto,
@@ -21,6 +32,7 @@ import {
 } from './auth.types'
 
 @Controller('auth')
+@UseGuards(TenantGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -28,6 +40,8 @@ export class AuthController {
    * POST /auth/login/sms
    * 手机号+短信验证码登录
    */
+  @Public()
+  @TenantOptional()
   @Post('login/sms')
   @HttpCode(HttpStatus.OK)
   async loginBySms(
@@ -54,6 +68,8 @@ export class AuthController {
    * POST /auth/login/password
    * 密码登录
    */
+  @Public()
+  @TenantOptional()
   @Post('login/password')
   @HttpCode(HttpStatus.OK)
   async loginByPassword(
@@ -82,10 +98,33 @@ export class AuthController {
     }
   }
 
+  @Post('locks/password/unlock')
+  @HttpCode(HttpStatus.OK)
+  @RequireRoles('SUPER_ADMIN', 'TENANT_ADMIN', 'OPERATIONS', 'SECURITY_ADMIN')
+  @RequirePermissions('foundation.runtime-governance.write')
+  async unlockPasswordLock(
+    @Body() body: UnlockPasswordLockDto,
+    @CurrentActor() actorContext: CurrentActorValue,
+  ) {
+    const result = await this.authService.unlockPasswordLogin(
+      body.mobile,
+      body.email,
+      actorContext?.actorId,
+      body.reason,
+    )
+
+    return {
+      success: true,
+      data: result,
+    }
+  }
+
   /**
    * POST /auth/login/wechat
    * 微信登录
    */
+  @Public()
+  @TenantOptional()
   @Post('login/wechat')
   @HttpCode(HttpStatus.OK)
   async loginByWechat(
@@ -112,6 +151,8 @@ export class AuthController {
    * POST /auth/refresh
    * 刷新Token
    */
+  @Public()
+  @TenantOptional()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(@Body() body: RefreshTokenDto) {
@@ -133,6 +174,8 @@ export class AuthController {
    * POST /auth/logout
    * 登出
    */
+  @Public()
+  @TenantOptional()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
@@ -161,6 +204,8 @@ export class AuthController {
    * GET /auth/me
    * 获取当前用户信息
    */
+  @Public()
+  @TenantOptional()
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getCurrentUser(@Headers('authorization') auth?: string) {

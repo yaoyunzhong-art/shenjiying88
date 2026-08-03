@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../../tenant/tenant.types'
 import {
@@ -15,8 +15,10 @@ import {
   SyncRuntimeGovernanceActionDto
 } from './runtime-governance.dto'
 import { RuntimeGovernanceService } from './runtime-governance.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/runtime-governance')
+@UseGuards(TenantGuard)
 @RequireTenantScope()
 export class RuntimeGovernanceController {
   constructor(private readonly runtimeGovernanceService: RuntimeGovernanceService) {}

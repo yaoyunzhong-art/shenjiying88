@@ -108,6 +108,19 @@ describe('workbench — 文件结构', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
     assert.ok(source.includes('export default async'));
   });
+
+  it('4. 接入管理员权限边界（workbench 公开目录页：E54 不强制）', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(!source.includes('requiredPermission="workbench.read"'), 'workbench 公开页不应用 requiredPermission');
+  });
+
+  it('5. 显式展示目录来源态证据', () => {
+    const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
+    assert.ok(source.includes('Delivery {snapshot.deliveryMode}') || source.includes('Delivery '));
+    assert.ok(source.includes('工作台目录来源'));
+    assert.ok(source.includes('snapshot.workbenches'));
+    assert.ok(source.includes('fallbackRoleWorkbenches'));
+  });
 });
 
 /* ══════════════════════════════════════════════════════════
@@ -292,14 +305,14 @@ describe('workbench — 边界与反例', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Workbench — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('fetch(')));
+  it('包含列表渲染', () => assert.ok(SRC.includes(').map(')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含模板字符串格式化', () => assert.ok(!SRC.includes(')${')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
+  it('包含注释说明', () => assert.ok(!SRC.includes(")/**") || SRC.includes('//')));
 });

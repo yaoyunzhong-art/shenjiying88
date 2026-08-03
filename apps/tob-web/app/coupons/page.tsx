@@ -1,9 +1,9 @@
+'use client';
 /**
  * coupons/page.tsx — ToB 优惠券管理列表页
  *
  * 展示租户级 / 品牌级优惠券活动，支持搜索、类型筛选、状态筛选、分页
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 

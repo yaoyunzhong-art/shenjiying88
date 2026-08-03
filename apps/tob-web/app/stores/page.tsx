@@ -1,7 +1,7 @@
+'use client';
 /**
  * stores/page.tsx — 门店管理列表页 (ToB 门店管理)
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import {

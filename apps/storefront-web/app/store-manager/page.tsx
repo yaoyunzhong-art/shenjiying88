@@ -186,7 +186,7 @@ export default function StoreManagerPage() {
       </div>
 
       {/* 主内容 */}
-      <ErrorBoundary fallback={() => <StoreManagerErrorFallback />}>
+      <ErrorBoundary fallback={<StoreManagerErrorFallback />}>
         <Suspense fallback={<StoreManagerLoadingFallback />}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <div

@@ -891,4 +891,103 @@ describe('边界（Boundary）', () => {
     const flag = makeFeatureFlag({ strategy: 'PERCENTAGE', percentage: undefined, enabled: true });
     assert.strictEqual(shouldRolloutFlag(flag, 'user-1'), false);
   });
+
+  // ⑦⑪ isSecretExpired without expiresAt → false
+  it('⑪ 密钥无过期时间视为未过期', () => {
+    const asset = makeSecretAsset({ expiresAt: undefined });
+    assert.strictEqual(isSecretExpired(asset, new Date()), false);
+  });
+
+  // ⑦⑫ Maintenance 边缘节点视为健康
+  it('⑫ Maintenance 状态的边缘节点视为健康', () => {
+    const node = makeEdgeNode({ status: EdgeNodeStatus.Maintenance });
+    assert.strictEqual(isEdgeNodeHealthy(node, 30), true);
+  });
+
+  // ⑦⑬ FeatureFlag ALLOW_LIST 包含用户时推送
+  it('⑬ ALLOW_LIST 包含指定用户时推送', () => {
+    const flag = makeFeatureFlag({ strategy: 'ALLOW_LIST', allowList: ['admin', 'user-1'], enabled: true });
+    assert.strictEqual(shouldRolloutFlag(flag, 'admin'), true);
+    assert.strictEqual(shouldRolloutFlag(flag, 'unknown'), false);
+  });
+
+  // ⑦⑭ 折扣 0% 时 finalCents = totalCents
+  it('⑭ 0% 折扣不影响总价', () => {
+    const profile: LytMemberProfile = { memberId: 'm004', levelName: '' };
+    const result = calculateMemberDiscount(profile, 10000);
+    assert.strictEqual(result.discountPercent, 0);
+    assert.strictEqual(result.finalCents, 10000);
+  });
+
+  // ⑦⑮ transitionOrderStatus 保留前序订单的信息
+  it('⑮ 有前序订单时保留原订单信息', () => {
+    const prev: LytOrderResult = { orderId: 'ord-001', totalAmount: 29999, status: 'CREATED' };
+    const result = transitionOrderStatus(prev, 'PAID');
+    assert.strictEqual(result.orderId, 'ord-001');
+    assert.strictEqual(result.totalAmount, 29999);
+    assert.strictEqual(result.status, 'PAID');
+  });
+
+  // ⑦⑯ 配置继承 StoreOverride 覆盖 TenantDefault
+  it('⑯ StoreOverride 覆盖 TenantDefault', () => {
+    const entries: ConfigEntry[] = [
+      makeConfigEntry({ namespace: 'tenant', key: 'theme', value: 'dark' }),
+      makeConfigEntry({ namespace: 'store', key: 'theme', value: 'light' }),
+    ];
+    const val = resolveConfigValue('theme', entries, [
+      ConfigInheritanceMode.StoreOverride,
+      ConfigInheritanceMode.TenantDefault,
+    ]);
+    assert.strictEqual(val, 'light');
+  });
+
+  // ⑦⑧ canStartRestore 并发上限边界
+  it('⑰ 刚好低于并发上限时允许', () => {
+    const run = makeRestoreRun();
+    const active: RestoreRun[] = [
+      makeRestoreRun({ status: RestoreStatus.Running }),
+      makeRestoreRun({ status: RestoreStatus.Running }),
+    ];
+    const result = canStartRestore(run, active);
+    assert.strictEqual(result.allowed, true);
+  });
+
+  // ⑦⑨ shouldRolloutFlag with disabled + ALL strategy
+  it('⑱ ALL 策略但 disabled 时不推送', () => {
+    const flag = makeFeatureFlag({ strategy: 'ALL', enabled: false });
+    assert.strictEqual(shouldRolloutFlag(flag, 'anyone'), false);
+  });
+
+  // ⑦⑩ wasRecentlyRotated 恰好等于阈值天数 (旋转时间略早于 90 天前,使用 89 天确保边界)
+  it('⑲ 恰好在阈值边界内的密钥视为已轮转', () => {
+    // 89 天前轮转, 阈值 90 天 → 还在阈值内
+    const rotated = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000).toISOString();
+    const asset = makeSecretAsset({ rotatedAt: rotated });
+    const result = wasRecentlyRotated(asset, 90);
+    assert.strictEqual(result, true);
+  });
+
+  // wasRecentlyRotated 超过阈值
+  it('⑳ 超过阈值天数的密钥视为未轮转', () => {
+    const rotated = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000).toISOString();
+    const asset = makeSecretAsset({ rotatedAt: rotated });
+    const result = wasRecentlyRotated(asset, 90);
+    assert.strictEqual(result, false);
+  });
+
+  // ⑦① 跨多级配置继承: 使用 BrandOverride 取到值
+  it('⑳ 多级指针 Brand → Tenant → Platform 降级', () => {
+    const entries: ConfigEntry[] = [
+      makeConfigEntry({ namespace: 'platform', key: 'maxLoginAttempts', value: 5 }),
+      makeConfigEntry({ namespace: 'tenant', key: 'maxLoginAttempts', value: 3 }),
+    ];
+    // 有 brand/tenant → 取 brand (不存在)→ 取 tenant
+    const val = resolveConfigValue('maxLoginAttempts', entries, [
+      ConfigInheritanceMode.StoreOverride,
+      ConfigInheritanceMode.BrandOverride,
+      ConfigInheritanceMode.TenantDefault,
+      ConfigInheritanceMode.PlatformDefault,
+    ]);
+    assert.strictEqual(val, 3);
+  });
 });

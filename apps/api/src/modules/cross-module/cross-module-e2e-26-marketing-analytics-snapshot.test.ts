@@ -29,6 +29,7 @@ import { CouponAdapter } from '../marketing/datasources/coupon.adapter'
 import { RFMAdapter } from '../marketing/datasources/rfm.adapter'
 import { CouponIssuer } from '../marketing/coupon-issuer'
 import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
+import type { CouponIssueRequest } from '../marketing/marketing.entity'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 import { buildCrossModuleTestApp } from './test-helpers'
 
@@ -41,7 +42,7 @@ class TestMarketingAnalyticsController {
 
   @Post('marketing/coupon/issue')
   issueCoupon(@Body() body: Record<string, unknown>, @Req() req: Request) {
-    return this.marketingController.issueCoupon(body as any, req)
+    return this.marketingController.issueCoupon(body as unknown as CouponIssueRequest, req)
   }
 
   @Post('marketing/coupon/redeem')
@@ -55,7 +56,7 @@ class TestMarketingAnalyticsController {
     @Query() query: { scope?: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }
   ) {
     const tenantContext = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.analyticsController.getOperationSnapshot(tenantContext, query as any)
+    return this.analyticsController.getOperationSnapshot(tenantContext, query as unknown as import('../analytics/analytics.dto').GetOperationSnapshotDto)
   }
 }
 
@@ -84,15 +85,16 @@ function totalValue(
 async function buildApp() {
   const couponIssuer = new CouponIssuer(new CouponAdapter(), new RFMAdapter())
   const marketingMetricsService = new MarketingMetricsService()
+  const mockObj = {} as Record<string, unknown>
   const marketingController = new MarketingController(
-    {} as any,
-    {} as any,
+    mockObj as unknown as never,
+    mockObj as unknown as never,
     couponIssuer,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
-    {} as any,
+    mockObj as unknown as never,
+    mockObj as unknown as never,
+    mockObj as unknown as never,
+    mockObj as unknown as never,
+    mockObj as unknown as never,
     marketingMetricsService
   )
   const analyticsService = new AnalyticsService(undefined, marketingMetricsService)
@@ -164,8 +166,8 @@ it('e2e xm26: marketing coupon issue + redeem is visible in analytics snapshot w
     assert.equal(totalValue(snapshot, 'totalCouponsIssued'), 1)
     assert.equal(totalValue(snapshot, 'totalMarketingRedemptions'), 1)
     assert.ok(!JSON.stringify(snapshot).includes('member-private-001'))
-    assert.equal((snapshot as any).memberId, undefined)
-    assert.equal((snapshot as any).memberPhone, undefined)
+    assert.equal((snapshot as Record<string, unknown>).memberId, undefined)
+    assert.equal((snapshot as Record<string, unknown>).memberPhone, undefined)
   } finally {
     await app.close()
   }

@@ -171,7 +171,7 @@ it('e2e-http: CollabService broadcast change returns session', async () => {
   try {
     const collabService = new CollabService()
     const session = collabService.createSession('doc-bc', 'user-bc')
-    const result = collabService.broadcastChange(session.sessionId, 'user-bc', { type: 'edit', data: 'test' })
+    const result = collabService.broadcastChange(session.id, 'user-bc', { type: 'edit', data: 'test' })
     assert.ok(result)
   } finally {
     await app.close()

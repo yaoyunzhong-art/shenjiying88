@@ -22,9 +22,11 @@ var index_exports = {};
 __export(index_exports, {
   ApiClient: () => ApiClient,
   ApiError: () => ApiError,
+  buildActorHeaders: () => buildActorHeaders,
   buildRuntimeGovernanceReplayRequest: () => buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest: () => buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay: () => computeBackoffDelay,
+  createBusinessClient: () => createBusinessClient,
   createFoundationAlertClient: () => createFoundationAlertClient,
   createFoundationAlertMutationExecutor: () => createFoundationAlertMutationExecutor,
   createFoundationAlertPanelClientAccess: () => createFoundationAlertPanelClientAccess,
@@ -357,6 +359,29 @@ function buildHeaders(options, headers) {
     ...headers ?? {}
   };
 }
+function buildActorHeaders(options) {
+  const roles = Array.from(new Set((options.roles ?? []).map((item) => item.trim()).filter(Boolean)));
+  const permissions = Array.from(
+    new Set((options.permissions ?? []).map((item) => item.trim()).filter(Boolean))
+  );
+  return {
+    "x-actor-id": options.actorId,
+    ...options.actorType ? { "x-actor-type": options.actorType } : {},
+    ...options.actorName ? { "x-actor-name": options.actorName } : {},
+    ...options.tenantId ? { "x-actor-tenant-id": options.tenantId } : {},
+    ...options.brandId ? { "x-actor-brand-id": options.brandId } : {},
+    ...options.storeId ? { "x-actor-store-id": options.storeId } : {},
+    ...roles.length > 0 ? {
+      "x-actor-roles": roles.join(","),
+      "x-roles": roles.join(",")
+    } : {},
+    ...permissions.length > 0 ? {
+      "x-actor-permissions": permissions.join(","),
+      "x-permissions": permissions.join(",")
+    } : {},
+    ...options.authenticated !== void 0 ? { "x-actor-authenticated": String(options.authenticated) } : {}
+  };
+}
 function getDefaultApiBaseUrl() {
   return process.env.M5_API_BASE_URL ?? process.env.NEXT_PUBLIC_M5_API_BASE_URL ?? "http://localhost:3001/api/v1";
 }
@@ -595,6 +620,9 @@ var ApiClient = class {
   }
   async getPortalBootstrap(init = {}) {
     return this.getData("/portals/bootstrap", init);
+  }
+  async getPortalDomainGovernanceSummary(init = {}) {
+    return this.getData("/portals/domain-governance", init);
   }
   async getWorkbenchBootstrap(init = {}) {
     return this.getData("/workbenches/bootstrap", init);
@@ -1230,6 +1258,260 @@ function subscribeStream(client, opts) {
     getLastEventId: () => lastEventId
   };
 }
+function buildBusinessOrderListPath(query) {
+  if (!query) {
+    return "/transactions/orders";
+  }
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== void 0 && value !== null && String(value).length > 0) {
+      params.set(key, String(value));
+    }
+  });
+  const search = params.toString();
+  return search ? `/transactions/orders?${search}` : "/transactions/orders";
+}
+function normalizeBusinessOrderListResponse(payload) {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length
+    };
+  }
+  return payload;
+}
+function createBusinessClient(options) {
+  const resolvedOptions = typeof options === "string" ? { baseUrl: options } : { ...options ?? {}, baseUrl: options?.baseUrl ?? getDefaultApiBaseUrl() };
+  const api = new ApiClient({
+    ...resolvedOptions,
+    baseUrl: resolvedOptions.baseUrl
+  });
+  return {
+    // ── Checkout (POST /api/v1/transactions/checkout) ──
+    checkout: {
+      /** 发起结账 */
+      start: (body, init) => api.postData("/transactions/checkout", body, init)
+    },
+    // ── Orders (GET/POST /api/v1/transactions/orders) ──
+    orders: {
+      /** 订单列表 */
+      list: (query, init) => api.getData(
+        buildBusinessOrderListPath(query),
+        init
+      ).then((payload) => normalizeBusinessOrderListResponse(payload).items),
+      /** 订单分页列表 */
+      listPage: (query, init) => api.getData(
+        buildBusinessOrderListPath(query),
+        init
+      ).then((payload) => normalizeBusinessOrderListResponse(payload)),
+      /** 订单详情 */
+      get: (orderId, init) => api.getData(`/transactions/orders/${orderId}`, init),
+      /** 订单退款记录 */
+      listRefunds: (orderId, init) => api.getData(`/transactions/orders/${orderId}/refunds`, init)
+    },
+    // ── Cashier (GET/POST /api/v1/cashier/*) ──
+    cashier: {
+      /** 会员查找 (手机号/卡号) */
+      lookupMember: (query, init) => api.getData(
+        `/cashier/members/lookup?q=${encodeURIComponent(query)}`,
+        init
+      ),
+      /** 会员消费记录 (走 transactions 模块) */
+      listMemberTransactions: (memberId, init) => api.getData(`/transactions/members/${memberId}`, init),
+      /** 商品扫码查询 */
+      lookupProduct: (sku, init) => api.getData(
+        `/cashier/products/${encodeURIComponent(sku)}`,
+        init
+      ),
+      /** 商品目录列表 */
+      listProducts: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.limit !== void 0) params.set("limit", String(query.limit));
+        if (query?.offset !== void 0) params.set("offset", String(query.offset));
+        const search = params.toString();
+        return api.getData(
+          search ? `/cashier/products?${search}` : "/cashier/products",
+          init
+        );
+      },
+      /** 支付渠道统计 */
+      getChannelStats: (init) => api.getData("/cashier/stats/channels", init),
+      /** 创建订单 (POS) */
+      createOrder: (body, init) => api.postData("/cashier/orders", body, init),
+      /** 提交订单 (DRAFT → PENDING) */
+      submitOrder: (orderId, init) => api.postData(`/cashier/orders/${orderId}/submit`, {}, init),
+      /** 创建支付 */
+      createPayment: (orderId, body, init) => api.postData(`/cashier/orders/${orderId}/payments`, body, init),
+      /** 创建退款 */
+      createRefund: (orderId, body, init) => api.postData(`/cashier/orders/${orderId}/refunds`, body, init)
+    },
+    // ── Refunds (GET/POST /api/v1/transactions/refunds) ──
+    refunds: {
+      /** 退款列表 */
+      list: (query, init) => (() => {
+        const searchParams = new URLSearchParams();
+        if (query?.memberId) searchParams.set("memberId", query.memberId);
+        if (query?.orderId) searchParams.set("orderId", query.orderId);
+        if (query?.status) searchParams.set("status", query.status);
+        if (typeof query?.limit === "number") searchParams.set("limit", String(query.limit));
+        const suffix = searchParams.toString();
+        return api.getData(`/transactions/refunds${suffix ? `?${suffix}` : ""}`, init);
+      })(),
+      /** 待处理退款 */
+      listPending: (query, init) => api.getData(`/transactions/refunds/pending${typeof query?.limit === "number" ? `?limit=${query.limit}` : ""}`, init),
+      /** 退款 dashboard */
+      getDashboard: (init) => api.getData("/transactions/refunds/dashboard", init),
+      /** 退款详情 */
+      get: (refundId, init) => api.getData(`/transactions/refunds/${refundId}`, init),
+      /** 审批退款 */
+      approve: (refundId, body, init) => api.postData(`/transactions/refunds/${refundId}/approve`, body, init),
+      /** 拒绝退款 */
+      reject: (refundId, body, init) => api.postData(`/transactions/refunds/${refundId}/reject`, body, init)
+    },
+    // ── Finance (GET /api/v1/finance/*) ──
+    finance: {
+      /** 账户列表 */
+      listAccounts: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/accounts?${search}` : "/finance/accounts",
+          init
+        );
+      },
+      /** 账户详情 */
+      getAccount: (accountId, init) => api.getData(`/finance/accounts/${accountId}`, init),
+      /** 营收汇总 */
+      getRevenueSummary: (query, init) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set("storeId", query.storeId);
+        params.set("startDate", query.startDate);
+        params.set("endDate", query.endDate);
+        return api.getData(
+          `/finance/revenue/summary?${params.toString()}`,
+          init
+        );
+      },
+      /** 日营收 */
+      getDailyRevenue: (query, init) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set("storeId", query.storeId);
+        params.set("date", query.date);
+        return api.getData(
+          `/finance/revenue/daily?${params.toString()}`,
+          init
+        );
+      },
+      /** 财务流水 */
+      listLedgers: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        if (query?.type) params.set("type", query.type);
+        if (query?.orderId) params.set("orderId", query.orderId);
+        if (query?.transactionId) params.set("transactionId", query.transactionId);
+        if (query?.category) params.set("category", query.category);
+        if (query?.recordedAfter) params.set("recordedAfter", query.recordedAfter);
+        if (query?.recordedBefore) params.set("recordedBefore", query.recordedBefore);
+        if (query?.limit !== void 0) params.set("limit", String(query.limit));
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/ledgers?${search}` : "/finance/ledgers",
+          init
+        );
+      },
+      /** 结算列表 */
+      listSettlements: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        if (query?.settlementStatus) params.set("settlementStatus", query.settlementStatus);
+        if (query?.startAfter) params.set("startAfter", query.startAfter);
+        if (query?.endBefore) params.set("endBefore", query.endBefore);
+        if (query?.limit !== void 0) params.set("limit", String(query.limit));
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/settlements?${search}` : "/finance/settlements",
+          init
+        );
+      },
+      /** 结算详情 */
+      getSettlement: (settlementId, init) => api.getData(`/finance/settlements/${settlementId}`, init),
+      /** 发票列表 */
+      listInvoices: (query, init) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set("storeId", query.storeId);
+        if (query?.orderId) params.set("orderId", query.orderId);
+        if (query?.status) params.set("status", query.status);
+        if (query?.type) params.set("type", query.type);
+        const search = params.toString();
+        return api.getData(
+          search ? `/finance/invoices?${search}` : "/finance/invoices",
+          init
+        );
+      },
+      /** 发票详情 */
+      getInvoice: (invoiceId, init) => api.getData(`/finance/invoices/${invoiceId}`, init),
+      /** 发票开具 */
+      issueInvoice: (invoiceId, init) => api.postData(`/finance/invoices/${invoiceId}/issue`, {}, init),
+      /** 发票作废 */
+      cancelInvoice: (invoiceId, init) => api.postData(`/finance/invoices/${invoiceId}/cancel`, {}, init)
+    },
+    // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──
+    paymentGateway: {
+      /** 发起支付 */
+      pay: (body, init) => api.postData("/payment-gateway/pay", body, init),
+      /** 查询支付结果 */
+      queryPayment: (transactionId, init) => api.getData(`/payment-gateway/pay/${transactionId}`, init),
+      /** 发起退款 */
+      refund: (body, init) => api.postData("/payment-gateway/refund", body, init),
+      /** 查询退款状态 */
+      queryRefund: (refundId, init) => api.getData(`/payment-gateway/refund/${refundId}`, init)
+    },
+    // ── Budget (GET/POST /api/v1/finance/budgets) ──
+    budget: {
+      /** 预算列表 */
+      list: (query, init) => api.getData("/finance/budgets", { ...init, headers: { ...query ? {
+        "x-tenant-id": query.tenantId ?? "",
+        "x-status": query.status ?? "",
+        "x-category": query.category ?? ""
+      } : {}, ...init?.headers ?? {} } }),
+      /** 创建预算 */
+      create: (body, init) => api.postData("/finance/budgets", body, init),
+      /** 提交审批 */
+      submitForApproval: (id, body, init) => api.postData(`/finance/budgets/${id}/submit`, body, init),
+      /** 关闭预算 */
+      close: (id, body, init) => api.postData(`/finance/budgets/${id}/close`, body, init),
+      /** 审批请求列表 */
+      listApprovals: (query, init) => api.getData("/finance/budgets/approvals", { ...init, headers: { ...query ? {
+        "x-budget-id": query.budgetId ?? "",
+        "x-status": query.status ?? ""
+      } : {}, ...init?.headers ?? {} } }),
+      /** 批准审批请求 */
+      approveApproval: (approvalId, body, init) => api.postData(`/finance/budgets/approvals/${approvalId}/approve`, body, init),
+      /** 驳回审批请求 */
+      rejectApproval: (approvalId, body, init) => api.postData(`/finance/budgets/approvals/${approvalId}/reject`, body, init)
+    },
+    // ── Promotions (GET/POST /api/v1/marketing/promotions) ──
+    promotions: {
+      /** 促销列表 */
+      list: (query, init) => api.getData("/marketing/promotions", { ...init, headers: { ...query ? {
+        "x-tenant-id": query.tenantId ?? "",
+        "x-store-id": query.storeId ?? "",
+        "x-status": query.status ?? ""
+      } : {}, ...init?.headers ?? {} } }),
+      /** 创建促销 */
+      create: (body, init) => api.postData("/marketing/promotions", body, init),
+      /** 发布草稿促销 */
+      publish: (id, body, init) => api.postData(`/marketing/promotions/${id}/publish`, body, init),
+      /** 结束促销 */
+      end: (id, body, init) => api.postData(`/marketing/promotions/${id}/end`, body, init)
+    },
+    // ── Convenience: 原始 ApiClient 实例 (用于自定义请求) ──
+    raw: api
+  };
+}
 function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier = 2) {
   const safeAttempt = Math.max(0, attemptNum - 1);
   return initialDelayMs * Math.pow(backoffMultiplier, safeAttempt);
@@ -1238,9 +1520,11 @@ function computeBackoffDelay(attemptNum, initialDelayMs = 1e3, backoffMultiplier
 0 && (module.exports = {
   ApiClient,
   ApiError,
+  buildActorHeaders,
   buildRuntimeGovernanceReplayRequest,
   buildRuntimeGovernanceSubmitRequest,
   computeBackoffDelay,
+  createBusinessClient,
   createFoundationAlertClient,
   createFoundationAlertMutationExecutor,
   createFoundationAlertPanelClientAccess,

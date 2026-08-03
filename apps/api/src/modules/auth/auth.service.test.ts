@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 /**
  * auth.service.test.ts - Phase-FP P0
  * 用途: AuthService 统一认证服务 单元测试
@@ -8,6 +8,73 @@ import { AuthService } from './auth.service'
 import { TokenService } from './token.service'
 import { SessionService } from './session.service'
 import { LoginType, AuthErrorCode } from './auth.types'
+import { AuditService } from '../audit/audit.service'
+
+class FakeRedisClient {
+  private readonly store = new Map<string, { value: string; expiresAt?: number }>()
+
+  constructor(private readonly delayMs = 0) {}
+
+  private async wait() {
+    if (this.delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, this.delayMs))
+    }
+  }
+
+  private touch(key: string) {
+    const entry = this.store.get(key)
+    if (entry?.expiresAt && entry.expiresAt <= Date.now()) {
+      this.store.delete(key)
+      return undefined
+    }
+    return entry
+  }
+
+  async get(key: string): Promise<string | null> {
+    await this.wait()
+    return this.touch(key)?.value ?? null
+  }
+
+  async set(key: string, value: string, mode?: string, ttl?: number): Promise<'OK'> {
+    await this.wait()
+    const expiresAt = mode === 'EX' && typeof ttl === 'number'
+      ? Date.now() + ttl * 1000
+      : undefined
+    this.store.set(key, { value, expiresAt })
+    return 'OK'
+  }
+
+  async del(...keys: string[]): Promise<number> {
+    await this.wait()
+    let count = 0
+    for (const key of keys) {
+      if (this.store.delete(key)) {
+        count += 1
+      }
+    }
+    return count
+  }
+
+  async incr(key: string): Promise<number> {
+    await this.wait()
+    const current = Number.parseInt(this.touch(key)?.value ?? '0', 10)
+    const next = current + 1
+    const existing = this.touch(key)
+    this.store.set(key, { value: String(next), expiresAt: existing?.expiresAt })
+    return next
+  }
+
+  async expire(key: string, ttl: number): Promise<number> {
+    await this.wait()
+    const entry = this.touch(key)
+    if (!entry) {
+      return 0
+    }
+    entry.expiresAt = Date.now() + ttl * 1000
+    this.store.set(key, entry)
+    return 1
+  }
+}
 
 describe('AuthService', () => {
   let authService: AuthService
@@ -61,6 +128,7 @@ describe('AuthService', () => {
       )
       expect(result.success).toBe(true)
       expect(result.user!.userId).toBe('admin_001')
+      expect(result.user!.permissions).toEqual(['*'])
     })
 
     it('should login successfully via email+password', async () => {
@@ -91,6 +159,240 @@ describe('AuthService', () => {
       )
       expect(result.success).toBe(false)
       expect(result.error!.code).toBe(AuthErrorCode.INVALID_CREDENTIALS)
+    })
+
+    it('should lock account after 5 consecutive failed password attempts', async () => {
+      let result
+
+      for (let i = 0; i < 5; i++) {
+        result = await authService.loginByPassword(
+          '13800138000', undefined, `wrong-password-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `dev-lock-${i}`, deviceType: 'web' },
+        )
+      }
+
+      expect(result!.success).toBe(false)
+      expect(result!.error!.code).toBe(AuthErrorCode.ACCOUNT_LOCKED)
+      expect(result!.error!.retryAfter).toBeGreaterThan(0)
+    })
+
+    it('should reset failed password attempts after a successful login', async () => {
+      for (let i = 0; i < 4; i++) {
+        const failed = await authService.loginByPassword(
+          '13800138000', undefined, `wrong-password-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `dev-reset-${i}`, deviceType: 'web' },
+        )
+
+        expect(failed.success).toBe(false)
+        expect(failed.error!.code).toBe(AuthErrorCode.INVALID_CREDENTIALS)
+      }
+
+      const success = await authService.loginByPassword(
+        '13800138000', undefined, 'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'dev-reset-success', deviceType: 'web' },
+      )
+
+      expect(success.success).toBe(true)
+
+      const failedAgain = await authService.loginByPassword(
+        '13800138000', undefined, 'wrong-password-after-reset',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'dev-reset-after', deviceType: 'web' },
+      )
+
+      expect(failedAgain.success).toBe(false)
+      expect(failedAgain.error!.code).toBe(AuthErrorCode.INVALID_CREDENTIALS)
+    })
+
+    it('should share lock state across service instances when redis is available', async () => {
+      const sharedRedis = new FakeRedisClient()
+      const redisService = { client: sharedRedis } as any
+
+      const firstInstance = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        redisService,
+      )
+      const secondInstance = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        redisService,
+      )
+
+      for (let i = 0; i < 5; i++) {
+        await firstInstance.loginByPassword(
+          '13800138000', undefined, `wrong-password-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `shared-${i}`, deviceType: 'web' },
+        )
+      }
+
+      const blocked = await secondInstance.loginByPassword(
+        '13800138000', undefined, 'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'shared-legit', deviceType: 'web' },
+      )
+
+      expect(blocked.success).toBe(false)
+      expect(blocked.error!.code).toBe(AuthErrorCode.ACCOUNT_LOCKED)
+      expect(blocked.error!.retryAfter).toBeGreaterThan(0)
+    })
+
+    it('should keep lock semantics under concurrent failures when redis counter is shared', async () => {
+      const sharedRedis = new FakeRedisClient(5)
+      const redisService = { client: sharedRedis } as any
+
+      const firstInstance = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        redisService,
+      )
+      const secondInstance = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        redisService,
+      )
+
+      await Promise.all(
+        Array.from({ length: 5 }, (_, i) =>
+          (i % 2 === 0 ? firstInstance : secondInstance).loginByPassword(
+            '13800138000',
+            undefined,
+            `wrong-password-concurrent-${i}`,
+            LoginType.MOBILE_PASSWORD,
+            { deviceId: `concurrent-${i}`, deviceType: 'web' },
+          ),
+        ),
+      )
+
+      const blocked = await secondInstance.loginByPassword(
+        '13800138000',
+        undefined,
+        'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'concurrent-legit', deviceType: 'web' },
+      )
+
+      expect(blocked.success).toBe(false)
+      expect(blocked.error!.code).toBe(AuthErrorCode.ACCOUNT_LOCKED)
+      expect(blocked.error!.retryAfter).toBeGreaterThan(0)
+    })
+
+    it('should record audit event when password login becomes locked', async () => {
+      const auditService = new AuditService()
+      const service = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        undefined,
+        auditService,
+      )
+
+      for (let i = 0; i < 5; i++) {
+        await service.loginByPassword(
+          '13800138000',
+          undefined,
+          `wrong-password-audit-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `audit-lock-${i}`, deviceType: 'web' },
+        )
+      }
+
+      const logs = auditService.__getAll()
+      const lockEvent = logs.find((log) => log.eventType === 'auth.login_locked')
+
+      expect(lockEvent).toBeDefined()
+      expect(lockEvent!.actorId).toBe('admin_001')
+      expect(lockEvent!.riskLevel).toBe('high')
+      expect(lockEvent!.metadata?.failedAttempts).toBe(5)
+    })
+
+    it('should record audit event when successful login clears previous failures', async () => {
+      const auditService = new AuditService()
+      const service = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        undefined,
+        auditService,
+      )
+
+      for (let i = 0; i < 2; i++) {
+        await service.loginByPassword(
+          '13800138000',
+          undefined,
+          `wrong-password-unlock-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `audit-unlock-${i}`, deviceType: 'web' },
+        )
+      }
+
+      const success = await service.loginByPassword(
+        '13800138000',
+        undefined,
+        'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'audit-unlock-success', deviceType: 'web' },
+      )
+
+      expect(success.success).toBe(true)
+
+      const logs = auditService.__getAll()
+      const unlockEvent = logs.find((log) => log.eventType === 'auth.login_unlocked')
+
+      expect(unlockEvent).toBeDefined()
+      expect(unlockEvent!.actorId).toBe('admin_001')
+      expect(unlockEvent!.metadata?.clearedFailedAttempts).toBe(2)
+      expect(unlockEvent!.metadata?.resetReason).toBe('successful-login')
+    })
+
+    it('should allow operator unlock for a locked password principal', async () => {
+      const auditService = new AuditService()
+      const service = new AuthService(
+        new TokenService(),
+        new SessionService(),
+        undefined,
+        auditService,
+      )
+
+      for (let i = 0; i < 5; i++) {
+        await service.loginByPassword(
+          '13800138000',
+          undefined,
+          `wrong-password-manual-unlock-${i}`,
+          LoginType.MOBILE_PASSWORD,
+          { deviceId: `manual-unlock-${i}`, deviceType: 'web' },
+        )
+      }
+
+      const unlockResult = await service.unlockPasswordLogin(
+        '13800138000',
+        undefined,
+        'sec-admin-001',
+        'helpdesk-verified',
+      )
+
+      expect(unlockResult.cleared).toBe(true)
+      expect(unlockResult.clearedFailedAttempts).toBe(5)
+      expect(unlockResult.userId).toBe('admin_001')
+
+      const success = await service.loginByPassword(
+        '13800138000',
+        undefined,
+        'password123',
+        LoginType.MOBILE_PASSWORD,
+        { deviceId: 'manual-unlock-success', deviceType: 'web' },
+      )
+
+      expect(success.success).toBe(true)
+
+      const logs = auditService.__getAll()
+      const overrideEvent = logs.find((log) => log.eventType === 'auth.login_unlock_override')
+      expect(overrideEvent).toBeDefined()
+      expect(overrideEvent!.actorId).toBe('sec-admin-001')
+      expect(overrideEvent!.actorType).toBe('admin')
+      expect(overrideEvent!.metadata?.resetReason).toBe('manual-unlock')
     })
   })
 

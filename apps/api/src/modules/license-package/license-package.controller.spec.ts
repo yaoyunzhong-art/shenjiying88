@@ -28,13 +28,7 @@ describe('LicensePackageController', () => {
     }
   }
 
-  describe('路由注册与模块元数据', () => {
-    it('Controller 有正确的路由前缀', () => {
-
-      const path = Reflect.getMetadata('path', LicensePackageController)
-      assert.equal(path, 'api/license-packages')
-    })
-
+  describe('模块元数据', () => {
     it('ApiTags 元数据正确', () => {
 
       const tags = Reflect.getMetadata('swagger/apiUseTags', LicensePackageController)

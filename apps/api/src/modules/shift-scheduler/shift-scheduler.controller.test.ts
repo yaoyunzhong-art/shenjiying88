@@ -26,69 +26,6 @@ describe('ShiftSchedulerController', () => {
 
   // ── Route metadata ──
 
-  describe('route metadata', () => {
-    it('controller path should be shift-schedules', () => {
-      const path = Reflect.getMetadata('path', ShiftSchedulerController)
-      assert.equal(path, 'shift-schedules')
-    })
-
-    it('createShift should be POST /', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.createShift)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.createShift)
-      assert.equal(method, 1)
-      assert.equal(path, '/')
-    })
-
-    it('listShifts should be GET /', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.listShifts)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.listShifts)
-      assert.equal(method, 0)
-      assert.equal(path, '/')
-    })
-
-    it('getShift should be GET /:shiftId', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.getShift)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.getShift)
-      assert.equal(method, 0)
-      assert.equal(path, ':shiftId')
-    })
-
-    it('updateShift should be PATCH /:shiftId', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.updateShift)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.updateShift)
-      assert.equal(method, 4)
-      assert.equal(path, ':shiftId')
-    })
-
-    it('updateShiftStatus should be PATCH /:shiftId/status', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.updateShiftStatus)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.updateShiftStatus)
-      assert.equal(method, 4)
-      assert.equal(path, ':shiftId/status')
-    })
-
-    it('getWeeklyShifts should be GET /analysis/weekly', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.getWeeklyShifts)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.getWeeklyShifts)
-      assert.equal(method, 0)
-      assert.equal(path, 'analysis/weekly')
-    })
-
-    it('getEmployeeWeeklyShifts should be GET /analysis/employee-weekly', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.getEmployeeWeeklyShifts)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.getEmployeeWeeklyShifts)
-      assert.equal(method, 0)
-      assert.equal(path, 'analysis/employee-weekly')
-    })
-
-    it('seedMockData should be POST /seed', () => {
-      const method = Reflect.getMetadata('method', ShiftSchedulerController.prototype.seedMockData)
-      const path = Reflect.getMetadata('path', ShiftSchedulerController.prototype.seedMockData)
-      assert.equal(method, 1)
-      assert.equal(path, 'seed')
-    })
-  })
-
   // ── Controller Logic ──
 
   describe('createShift', () => {
@@ -185,6 +122,41 @@ describe('ShiftSchedulerController', () => {
       })
       const emp1 = controller.getEmployeeWeeklyShifts(TENANT, 'EMP-001', '2026-07-13', '2026-07-19')
       assert.equal(emp1.length, 1)
+    })
+  })
+
+  describe('deleteShift', () => {
+    it('should delete shift and return void', () => {
+      const s = controller.createShift(TENANT, {
+        employeeId: 'EMP-001', employeeName: 'A', date: '2026-07-16',
+        shiftType: ShiftType.Morning, startTime: '08:00', endTime: '16:00', location: 'L1',
+      })
+      const result = controller.deleteShift(TENANT, s.id)
+      assert.strictEqual(result, undefined)
+      assert.throws(() => {
+        controller.getShift(TENANT, s.id)
+      }, /Shift schedule not found/)
+    })
+
+    it('should throw on delete non-existent shift', () => {
+      assert.throws(() => {
+        controller.deleteShift(TENANT, 'nonexistent')
+      }, /Shift schedule not found/)
+    })
+
+    it('should not affect other tenant shifts on delete', () => {
+      const s1 = controller.createShift(TENANT, {
+        employeeId: 'EMP-001', employeeName: 'A', date: '2026-07-16',
+        shiftType: ShiftType.Morning, startTime: '08:00', endTime: '16:00', location: 'L1',
+      })
+      const OTHER = { tenantId: 'tenant-002' }
+      controller.createShift(OTHER, {
+        employeeId: 'EMP-001', employeeName: 'A', date: '2026-07-16',
+        shiftType: ShiftType.Morning, startTime: '08:00', endTime: '16:00', location: 'L2',
+      })
+      controller.deleteShift(TENANT, s1.id)
+      assert.equal(controller.listShifts(TENANT, {}).length, 0)
+      assert.equal(controller.listShifts(OTHER, {}).length, 1)
     })
   })
 

@@ -51,6 +51,9 @@ export interface CashierPaymentContract {
   channel: string
   amount: number
   status: CashierPaymentStatus
+  qrCodeUrl?: string
+  paymentUrl?: string
+  expiresAt?: string
   transactionNo?: string
   sourceEventName?: string
   failureReason?: string
@@ -103,6 +106,9 @@ export function toCashierPaymentContract(payment: CashierPayment): CashierPaymen
     channel: payment.channel,
     amount: payment.amount,
     status: payment.status,
+    qrCodeUrl: payment.qrCodeUrl,
+    paymentUrl: payment.paymentUrl,
+    expiresAt: payment.expiresAt,
     transactionNo: payment.transactionNo,
     sourceEventName: payment.sourceEventName,
     failureReason: payment.failureReason,

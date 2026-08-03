@@ -148,7 +148,6 @@ export function ReturnListClient({ returns }: { returns: ReturnRequest[] }) {
         callbacks={{
           onStatusChange: (requestId, newStatus, remark) => {
             // 在实际应用中这里会调用 API
-            console.log(`[DEMO] ${requestId} -> ${newStatus}`, remark);
           },
         }}
       />

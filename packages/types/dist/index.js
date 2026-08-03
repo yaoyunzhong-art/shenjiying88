@@ -34,6 +34,9 @@ __export(index_exports, {
   buildConfigurationHref: () => buildConfigurationHref,
   buildConfigurationOperationDetailHref: () => buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref: () => buildConfigurationSecretDetailHref,
+  buildDomainGovernanceDisplayModel: () => buildDomainGovernanceDisplayModel,
+  buildDomainGovernanceHref: () => buildDomainGovernanceHref,
+  buildDomainGovernanceWorkspaceHref: () => buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext: () => buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams: () => buildFoundationAlertLinkedFocusSearchParams,
   buildFoundationAlertOptimisticReadState: () => buildFoundationAlertOptimisticReadState,
@@ -69,16 +72,26 @@ __export(index_exports, {
   createRuntimeGovernanceReplayPolicy: () => createRuntimeGovernanceReplayPolicy,
   defaultRoleWorkbenchContractMap: () => defaultRoleWorkbenchContractMap,
   defaultRoleWorkbenchContracts: () => defaultRoleWorkbenchContracts,
+  domainGovernanceDisplayCopy: () => domainGovernanceDisplayCopy,
+  domainGovernanceDisplayPresetContractMap: () => domainGovernanceDisplayPresetContractMap,
   evaluateRuntimeGovernanceCallbackStall: () => evaluateRuntimeGovernanceCallbackStall,
   filterFoundationAlertTimeline: () => filterFoundationAlertTimeline,
   filterFoundationAlertTimelineByOwner: () => filterFoundationAlertTimelineByOwner,
   filterFoundationAlertTimelineBySource: () => filterFoundationAlertTimelineBySource,
   findLatestFoundationAlertTimelineEntry: () => findLatestFoundationAlertTimelineEntry,
+  formatDomainGovernanceCountsSummary: () => formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceFocusScopeLabel: () => formatDomainGovernanceFocusScopeLabel,
+  formatDomainGovernanceFocusScopeSummary: () => formatDomainGovernanceFocusScopeSummary,
+  formatDomainGovernanceLastEvaluatedSummary: () => formatDomainGovernanceLastEvaluatedSummary,
+  formatDomainGovernanceRecommendationSummary: () => formatDomainGovernanceRecommendationSummary,
+  formatDomainGovernanceSourceSummary: () => formatDomainGovernanceSourceSummary,
+  formatDomainGovernanceStatusSummary: () => formatDomainGovernanceStatusSummary,
   foundationAlertCatalogFallback: () => foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles: () => foundationAppBootstrapProfiles,
   foundationBootstrapCapabilityRules: () => foundationBootstrapCapabilityRules,
   foundationBootstrapContract: () => foundationBootstrapContract,
   foundationSupportedClients: () => foundationSupportedClients,
+  getDomainGovernanceAttentionLabel: () => getDomainGovernanceAttentionLabel,
   getFoundationAlertLytConnectionGovernanceRiskDetail: () => getFoundationAlertLytConnectionGovernanceRiskDetail,
   getFoundationAlertRuntimeCallbackStalledDetail: () => getFoundationAlertRuntimeCallbackStalledDetail,
   getFoundationAppBootstrapWiring: () => getFoundationAppBootstrapWiring,
@@ -122,6 +135,8 @@ __export(index_exports, {
   readResilienceRecoveryPlanDetailParam: () => readResilienceRecoveryPlanDetailParam,
   readResilienceRetryPolicyDetailParam: () => readResilienceRetryPolicyDetailParam,
   readResilienceSignalDetailParam: () => readResilienceSignalDetailParam,
+  resolveDomainGovernanceDisplayPreset: () => resolveDomainGovernanceDisplayPreset,
+  resolveDomainGovernanceRenderItemColor: () => resolveDomainGovernanceRenderItemColor,
   resolveFoundationAlertFocusCode: () => resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode: () => resolveFoundationAlertSelectedCode,
   runtimeGovernanceActionKeys: () => runtimeGovernanceActionKeys,
@@ -137,6 +152,7 @@ __export(index_exports, {
   runtimeGovernanceReplayEscalationActions: () => runtimeGovernanceReplayEscalationActions,
   runtimeGovernanceReplaySources: () => runtimeGovernanceReplaySources,
   runtimeGovernanceRiskLevels: () => runtimeGovernanceRiskLevels,
+  selectDomainGovernanceFocusScope: () => selectDomainGovernanceFocusScope,
   summarizeFoundationAlertOwners: () => summarizeFoundationAlertOwners,
   summarizeFoundationAlertTimelineDigest: () => summarizeFoundationAlertTimelineDigest,
   summarizeFoundationAlertTimelineFilters: () => summarizeFoundationAlertTimelineFilters,
@@ -1173,6 +1189,331 @@ var foundationAlertCatalogFallback = [
     unmutePath: "/foundation/overview/alerts/lyt-connection-governance-risk/unmute"
   }
 ];
+function selectDomainGovernanceFocusScope(summary) {
+  return summary.currentScopes.find((item) => item.missingPrimary) ?? summary.currentScopes.find((item) => item.scopeType === "STORE") ?? summary.currentScopes.find((item) => item.scopeType === "BRAND") ?? summary.currentScopes[0];
+}
+function buildDomainGovernanceHref(query = {}) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === "string" && value.length > 0) {
+      params.set(key, value);
+    }
+  }
+  const queryString = params.toString();
+  return queryString ? `/saas/domains?${queryString}` : "/saas/domains";
+}
+function buildDomainGovernanceWorkspaceHref(summary, marketCode) {
+  const scope = selectDomainGovernanceFocusScope(summary);
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType
+  });
+}
+function getDomainGovernanceAttentionLabel(summary) {
+  return summary.requiresAttention ? "\u5F85\u6CBB\u7406" : "\u5DF2\u5BF9\u9F50";
+}
+function formatDomainGovernanceCountsSummary(summary) {
+  return `\u7F3A\u4E3B scope ${summary.totalMissingPrimaryScopes} / \u6D3B\u8DC3\u672A\u8BBE\u4E3B\u57DF\u540D ${summary.totalActiveWithoutPrimaryDomains}`;
+}
+function formatDomainGovernanceSourceSummary(domainSource, summary) {
+  return `\u57DF\u540D\u6765\u6E90 ${domainSource} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
+}
+var domainGovernanceDisplayCopy = {
+  eyebrow: "\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
+  subtitle: "\u7EDF\u4E00\u57DF\u540D\u7F3A\u53E3\u3001\u63A8\u8350\u8865\u9009\u548C\u6CBB\u7406\u5165\u53E3\u5C55\u793A",
+  detailSectionTitle: "\u6CBB\u7406\u660E\u7EC6",
+  workspaceLabel: "\u6CBB\u7406\u5165\u53E3",
+  ctaLabel: "\u6253\u5F00\u57DF\u540D\u6CBB\u7406\u5DE5\u4F5C\u53F0",
+  sectionTitles: {
+    summary: "\u6CBB\u7406\u6982\u89C8",
+    focusScope: "\u7126\u70B9 scope",
+    recommendation: "\u63A8\u8350\u8865\u9009",
+    timeline: "\u8BC4\u4F30\u65F6\u95F4",
+    workspace: "\u6CBB\u7406\u5165\u53E3"
+  },
+  itemLabels: {
+    source: "\u57DF\u540D\u6765\u6E90",
+    status: "\u6CBB\u7406\u72B6\u6001",
+    summary: "\u6CBB\u7406\u6982\u89C8",
+    statusSummary: "\u72B6\u6001\u6458\u8981",
+    recommendation: "\u63A8\u8350\u4E3B\u57DF\u540D",
+    lastEvaluated: "\u6700\u8FD1\u8BC4\u4F30"
+  }
+};
+function resolveDomainGovernanceRenderItemColor(preset, tone) {
+  if (tone === "primary") {
+    return preset.titleColor;
+  }
+  if (tone === "accent") {
+    return preset.accentColor;
+  }
+  return preset.summaryColor;
+}
+var domainGovernanceDisplayPresetContractMap = {
+  STOREFRONT_H5: {
+    key: "STOREFRONT_H5",
+    accentColor: "#93c5fd",
+    titleColor: "#f8fafc",
+    subtitleColor: "#cbd5e1",
+    summaryColor: "#cbd5e1",
+    detailColor: "#93c5fd",
+    borderColor: "rgba(148, 163, 184, 0.12)",
+    buttonBackground: "#1d4ed8",
+    buttonTextColor: "#eff6ff",
+    backgroundAligned: "rgba(15, 23, 42, 0.42)",
+    backgroundAttention: "rgba(127, 29, 29, 0.35)",
+    statusAlignedColor: "#bbf7d0",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.32)",
+    statusAttentionColor: "#fecaca",
+    statusAttentionBackground: "rgba(127, 29, 29, 0.32)"
+  },
+  STOREFRONT_PC: {
+    key: "STOREFRONT_PC",
+    accentColor: "#93c5fd",
+    titleColor: "#f8fafc",
+    subtitleColor: "#cbd5e1",
+    summaryColor: "#cbd5e1",
+    detailColor: "#93c5fd",
+    borderColor: "rgba(148, 163, 184, 0.1)",
+    buttonBackground: "#1d4ed8",
+    buttonTextColor: "#eff6ff",
+    backgroundAligned: "rgba(15, 23, 42, 0.45)",
+    backgroundAttention: "rgba(127, 29, 29, 0.28)",
+    statusAlignedColor: "#bbf7d0",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.32)",
+    statusAttentionColor: "#fecaca",
+    statusAttentionBackground: "rgba(127, 29, 29, 0.32)"
+  },
+  TOB_TENANT: {
+    key: "TOB_TENANT",
+    accentColor: "#bae6fd",
+    titleColor: "#f8fafc",
+    subtitleColor: "#cbd5e1",
+    summaryColor: "#cbd5e1",
+    detailColor: "#bae6fd",
+    borderColor: "rgba(125, 211, 252, 0.16)",
+    buttonBackground: "#38bdf8",
+    buttonTextColor: "#082f49",
+    backgroundAligned: "rgba(15, 23, 42, 0.35)",
+    backgroundAttention: "rgba(127, 29, 29, 0.28)",
+    statusAlignedColor: "#bbf7d0",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.32)",
+    statusAttentionColor: "#fecaca",
+    statusAttentionBackground: "rgba(127, 29, 29, 0.32)"
+  },
+  TOB_BRAND: {
+    key: "TOB_BRAND",
+    accentColor: "#f0abfc",
+    titleColor: "#f5f3ff",
+    subtitleColor: "#ddd6fe",
+    summaryColor: "#ddd6fe",
+    detailColor: "#f0abfc",
+    borderColor: "rgba(240, 171, 252, 0.16)",
+    buttonBackground: "#f0abfc",
+    buttonTextColor: "#3b0764",
+    backgroundAligned: "rgba(15, 23, 42, 0.36)",
+    backgroundAttention: "rgba(127, 29, 29, 0.24)",
+    statusAlignedColor: "#dcfce7",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.3)",
+    statusAttentionColor: "#fecdd3",
+    statusAttentionBackground: "rgba(136, 19, 55, 0.32)"
+  },
+  APP_NATIVE: {
+    key: "APP_NATIVE",
+    accentColor: "#93C5FD",
+    titleColor: "#F8FAFC",
+    subtitleColor: "#94A3B8",
+    summaryColor: "#CBD5E1",
+    detailColor: "#93C5FD",
+    borderColor: "transparent",
+    buttonBackground: "#1D4ED8",
+    buttonTextColor: "#EFF6FF",
+    backgroundAligned: "#0F172A",
+    backgroundAttention: "#1E293B",
+    statusAlignedColor: "#BBF7D0",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.32)",
+    statusAttentionColor: "#FECACA",
+    statusAttentionBackground: "rgba(127, 29, 29, 0.32)"
+  },
+  MINIAPP_HOME: {
+    key: "MINIAPP_HOME",
+    accentColor: "#93c5fd",
+    titleColor: "#f8fafc",
+    subtitleColor: "#cbd5e1",
+    summaryColor: "#e2e8f0",
+    detailColor: "#93c5fd",
+    borderColor: "transparent",
+    buttonBackground: "#1d4ed8",
+    buttonTextColor: "#eff6ff",
+    backgroundAligned: "rgba(15, 23, 42, 0.45)",
+    backgroundAttention: "rgba(127, 29, 29, 0.35)",
+    statusAlignedColor: "#bbf7d0",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.32)",
+    statusAttentionColor: "#fecaca",
+    statusAttentionBackground: "rgba(127, 29, 29, 0.32)"
+  },
+  MINIAPP_MEMBER: {
+    key: "MINIAPP_MEMBER",
+    accentColor: "#c4b5fd",
+    titleColor: "#f8fafc",
+    subtitleColor: "#ddd6fe",
+    summaryColor: "#e2e8f0",
+    detailColor: "#c4b5fd",
+    borderColor: "transparent",
+    buttonBackground: "#8b5cf6",
+    buttonTextColor: "#f5f3ff",
+    backgroundAligned: "rgba(15, 23, 42, 0.65)",
+    backgroundAttention: "rgba(127, 29, 29, 0.35)",
+    statusAlignedColor: "#dcfce7",
+    statusAlignedBackground: "rgba(20, 83, 45, 0.32)",
+    statusAttentionColor: "#fecdd3",
+    statusAttentionBackground: "rgba(136, 19, 55, 0.32)"
+  }
+};
+function resolveDomainGovernanceDisplayPreset(key, requiresAttention) {
+  const preset = domainGovernanceDisplayPresetContractMap[key];
+  return {
+    key: preset.key,
+    accentColor: preset.accentColor,
+    titleColor: preset.titleColor,
+    subtitleColor: preset.subtitleColor,
+    summaryColor: preset.summaryColor,
+    detailColor: preset.detailColor,
+    borderColor: preset.borderColor,
+    buttonBackground: preset.buttonBackground,
+    buttonTextColor: preset.buttonTextColor,
+    background: requiresAttention ? preset.backgroundAttention : preset.backgroundAligned,
+    statusColor: requiresAttention ? preset.statusAttentionColor : preset.statusAlignedColor,
+    statusBackground: requiresAttention ? preset.statusAttentionBackground : preset.statusAlignedBackground
+  };
+}
+function formatDomainGovernanceFocusScopeLabel(scope) {
+  if (!scope) {
+    return "\u7126\u70B9 scope \u672A\u547D\u4E2D";
+  }
+  const scopeSegments = [scope.scopeType];
+  if (scope.tenantId) {
+    scopeSegments.push(scope.tenantId);
+  }
+  if (scope.brandId) {
+    scopeSegments.push(scope.brandId);
+  }
+  if (scope.storeId) {
+    scopeSegments.push(scope.storeId);
+  }
+  return `\u7126\u70B9 scope ${scopeSegments.join(" / ")}`;
+}
+function formatDomainGovernanceFocusScopeSummary(scope) {
+  if (!scope) {
+    return "\u5F53\u524D\u6279\u6B21\u6682\u65E0\u547D\u4E2D\u7684\u6CBB\u7406 scope\uFF0C\u5148\u6CBF\u7528\u7EDF\u4E00\u6CBB\u7406\u5165\u53E3\u3002";
+  }
+  return `${formatDomainGovernanceFocusScopeLabel(scope)} / \u6FC0\u6D3B\u57DF\u540D ${scope.activeDomainCount} / ${scope.missingPrimary ? "\u7F3A\u4E3B\u57DF\u540D" : "\u5DF2\u5BF9\u9F50"}`;
+}
+function formatDomainGovernanceRecommendationSummary(scope) {
+  if (!scope?.recommendedDomain) {
+    return "\u63A8\u8350\u4E3B\u57DF\u540D\uFF1A\u6682\u65E0\u76F4\u63A5\u8865\u9009\u5019\u9009\uFF0C\u5148\u8FDB\u5165\u6CBB\u7406\u5DE5\u4F5C\u53F0\u67E5\u770B\u660E\u7EC6\u3002";
+  }
+  const reason = scope.recommendationReason ? ` / \u539F\u56E0 ${scope.recommendationReason}` : "";
+  return `\u63A8\u8350\u4E3B\u57DF\u540D\uFF1A${scope.recommendedDomain}${reason}`;
+}
+function formatDomainGovernanceStatusSummary(summary, statusLabel = getDomainGovernanceAttentionLabel(summary)) {
+  return `\u6CBB\u7406\u72B6\u6001\uFF1A${statusLabel} / \u53EF\u76F4\u63A5\u8865\u9009 ${summary.recommendedReadyScopes}`;
+}
+function formatDomainGovernanceLastEvaluatedSummary(summary) {
+  return `\u6700\u8FD1\u8BC4\u4F30 ${summary.lastEvaluatedAt}`;
+}
+function buildDomainGovernanceDisplayModel(domainSource, summary, workspaceHref) {
+  const statusLabel = getDomainGovernanceAttentionLabel(summary);
+  const focusScope = selectDomainGovernanceFocusScope(summary);
+  const eyebrow = domainGovernanceDisplayCopy.eyebrow;
+  const subtitle = domainGovernanceDisplayCopy.subtitle;
+  const title = formatDomainGovernanceSourceSummary(domainSource, summary);
+  const summaryText = formatDomainGovernanceCountsSummary(summary);
+  const workspaceLabel = domainGovernanceDisplayCopy.workspaceLabel;
+  const ctaLabel = domainGovernanceDisplayCopy.ctaLabel;
+  const renderSections = [
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.source,
+          value: title,
+          tone: "primary"
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.status,
+          value: statusLabel,
+          tone: "accent"
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
+          value: summaryText,
+          tone: "summary"
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary(summary, statusLabel),
+          tone: "summary"
+        }
+      ]
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
+      items: [
+        {
+          label: formatDomainGovernanceFocusScopeLabel(focusScope),
+          value: formatDomainGovernanceFocusScopeSummary(focusScope),
+          tone: "accent"
+        }
+      ]
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
+          value: formatDomainGovernanceRecommendationSummary(focusScope),
+          tone: "summary"
+        }
+      ]
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.timeline,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
+          value: formatDomainGovernanceLastEvaluatedSummary(summary),
+          tone: "summary"
+        }
+      ]
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.workspace,
+      items: [
+        {
+          label: workspaceLabel,
+          value: workspaceHref,
+          tone: "accent"
+        }
+      ]
+    }
+  ];
+  return {
+    eyebrow,
+    subtitle,
+    title,
+    statusLabel,
+    summaryText,
+    renderSections,
+    workspaceLabel,
+    workspaceHref,
+    ctaLabel,
+    requiresAttention: summary.requiresAttention
+  };
+}
 var defaultRoleWorkbenchContracts = [
   {
     role: "SUPER_ADMIN",
@@ -1940,6 +2281,9 @@ function buildIntegrationOrchestrationHref(query = {}) {
   buildConfigurationHref,
   buildConfigurationOperationDetailHref,
   buildConfigurationSecretDetailHref,
+  buildDomainGovernanceDisplayModel,
+  buildDomainGovernanceHref,
+  buildDomainGovernanceWorkspaceHref,
   buildFoundationAlertLinkedFocusContext,
   buildFoundationAlertLinkedFocusSearchParams,
   buildFoundationAlertOptimisticReadState,
@@ -1975,16 +2319,26 @@ function buildIntegrationOrchestrationHref(query = {}) {
   createRuntimeGovernanceReplayPolicy,
   defaultRoleWorkbenchContractMap,
   defaultRoleWorkbenchContracts,
+  domainGovernanceDisplayCopy,
+  domainGovernanceDisplayPresetContractMap,
   evaluateRuntimeGovernanceCallbackStall,
   filterFoundationAlertTimeline,
   filterFoundationAlertTimelineByOwner,
   filterFoundationAlertTimelineBySource,
   findLatestFoundationAlertTimelineEntry,
+  formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceFocusScopeLabel,
+  formatDomainGovernanceFocusScopeSummary,
+  formatDomainGovernanceLastEvaluatedSummary,
+  formatDomainGovernanceRecommendationSummary,
+  formatDomainGovernanceSourceSummary,
+  formatDomainGovernanceStatusSummary,
   foundationAlertCatalogFallback,
   foundationAppBootstrapProfiles,
   foundationBootstrapCapabilityRules,
   foundationBootstrapContract,
   foundationSupportedClients,
+  getDomainGovernanceAttentionLabel,
   getFoundationAlertLytConnectionGovernanceRiskDetail,
   getFoundationAlertRuntimeCallbackStalledDetail,
   getFoundationAppBootstrapWiring,
@@ -2028,6 +2382,8 @@ function buildIntegrationOrchestrationHref(query = {}) {
   readResilienceRecoveryPlanDetailParam,
   readResilienceRetryPolicyDetailParam,
   readResilienceSignalDetailParam,
+  resolveDomainGovernanceDisplayPreset,
+  resolveDomainGovernanceRenderItemColor,
   resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode,
   runtimeGovernanceActionKeys,
@@ -2043,6 +2399,7 @@ function buildIntegrationOrchestrationHref(query = {}) {
   runtimeGovernanceReplayEscalationActions,
   runtimeGovernanceReplaySources,
   runtimeGovernanceRiskLevels,
+  selectDomainGovernanceFocusScope,
   summarizeFoundationAlertOwners,
   summarizeFoundationAlertTimelineDigest,
   summarizeFoundationAlertTimelineFilters,

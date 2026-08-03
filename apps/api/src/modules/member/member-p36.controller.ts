@@ -7,10 +7,23 @@
  * @see docs/knowledge/prd/prd-member-p36.md
  */
 
-import { Controller, Get, Post, Param, Body, HttpException, HttpStatus } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { MemberP36Service } from './member-p36.service'
 import type { P36Member, LevelDisplay, ConsumptionRecord } from './member-p36.entity'
 
+@UseGuards(TenantGuard)
 @Controller('api/v1/p36/members')
 export class MemberP36Controller {
   constructor(private readonly svc: MemberP36Service) {}

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 会员注册 — Member Registration Page (Next.js App Router Page)
  * 角色视角: 👤 前台顾客 / 🛒 导购员协助
  * 功能: 表单验证、短信验证码、提交、注册统计、条款同意
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';

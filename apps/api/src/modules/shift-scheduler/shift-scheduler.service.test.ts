@@ -133,6 +133,29 @@ describe('ShiftSchedulerService', () => {
     })
   })
 
+  // ── Delete ──
+
+  describe('deleteShift', () => {
+    it('should delete shift by id', () => {
+      const s = createTestShift()
+      service.deleteShift(s.id, TENANT)
+      assert.equal(service.getShift(s.id, TENANT), undefined)
+    })
+
+    it('should throw on non-existent shift', () => {
+      assert.throws(() => {
+        service.deleteShift('nonexistent', TENANT)
+      }, /Shift schedule not found/)
+    })
+
+    it('should throw on wrong tenant', () => {
+      const s = createTestShift()
+      assert.throws(() => {
+        service.deleteShift(s.id, 'other-tenant')
+      }, /Shift schedule not found/)
+    })
+  })
+
   // ── Weekly View ──
 
   describe('getWeeklyShifts', () => {

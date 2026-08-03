@@ -1,4 +1,19 @@
-import { Controller, Get, Post, Body, Query, Injectable, Optional, Req } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Injectable,
+  Optional,
+  Req,
+  UseGuards,
+} from '@nestjs/common'
+
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
+import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
+
 import type { Request } from 'express'
 import type { TenantAwareRequest } from '../tenant/tenant.types'
 import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
@@ -30,8 +45,12 @@ import type { TenantId, TouchPoint, CouponIssueRequest, AttributionResult } from
  *  GET  /marketing/channel/route            渠道路由
  */
 
+@UseGuards(TenantGuard)
 @Controller('marketing')
 @Injectable()
+@RequireTenantScope()
+@RequirePermissions('marketing:read')
+@TenantOptional()
 export class MarketingController {
   constructor(
     private readonly rfmCalculator: RFMCalculator,
@@ -70,6 +89,7 @@ export class MarketingController {
   // ─── RFM ───
 
   @Post('rfm/compute')
+  @RequirePermissions('marketing:update')
   computeRFM(@Body() body: { tenantId: TenantId; memberIds?: string[] }) {
     if (body.memberIds && body.memberIds.length > 0) {
       const profiles = []
@@ -98,12 +118,14 @@ export class MarketingController {
   // ─── A/B ───
 
   @Post('ab/create')
+  @RequirePermissions('marketing:update')
   createExperiment(@Body() body: Omit<Parameters<ABTestEngine['createExperiment']>[0], never>) {
     const exp = this.abTest.createExperiment(body as Parameters<ABTestEngine['createExperiment']>[0])
     return { experiment: exp }
   }
 
   @Post('ab/record')
+  @RequirePermissions('marketing:update')
   recordEvent(@Body() body: { experimentId: string; memberId: string; event: 'impression' | 'click' | 'conversion'; revenueCents?: number }) {
     if (body.event === 'impression') this.abTest.recordImpression(body.experimentId, body.memberId)
     else if (body.event === 'click') this.abTest.recordClick(body.experimentId, body.memberId)
@@ -128,6 +150,7 @@ export class MarketingController {
   // ─── Coupon ───
 
   @Post('coupon/issue')
+  @RequirePermissions('marketing:update')
   issueCoupon(@Body() body: CouponIssueRequest, @Req() req?: Request) {
     const result = this.couponIssuer.issueCoupon(body)
     if (result.success) {
@@ -137,6 +160,7 @@ export class MarketingController {
   }
 
   @Post('coupon/auto-issue')
+  @RequirePermissions('marketing:update')
   autoIssue(@Body() body: { tenantId: TenantId; memberId: string; campaignId: string }, @Req() req?: Request) {
     const result = this.couponIssuer.autoIssue(body.tenantId, body.memberId, body.campaignId)
     if (result.success) {
@@ -146,6 +170,7 @@ export class MarketingController {
   }
 
   @Post('coupon/redeem')
+  @RequirePermissions('marketing:update')
   redeemCoupon(@Body() body: { tenantId: TenantId; recordId: string }, @Req() req?: Request) {
     const result = this.couponIssuer.redeemCoupon(body.tenantId, body.recordId)
     if (result?.redeemed) {
@@ -162,6 +187,7 @@ export class MarketingController {
   // ─── Attribution ───
 
   @Post('attribution/attribute')
+  @RequirePermissions('marketing:update')
   attribute(@Body() body: { memberId: string; conversionId: string; revenueCents: number; mode?: 'last' | 'multi' }): AttributionResult {
     if (body.mode === 'multi') {
       return this.attribution.attributeMultiTouch(body.memberId, body.conversionId, body.revenueCents)
@@ -170,6 +196,7 @@ export class MarketingController {
   }
 
   @Post('attribution/record')
+  @RequirePermissions('marketing:update')
   recordTouch(@Body() body: TouchPoint) {
     return this.attribution.recordTouchPoint(body)
   }
@@ -177,6 +204,7 @@ export class MarketingController {
   // ─── ROI ───
 
   @Post('roi/calculate')
+  @RequirePermissions('marketing:update')
   calculateROI(@Body() body: {
     campaignId: string
     campaignName: string

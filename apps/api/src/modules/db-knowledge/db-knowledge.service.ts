@@ -12,6 +12,8 @@
 import { Injectable } from '@nestjs/common'
 import { getPgPool } from '../../database/pg-pool'
 
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
+
 // ── 类型定义 ─────────────────────────────────────────────
 
 export interface KnowledgeDoc {
@@ -151,7 +153,7 @@ export class DbKnowledgeService {
     this.isAvailable = this.pool !== null
     if (this.isAvailable) {
       this.runMigration().catch(e =>
-        console.warn('[DbKnowledgeService] Migration failed:', e.message)
+        console.warn('[DbKnowledgeService] Migration failed:', (e as Error).message)
       )
     }
   }
@@ -173,14 +175,16 @@ export class DbKnowledgeService {
     for (const stmt of statements) {
       try {
         await this.pool!.query(stmt)
-      } catch (e: any) {
+      } catch (e: unknown) {
         // 忽略 "already exists" 错误
-        if (!e.message?.includes('already exists')) {
+        if (!(e as Error).message?.includes('already exists')) {
           throw e
         }
       }
     }
-    console.log('[DbKnowledgeService] ✅ Migration applied')
+    if (SHOULD_LOG_INIT_DEBUG) {
+      console.log('[DbKnowledgeService] ✅ Migration applied')
+    }
   }
 
   /**
@@ -247,7 +251,7 @@ export class DbKnowledgeService {
       FROM knowledge_documents
       WHERE to_tsvector('simple', content) @@ plainto_tsquery('simple', $1)
     `
-    const params: any[] = [query]
+    const params: unknown[] = [query]
     if (kind) {
       sql += ` AND kind = $2`
       params.push(kind)
@@ -256,13 +260,13 @@ export class DbKnowledgeService {
     params.push(limit)
 
     const result = await this.pool!.query(sql, params)
-    return result.rows.map((r: any) => ({
-      id: r.id,
-      sourcePath: r.source_path,
-      title: r.title,
-      kind: r.kind,
-      content: r.content.substring(0, 500),
-      score: r.score,
+    return result.rows.map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      sourcePath: r.source_path as string,
+      title: r.title as string,
+      kind: r.kind as string,
+      content: (r.content as string).substring(0, 500),
+      score: r.score as number,
     }))
   }
 
@@ -280,7 +284,7 @@ export class DbKnowledgeService {
   async getExperts(groupId?: string): Promise<ExpertProfile[]> {
     if (!this.isAvailable) return []
     let sql = `SELECT * FROM expert_profiles`
-    const params: any[] = []
+    const params: unknown[] = []
     if (groupId) {
       sql += ` WHERE group_id = $1`
       params.push(groupId)
@@ -313,7 +317,7 @@ export class DbKnowledgeService {
   async getPatterns(type?: 'anti-pattern' | 'positive-pattern'): Promise<PatternRecord[]> {
     if (!this.isAvailable) return []
     let sql = `SELECT * FROM pattern_records`
-    const params: any[] = []
+    const params: unknown[] = []
     if (type) {
       sql += ` WHERE pattern_type = $1`
       params.push(type)
@@ -353,122 +357,122 @@ export class DbKnowledgeService {
 
   // ── 映射函数 ──
 
-  private mapDoc(r: any): KnowledgeDoc {
+  private mapDoc(r: Record<string, unknown>): KnowledgeDoc {
     return {
-      id: r.id,
-      sourcePath: r.source_path,
-      title: r.title,
-      kind: r.kind,
-      tags: r.tags,
-      content: r.content,
-      summary: r.summary,
-      chunkCount: r.chunk_count,
-      isArchive: r.is_archive,
-      metadata: r.metadata,
-      createdAt: r.created_at,
-      updatedAt: r.updated_at,
+      id: r.id as string,
+      sourcePath: r.source_path as string,
+      title: r.title as string,
+      kind: r.kind as string,
+      tags: r.tags as string[],
+      content: r.content as string,
+      summary: r.summary as string | undefined,
+      chunkCount: r.chunk_count as number,
+      isArchive: r.is_archive as boolean,
+      metadata: r.metadata as Record<string, unknown>,
+      createdAt: r.created_at as string,
+      updatedAt: r.updated_at as string,
     }
   }
 
-  private mapExpert(r: any): ExpertProfile {
+  private mapExpert(r: Record<string, unknown>): ExpertProfile {
     return {
-      id: r.id,
-      code: r.code,
-      name: r.name,
-      groupId: r.group_id,
-      role: r.role,
-      specialization: r.specialization,
-      activePhases: r.active_phases,
-      activityLevel: r.activity_level,
-      insights: r.insights,
-      learningNotes: r.learning_notes,
-      feedbackLog: r.feedback_log,
-      evolutionLog: r.evolution_log,
+      id: r.id as string,
+      code: r.code as string,
+      name: r.name as string,
+      groupId: r.group_id as string,
+      role: r.role as string,
+      specialization: r.specialization as string[],
+      activePhases: r.active_phases as string[],
+      activityLevel: r.activity_level as string,
+      insights: r.insights as unknown[],
+      learningNotes: r.learning_notes as unknown[],
+      feedbackLog: r.feedback_log as unknown[],
+      evolutionLog: r.evolution_log as unknown[],
     }
   }
 
-  private mapPulse(r: any): AcceptancePulse {
+  private mapPulse(r: Record<string, unknown>): AcceptancePulse {
     return {
-      id: r.id,
-      pulseNumber: r.pulse_number,
-      module: r.module,
-      status: r.status,
-      basePass: r.base_pass,
-      servicePass: r.service_pass,
-      controllerPass: r.controller_pass,
-      ctestPass: r.ctest_pass,
-      streakCount: r.streak_count,
-      fixCount: r.fix_count,
-      closedPulse: r.closed_pulse,
-      createdAt: r.created_at,
+      id: r.id as string,
+      pulseNumber: r.pulse_number as number,
+      module: r.module as string,
+      status: r.status as string,
+      basePass: r.base_pass as boolean,
+      servicePass: r.service_pass as boolean,
+      controllerPass: r.controller_pass as boolean,
+      ctestPass: r.ctest_pass as boolean,
+      streakCount: r.streak_count as number,
+      fixCount: r.fix_count as number,
+      closedPulse: r.closed_pulse as number | undefined,
+      createdAt: r.created_at as string,
     }
   }
 
-  private mapPattern(r: any): PatternRecord {
+  private mapPattern(r: Record<string, unknown>): PatternRecord {
     return {
-      id: r.id,
-      patternType: r.pattern_type,
-      code: r.code,
-      title: r.title,
-      description: r.description,
-      discoveryDate: r.discovery_date,
-      rootCause: r.root_cause,
-      fixDescription: r.fix_description,
-      relatedPhases: r.related_phases,
-      severity: r.severity,
-      resolved: r.resolved,
+      id: r.id as string,
+      patternType: r.pattern_type as 'anti-pattern' | 'positive-pattern',
+      code: r.code as string,
+      title: r.title as string,
+      description: r.description as string,
+      discoveryDate: r.discovery_date as string,
+      rootCause: r.root_cause as string | undefined,
+      fixDescription: r.fix_description as string | undefined,
+      relatedPhases: r.related_phases as string[],
+      severity: r.severity as string | undefined,
+      resolved: r.resolved as boolean,
     }
   }
 
-  private mapPhase(r: any): PhaseRecord {
+  private mapPhase(r: Record<string, unknown>): PhaseRecord {
     return {
-      id: r.id,
-      phaseCode: r.phase_code,
-      name: r.name,
-      owner: r.owner,
-      deadline: r.deadline,
-      completionPct: r.completion_pct,
-      status: r.status,
-      storeARequired: r.store_a_required,
-      frontendDone: r.frontend_done,
-      backendDone: r.backend_done,
-      testDone: r.test_done,
-      acceptanceDone: r.acceptance_done,
-      notes: r.notes,
+      id: r.id as string,
+      phaseCode: r.phase_code as string,
+      name: r.name as string,
+      owner: r.owner as string,
+      deadline: String(r.deadline ?? ''),
+      completionPct: r.completion_pct as number,
+      status: r.status as string,
+      storeARequired: r.store_a_required as boolean,
+      frontendDone: r.frontend_done as boolean,
+      backendDone: r.backend_done as boolean,
+      testDone: r.test_done as boolean,
+      acceptanceDone: r.acceptance_done as boolean,
+      notes: r.notes as string | undefined,
     }
   }
 
-  private mapBrief(r: any): DailyBrief {
+  private mapBrief(r: Record<string, unknown>): DailyBrief {
     return {
-      id: r.id,
-      date: r.date,
-      commits: r.commits,
-      treeCommits: r.tree_commits,
-      lobsterCommits: r.lobster_commits,
-      expertCommits: r.expert_commits,
-      acceptancePulses: r.acceptance_pulses,
-      streakMax: r.streak_max,
-      testsPass: r.tests_pass,
-      testsFail: r.tests_fail,
-      tscModules: r.tsc_modules,
-      tscPassed: r.tsc_passed,
-      cronsEnabled: r.crons_enabled,
-      balance: r.balance,
-      summary: r.summary,
-      highlights: r.highlights,
-      issues: r.issues,
+      id: r.id as string,
+      date: r.date as string,
+      commits: r.commits as number,
+      treeCommits: r.tree_commits as number,
+      lobsterCommits: r.lobster_commits as number,
+      expertCommits: r.expert_commits as number,
+      acceptancePulses: r.acceptance_pulses as number,
+      streakMax: r.streak_max as number,
+      testsPass: r.tests_pass as number,
+      testsFail: r.tests_fail as number,
+      tscModules: r.tsc_modules as number,
+      tscPassed: r.tsc_passed as number,
+      cronsEnabled: r.crons_enabled as number,
+      balance: r.balance as number | undefined,
+      summary: r.summary as string | undefined,
+      highlights: r.highlights as unknown[],
+      issues: r.issues as unknown[],
     }
   }
 
-  private mapVenue(r: any): CompetitorVenue {
+  private mapVenue(r: Record<string, unknown>): CompetitorVenue {
     return {
-      id: r.id,
-      city: r.city,
-      venueName: r.venue_name,
-      venueType: r.venue_type,
-      sourcePlatform: r.source_platform,
-      data9dims: r.data_9dims,
-      scoutNotes: r.scout_notes,
+      id: r.id as string,
+      city: r.city as string,
+      venueName: r.venue_name as string,
+      venueType: r.venue_type as string,
+      sourcePlatform: r.source_platform as string | undefined,
+      data9dims: r.data_9dims as Record<string, unknown>,
+      scoutNotes: r.scout_notes as string | undefined,
     }
   }
 }

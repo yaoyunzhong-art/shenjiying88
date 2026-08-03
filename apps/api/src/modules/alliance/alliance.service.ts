@@ -12,13 +12,23 @@
  * 对外暴露简洁接口，内部委托给对应的子服务。
  */
 
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
+import { isRecordError } from '../../common/error-handler.utils'
+import { AuditService } from '../audit/audit.service'
 import { AlliancePartner, PartnerGradingService, HealthScoreService } from './alliance-grade.service'
 import {
   CrossMerchantSettlementService,
   UnlinkedOrderDetector,
   AnomalyDetectionService,
+  type SettlementType,
 } from './alliance-settlement.service'
+import { AllianceTierService } from './alliance-tier.service'
+import { AllianceCouponService, type CouponIssueRequest, type PartnerCouponStats, type CrossBrandCoupon, type CouponRedemption, type CouponSettlement } from './alliance-coupon.service'
+import { AllianceDataService, type DataCallbackRecord, type CallbackDataType, type DataQuery, type DataDashboard, type CallbackStats } from './alliance-data.service'
+import { AllianceReviewService, type AnomalyTransaction, type ReviewRecord, type ReviewStatus, type AnomalyType, type AnomalySeverity } from './alliance-review.service'
+import { AllianceDashboardService, type DashboardOverview, type GradeDistribution, type MonthlyTrend, type ActivityOverview, type PartnerRanking, type PartnerDashboard } from './alliance-dashboard.service'
+import type { TierShareConfig, TierChangeRecord } from './alliance-tier.service'
+import type { Settlement, SettlementParticipant } from './alliance-settlement.service'
 import type {
   AlliancePartner as AlliancePartnerType,
   PartnerInfo,
@@ -102,6 +112,12 @@ export class AllianceService {
     private readonly settlementService: CrossMerchantSettlementService,
     private readonly orderDetector: UnlinkedOrderDetector,
     private readonly anomalyService: AnomalyDetectionService,
+    private readonly tierService: AllianceTierService = new AllianceTierService(),
+    private readonly couponService: AllianceCouponService = new AllianceCouponService(new AllianceTierService()),
+    private readonly dataService: AllianceDataService = new AllianceDataService(),
+    private readonly reviewService: AllianceReviewService = new AllianceReviewService(),
+    private readonly dashboardService: AllianceDashboardService = new AllianceDashboardService(),
+    @Optional() private readonly auditService?: AuditService,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════
@@ -112,10 +128,20 @@ export class AllianceService {
   registerPartner(req: RegisterRequest): AllianceResult<AlliancePartnerType> {
     try {
       const partner = this.partnerService.register(req)
+      // 审计日志: 伙伴注册
+      this.auditService?.log({
+        eventType: 'admin.role_create',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partner.id,
+        riskLevel: 'low',
+        metadata: { partnerName: partner.name, businessType: partner.businessType },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: partner }
-    } catch (err: any) {
-      this.logger.error(`registerPartner failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message }
+    } catch (err: unknown) {
+      this.logger.error(`registerPartner failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -123,10 +149,60 @@ export class AllianceService {
   updatePartner(partnerId: string, req: UpdateRequest): AllianceResult<AlliancePartnerType> {
     try {
       const partner = this.partnerService.updatePartner(partnerId, req)
+      // 审计日志: 伙伴信息更新
+      this.auditService?.log({
+        eventType: 'admin.config_change',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partnerId,
+        riskLevel: 'low',
+        metadata: { updates: req },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: partner }
-    } catch (err: any) {
-      this.logger.error(`updatePartner failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message }
+    } catch (err: unknown) {
+      this.logger.error(`updatePartner failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: (err as Error).message }
+    }
+  }
+
+  /** 停用伙伴（入驻退出机制核心入口）*/
+  deactivatePartner(partnerId: string, reason?: string): AllianceResult<AlliancePartnerType> {
+    try {
+      const partner = this.partnerService.deactivatePartner(partnerId, reason)
+      this.auditService?.log({
+        eventType: 'admin.config_change',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partnerId,
+        riskLevel: 'medium',
+        metadata: { action: 'deactivate', reason },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
+      return { success: true, data: partner, message: reason ?? 'Partner deactivated' }
+    } catch (err: unknown) {
+      this.logger.error(`deactivatePartner failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: (err as Error).message }
+    }
+  }
+
+  /** 重新启用伙伴 */
+  reactivatePartner(partnerId: string): AllianceResult<AlliancePartnerType> {
+    try {
+      const partner = this.partnerService.reactivatePartner(partnerId)
+      this.auditService?.log({
+        eventType: 'admin.config_change',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'alliance_partner',
+        resourceId: partnerId,
+        riskLevel: 'medium',
+        metadata: { action: 'reactivate' },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
+      return { success: true, data: partner }
+    } catch (err: unknown) {
+      this.logger.error(`reactivatePartner failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: (err as Error).message }
     }
   }
 
@@ -167,6 +243,16 @@ export class AllianceService {
   /** 手动指定等级 */
   assignGrade(partnerId: string, grade: Grade): AllianceResult<void> {
     this.gradingService.assignGrade(partnerId, grade)
+    // 审计日志: 手动调整等级
+    this.auditService?.log({
+      eventType: 'admin.config_change',
+      actorId: 'system',
+      actorType: 'admin',
+      resourceType: 'alliance_grade',
+      resourceId: partnerId,
+      riskLevel: 'medium',
+      metadata: { grade },
+    }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
     return { success: true, message: `Grade ${grade} assigned to ${partnerId}` }
   }
 
@@ -212,8 +298,25 @@ export class AllianceService {
 
   /** 设置指标（测试辅助） */
   setMetrics(partnerId: string, metrics: HealthMetricsInput): AllianceResult<void> {
-    this.healthService.setMetrics(partnerId, metrics as any)
+    this.healthService.setMetrics(partnerId, metrics)
     return { success: true, message: 'Metrics updated' }
+  }
+
+  /**
+   * BS-0294: 低效联盟检测
+   * 检测月订单 < 10 或收益下降 > 50% 的联盟伙伴
+   */
+  detectLowEfficiency(): AllianceResult<Array<{
+    partnerId: string
+    partnerName: string
+    orderCount: number
+    revenue: number
+    revenueChangePercent: number
+    reason: string
+    alertedAt: string
+  }>> {
+    const alerts = this.healthService.detectLowEfficiencyPartners()
+    return { success: true, data: alerts }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -221,11 +324,11 @@ export class AllianceService {
   // ═══════════════════════════════════════════════════════════════
 
   /** 创建分账单 */
-  createSettlement(req: SettlementCreateRequest): AllianceResult<any> {
+  createSettlement(req: SettlementCreateRequest): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.createSettlement(
         req.orderId,
-        req.type as any,
+        req.type as SettlementType,
         req.totalAmount,
         req.participants.map((p) => ({
           partnerId: p.partnerId,
@@ -234,37 +337,115 @@ export class AllianceService {
           fixedAmount: p.fixedAmount,
         })),
       )
+      // 审计日志: 分账创建
+      this.auditService?.log({
+        eventType: 'settlement.created',
+        actorId: 'system',
+        actorType: 'system',
+        resourceType: 'settlement',
+        resourceId: settlement.settlementId,
+        riskLevel: 'low',
+        settlementId: settlement.settlementId,
+        settlementAmount: req.totalAmount,
+        metadata: { orderId: req.orderId, type: req.type, participantCount: req.participants.length },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
-    } catch (err: any) {
-      this.logger.error(`createSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+    } catch (err: unknown) {
+      this.logger.error(`createSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
   /** 审批分账 */
-  approveSettlement(settlementId: string): AllianceResult<any> {
+  approveSettlement(settlementId: string): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.approveSettlement(settlementId)
+      // 审计日志: 分账审批
+      this.auditService?.log({
+        eventType: 'settlement.approved',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        settlementAmount: settlement.totalAmount,
+        metadata: { settlementId, orderId: settlement.orderId },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
-    } catch (err: any) {
-      this.logger.error(`approveSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+    } catch (err: unknown) {
+      this.logger.error(`approveSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 驳回分账 */
+  rejectSettlement(settlementId: string): AllianceResult<Settlement> {
+    try {
+      const settlement = this.settlementService.rejectSettlement(settlementId)
+      this.auditService?.log({
+        eventType: 'settlement.rejected',
+        actorId: 'system',
+        actorType: 'admin',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        metadata: { settlementId },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
+      return { success: true, data: settlement }
+    } catch (err: unknown) {
+      this.logger.error(`rejectSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 取消分账（审批后撤） */
+  cancelSettlement(settlementId: string): AllianceResult<Settlement> {
+    try {
+      const settlement = this.settlementService.cancelSettlement(settlementId)
+      this.auditService?.log({
+        eventType: 'settlement.rejected',
+        actorId: 'system',
+        actorType: 'system',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        metadata: { settlementId, action: 'cancel_after_approval' },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
+      return { success: true, data: settlement }
+    } catch (err: unknown) {
+      this.logger.error(`cancelSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
   /** 执行分账 */
-  executeSettlement(settlementId: string): AllianceResult<any> {
+  executeSettlement(settlementId: string): AllianceResult<Settlement> {
     try {
       const settlement = this.settlementService.executeSettlement(settlementId)
+      // 审计日志: 分账执行
+      this.auditService?.log({
+        eventType: 'settlement.paid',
+        actorId: 'system',
+        actorType: 'system',
+        resourceType: 'settlement',
+        resourceId: settlementId,
+        riskLevel: 'medium',
+        settlementId,
+        settlementAmount: settlement.totalAmount,
+        metadata: { settlementId, orderId: settlement.orderId, participantCount: settlement.participants?.length },
+      }).catch((e: Error) => this.logger.warn(`Audit log failed: ${(e as Error).message}`))
       return { success: true, data: settlement }
-    } catch (err: any) {
-      this.logger.error(`executeSettlement failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+    } catch (err: unknown) {
+      this.logger.error(`executeSettlement failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
   /** 查询分账 */
-  querySettlement(settlementId: string): AllianceResult<any> {
+  querySettlement(settlementId: string): AllianceResult<Settlement> {
     const settlement = this.settlementService.querySettlement(settlementId)
     if (!settlement) {
       return { success: false, message: `Settlement ${settlementId} not found` }
@@ -273,7 +454,7 @@ export class AllianceService {
   }
 
   /** 获取伙伴分账历史 */
-  getSettlementHistory(partnerId: string): AllianceResult<{ items: any[]; total: number }> {
+  getSettlementHistory(partnerId: string): AllianceResult<{ items: Settlement[]; total: number }> {
     const history = this.settlementService.getSettlementHistory(partnerId)
     return { success: true, data: { items: history, total: history.length } }
   }
@@ -305,18 +486,18 @@ export class AllianceService {
   }
 
   /** 手动关联订单 */
-  linkOrder(orderId: string, partnerId: string): AllianceResult<any> {
+  linkOrder(orderId: string, partnerId: string): AllianceResult<import('./alliance-settlement.service').UnlinkedOrder> {
     try {
       const result = this.orderDetector.manualLink(orderId, partnerId)
       return { success: true, data: result }
-    } catch (err: any) {
-      this.logger.error(`linkOrder failed: ${err.message}`, err.stack)
-      return { success: false, message: err.message, code: err.code }
+    } catch (err: unknown) {
+      this.logger.error(`linkOrder failed: ${(err as Error).message}`, isRecordError(err)?.stack)
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
     }
   }
 
   /** 自动关联订单 */
-  autoLinkOrder(orderId: string): AllianceResult<any> {
+  autoLinkOrder(orderId: string): AllianceResult<{ linked: boolean; partnerId?: string; reason?: string }> {
     const result = this.orderDetector.autoLinkByRule(orderId)
     return { success: true, data: result }
   }
@@ -326,20 +507,255 @@ export class AllianceService {
   // ═══════════════════════════════════════════════════════════════
 
   /** 检测异常模式 */
-  detectAnomaly(partnerId: string): AllianceResult<{ partnerId: string; anomalies: any[]; count: number }> {
+  detectAnomaly(partnerId: string): AllianceResult<{ partnerId: string; anomalies: import('./alliance-settlement.service').AnomalyRecord[]; count: number }> {
     const anomalies = this.anomalyService.detectUnusualPattern(partnerId)
     return { success: true, data: { partnerId, anomalies, count: anomalies.length } }
   }
 
   /** 获取异常报告 */
-  getAnomalyReport(partnerId: string): AllianceResult<any> {
+  getAnomalyReport(partnerId: string): AllianceResult<import('./alliance-settlement.service').AnomalyReport> {
     const report = this.anomalyService.getAnomalyReport(partnerId)
     return { success: true, data: report }
   }
 
   /** 标记可疑分账 */
-  flagSuspiciousSettlement(settlementId: string): AllianceResult<any> {
+  flagSuspiciousSettlement(settlementId: string): AllianceResult<{ flagged: boolean; settlementId: string }> {
     const result = this.anomalyService.flagSuspiciousSettlement(settlementId)
     return { success: true, data: result }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 7. 分级联盟 (BS-0218~BS-0219)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 获取等级分成配置 */
+  getTierConfig(grade: Grade): AllianceResult<TierShareConfig> {
+    const config = this.tierService.getTierConfig(grade)
+    return { success: true, data: config }
+  }
+
+  /** 获取所有等级配置 */
+  getAllTierConfigs(): AllianceResult<TierShareConfig[]> {
+    const configs = this.tierService.getAllTierConfigs()
+    return { success: true, data: configs }
+  }
+
+  /** 更新等级配置 */
+  setTierConfig(grade: Grade, config: Partial<TierShareConfig>): AllianceResult<TierShareConfig> {
+    const updated = this.tierService.setTierConfig(grade, config)
+    return { success: true, data: updated }
+  }
+
+  /** 计算等级分成金额 */
+  calculateRevenueShare(grade: Grade, orderAmount: number): AllianceResult<number> {
+    const share = this.tierService.calculateRevenueShare(grade, orderAmount)
+    return { success: true, data: share }
+  }
+
+  /** 获取等级变更历史 */
+  getGradeChangeHistory(partnerId: string): AllianceResult<TierChangeRecord[]> {
+    const history = this.tierService.getGradeChangeHistory(partnerId)
+    return { success: true, data: history }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 8. 联盟券互推 (BS-0220~BS-0221)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 发放跨品牌优惠券 */
+  issueCoupon(req: CouponIssueRequest): AllianceResult<CrossBrandCoupon> {
+    try {
+      const coupon = this.couponService.issueCoupon(req)
+      return { success: true, data: coupon }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 核销优惠券 */
+  redeemCoupon(couponId: string, partnerId: string, partnerName: string, orderId: string, memberId: string, orderAmount: number): AllianceResult<CouponRedemption> {
+    try {
+      const redemption = this.couponService.redeemCoupon(couponId, partnerId, partnerName, orderId, memberId, orderAmount)
+      return { success: true, data: redemption }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 取消优惠券 */
+  cancelCoupon(couponId: string): AllianceResult<CrossBrandCoupon> {
+    try {
+      const coupon = this.couponService.cancelCoupon(couponId)
+      return { success: true, data: coupon }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 获取优惠券 */
+  getCoupon(couponId: string): AllianceResult<CrossBrandCoupon> {
+    const coupon = this.couponService.getCoupon(couponId)
+    if (!coupon) return { success: false, message: `Coupon ${couponId} not found` }
+    return { success: true, data: coupon }
+  }
+
+  /** 列出伙伴可核销优惠券 */
+  listRedeemableCoupons(partnerId: string): AllianceResult<CrossBrandCoupon[]> {
+    const coupons = this.couponService.listRedeemableCoupons(partnerId)
+    return { success: true, data: coupons }
+  }
+
+  /** 优惠券结算 */
+  settleCoupon(couponId: string): AllianceResult<CouponSettlement> {
+    try {
+      const settlement = this.couponService.settleCoupon(couponId)
+      return { success: true, data: settlement }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 获取伙伴券统计 */
+  getPartnerCouponStats(partnerId: string): AllianceResult<PartnerCouponStats> {
+    const stats = this.couponService.getPartnerCouponStats(partnerId)
+    return { success: true, data: stats }
+  }
+
+  /** 获取待结算列表 */
+  getPendingCouponSettlements(): AllianceResult<CouponSettlement[]> {
+    const settlements = this.couponService.getPendingSettlements()
+    return { success: true, data: settlements }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 9. 数据API (BS-0222~BS-0224)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 接收数据回传 */
+  receiveCallback(partnerId: string, dataType: CallbackDataType, payload: string): AllianceResult<DataCallbackRecord> {
+    try {
+      const record = this.dataService.receiveCallback(partnerId, dataType, payload)
+      return { success: true, data: record }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 查询回传记录 */
+  getCallbackRecords(partnerId: string, query?: DataQuery): AllianceResult<DataCallbackRecord[]> {
+    const records = this.dataService.getCallbackRecords(partnerId, query)
+    return { success: true, data: records }
+  }
+
+  /** 获取回传统计 */
+  getCallbackStats(partnerId: string): AllianceResult<CallbackStats> {
+    const stats = this.dataService.getCallbackStats(partnerId)
+    return { success: true, data: stats }
+  }
+
+  /** 获取数据看板 */
+  getDataDashboard(partnerId: string): AllianceResult<DataDashboard> {
+    const dashboard = this.dataService.getDataDashboard(partnerId)
+    return { success: true, data: dashboard }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 10. 异常审核 (BS-0225~BS-0226)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 提交异常记录 */
+  reportAnomaly(partnerId: string, partnerName: string, type: string, severity: string, amount: number, description: string, relatedId?: string): AllianceResult<AnomalyTransaction> {
+    try {
+      const anomaly = this.reviewService.reportAnomaly(partnerId, partnerName, type as AnomalyType, severity as AnomalySeverity, amount, description, relatedId)
+      return { success: true, data: anomaly }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 获取待审核列表 */
+  getPendingReviews(): AllianceResult<AnomalyTransaction[]> {
+    const pending = this.reviewService.getPendingReviews()
+    return { success: true, data: pending }
+  }
+
+  /** 提交审核 */
+  submitReview(anomalyId: string, decision: ReviewStatus, reviewer: string, note: string): AllianceResult<ReviewRecord> {
+    try {
+      const review = this.reviewService.submitReview(anomalyId, decision, reviewer, note)
+      return { success: true, data: review }
+    } catch (err: unknown) {
+      return { success: false, message: isRecordError(err)?.message, code: isRecordError(err)?.code as string }
+    }
+  }
+
+  /** 获取审核历史 */
+  getReviewHistory(anomalyId: string): AllianceResult<ReviewRecord[]> {
+    const history = this.reviewService.getReviewHistory(anomalyId)
+    return { success: true, data: history }
+  }
+
+  /** 获取审核统计 */
+  getReviewStats(): AllianceResult<ReturnType<AllianceReviewService['getReviewStats']>> {
+    const stats = this.reviewService.getReviewStats()
+    return { success: true, data: stats }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // WP-17B: 11. 联盟看板 (BS-0227~BS-0228)
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 获取运营概览 */
+  getDashboardOverview(): AllianceResult<DashboardOverview> {
+    const partners = this.partnerService.listPartners({})
+    const activePartners = partners.filter((p) => p.status === 'ACTIVE')
+    const activeCount = this.partnerService.listPartners({ status: 'ACTIVE' }).length
+    const now = new Date()
+    const currentMonth = now.toISOString().slice(0, 7)
+    const newThisMonth = partners.filter((p) => p.registeredAt.startsWith(currentMonth)).length
+    const overview = this.dashboardService.getOverview(activeCount, partners.length, newThisMonth)
+    return { success: true, data: overview }
+  }
+
+  /** 获取等级分布 */
+  getGradeDistribution(): AllianceResult<GradeDistribution[]> {
+    const partners = this.partnerService.listPartners({})
+    const gradeCounts = new Map<string, number>()
+    for (const p of partners) {
+      const grade = p.currentGrade ?? 'C'
+      gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1)
+    }
+    const distribution = this.dashboardService.getGradeDistribution(gradeCounts)
+    return { success: true, data: distribution }
+  }
+
+  /** 获取月度趋势 */
+  getMonthlyTrend(months?: number): AllianceResult<MonthlyTrend[]> {
+    const trend = this.dashboardService.getMonthlyTrend(months)
+    return { success: true, data: trend }
+  }
+
+  /** 获取活动概览 */
+  getActivityOverview(): AllianceResult<ActivityOverview> {
+    const overview = this.dashboardService.getActivityOverview()
+    return { success: true, data: overview }
+  }
+
+  /** 获取伙伴排行榜 */
+  getPartnerRanking(): AllianceResult<PartnerRanking[]> {
+    const partners = this.partnerService.listPartners({})
+    const nameMap = new Map(partners.map((p) => [p.id, p.name]))
+    const ranking = this.dashboardService.getPartnerRanking(nameMap)
+    return { success: true, data: ranking }
+  }
+
+  /** 获取伙伴看板 */
+  getPartnerDashboard(partnerId: string): AllianceResult<PartnerDashboard> {
+    const partner = this.partnerService.getPartner(partnerId)
+    if (!partner) {
+      return { success: false, message: `Partner ${partnerId} not found` }
+    }
+    const dashboard = this.dashboardService.getPartnerDashboard(partnerId, partner.name, partner.currentGrade ?? 'C')
+    return { success: true, data: dashboard }
   }
 }

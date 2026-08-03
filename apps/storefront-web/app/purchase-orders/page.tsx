@@ -1,9 +1,9 @@
+'use client';
 /**
  * 采购单列表页 — Purchase Orders List Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 列表搜索、状态筛选、分页浏览
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';

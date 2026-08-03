@@ -10,6 +10,13 @@ const mockStores = [
 export function StoreSearchScreen() {
   const [keyword, setKeyword] = useState('');
 
+  const filteredStores = keyword.trim()
+    ? mockStores.filter(
+        (s) =>
+          s.name.includes(keyword) || s.address.includes(keyword)
+      )
+    : mockStores;
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <View style={styles.header}>
@@ -30,27 +37,35 @@ export function StoreSearchScreen() {
 
       {/* Store List */}
       <ScrollView style={{ flex: 1, padding: 16 }}>
-        {mockStores.map(store => (
-          <TouchableOpacity key={store.id} style={styles.storeCard}>
-            <View style={styles.storeHeader}>
-              <Text style={styles.storeName}>{store.name}</Text>
-              <View style={styles.ratingBadge}>
-                <Text style={styles.ratingText}>⭐ {store.rating}</Text>
+        {filteredStores.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>🔍</Text>
+            <Text style={styles.emptyText}>未找到匹配的门店</Text>
+            <Text style={styles.emptyHint}>尝试其他关键词</Text>
+          </View>
+        ) : (
+          filteredStores.map(store => (
+            <TouchableOpacity key={store.id} style={styles.storeCard}>
+              <View style={styles.storeHeader}>
+                <Text style={styles.storeName}>{store.name}</Text>
+                <View style={styles.ratingBadge}>
+                  <Text style={styles.ratingText}>⭐ {store.rating}</Text>
+                </View>
               </View>
-            </View>
-            <Text style={styles.storeAddress}>{store.address}</Text>
-            <View style={styles.storeFooter}>
-              <Text style={styles.distance}>📍 {store.distance}</Text>
-              <View style={styles.services}>
-                {store.services.map(s => (
-                  <View key={s} style={styles.serviceTag}>
-                    <Text style={styles.serviceText}>{s}</Text>
-                  </View>
-                ))}
+              <Text style={styles.storeAddress}>{store.address}</Text>
+              <View style={styles.storeFooter}>
+                <Text style={styles.distance}>📍 {store.distance}</Text>
+                <View style={styles.services}>
+                  {store.services.map(s => (
+                    <View key={s} style={styles.serviceTag}>
+                      <Text style={styles.serviceText}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -73,4 +88,24 @@ const styles = StyleSheet.create({
   services: { flexDirection: 'row', gap: 8 },
   serviceTag: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   serviceText: { fontSize: 12, color: '#64748B' },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 120,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  emptyHint: {
+    fontSize: 14,
+    color: '#94A3B8',
+    marginTop: 4,
+  },
 });

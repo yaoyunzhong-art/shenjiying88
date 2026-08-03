@@ -22,8 +22,15 @@ import {
   Body,
   Query,
   Res,
-  Logger
+  Logger,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import type { Response } from 'express'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -35,6 +42,9 @@ import {
   type DiffDetailQuery
 } from './reconciliation.service'
 import { FinanceReconciliationReportService } from './reconciliation/finance-reconciliation-report.service'
+
+const RECONCILIATION_READ_PERMISSION = 'finance:read'
+const RECONCILIATION_WRITE_PERMISSION = 'finance:*'
 
 // ─── DTO ──────────────────────────────────────────────────
 
@@ -88,7 +98,10 @@ export class MonthlyReportQueryDto {
 
 // ─── Controller ──────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('finance/reconciliation')
+@RequireTenantScope()
+@RequirePermissions(RECONCILIATION_READ_PERMISSION)
 export class ReconciliationController {
   private readonly logger = new Logger(ReconciliationController.name)
 
@@ -116,6 +129,7 @@ export class ReconciliationController {
    * 执行对账
    */
   @Post('run')
+  @RequirePermissions(RECONCILIATION_WRITE_PERMISSION)
   async run(
     @TenantContext() _tenantContext: RequestTenantContext,
     @Body() body: RunReconciliationDto
@@ -230,6 +244,7 @@ export class ReconciliationController {
    * 标记某差异已处理
    */
   @Post(':id/resolve')
+  @RequirePermissions(RECONCILIATION_WRITE_PERMISSION)
   resolve(
     @Param('id') id: string,
     @TenantContext() _tenantContext: RequestTenantContext,

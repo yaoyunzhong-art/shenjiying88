@@ -88,7 +88,7 @@ export function InventoryScreen() {
   };
 
   const handleItemPress = (skuId: string) => {
-    console.log('Item pressed:', skuId);
+    // TODO(NAV): navigate to item detail
   };
 
   const renderItem = ({ item }: { item: InventoryItem }) => (

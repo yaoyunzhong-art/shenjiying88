@@ -12,6 +12,8 @@ export type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'custom'
 export type ReportMetric =
   | 'sales.amount'        // 销售额
   | 'sales.count'         // 订单数
+  | 'sales.traffic'       // 客流/到店人数
+  | 'sales.conversion'    // 转化率 (%)
   | 'member.new'          // 新增会员
   | 'member.active'       // 活跃会员
   | 'inventory.turnover'  // 库存周转
@@ -103,6 +105,8 @@ export interface ReportQueryResponse {
 export const METRIC_LABELS: Record<ReportMetric, string> = {
   'sales.amount': '销售额',
   'sales.count': '订单数',
+  'sales.traffic': '客流量',
+  'sales.conversion': '转化率',
   'member.new': '新增会员',
   'member.active': '活跃会员',
   'inventory.turnover': '库存周转',
@@ -114,6 +118,8 @@ export const METRIC_LABELS: Record<ReportMetric, string> = {
 export const METRIC_UNITS: Record<ReportMetric, string> = {
   'sales.amount': '元',
   'sales.count': '单',
+  'sales.traffic': '人',
+  'sales.conversion': '%',
   'member.new': '人',
   'member.active': '人',
   'inventory.turnover': '%',

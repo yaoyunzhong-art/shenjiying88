@@ -9,10 +9,12 @@
  *   - 返回 HTTP 200 + JSON (即使某组件 unavailable,便于 dashboard 采集)
  */
 
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, UseGuards } from '@nestjs/common'
 import { RetrievalService } from './retrieval.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('api/retrieval')
+@UseGuards(TenantGuard)
 export class RetrievalHealthController {
   constructor(private readonly retrievalService: RetrievalService) {}
 

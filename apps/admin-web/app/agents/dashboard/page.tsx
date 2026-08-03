@@ -1,12 +1,13 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui';
-import AgentDashboardClient from './dashboard-client';
-import { loadAgentDashboardSnapshot } from '../agent-view-model';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell, StatCard } from '@m5/ui'
+import AgentDashboardClient from './dashboard-client'
+import { loadAgentDashboardSnapshot } from '../agent-view-model'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AgentDashboardPage() {
-  const snapshot = await loadAgentDashboardSnapshot({ cache: 'no-store' });
+  const snapshot = await loadAgentDashboardSnapshot({ cache: 'no-store' })
 
   // 按 status 排序: RUNNING > PENDING > COMPLETED > FAILED > CANCELLED
   const STATUS_RANK: Record<string, number> = {
@@ -14,11 +15,11 @@ export default async function AgentDashboardPage() {
     PENDING: 1,
     COMPLETED: 2,
     FAILED: 3,
-    CANCELLED: 4
-  };
+    CANCELLED: 4,
+  }
   const sortedSessions = [...snapshot.sessions].sort(
-    (a, b) => (STATUS_RANK[a.status] ?? 99) - (STATUS_RANK[b.status] ?? 99)
-  );
+    (a, b) => (STATUS_RANK[a.status] ?? 99) - (STATUS_RANK[b.status] ?? 99),
+  )
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
@@ -31,7 +32,7 @@ export default async function AgentDashboardPage() {
             display: 'grid',
             gap: 14,
             gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-            marginBottom: 20
+            marginBottom: 20,
           }}
           data-testid="dashboard-stats"
         >
@@ -72,5 +73,5 @@ export default async function AgentDashboardPage() {
         </Suspense>
       </PageShell>
     </main>
-  );
+  )
 }

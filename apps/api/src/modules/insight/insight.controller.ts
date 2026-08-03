@@ -19,7 +19,10 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { InsightService } from './insight.service'
 import {
   GenerateInsightRequest,
@@ -29,6 +32,7 @@ import {
 import { listTemplates } from './insight.prompt'
 import type { InsightTemplateType, InsightStatus } from './insight.entity'
 
+@UseGuards(TenantGuard)
 @Controller('insight')
 export class InsightController {
   constructor(private readonly service: InsightService) {}

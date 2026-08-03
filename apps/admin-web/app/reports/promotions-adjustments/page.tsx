@@ -1,12 +1,11 @@
-'use client'
+import PromotionsAdjustmentsClient from './promotions-adjustments-client'
+import { loadPromotionsAdjustmentsSnapshot } from './promotions-adjustments-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function PromotionsAdjustmentsPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>📊 促销调整报表</h1>
-      <p>追踪促销活动的调整记录与影响分析</p>
-    </div>
-  )
+export default async function PromotionsAdjustmentsPage() {
+  const snapshot = await loadPromotionsAdjustmentsSnapshot()
+
+  return <PromotionsAdjustmentsClient snapshot={snapshot} />
 }

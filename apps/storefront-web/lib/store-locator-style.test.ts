@@ -28,8 +28,8 @@ import {
   getBottomNavItemStyle,
   filterStoreByKeyword,
   type StoreStatus,
-} from './store-locator-style';
-import type { StoreLocator } from './store-locator-service';
+} from './store-locator-style.ts';
+import type { StoreLocator } from './store-locator-service.ts';
 
 // ─── STATUS_INFO ──────────────────────────────────────
 

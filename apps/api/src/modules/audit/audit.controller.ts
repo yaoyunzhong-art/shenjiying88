@@ -13,9 +13,15 @@ import {
   UseGuards,
   HttpStatus,
   HttpCode,
+  Logger,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { AuditService } from './audit.service'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   CreateAuditLogDto,
   AuditLogQueryDto,
@@ -28,10 +34,18 @@ import {
   RiskScoreResponseDto,
 } from './audit.dto'
 
+const AUDIT_READ_PERMISSION = 'audit:read'
+const AUDIT_EXPORT_PERMISSION = 'audit:export'
+
 @ApiTags('审计日志')
 @ApiBearerAuth()
 @Controller('api/audit')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(AUDIT_READ_PERMISSION)
 export class AuditController {
+  private readonly logger = new Logger(AuditController.name)
+
   constructor(private readonly auditService: AuditService) {}
 
   /**
@@ -39,15 +53,18 @@ export class AuditController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '创建审计日志', description: '记录一条审计事件' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '创建成功' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '参数错误' })
   async create(@Body() createDto: CreateAuditLogDto): Promise<{ id: string }> {
+    this.logger.log(`[AUDIT] Create audit log: eventType=${createDto.eventType} actorId=${createDto.actorId} actorType=${createDto.actorType}`)
     const id = await this.auditService.log({
       ...createDto,
       riskLevel: createDto.riskLevel ?? 'low',
       timestamp: new Date(),
-    } as any)
+    } as unknown as Parameters<import('./audit.service').AuditService['log']>[0])
+    this.logger.log(`[AUDIT] Audit log created: id=${id}`)
     return { id }
   }
 
@@ -56,17 +73,20 @@ export class AuditController {
    */
   @Post('batch')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '批量创建审计日志', description: '批量记录审计事件' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '创建成功' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '参数错误' })
   async createBatch(@Body() createDtos: CreateAuditLogDto[]): Promise<{ ids: string[] }> {
+    this.logger.log(`[AUDIT] Batch create ${createDtos.length} audit logs`)
     const ids = await this.auditService.logBatch(
       createDtos.map((dto) => ({
         ...dto,
         riskLevel: dto.riskLevel ?? 'low',
         timestamp: new Date(),
-      })) as any,
+      })) as unknown as Parameters<import('./audit.service').AuditService['logBatch']>[0],
     )
+    this.logger.log(`[AUDIT] Batch created: ${ids.length} audit logs`)
     return { ids }
   }
 
@@ -77,12 +97,14 @@ export class AuditController {
   @ApiOperation({ summary: '查询审计日志', description: '分页查询审计日志，支持多维过滤' })
   @ApiResponse({ status: HttpStatus.OK, description: '查询成功', type: AuditLogPaginatedResponseDto })
   async findAll(@Query() queryDto: AuditLogQueryDto): Promise<AuditLogPaginatedResponseDto> {
+    this.logger.log(`[AUDIT] Query audit logs: actorId=${queryDto.actorId ?? '-'} eventType=${queryDto.eventType ?? '-'} limit=${queryDto.limit ?? '-'}`)
     const filter: any = {
       ...queryDto,
       from: queryDto.from ? new Date(queryDto.from) : undefined,
       to: queryDto.to ? new Date(queryDto.to) : undefined,
     }
     const result = await this.auditService.query(filter)
+    this.logger.log(`[AUDIT] Query result: ${result.total} total, ${result.items.length} returned`)
     return result
   }
 
@@ -94,7 +116,12 @@ export class AuditController {
   @ApiResponse({ status: HttpStatus.OK, description: '获取成功', type: AuditLogResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '日志不存在' })
   async findOne(@Param('id') id: string): Promise<AuditLogResponseDto | null> {
-    return this.auditService.getById(id)
+    this.logger.log(`[AUDIT] View audit log detail: id=${id}`)
+    const result = await this.auditService.getById(id)
+    if (!result) {
+      this.logger.warn(`[AUDIT] Audit log not found: id=${id}`)
+    }
+    return result
   }
 
   /**
@@ -110,7 +137,10 @@ export class AuditController {
     @Query('from') from: string,
     @Query('to') to: string,
   ): Promise<AuditLogResponseDto[]> {
-    return this.auditService.getUserActivityLog(userId, new Date(from), new Date(to))
+    this.logger.log(`[AUDIT] Get user activity: userId=${userId} from=${from} to=${to}`)
+    const results = await this.auditService.getUserActivityLog(userId, new Date(from), new Date(to))
+    this.logger.log(`[AUDIT] User activity result: ${results.length} records`)
+    return results
   }
 
   /**
@@ -123,7 +153,11 @@ export class AuditController {
   async detectAnomalies(
     @Query('windowMinutes') windowMinutes?: number,
   ): Promise<AnomalyDetectionResultDto[]> {
-    return this.auditService.detectAnomalies(windowMinutes ?? 5)
+    const w = windowMinutes ?? 5
+    this.logger.log(`[AUDIT] Trigger anomaly detection: window=${w}min`)
+    const results = await this.auditService.detectAnomalies(w)
+    this.logger.log(`[AUDIT] Anomaly detection complete: ${results.length} anomalies found`)
+    return results
   }
 
   /**
@@ -133,8 +167,10 @@ export class AuditController {
   @ApiOperation({ summary: '计算风险评分', description: '根据操作者的历史行为计算风险评分' })
   @ApiResponse({ status: HttpStatus.OK, description: '计算成功', type: RiskScoreResponseDto })
   async computeRiskScore(@Param('actorId') actorId: string): Promise<RiskScoreResponseDto> {
+    this.logger.log(`[AUDIT] Compute risk score: actorId=${actorId}`)
     const score = await this.auditService.computeRiskScore(actorId)
     const riskLevel = score >= 70 ? 'critical' : score >= 40 ? 'high' : score >= 20 ? 'medium' : 'low'
+    this.logger.log(`[AUDIT] Risk score result: actorId=${actorId} score=${score} level=${riskLevel}`)
     return { actorId, score, riskLevel }
   }
 
@@ -143,15 +179,18 @@ export class AuditController {
    */
   @Post('settlement')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '记录分账事件', description: '记录分账相关的审计事件' })
   @ApiResponse({ status: HttpStatus.CREATED, description: '记录成功' })
   async logSettlement(@Body() dto: SettlementAuditLogDto): Promise<{ id: string }> {
+    this.logger.log(`[AUDIT] Log settlement event: settlementId=${dto.settlementId} event=${dto.eventType} amount=${dto.amount}`)
     const id = await this.auditService.logSettlementEvent(
       dto.settlementId,
       dto.amount,
       dto.eventType,
       dto.metadata,
     )
+    this.logger.log(`[AUDIT] Settlement event logged: id=${id}`)
     return { id }
   }
 
@@ -164,7 +203,10 @@ export class AuditController {
   async getSettlementAuditTrail(
     @Param('settlementId') settlementId: string,
   ): Promise<AuditLogResponseDto[]> {
-    return this.auditService.getSettlementAuditTrail(settlementId)
+    this.logger.log(`[AUDIT] Get settlement trail: settlementId=${settlementId}`)
+    const results = await this.auditService.getSettlementAuditTrail(settlementId)
+    this.logger.log(`[AUDIT] Settlement trail result: ${results.length} records`)
+    return results
   }
 
   /**
@@ -172,14 +214,17 @@ export class AuditController {
    */
   @Post('export')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '导出审计报告', description: '导出指定时间范围内的审计报告' })
   @ApiResponse({ status: HttpStatus.OK, description: '导出成功' })
   async exportReport(@Body() dto: AuditReportExportDto): Promise<{ content: string }> {
+    this.logger.log(`[AUDIT] Export report: from=${dto.from} to=${dto.to} format=${dto.format ?? 'json'}`)
     const content = await this.auditService.exportReport(
       new Date(dto.from),
       new Date(dto.to),
       dto.format ?? 'json',
     )
+    this.logger.log(`[AUDIT] Export complete: ${content.length} chars`)
     return { content }
   }
 
@@ -187,11 +232,15 @@ export class AuditController {
    * 生成合规报告
    */
   @Get('compliance-report/:tenantId')
+  @RequirePermissions(AUDIT_EXPORT_PERMISSION)
   @ApiOperation({ summary: '生成合规报告', description: '根据 GDPR Article 30 生成合规报告' })
   @ApiResponse({ status: HttpStatus.OK, description: '生成成功', type: ComplianceReportDto })
   async generateComplianceReport(
     @Param('tenantId') tenantId: string,
   ): Promise<ComplianceReportDto> {
-    return this.auditService.generateComplianceReport(tenantId)
+    this.logger.log(`[AUDIT] Generate compliance report: tenantId=${tenantId}`)
+    const report = await this.auditService.generateComplianceReport(tenantId)
+    this.logger.log(`[AUDIT] Compliance report generated: tenantId=${tenantId}`)
+    return report
   }
 }

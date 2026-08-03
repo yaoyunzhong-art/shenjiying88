@@ -20,11 +20,13 @@ import {
   Post,
   Put,
   Query,
+UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import type { Locale } from './i18n.entity'
 import { I18nService } from './i18n.service'
+import { extractKeysFromSource } from './i18n-extract'
 import {
   BulkRegisterTranslationDto,
   CreateTranslationDto,
@@ -33,8 +35,10 @@ import {
   UpdateLocaleConfigDto,
   ValidateTranslationsDto,
 } from './i18n.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('i18n')
+@UseGuards(TenantGuard)
 export class I18nController {
   constructor(private readonly i18nService: I18nService) {}
 
@@ -147,7 +151,6 @@ export class I18nController {
       return { keys: [], totalCount: 0 }
     }
 
-    const { extractKeysFromSource } = require('./i18n-extract')
     const keys = extractKeysFromSource(source)
     return { keys, totalCount: keys.length }
   }

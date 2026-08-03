@@ -1,0 +1,21 @@
+[2026-07-20 01:03:40] ==> formal window readiness start
+[2026-07-20 01:03:40] env_file=infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-20 01:03:40] namespace=m5
+[2026-07-20 01:03:40] tls_manifest=live-secret
+[2026-07-20 01:03:40] cert_manager_enabled=true
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+[2026-07-20 01:03:40] ==> dns check api.sportsant.net
+A: 120.26.66.40
+A: 121.41.69.154
+[2026-07-20 01:03:40] ==> dns check admin.sportsant.net
+A: 120.26.66.40
+A: 121.41.69.154
+[2026-07-20 01:03:40] ==> dns check store.sportsant.net
+A: 120.26.66.40
+A: 121.41.69.154
+[2026-07-20 01:03:40] ==> dns check tob.sportsant.net
+A: 120.26.66.40
+A: 121.41.69.154
+[2026-07-20 01:03:40] ==> live tls secret verify
+==> Checking TLS secret metadata
+[2026-07-20 01:03:41] ==> formal window readiness done

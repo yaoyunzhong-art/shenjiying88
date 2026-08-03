@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { LocaleService, type CountryCode, type TimeZone } from './locale.service'
 import type {
   TimeZoneInfo,
@@ -18,6 +18,7 @@ import {
   IsWorkdayDto,
   ConfigUpdateDto
 } from './locale.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 // 时区名称映射
 const TIMEZONE_NAMES: Partial<Record<TimeZone, string>> = {
@@ -42,6 +43,7 @@ const DEFAULT_CONFIG: LocaleConfig = {
 
 @Controller('locale')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class LocaleController {
   private config: LocaleConfig = { ...DEFAULT_CONFIG }
 

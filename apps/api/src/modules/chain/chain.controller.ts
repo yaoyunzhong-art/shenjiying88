@@ -13,7 +13,10 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import {
   PointsSettlementContract,
   RevenueShareContract,
@@ -42,6 +45,7 @@ function fail(error: string, message?: string): ApiEnvelope {
 
 // ─── Controller ──────────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('chain')
 export class ChainController {
   constructor(

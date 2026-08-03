@@ -4,24 +4,18 @@
  * 功能: 列表搜索、状态筛选、分页浏览
  */
 import { View, Text, Button, Input, Picker } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
+import {
+  loadMiniappPurchaseReturns,
+  type MiniappReturnOrderListItem,
+} from '../../supplychain-runtime';
+import { EmptyState, PageSkeleton, TriStateContainer, useTriState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
-type ReturnStatus = 'pending' | 'inspecting' | 'approved' | 'rejected' | 'refunded' | 'exchanged' | 'closed';
-
-interface ReturnOrder {
-  id: string;
-  returnNo: string;
-  customerName: string;
-  phone: string;
-  productName: string;
-  reason: string;
-  amount: number;
-  status: ReturnStatus;
-  createdDate: string;
-}
+type ReturnStatus = MiniappReturnOrderListItem['status'];
+type ReturnOrder = MiniappReturnOrderListItem;
 
 const STATUS_OPTIONS = ['全部', '待处理', '质检中', '已通过', '已拒绝', '已退款', '已换货', '已关闭'] as const;
 const STATUS_MAP: Record<string, ReturnStatus | 'ALL'> = {
@@ -61,37 +55,85 @@ const MOCK_RETURNS: ReturnOrder[] = [
 const PAGE_SIZE = 5;
 
 export default function ReturnOrdersPage() {
+  const [returns, setReturns] = useState<ReturnOrder[]>(MOCK_RETURNS);
+  const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示退货数据。');
   const [searchText, setSearchText] = useState('');
   const [statusIdx, setStatusIdx] = useState(0);
   const [page, setPage] = useState(1);
+
+  const { status: pageStatus, setLoading, setError, setEmpty, setSuccess } = useTriState('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading();
+    loadMiniappPurchaseReturns(MOCK_RETURNS)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setReturns(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          if (snapshot.data.length === 0) {
+            setEmpty();
+          } else {
+            setSuccess();
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载退货单失败');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setLoading, setError, setEmpty, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseReturns(MOCK_RETURNS)
+      .then((snapshot) => {
+        setReturns(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        if (snapshot.data.length === 0) {
+          setEmpty();
+        } else {
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setEmpty, setSuccess]);
 
   const statusLabel = (STATUS_OPTIONS[statusIdx] ?? '全部') as string;
   const statusFilter: ReturnStatus | 'ALL' = STATUS_MAP[statusLabel] ?? 'ALL';
 
   const filtered = useMemo(() => {
     const raw = searchText
-      ? MOCK_RETURNS.filter(
+      ? returns.filter(
           (r) =>
             r.returnNo.toLowerCase().includes(searchText.toLowerCase()) ||
             r.customerName.includes(searchText) ||
             r.productName.includes(searchText),
         )
-      : MOCK_RETURNS;
+      : returns;
     return statusFilter === 'ALL'
       ? raw
       : raw.filter((r) => r.status === statusFilter);
-  }, [searchText, statusFilter]);
+  }, [returns, searchText, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const stats = useMemo(() => {
-    const total = MOCK_RETURNS.length;
-    const totalAmount = MOCK_RETURNS.reduce((s, r) => s + r.amount, 0);
-    const pending = MOCK_RETURNS.filter((r) => r.status === 'pending').length;
+    const total = returns.length;
+    const totalAmount = returns.reduce((s, r) => s + r.amount, 0);
+    const pending = returns.filter((r) => r.status === 'pending').length;
     return { total, totalAmount, pending };
-  }, []);
+  }, [returns]);
 
   const handleSearch = () => setPage(1);
 
@@ -101,7 +143,7 @@ export default function ReturnOrdersPage() {
   };
 
   const goToDetail = (id: string) => {
-    Taro.showToast({ title: `查看退货单 ${id}`, icon: 'none' });
+    void Taro.navigateTo({ url: `/pages/return-orders/detail/index?id=${id}` });
   };
 
   const formatAmount = (v: number): string => {
@@ -110,9 +152,22 @@ export default function ReturnOrdersPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="退货单加载失败"
+      errorMessage="无法加载退货单数据，请检查网络后重试"
+      onRetry={handleRetry}
+      emptyIcon="🧾"
+      emptyTitle="暂无退货单"
+      emptyDescription="当前没有符合条件的退货单数据"
+      loadingComponent={<PageSkeleton />}
+    >
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       {/* 标题 */}
       <Text style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9' }}>退货售后</Text>
+      <View style={{ marginTop: 8 }}>
+        <Text style={{ fontSize: 12, color: '#94a3b8' }}>{deliveryNote}</Text>
+      </View>
 
       {/* 统计卡片 */}
       <View style={{ display: 'flex', gap: '8px', marginTop: 16 }}>
@@ -170,10 +225,13 @@ export default function ReturnOrdersPage() {
 
       {/* 列表 */}
       <View style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {pageItems.length === 0 ? (
-          <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无符合条件的退货单</Text>
-          </View>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={searchText ? '🔍' : '🧾'}
+            title={searchText || statusIdx > 0 ? '未找到匹配结果' : '暂无退货单'}
+            description={searchText || statusIdx > 0 ? '尝试修改搜索关键词或筛选条件' : undefined}
+            compact
+          />
         ) : (
           pageItems.map((ro) => (
             <View
@@ -266,10 +324,11 @@ export default function ReturnOrdersPage() {
         </Text>
       </View>
     </View>
+    </TriStateContainer>
   );
 }
 
-const cardStyle: React.CSSProperties = {
+const cardStyle: CSSProperties = {
   flex: 1, padding: '12px', borderRadius: 10,
   background: 'rgba(15, 23, 42, 0.4)',
   border: '1px solid rgba(148,163,184,0.1)',

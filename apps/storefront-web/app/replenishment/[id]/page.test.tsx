@@ -102,4 +102,37 @@ describe('replenishment detail — 防御', () => {
     const src = readSource();
     assert.ok(src.includes("onBack={() => router.push('/replenishment')"), '返回列表链接');
   });
+
+  it('应有 ErrorBoundary 或错误处理', () => {
+    const src = readSource();
+    assert.ok(src.includes('ErrorBoundary') || src.includes('error'), '错误处理');
+  });
+});
+
+describe('replenishment detail — 扩展验证', () => {
+  it('approved 后可发货', () => {
+    const src = readSource();
+    assert.ok(src.includes("approved: ['ship']") || src.includes("approved: ['cancel', 'ship']"), 'approved可发货');
+  });
+
+  it('shipped 后可完成', () => {
+    const src = readSource();
+    assert.ok(src.includes("shipped: ['complete']"), 'shipped可完成');
+  });
+
+  it('rejected 后无操作', () => {
+    const src = readSource();
+    assert.ok(src.includes('rejected: []'), 'rejected无操作');
+  });
+
+  it('所有状态状态标签应有中文映射', () => {
+    const src = readSource();
+    assert.ok(src.includes('STATUS_LABEL'), '状态标签映射');
+    assert.ok(src.includes('待审批') || src.includes('已批准') || src.includes('已完成'), '中文状态');
+  });
+
+  it('页面包含 formId 字段', () => {
+    const src = readSource();
+    assert.ok(src.includes('id:') || src.includes('formId'), '表单ID字段');
+  });
 });

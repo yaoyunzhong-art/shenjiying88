@@ -2,6 +2,11 @@
   "extends": "../../packages/config-typescript/next.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
     "paths": {
       "@m5/types": [
         "../../packages/types/src/index.ts"

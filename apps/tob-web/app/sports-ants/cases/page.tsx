@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁案例中心页面 - 重构版
  * BigAnts Cases Page - Enhanced
  * 四大核心业务分类 + 八类人群筛选 + 可量化成果数据 + SaaS应用
  */
 
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';

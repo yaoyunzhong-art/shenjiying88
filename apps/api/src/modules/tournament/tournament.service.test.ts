@@ -11,8 +11,15 @@ import {
   TournamentType,
   MatchStatus,
   TeamRegistrationStatus,
+  RedemptionStatus,
+  PredictionStatus,
+  JoinType,
   type Tournament,
   type Match,
+  type RedemptionRecord,
+  type PredictionRecord,
+  type VoteRecord,
+  type PopularityEntry,
 } from './tournament.entity'
 
 describe('TournamentService', () => {
@@ -594,6 +601,367 @@ describe('TournamentService', () => {
       assert.equal(winner?.rank, 1)
       assert.equal(winner?.wins, 1)
       assert.equal(winner?.points, 3)
+    })
+  })
+
+  // ── Redemption (兑换) ──
+
+  describe('redeem', () => {
+    it('should redeem points for a prize when tournament is ongoing', () => {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+      // Add points and prize stock
+      service.addUserPoints(t.id, 'mem-001', 100)
+      service.setPrizeStock('first', 5)
+
+      const result = service.redeem({
+        tournamentId: t.id,
+        tenantId: TENANT,
+        userId: 'mem-001',
+        prizeId: 'first',
+        points: 50,
+      })
+
+      assert.equal(result.success, true)
+      assert.ok(result.redemptionId.startsWith('redemption-'))
+      assert.equal(result.remainingPoints, 50) // 100 - 50
+      assert.ok(result.estimatedDelivery)
+    })
+
+    it('should throw when tournament is not ongoing', () => {
+      const t = createTestTournament()
+      service.addUserPoints(t.id, 'mem-001', 100)
+      service.setPrizeStock('first', 5)
+
+      assert.throws(
+        () => service.redeem({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 10,
+        }),
+        /redemptions are only available during active tournaments/,
+      )
+    })
+
+    it('should throw when user has insufficient points', () => {
+      const t = createTestTournament()
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+
+      assert.throws(
+        () => service.redeem({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 100,
+        }),
+        /Insufficient points/,
+      )
+    })
+
+    it('should throw when prize is out of stock', () => {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+      service.addUserPoints(t.id, 'mem-001', 100)
+
+      assert.throws(
+        () => service.redeem({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'nonexistent', points: 10,
+        }),
+        /out of stock/,
+      )
+    })
+
+    it('should list redemptions sorted by creation time', () => {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+      service.addUserPoints(t.id, 'mem-001', 200)
+      service.setPrizeStock('first', 5)
+      service.redeem({ tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 50 })
+
+      const list = service.listRedemptions(t.id, TENANT)
+      assert.equal(list.length, 1)
+      assert.equal(list[0].prizeId, 'first')
+    })
+
+    it('should get a single redemption record', () => {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+      service.addUserPoints(t.id, 'mem-001', 100)
+      service.setPrizeStock('first', 5)
+      const { redemptionId } = service.redeem({
+        tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 30,
+      })
+
+      const record = service.getRedemption(redemptionId)
+      assert.ok(record)
+      assert.equal(record?.id, redemptionId)
+      assert.equal(record?.pointsCost, 30)
+    })
+  })
+
+  // ── Enhanced Join ──
+
+  describe('joinTournament', () => {
+    it('should join as participant and create ranking entry', () => {
+      const t = createTestTournament()
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+
+      const result = service.joinTournament({
+        tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', joinType: 'PARTICIPANT',
+      })
+      assert.equal(result.currentParticipants, 1)
+    })
+
+    it('should join as spectator without capacity check', () => {
+      const t = createTestTournament({ maxParticipants: 1 })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      // Fill capacity
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+
+      // Spectator still allowed
+      const result = service.joinTournament({
+        tournamentId: t.id, tenantId: TENANT, userId: 'mem-002', joinType: 'SPECTATOR',
+      })
+      assert.equal(result.currentParticipants, 1)
+    })
+
+    it('should throw for participant join when tournament is not open', () => {
+      const t = createTestTournament()
+      assert.throws(
+        () => service.joinTournament({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', joinType: 'PARTICIPANT',
+        }),
+        /not open/,
+      )
+    })
+  })
+
+  // ── Prediction (竞猜) ──
+
+  describe('placePrediction', () => {
+    function setupOngoingMatch(): { tournamentId: string; matchId: string } {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      const matches = service.generateBracket(t.id, TENANT)
+      service.addUserPoints(t.id, 'mem-003', 200) // spectator with points
+      return { tournamentId: t.id, matchId: matches[0].id }
+    }
+
+    it('should place a prediction and lock stake', () => {
+      const { tournamentId, matchId } = setupOngoingMatch()
+
+      const pred = service.placePrediction({
+        tournamentId, tenantId: TENANT, userId: 'mem-003', matchId, prediction: 'mem-001', stake: 50,
+      })
+
+      assert.equal(pred.status, PredictionStatus.Locked)
+      assert.equal(pred.stake, 50)
+      assert.equal(pred.prediction, 'mem-001')
+      assert.ok(pred.id.startsWith('prediction-'))
+
+      // Points deducted from available balance
+      assert.equal(service.getUserPoints(tournamentId, 'mem-003'), 150)
+    })
+
+    it('should throw when tournament is not ongoing', () => {
+      const t = createTestTournament()
+      assert.throws(
+        () => service.placePrediction({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', matchId: 'm1', prediction: 'p1', stake: 10,
+        }),
+        /predictions are only available during active tournaments/,
+      )
+    })
+
+    it('should throw when stake exceeds user points', () => {
+      const { tournamentId, matchId } = setupOngoingMatch()
+      assert.throws(
+        () => service.placePrediction({
+          tournamentId, tenantId: TENANT, userId: 'mem-003', matchId, prediction: 'mem-001', stake: 999,
+        }),
+        /Insufficient points for prediction/,
+      )
+    })
+
+    it('should throw for non-existent match', () => {
+      const { tournamentId } = setupOngoingMatch()
+      assert.throws(
+        () => service.placePrediction({
+          tournamentId, tenantId: TENANT, userId: 'mem-003', matchId: 'nonexistent', prediction: 'x', stake: 10,
+        }),
+        /Match not found/,
+      )
+    })
+
+    it('should settle predictions: winner gets double stake', () => {
+      const { tournamentId, matchId } = setupOngoingMatch()
+      service.addUserPoints(tournamentId, 'mem-004', 100)
+      service.addUserPoints(tournamentId, 'mem-005', 100)
+
+      service.placePrediction({
+        tournamentId, tenantId: TENANT, userId: 'mem-004', matchId, prediction: 'mem-001', stake: 40,
+      })
+      service.placePrediction({
+        tournamentId, tenantId: TENANT, userId: 'mem-005', matchId, prediction: 'mem-002', stake: 30,
+      })
+
+      const settled = service.settlePredictions(matchId, 'mem-001', TENANT)
+      assert.equal(settled, 2)
+
+      // Winner gets 80 back (40*2)
+      assert.equal(service.getUserPoints(tournamentId, 'mem-004'), 100 - 40 + 80)
+      // Loser forfeits stake
+      assert.equal(service.getUserPoints(tournamentId, 'mem-005'), 100 - 30)
+    })
+
+    it('should query predictions by filter', () => {
+      const { tournamentId, matchId } = setupOngoingMatch()
+      const pred = service.placePrediction({
+        tournamentId, tenantId: TENANT, userId: 'mem-003', matchId, prediction: 'mem-001', stake: 20,
+      })
+
+      const byMatch = service.getPredictions({ matchId })
+      assert.equal(byMatch.length, 1)
+      assert.equal(byMatch[0].id, pred.id)
+
+      const byUser = service.getPredictions({ userId: 'mem-003' })
+      assert.equal(byUser.length, 1)
+
+      const byTournament = service.getPredictions({ tournamentId })
+      assert.equal(byTournament.length, 1)
+    })
+  })
+
+  // ── Vote (人气投票) ──
+
+  describe('castVote', () => {
+    it('should cast votes for a contestant', () => {
+      const t = createTestTournament()
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+      service.addUserPoints(t.id, 'mem-003', 50)
+
+      const vote = service.castVote({
+        tournamentId: t.id, tenantId: TENANT, userId: 'mem-003', contestantId: 'mem-001', votes: 10,
+      })
+
+      assert.equal(vote.votes, 10)
+      assert.equal(vote.contestantId, 'mem-001')
+      assert.ok(vote.id.startsWith('vote-'))
+    })
+
+    it('should throw when voting on non-ongoing tournament', () => {
+      const t = createTestTournament()
+      assert.throws(
+        () => service.castVote({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', contestantId: 'c1', votes: 1,
+        }),
+        /voting is only available during active tournaments/,
+      )
+    })
+
+    it('should throw when user has insufficient points for voting', () => {
+      const t = createTestTournament()
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+
+      assert.throws(
+        () => service.castVote({
+          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', contestantId: 'mem-002', votes: 100,
+        }),
+        /Insufficient points for voting/,
+      )
+    })
+
+    it('should get popularity rankings sorted by total votes', () => {
+      const t = createTestTournament()
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      service.generateBracket(t.id, TENANT)
+      service.addUserPoints(t.id, 'voter1', 100)
+      service.addUserPoints(t.id, 'voter2', 100)
+
+      service.castVote({ tournamentId: t.id, tenantId: TENANT, userId: 'voter1', contestantId: 'mem-001', votes: 5 })
+      service.castVote({ tournamentId: t.id, tenantId: TENANT, userId: 'voter2', contestantId: 'mem-001', votes: 3 })
+      service.castVote({ tournamentId: t.id, tenantId: TENANT, userId: 'voter1', contestantId: 'mem-002', votes: 2 })
+
+      const rankings = service.getPopularityRankings(t.id, TENANT)
+      assert.equal(rankings.length, 2)
+      assert.equal(rankings[0].contestantId, 'mem-001')
+      assert.equal(rankings[0].totalVotes, 8)
+      assert.equal(rankings[1].totalVotes, 2)
+    })
+  })
+
+  // ── Draw match ──
+
+  describe('draw match', () => {
+    it('should record a draw with 1 point for each player', () => {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      const matches = service.generateBracket(t.id, TENANT)
+
+      const result = service.recordMatchResult(matches[0].id, 1, 1, TENANT)
+      assert.equal(result.winnerId, undefined)
+
+      const rankings = service.getRankings(t.id, TENANT)
+      const p1 = rankings.find((r) => r.memberId === 'mem-001')
+      const p2 = rankings.find((r) => r.memberId === 'mem-002')
+      assert.equal(p1?.points, 1)
+      assert.equal(p1?.draws, 1)
+      assert.equal(p2?.points, 1)
+      assert.equal(p2?.draws, 1)
+    })
+  })
+
+  // ── Tournament completion ──
+
+  describe('tournament auto-completion', () => {
+    it('should auto-complete tournament when all matches are done (RoundRobin)', () => {
+      const t = createTestTournament({ type: TournamentType.RoundRobin })
+      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
+      service.registerParticipant(t.id, 'mem-001', TENANT)
+      service.registerParticipant(t.id, 'mem-002', TENANT)
+      const matches = service.generateBracket(t.id, TENANT)
+      assert.equal(service.getTournament(t.id, TENANT)?.status, TournamentStatus.Ongoing)
+
+      service.recordMatchResult(matches[0].id, 2, 1, TENANT)
+
+      // Match was the only one, tournament should auto-complete
+      const updated = service.getTournament(t.id, TENANT)
+      assert.equal(updated?.status, TournamentStatus.Completed)
+    })
+  })
+
+  // ── Admin points ──
+
+  describe('admin points management', () => {
+    it('should add and query user points', () => {
+      service.addUserPoints('t-1', 'user-1', 500)
+      assert.equal(service.getUserPoints('t-1', 'user-1'), 500)
+    })
+
+    it('should return 0 for unknown user in a tournament', () => {
+      assert.equal(service.getUserPoints('nonexistent', 'user-1'), 0)
     })
   })
 })

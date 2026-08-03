@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Card } from './Card'
-import { Badge } from './Badge'
+import { Badge, type BadgeVariant } from './Badge'
 import { Button } from './Button'
 import { Spinner } from './Spinner'
 import { StatCard } from './StatCard'
@@ -51,7 +51,7 @@ export interface AnomalyDiagnosisReportProps {
 /*  Severity helpers                                                          */
 /* -------------------------------------------------------------------------- */
 
-const severityVariantMap: Record<DiagnosisFinding['severity'], string> = {
+const severityVariantMap: Record<DiagnosisFinding['severity'], BadgeVariant> = {
   critical: 'error',
   high: 'warning',
   medium: 'warning',
@@ -209,7 +209,7 @@ export function AnomalyDiagnosisReport({
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Badge variant={severityVariantMap[finding.severity] as any}>
+                  <Badge variant={severityVariantMap[finding.severity]}>
                     {severityLabelMap[finding.severity]}
                   </Badge>
                   <span className="font-medium text-sm text-gray-900">

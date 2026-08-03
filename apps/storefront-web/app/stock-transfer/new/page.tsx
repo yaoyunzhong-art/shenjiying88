@@ -1,9 +1,9 @@
+'use client';
 /**
  * 新建库存调拨单 — New Stock Transfer Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购 / 📦仓管
  * 功能: 调拨单创建表单（选择类型/门店/商品明细）
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

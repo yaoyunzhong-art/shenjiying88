@@ -6,6 +6,7 @@ import type { MarketService } from '../market/market.service'
 import type { FoundationService } from '../foundation/foundation.service'
 import { LanguageCode, PortalAudience, PortalScopeType, PortalChannel, StorefrontSurface } from '@m5/domain'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import type { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
 
 function mockMarketService() {
   return {
@@ -52,6 +53,15 @@ function createContext(overrides: Partial<RequestTenantContext> = {}): RequestTe
   }
 }
 
+function mockDomainResolutionService(
+  overrides: Partial<Pick<DomainResolutionService, 'findPrimaryDomain'>> = {},
+) {
+  return {
+    findPrimaryDomain: () => null,
+    ...overrides,
+  } as DomainResolutionService
+}
+
 describe('portal.service: resolveTenantPortal', () => {
   it('returns tenant portal with correct audience and scope', () => {
     const svc = new PortalService(mockMarketService(), mockFoundationService())
@@ -94,6 +104,25 @@ describe('portal.service: resolveTenantPortal', () => {
     const portal = svc.resolveTenantPortal(createContext())
 
     assert.equal(portal.primaryDomain, 'tenant-demo.cn-mainland.b2b.local')
+    assert.equal(portal.domainSource, 'default')
+  })
+
+  it('tenant portal 优先返回 custom primary domain', () => {
+    const svc = new PortalService(
+      mockMarketService(),
+      mockFoundationService(),
+      undefined,
+      mockDomainResolutionService({
+        findPrimaryDomain: (scope) =>
+          scope.scopeType === 'TENANT' && scope.tenantId === 'tenant-demo'
+            ? 'tenant.custom.example.com'
+            : null,
+      }),
+    )
+    const portal = svc.resolveTenantPortal(createContext())
+
+    assert.equal(portal.primaryDomain, 'tenant.custom.example.com')
+    assert.equal(portal.domainSource, 'custom')
   })
 })
 
@@ -124,6 +153,24 @@ describe('portal.service: resolveBrandPortal', () => {
     assert.ok(portal.loginEntry)
     assert.equal(portal.loginEntry.ssoEnabled, true)
     assert.ok(portal.loginEntry.label.includes('品牌后台'))
+  })
+
+  it('brand portal 优先返回品牌 custom primary domain', () => {
+    const svc = new PortalService(
+      mockMarketService(),
+      mockFoundationService(),
+      undefined,
+      mockDomainResolutionService({
+        findPrimaryDomain: (scope) =>
+          scope.scopeType === 'BRAND' && scope.brandId === 'brand-demo'
+            ? 'brand.custom.example.com'
+            : null,
+      }),
+    )
+    const portal = svc.resolveBrandPortal(createContext())
+
+    assert.equal(portal.primaryDomain, 'brand.custom.example.com')
+    assert.equal(portal.domainSource, 'custom')
   })
 })
 
@@ -165,6 +212,24 @@ describe('portal.service: resolveStorePortal', () => {
 
     assert.deepEqual(portal.supportedLanguages, [LanguageCode.ZhCn])
   })
+
+  it('store portal 优先返回门店 custom primary domain', () => {
+    const svc = new PortalService(
+      mockMarketService(),
+      mockFoundationService(),
+      undefined,
+      mockDomainResolutionService({
+        findPrimaryDomain: (scope) =>
+          scope.scopeType === 'STORE' && scope.storeId === 'store-001'
+            ? 'store.custom.example.com'
+            : null,
+      }),
+    )
+    const portal = svc.resolveStorePortal(createContext())
+
+    assert.equal(portal.primaryDomain, 'store.custom.example.com')
+    assert.equal(portal.domainSource, 'custom')
+  })
 })
 
 describe('portal.service: getBootstrap', () => {
@@ -200,5 +265,45 @@ describe('portal.service: getBootstrap', () => {
     const result = svc.getBootstrap(createContext())
 
     assert.equal(result.marketProfile.marketCode, 'cn-mainland')
+  })
+
+  it('getBootstrap 三个 scope 都优先返回 custom primary domain', () => {
+    const svc = new PortalService(
+      mockMarketService(),
+      mockFoundationService(),
+      undefined,
+      mockDomainResolutionService({
+        findPrimaryDomain: (scope) => {
+          if (scope.scopeType === 'TENANT') return 'tenant.custom.example.com'
+          if (scope.scopeType === 'BRAND') return 'brand.custom.example.com'
+          if (scope.scopeType === 'STORE') return 'store.custom.example.com'
+          return null
+        },
+      }),
+    )
+    const result = svc.getBootstrap(createContext())
+
+    assert.equal(result.tenantPortal.primaryDomain, 'tenant.custom.example.com')
+    assert.equal(result.tenantPortal.domainSource, 'custom')
+    assert.equal(result.brandPortal.primaryDomain, 'brand.custom.example.com')
+    assert.equal(result.brandPortal.domainSource, 'custom')
+    assert.equal(result.storePortal.primaryDomain, 'store.custom.example.com')
+    assert.equal(result.storePortal.domainSource, 'custom')
+  })
+
+  it('getBootstrap 未命中 custom primary 时三个 scope 都标记 default', () => {
+    const svc = new PortalService(
+      mockMarketService(),
+      mockFoundationService(),
+      undefined,
+      mockDomainResolutionService({
+        findPrimaryDomain: () => null,
+      }),
+    )
+    const result = svc.getBootstrap(createContext())
+
+    assert.equal(result.tenantPortal.domainSource, 'default')
+    assert.equal(result.brandPortal.domainSource, 'default')
+    assert.equal(result.storePortal.domainSource, 'default')
   })
 })

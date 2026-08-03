@@ -30,6 +30,7 @@ import {
 } from '@m5/types';
 import { adminGovernanceApprovalsRoute } from '../approvals-data';
 import { useDetailActions } from '../components/use-detail-actions';
+import SnapshotRefreshButton from '../components/snapshot-refresh-button'
 import {
   CERTIFICATE_STATUS_LABEL,
   CERTIFICATE_STATUS_VARIANT,
@@ -41,11 +42,12 @@ import {
   summarizeConfigEntry,
   summarizeSecret
 } from '../configuration-view-model';
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 interface ConfigurationWorkspaceClientProps {
   overview: ConfigurationOverview;
   managementMetadata: ConfigurationGovernanceMetadataEntry[];
-  query: ConfigurationOverview['scopeChain'];
+  scopeChain: ConfigurationOverview['scopeChain'];
 }
 
 type TabKey = 'overview' | 'feature-flags' | 'config-entries' | 'secrets' | 'certificates';
@@ -65,8 +67,9 @@ function toVariant(label: 'success' | 'warning' | 'danger' | 'neutral' | 'info' 
 export default function ConfigurationWorkspaceClient({
   overview,
   managementMetadata,
-  query: _query
+  scopeChain
 }: ConfigurationWorkspaceClientProps) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
   const { actions } = useDetailActions({
@@ -362,6 +365,19 @@ export default function ConfigurationWorkspaceClient({
 
   return (
     <div>
+      <div style={topBarStyle}>
+        <div style={topBarMetaStyle}>
+          Delivery evidence time {new Date(overview.generatedAt).toLocaleString('zh-CN')} · scopeChain {scopeChain.length}
+        </div>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="dark"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
+      </div>
+
       <div style={{ marginBottom: 18 }}>
         <Tabs
           items={TAB_DEFINITIONS.map((definition) => ({
@@ -458,10 +474,10 @@ export default function ConfigurationWorkspaceClient({
 
       <FilterChips
         chips={[
-          { key: 'tenant', label: `租户: ${_query?.[0]?.tenantId ?? '—'}`, tone: 'neutral' as const },
-          { key: 'brand', label: `品牌: ${_query?.[0]?.brandId ?? '—'}`, tone: 'neutral' as const },
-          { key: 'store', label: `门店: ${_query?.[0]?.storeId ?? '—'}`, tone: 'neutral' as const },
-          { key: 'market', label: `市场: ${_query?.[0]?.marketCode ?? '—'}`, tone: 'neutral' as const }
+          { key: 'tenant', label: `租户: ${scopeChain[0]?.tenantId ?? '—'}`, tone: 'neutral' as const },
+          { key: 'brand', label: `品牌: ${scopeChain[0]?.brandId ?? '—'}`, tone: 'neutral' as const },
+          { key: 'store', label: `门店: ${scopeChain[0]?.storeId ?? '—'}`, tone: 'neutral' as const },
+          { key: 'market', label: `市场: ${scopeChain[0]?.marketCode ?? '—'}`, tone: 'neutral' as const }
         ]}
         onClearAll={() => undefined}
         onRemove={() => undefined}
@@ -483,6 +499,21 @@ function paginate<T>(items: T[], page: number, pageSize: number): T[] {
   const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);
 }
+
+const topBarStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 12,
+  flexWrap: 'wrap',
+  marginBottom: 18,
+};
+
+const topBarMetaStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#94a3b8',
+};
+
 
 function OverviewBoard({
   overview,

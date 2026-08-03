@@ -48,7 +48,7 @@ export class EventBufferService {
    */
   setEventStore(eventStore: EventStoreService | null): void {
     this.eventStore = eventStore
-    this.logger.log(`EventStore ${eventStore ? 'enabled' : 'disabled'} for dual-write`)
+    this.logger.debug(`EventStore ${eventStore ? 'enabled' : 'disabled'} for dual-write`)
   }
 
   /**

@@ -1,11 +1,11 @@
+'use client';
 /**
  * 客服工作台页 — Customer Service Dashboard (Next.js App Router Page)
  * 角色: 客服视角，展示工单处理面板、服务质量指标、座席状态、快速操作
  * 功能: 工单列表/服务指标/座席状态/工单分类筛选/操作弹窗/任务处理
  */
-'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   PageShell,
   StatusBadge,
@@ -167,8 +167,24 @@ function TicketDetailModal({
 // 客服工作台页面
 // ============================================================
 
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
+
 export default function CustomerServicePage() {
-  const [tickets, setTickets] = useState<ServiceTicket[]>(MOCK_TICKETS);
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [tickets, setTickets] = useState<ServiceTicket[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  useEffect(() => {
+    wrapLoad(
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 400);
+      }),
+    ).then(() => {
+      setTickets(MOCK_TICKETS);
+      setPageReady(true);
+    });
+  }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -225,6 +241,21 @@ export default function CustomerServicePage() {
 
   return (
     <PageShell title="客服工作台" description="客服工单处理面板 · 朝阳旗舰店">
+      <TriStateRenderer
+        loading={loading}
+        empty={!pageReady && !loading && !error}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<void>((resolve) => {
+              setTimeout(() => resolve(), 400);
+            }),
+          ).then(() => {
+            setTickets(MOCK_TICKETS);
+            setPageReady(true);
+          })
+        }
+      >
       <div style={{ padding: 24, position: 'relative' }}>
         {/* Toast 通知 */}
         {toastMessage && (
@@ -384,6 +415,7 @@ export default function CustomerServicePage() {
           />
         )}
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

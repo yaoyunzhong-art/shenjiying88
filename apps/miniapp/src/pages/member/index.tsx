@@ -1,5 +1,8 @@
 import { View, Text, Button } from '@tarojs/components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Taro from '@tarojs/taro';
+import type { DomainGovernanceDisplayModel } from '@m5/types';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -28,6 +31,18 @@ import {
   type MiniappSubmitHistoryEntry,
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
+import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
+import { CardSkeleton, TriStateContainer, useTriState } from '../../components/TriStateComponents';
+
+const MEMBER_OPERATION_SHORTCUTS = [
+  { label: '采购单', route: '/pages/purchase-orders/index' },
+  { label: '退货售后', route: '/pages/return-orders/index' },
+] as const;
+
+const MEMBER_LINKAGE_SHORTCUTS = [
+  { label: '积分兑换', route: '/pages/redeem-center/index' },
+  { label: '客服工作台', route: '/pages/customer-service/index' },
+] as const;
 
 // 会员等级体系
 const MEMBER_TIERS = [
@@ -36,6 +51,8 @@ const MEMBER_TIERS = [
   { key: 'gold', level: '金牌会员', label: '金牌会员', minPoints: 10000, color: '#ffd700' },
   { key: 'platinum', level: '钻石会员', label: '钻石会员', minPoints: 50000, color: '#e5e4e2' },
 ];
+
+const DEFAULT_MEMBER_TIER = { key: 'bronze', level: '铜牌会员', label: '铜牌会员', minPoints: 0, color: '#cd7f32' };
 
 export default function MemberPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
@@ -55,6 +72,14 @@ export default function MemberPage() {
   const [submitHistory, setSubmitHistory] = useState<MiniappSubmitHistoryEntry[]>([]);
   const [replayOutcome, setReplayOutcome] = useState<MiniappReplayOutcome | null>(null);
   const bootstrap = consumerContract.snapshot;
+  const domainGovernanceDisplayModel: DomainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    bootstrap.domainSource,
+    bootstrap.domainGovernance,
+    bootstrap.domainGovernanceWorkspaceHref,
+  );
+  const currentTier =
+    MEMBER_TIERS.find((item) => item.key === (session.memberTier === 'SVIP' ? 'platinum' : session.memberTier.toLowerCase())) ??
+    DEFAULT_MEMBER_TIER;
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const visiblePlans = actionPlans.filter((plan) => plan.action !== 'booking-submit');
   const activePlan = visiblePlans.find((plan) => plan.action === activeAction) ?? null;
@@ -67,28 +92,69 @@ export default function MemberPage() {
   const callbackReceipt = submitOutcome && handlerSync ? createMiniappCallbackReceipt(submitOutcome, handlerSync) : null;
   const retryPolicy = ledger[0] && replayOutcome ? createMiniappReplayRetryPolicy(ledger[0], replayOutcome) : null;
 
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappRuntimeConsumerContract().then((contract) => {
-      if (!cancelled) {
-        setConsumerContract(contract);
-      }
-    });
-
-    loadMiniappMemberRuntimeSnapshot().then((runtime) => {
-      if (!cancelled) {
-        setMemberRuntime(runtime);
-        setSession(runtime.session);
-      }
-    });
+    setLoading();
+    Promise.all([
+      loadMiniappRuntimeConsumerContract(),
+      loadMiniappMemberRuntimeSnapshot(),
+    ])
+      .then(([contract, runtime]) => {
+        if (!cancelled) {
+          setConsumerContract(contract);
+          setMemberRuntime(runtime);
+          setSession(runtime.session);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载会员数据失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    Promise.all([
+      loadMiniappRuntimeConsumerContract(),
+      loadMiniappMemberRuntimeSnapshot(),
+    ])
+      .then(([contract, runtime]) => {
+        setConsumerContract(contract);
+        setMemberRuntime(runtime);
+        setSession(runtime.session);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setSuccess]);
+
+  const openOperationalPage = (route: string, label: string) => {
+    if (!session.authenticated) {
+      Taro.showToast({ title: `请先登录后进入${label}`, icon: 'none' });
+      return;
+    }
+
+    void Taro.navigateTo({ url: route });
+  };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="会员中心加载失败"
+      errorMessage="无法加载会员数据，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<CardSkeleton />}
+    >
     <View style={{ padding: '32px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       <Text>
         会员中心已接入移动端 bootstrap 运行态，当前为 {bootstrap.deliveryMode} / {bootstrap.marketCode}。
@@ -99,12 +165,18 @@ export default function MemberPage() {
         </Text>
       </View>
       <View style={{ marginTop: '8px' }}>
+        <Text>等级权益：{currentTier.label} / 升级门槛 {currentTier.minPoints} / 标识色 {currentTier.color}</Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
         <Text>{memberRuntime.note}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>
           会话：{session.authenticated ? '已登录' : '游客'} / 校验：{memberRuntime.sessionVerified ? '通过' : '未校验'}
         </Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
+        <Text>域名来源：{bootstrap.domainSource}</Text>
       </View>
       {memberRuntime.profile ? (
         <View style={{ marginTop: '8px' }}>
@@ -128,6 +200,43 @@ export default function MemberPage() {
       <View style={{ marginTop: '8px' }}>
         <Text>Scope：{consumerContract.scope.scopePath} / {consumerContract.scope.mismatchStrategy}</Text>
       </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(15, 23, 42, 0.55)',
+        }}
+      >
+        <Text>供应链高频操作</Text>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {MEMBER_OPERATION_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(30, 41, 59, 0.55)',
+        }}
+      >
+        <Text>会员权益联动</Text>
+        <View style={{ marginTop: '8px' }}>
+          <Text>从会员中心直达积分兑换与客服工作台，补齐营销、会员与门店服务的一跳链路。</Text>
+        </View>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {MEMBER_LINKAGE_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
+      </View>
       <View style={{ marginTop: '8px' }}>
         <Text>
           降级：{consumerContract.degradation.featureFlagFallback} / 脱敏：{consumerContract.degradation.desensitizationMode}
@@ -139,6 +248,13 @@ export default function MemberPage() {
       <View style={{ marginTop: '8px' }}>
         <Text>Governance：{consumerContract.governance.alerts.map((item) => item.code).join(' / ')}</Text>
       </View>
+      <DomainGovernancePanel
+        heading="域名治理"
+        model={domainGovernanceDisplayModel}
+        background={
+          domainGovernanceDisplayModel.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.65)'
+        }
+      />
       <View style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
         <Button onClick={() => {
           setSession(createGuestMemberSession());
@@ -458,5 +574,6 @@ export default function MemberPage() {
         </View>
       ) : null}
     </View>
+    </TriStateContainer>
   )
 }

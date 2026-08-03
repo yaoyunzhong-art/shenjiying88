@@ -1,0 +1,16 @@
+=== k6 50 VU 30s 压测数据 ===
+
+  http_reqs:           count=106353  rate=1933.4/s
+  http_req_failed:     rate=0.0000  passes=95200  fails=11153
+  http_req_duration:   avg=304.6ms  p90=972.5ms  p95=1573.0ms  p99=2831.9ms  max=36775.8ms
+  iterations:          count=84047  rate=1527.9/s
+  success_count:       11153
+  error_rate:          rate=0.0000
+  health_latency_ms:   p95=2133.7ms
+  order_latency_ms:    p95=1895.0ms
+  verify_latency_ms:   p95=1974.4ms
+
+=== checks ===
+  passes: 22306
+  fails: 168094
+  value: 0.11715336134453781

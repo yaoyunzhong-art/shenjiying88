@@ -82,6 +82,7 @@ export interface UserInfo {
   email?: string;
   nickname?: string;
   roles: string[];
+  permissions: string[];
   avatar?: string;
 }
 

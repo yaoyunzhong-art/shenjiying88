@@ -1,3 +1,4 @@
+'use client';
 /**
  * 前台收银台 — P-35 Storefront Cashier Page
  *
@@ -14,9 +15,9 @@
  *   AC-35-07: 支付方式选择
  *   AC-35-10: 空结算防御
  */
-'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   PageShell,
   Button,
@@ -24,18 +25,21 @@ import {
   Card,
   Tag,
 } from '@m5/ui';
+import {
+  buildStorefrontMemberId,
+  ensureStorefrontMemberRegistered,
+  listStorefrontCashierProducts,
+  startStorefrontCheckout,
+  type StorefrontCashierProduct,
+  lookupStorefrontMember,
+  type CheckoutPaymentMethod,
+} from '../../lib/storefront-transactions';
 
 // ============================================================
 // 类型定义 （PRD §6 数据模型对齐）
 // ============================================================
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  stock: number;
-}
+type Product = StorefrontCashierProduct;
 
 interface CartItem extends Product {
   quantity: number;
@@ -44,48 +48,13 @@ interface CartItem extends Product {
 interface MemberInfo {
   phone: string;
   name: string;
-  tier: 'gold' | 'silver' | 'regular';
+  tier: string;
+  tierLabel: string;
+  discountRate: number;
   points: number;
 }
 
-/** 会员等级折扣率 */
-const TIER_DISCOUNT: Record<MemberInfo['tier'], number> = {
-  gold: 0.9,   // 金卡9折
-  silver: 0.95, // 银卡95折
-  regular: 1.0, // 普卡无折扣
-};
-
-const TIER_LABEL: Record<MemberInfo['tier'], string> = {
-  gold: '🏅 黄金会员',
-  silver: '🥈 银卡会员',
-  regular: '🪪 普卡会员',
-};
-
 type PaymentMethod = 'wechat' | 'balance' | 'cash';
-
-// ============================================================
-// Mock 数据 — 街机/游艺厅场景
-// ============================================================
-
-const MOCK_PRODUCTS: Product[] = [
-  { id: 'p1', name: '射击体验', price: 30, category: '射击类', stock: 999 },
-  { id: 'p2', name: '赛车竞速', price: 40, category: '竞速类', stock: 999 },
-  { id: 'p3', name: '跳舞机', price: 25, category: '音乐类', stock: 999 },
-  { id: 'p4', name: '夹娃娃 (3次)', price: 15, category: '娱乐类', stock: 999 },
-  { id: 'p5', name: 'VR体验', price: 50, category: '虚拟现实', stock: 999 },
-  { id: 'p6', name: '篮球机', price: 20, category: '运动类', stock: 999 },
-  { id: 'p7', name: '电竞套餐(单人)', price: 88, category: '套餐', stock: 999 },
-  { id: 'p8', name: '电竞套餐(双人)', price: 158, category: '套餐', stock: 999 },
-  { id: 'p9', name: '射击体验x5', price: 125, category: '射击类', stock: 999 },
-  { id: 'p10', name: '不限时畅玩券', price: 199, category: '套餐', stock: 999 },
-];
-
-// 已注册会员数据库（AC-35-04 会员识别用）
-const MOCK_MEMBER_DB: MemberInfo[] = [
-  { phone: '13800138001', name: '张三', tier: 'gold', points: 2560 },
-  { phone: '13900139002', name: '李四', tier: 'silver', points: 1200 },
-  { phone: '15000150003', name: '王五', tier: 'regular', points: 300 },
-];
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string }[] = [
   { value: 'wechat', label: '微信扫码', icon: '💳' },
@@ -93,8 +62,23 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: string }[] =
   { value: 'cash', label: '现金', icon: '💵' },
 ];
 
+const DEFAULT_MEMBER_NAME = '门店散客';
+const CHECKOUT_DRAFT_STORAGE_KEY = 'storefront.checkout.draft';
+
 function fm(amount: number): string {
   return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
+}
+
+function mapPaymentMethodToCheckoutMethod(method: PaymentMethod): CheckoutPaymentMethod {
+  switch (method) {
+    case 'balance':
+      return 'member_card';
+    case 'cash':
+      return 'cash';
+    case 'wechat':
+    default:
+      return 'wechat';
+  }
 }
 
 // ============================================================
@@ -120,8 +104,12 @@ const sectionTitle: React.CSSProperties = {
 // ============================================================
 
 export default function CashierPage() {
+  const router = useRouter();
   // ── 核心状态 ──
   const [searchText, setSearchText] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [memberPhone, setMemberPhone] = useState('');
   const [member, setMember] = useState<MemberInfo | null>(null);
@@ -129,16 +117,57 @@ export default function CashierPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [messageText, setMessageText] = useState('');
-  const [paymentCodeUrl, setPaymentCodeUrl] = useState('');
+
+  const loadProductCatalog = useCallback(async () => {
+    setProductsLoading(true);
+    setProductsError(null);
+    try {
+      const nextProducts = await listStorefrontCashierProducts();
+      setProducts(nextProducts);
+    } catch (error) {
+      setProducts([]);
+      setProductsError(error instanceof Error ? error.message : '商品目录加载失败，请稍后重试');
+    } finally {
+      setProductsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProductCatalog();
+  }, [loadProductCatalog]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (cart.length === 0) {
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      CHECKOUT_DRAFT_STORAGE_KEY,
+      JSON.stringify(
+        cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category,
+        })),
+      ),
+    );
+  }, [cart]);
 
   // ── 商品过滤 ──
   const filteredProducts = useMemo(() => {
-    return MOCK_PRODUCTS.filter((p) => {
+    return products.filter((p) => {
       if (!searchText.trim()) return true;
       const q = searchText.toLowerCase();
       return p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     });
-  }, [searchText]);
+  }, [products, searchText]);
 
   // ── 购物车统计 ──
   const rawTotal = useMemo(() => {
@@ -149,7 +178,7 @@ export default function CashierPage() {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  const memberDiscountRate = member ? TIER_DISCOUNT[member.tier] : 1;
+  const memberDiscountRate = member?.discountRate ?? 1;
   const discountAmount = rawTotal - Math.round(rawTotal * memberDiscountRate);
   const finalTotal = rawTotal - discountAmount;
 
@@ -191,22 +220,44 @@ export default function CashierPage() {
     );
   }, []);
 
-  // ── 会员识别 ──
-  const handleLookupMember = useCallback(() => {
+  // ── 会员识别（AC-35-04: 真实API调用）──
+  const handleLookupMember = useCallback(async () => {
     const trimmed = memberPhone.trim();
     if (!trimmed || trimmed.length < 11) {
       setMessageText('⚠️ 请输入完整的11位手机号');
       return;
     }
-    const found = MOCK_MEMBER_DB.find((m) => m.phone === trimmed);
-    if (found) {
-      setMember(found);
-      setMessageText(
-        `✅ 欢迎 ${found.name}！${TIER_LABEL[found.tier]}，积分 ${found.points} 分`
-      );
-    } else {
+    try {
+      const result = await lookupStorefrontMember(trimmed);
+      if (result) {
+        const tierLabel = (() => {
+          switch (result.tier) {
+            case 'gold': return '🏅 黄金会员';
+            case 'silver': return '🥈 银卡会员';
+            case 'diamond': return '💎 钻石会员';
+            case 'bronze': return '🥉 铜牌会员';
+            default: return '🪪 普卡会员';
+          }
+        })();
+        const info: MemberInfo = {
+          phone: result.phone,
+          name: result.name,
+          tier: result.tier,
+          tierLabel,
+          discountRate: result.discountRate,
+          points: result.points,
+        };
+        setMember(info);
+        setMessageText(
+          `✅ 欢迎 ${info.name}！${tierLabel}，积分 ${info.points} 分`
+        );
+      } else {
+        setMember(null);
+        setMessageText('ℹ️ 未找到该会员，将按非会员结算');
+      }
+    } catch {
       setMember(null);
-      setMessageText('ℹ️ 未找到该会员，将按非会员结算');
+      setMessageText('⚠️ 查询会员失败，请稍后重试');
     }
     setTimeout(() => setMessageText(''), 4000);
   }, [memberPhone]);
@@ -221,18 +272,13 @@ export default function CashierPage() {
   // ── 支付选择 ──
   const handlePaymentSelect = useCallback((method: PaymentMethod) => {
     setPaymentMethod(method);
-    if (method === 'wechat') {
-      setPaymentCodeUrl('https://example.com/qr/wechat-pay-0001');
-    } else {
-      setPaymentCodeUrl('');
-    }
     const label = PAYMENT_OPTIONS.find((p) => p.value === method)?.label;
     setMessageText(`✅ 已选择：${label}`);
     setTimeout(() => setMessageText(''), 2000);
   }, []);
 
   // ── 结账（含空结算防御） ──
-  const handleCheckout = useCallback(() => {
+  const handleCheckout = useCallback(async () => {
     if (cart.length === 0) {
       setMessageText('⚠️ 请添加商品');
       setCheckoutStatus('error');
@@ -244,31 +290,57 @@ export default function CashierPage() {
     }
 
     setIsProcessing(true);
+    setCheckoutStatus('idle');
     setMessageText('');
 
-    // 模拟支付处理
-    setTimeout(() => {
+    try {
+      const normalizedPhone = memberPhone.trim();
+      const memberName = member?.name ?? (normalizedPhone ? `门店会员${normalizedPhone.slice(-4)}` : '门店散客');
+      const memberId = buildStorefrontMemberId(normalizedPhone);
+      const checkoutMethod = mapPaymentMethodToCheckoutMethod(paymentMethod);
+      const checkoutItems = cart.map((item) => ({
+        skuId: item.id,
+        title: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      await ensureStorefrontMemberRegistered(memberId, memberName);
+      const aggregate = await startStorefrontCheckout(
+        memberId,
+        checkoutItems,
+        checkoutMethod,
+        finalTotal,
+      );
+
       setIsProcessing(false);
       setCheckoutStatus('success');
-      const methodLabel = PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.label;
       setMessageText(
-        `✅ 支付成功！金额 ${fm(finalTotal)}，方式：${methodLabel}`
+        `✅ 订单 ${aggregate.order.orderNo ?? aggregate.order.orderId} 已创建，正在跳转支付页`
       );
-      // 新订单重置
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+      }
       setCart([]);
       setPaymentMethod(null);
-      setPaymentCodeUrl('');
-    }, 1500);
-  }, [cart, paymentMethod, finalTotal]);
+      router.push(`/h5/payment/${aggregate.order.orderId}`);
+    } catch (error) {
+      setCheckoutStatus('error');
+      setMessageText(error instanceof Error ? `⚠️ ${error.message}` : '⚠️ 下单失败，请稍后重试');
+      setIsProcessing(false);
+    }
+  }, [cart, finalTotal, member?.name, memberPhone, paymentMethod, router]);
 
   const resetOrder = useCallback(() => {
     setCart([]);
     setPaymentMethod(null);
-    setPaymentCodeUrl('');
     setCheckoutStatus('idle');
     setMessageText('');
     setMemberPhone('');
     setMember(null);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_STORAGE_KEY);
+    }
   }, []);
 
   // ============================================================
@@ -350,7 +422,38 @@ export default function CashierPage() {
               overflowY: 'auto',
             }}
           >
-            {filteredProducts.length === 0 ? (
+            {productsLoading ? (
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  textAlign: 'center',
+                  padding: '48px 0',
+                  color: '#94a3b8',
+                  fontSize: 14,
+                }}
+              >
+                商品目录加载中...
+              </div>
+            ) : productsError ? (
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  display: 'grid',
+                  gap: 12,
+                  textAlign: 'center',
+                  padding: '40px 0',
+                }}
+              >
+                <div style={{ color: '#fca5a5', fontSize: 14 }}>
+                  ⚠️ {productsError}
+                </div>
+                <div>
+                  <Button variant="outline" size="sm" onClick={() => void loadProductCatalog()}>
+                    重试加载商品
+                  </Button>
+                </div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div
                 style={{
                   gridColumn: '1 / -1',
@@ -398,6 +501,15 @@ export default function CashierPage() {
                         }}
                       >
                         {product.category}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: '#64748b',
+                          marginBottom: 8,
+                        }}
+                      >
+                        库存 {product.stock}
                       </div>
                       <div
                         style={{
@@ -652,7 +764,7 @@ export default function CashierPage() {
                     }}
                   >
                     <span>
-                      会员折扣（{TIER_LABEL[member.tier]}）
+                      会员折扣（{member.tierLabel}）
                     </span>
                     <span>-{fm(discountAmount)}</span>
                   </div>
@@ -737,10 +849,10 @@ export default function CashierPage() {
                 >
                   <span style={{ color: '#94a3b8' }}>等级</span>
                   <Tag variant="warning" size="sm">
-                    {TIER_LABEL[member.tier]}
+                    {member.tierLabel}
                   </Tag>
                 </div>
-                {member.tier !== 'regular' && (
+                {(
                   <div
                     style={{
                       fontSize: 12,
@@ -751,9 +863,9 @@ export default function CashierPage() {
                       textAlign: 'center',
                     }}
                   >
-                    {member.tier === 'gold'
-                      ? '🎉 金卡会员享9折优惠'
-                      : '⭐ 银卡会员享95折优惠'}
+                    {member.discountRate < 1
+                      ? `🎉 ${member.tierLabel}享${Math.round(member.discountRate * 10)}折优惠`
+                      : `🪪 ${member.tierLabel}无额外折扣`}
                     {discountAmount > 0 && (
                       <span>（已省 {fm(discountAmount)}）</span>
                     )}
@@ -830,43 +942,7 @@ export default function CashierPage() {
                 </button>
               ))}
             </div>
-            {paymentMethod === 'wechat' && paymentCodeUrl && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 16,
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.08)',
-                  textAlign: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    color: '#e2e8f0',
-                    fontSize: 12,
-                    marginBottom: 8,
-                  }}
-                >
-                  请使用微信扫码支付
-                </div>
-                <div
-                  style={{
-                    width: 140,
-                    height: 140,
-                    margin: '0 auto',
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    color: '#333',
-                  }}
-                >
-                  [二维码]
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* AC-35-10: 空结算防御 */}
@@ -885,9 +961,9 @@ export default function CashierPage() {
             }}
           >
             {isProcessing
-              ? '⏳ 处理中...'
+              ? '⏳ 正在创建订单...'
               : checkoutStatus === 'success'
-                ? '✅ 支付成功'
+                ? '✅ 订单已创建'
                 : `🧾 结算 ${fm(finalTotal)}`}
           </Button>
 

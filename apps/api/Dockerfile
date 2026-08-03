@@ -37,7 +37,7 @@ COPY tsconfig.base.json ./
 RUN pnpm --filter @m5/api build
 
 # 清理 dev deps 缩减 prod node_modules
-RUN pnpm deploy --filter @m5/api --prod /workspace/deploy/api
+RUN pnpm deploy --legacy --filter @m5/api --prod /workspace/deploy/api
 
 # ─── Stage 3: runtime ───
 FROM node:22-alpine AS runtime

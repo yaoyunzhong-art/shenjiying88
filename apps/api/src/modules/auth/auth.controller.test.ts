@@ -6,7 +6,10 @@
  * 正例 ✓ + 反例 ✗ + 边界 ⚠
  */
 
+import 'reflect-metadata'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { AuthController } from './auth.controller'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 
 // ─── Mock AuthService ─────────────────────────────────────────────────────
 
@@ -258,6 +261,12 @@ describe('AuthController', () => {
   })
 
   // ══════════════════════════════════════════════════════════════════════
+
+  describe('authorization metadata', () => {
+    it('getCurrentUser 应显式标记为 Public，避免被全局 IdentityAccessGuard 提前拦截', () => {
+      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, AuthController.prototype.getCurrentUser), true)
+    })
+  })
   // POST /auth/login/sms
   // ══════════════════════════════════════════════════════════════════════
 
@@ -309,6 +318,7 @@ describe('AuthController', () => {
       })
       expect(result.success).toBe(true)
       expect(result.data.user.userId).toBe('admin_001')
+      expect(result.data.user.permissions).toEqual(['*'])
     })
 
     it('✓ 正例: 邮箱+密码登录成功', async () => {
@@ -450,6 +460,7 @@ describe('AuthController', () => {
       expect(result.data.userId).toBe('admin_001')
       expect(result.data.nickname).toBe('超级管理员')
       expect(result.data.roles).toContain('PLATFORM_ADMIN')
+      expect(result.data.permissions).toEqual(['*'])
     })
 
     it('✗ 反例: 无 Token 返回 401', async () => {

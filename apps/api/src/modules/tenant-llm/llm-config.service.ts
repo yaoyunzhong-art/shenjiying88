@@ -16,7 +16,6 @@ import {
   LLMAuditLog,
   LLMApprovalOptions,
 } from './llm-config.entity'
-// @ts-ignore
 import { TenantScopeGuard } from '../../agent/tenant.guard'
 
 /** 内存存储 (生产环境应替换为Prisma + Redis) */
@@ -376,32 +375,58 @@ export const LLMProvider = {
   CUSTOM: 'custom',
 } as const
 
+interface LLMConfigEntry {
+  id: string
+  name: string
+  provider: string
+  model: string
+  apiKey: string
+  apiBase?: string
+  apiVersion?: string
+  maxTokens?: number
+  temperature?: number
+  topP?: number
+  createdAt: Date
+}
+
+interface LLMConfigCreateParams {
+  name: string
+  provider: string
+  model: string
+  apiKey?: string
+  apiBase?: string
+  apiVersion?: string
+  maxTokens?: number
+  temperature?: number
+  topP?: number
+}
+
 export class LLMConfigService {
-  private configs = new Map<string, any>()
+  private configs = new Map<string, LLMConfigEntry>()
   private apiKeyStore = new Map<string, string>()
 
-  createConfig(params: any): any {
+  createConfig(params: LLMConfigCreateParams): LLMConfigEntry {
     const id = `cfg-${nanoid()}`
-    const config = { id, name: params.name, provider: params.provider, model: params.model, apiKey: '***', apiBase: params.apiBase, apiVersion: params.apiVersion, maxTokens: params.maxTokens, temperature: params.temperature, topP: params.topP, createdAt: new Date() }
+    const config: LLMConfigEntry = { id, name: params.name, provider: params.provider, model: params.model, apiKey: '***', apiBase: params.apiBase, apiVersion: params.apiVersion, maxTokens: params.maxTokens, temperature: params.temperature, topP: params.topP, createdAt: new Date() }
     this.configs.set(id, config)
     if (params.apiKey) this.apiKeyStore.set(id, params.apiKey)
     return config
   }
 
-  getConfig(id: string): any | null {
+  getConfig(id: string): LLMConfigEntry | null {
     return this.configs.get(id) ?? null
   }
 
-  listConfigs(filter?: { provider?: string }): any[] {
+  listConfigs(filter?: { provider?: string }): LLMConfigEntry[] {
     const all = Array.from(this.configs.values())
     if (filter?.provider) return all.filter(c => c.provider === filter.provider)
     return all
   }
 
-  updateConfig(id: string, updates: Record<string, unknown>): any | null {
+  updateConfig(id: string, updates: Record<string, unknown>): LLMConfigEntry | null {
     const config = this.configs.get(id)
     if (!config) return null
-    const updated = { ...config, ...updates }
+    const updated = { ...config, ...updates } as LLMConfigEntry
     this.configs.set(id, updated)
     return updated
   }
@@ -420,7 +445,7 @@ export class LLMConfigService {
 
   private defaultId: string | null = null
 
-  getDefaultConfig(): any {
+  getDefaultConfig(): LLMConfigEntry | null {
     if (this.defaultId) return this.configs.get(this.defaultId) ?? null
     const all = Array.from(this.configs.values())
     return all[0] ?? null

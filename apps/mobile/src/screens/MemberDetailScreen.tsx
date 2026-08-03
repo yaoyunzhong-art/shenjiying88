@@ -62,7 +62,7 @@ const STATUS_COLORS: Record<MemberStatus, string> = {
   inactive: '#9ca3af',
 };
 
-// TODO: T55 替换为真实 useQuery 数据
+// TODO(T55): 替换为真实 useQuery 数据
 const DEFAULT_MEMBER: MemberDetail = {
   id: 'mem-001',
   name: '张三',

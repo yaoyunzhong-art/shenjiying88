@@ -1,0 +1,35 @@
+=== preflight offline fallback ===
+timestamp=2026-07-18 15:38:42
+command=bash /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/scripts/preflight-prod-public-cutover.sh --env-file /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/templates/m5-public-endpoints.env.example --offline --allow-missing-tls 
+
+bash: no job control in this shell
+WARN: Offline mode enabled; live cluster checks are skipped
+==> Target public URLs from env file
+API_HOST=api.m5-platform.com
+ADMIN_HOST=admin.m5-platform.com
+STOREFRONT_HOST=store.m5-platform.com
+TOB_HOST=tob.m5-platform.com
+NEXT_PUBLIC_API_URL=https://api.m5-platform.com/api/v1
+NEXT_PUBLIC_WS_URL=wss://api.m5-platform.com
+CORS_ORIGIN=https://admin.m5-platform.com,https://store.m5-platform.com,https://tob.m5-platform.com
+
+WARN: Offline mode enabled; deployment readiness is not queried
+==> TLS status
+WARN: Offline mode enabled; live TLS secret status is not queried
+
+==> Rendering manifests to /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+Rendered files:
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-ingress-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-config-public.yaml
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-public-dns-records.csv
+  /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight/m5-tls-secret.template.yaml
+==> Running offline manifest sanity checks
+WARN: Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
+==> Preflight finished
+Rendered dir: /Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/infra/k8s/rendered-public-preflight
+
+Warnings:
+  - Offline mode enabled; live cluster checks are skipped
+  - Offline mode enabled; deployment readiness is not queried
+  - Offline mode enabled; live TLS secret status is not queried
+  - Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover

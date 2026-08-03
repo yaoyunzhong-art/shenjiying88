@@ -25,6 +25,7 @@ import {
   Post,
   Put,
   Query,
+UseGuards,
 } from '@nestjs/common'
 import {
   AutomationService,
@@ -35,6 +36,7 @@ import {
   type RuleCondition,
   type ActionType,
 } from './automation.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 class EvaluateRuleDto {
   context!: EvaluationContext
@@ -73,6 +75,7 @@ class ListJobsQueryDto {
 }
 
 @Controller('api/automation')
+@UseGuards(TenantGuard)
 export class AutomationController {
   constructor(private readonly svc: AutomationService) {}
 

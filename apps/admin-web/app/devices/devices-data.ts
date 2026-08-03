@@ -1,5 +1,11 @@
 import type { DeviceItem } from './device-types';
 
+export interface DeviceSnapshotDelivery {
+  deliveryMode: 'mock';
+  devices: DeviceItem[];
+  generatedAt: string;
+}
+
 /** 模拟设备数据（可从 API 替换） */
 export function getDevices(): DeviceItem[] {
   return [
@@ -100,4 +106,18 @@ export function getDevices(): DeviceItem[] {
       serialNumber: 'PRT-ZS-2024018',
     },
   ];
+}
+
+function getLatestDeviceTimestamp(devices: DeviceItem[]): string {
+  if (devices.length === 0) return '—';
+  return devices.reduce((latest, item) => (item.lastCheckAt > latest ? item.lastCheckAt : latest), devices[0]!.lastCheckAt);
+}
+
+export async function loadDevicesSnapshot(): Promise<DeviceSnapshotDelivery> {
+  const devices = getDevices();
+  return {
+    deliveryMode: 'mock',
+    devices,
+    generatedAt: getLatestDeviceTimestamp(devices),
+  };
 }

@@ -1,12 +1,11 @@
-'use client'
+import SalesSummaryClient from './sales-summary-client'
+import { loadSalesSummarySnapshot } from './sales-summary-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function SalesSummaryPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>📊 销售汇总报表</h1>
-      <p>销售数据汇总与统计分析</p>
-    </div>
-  )
+export default async function SalesSummaryPage() {
+  const snapshot = await loadSalesSummarySnapshot()
+
+  return <SalesSummaryClient snapshot={snapshot} />
 }

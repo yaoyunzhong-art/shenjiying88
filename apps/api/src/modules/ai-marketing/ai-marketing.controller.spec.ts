@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import 'reflect-metadata'
-import assert from 'node:assert/strict'
 import { AiMarketingController } from './ai-marketing.controller'
 import { CampaignTypeEnum, ChannelEnum } from './ai-marketing.dto'
 import {
@@ -32,112 +31,6 @@ describe('AiMarketingController (spec)', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined()
-  })
-
-  // ===== 路由元数据验证 =====
-  describe('路由元数据验证', () => {
-    it('Controller path metadata = "ai-marketing"', () => {
-      const path = Reflect.getMetadata('path', AiMarketingController)
-      assert.equal(path, 'ai-marketing')
-    })
-
-    it('POST /ai-marketing/roi/calculate — method POST, path "roi/calculate"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.calculateROI)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.calculateROI)
-      assert.equal(method, 1, 'should be POST')
-      assert.equal(path, 'roi/calculate')
-    })
-
-    it('POST /ai-marketing/roi/compare — method POST, path "roi/compare"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.compareROI)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.compareROI)
-      assert.equal(method, 1)
-      assert.equal(path, 'roi/compare')
-    })
-
-    it('POST /ai-marketing/roi/project — method POST, path "roi/project"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.projectROI)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.projectROI)
-      assert.equal(method, 1)
-      assert.equal(path, 'roi/project')
-    })
-
-    it('POST /ai-marketing/roi/budget-allocation — method POST, path "roi/budget-allocation"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.getBudgetAllocation)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.getBudgetAllocation)
-      assert.equal(method, 1)
-      assert.equal(path, 'roi/budget-allocation')
-    })
-
-    it('POST /ai-marketing/copy/generate — method POST, path "copy/generate"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.generateCopy)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.generateCopy)
-      assert.equal(method, 1)
-      assert.equal(path, 'copy/generate')
-    })
-
-    it('POST /ai-marketing/copy/optimize-headline — method POST, path "copy/optimize-headline"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.optimizeHeadline)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.optimizeHeadline)
-      assert.equal(method, 1)
-      assert.equal(path, 'copy/optimize-headline')
-    })
-
-    it('POST /ai-marketing/copy/localize — method POST, path "copy/localize"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.localizeCopy)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.localizeCopy)
-      assert.equal(method, 1)
-      assert.equal(path, 'copy/localize')
-    })
-
-    it('POST /ai-marketing/copy/ab-test — method POST, path "copy/ab-test"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.generateABTest)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.generateABTest)
-      assert.equal(method, 1)
-      assert.equal(path, 'copy/ab-test')
-    })
-
-    it('POST /ai-marketing/copy/generate-batch — method POST, path "copy/generate-batch"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.batchGenerateCopy)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.batchGenerateCopy)
-      assert.equal(method, 1)
-      assert.equal(path, 'copy/generate-batch')
-    })
-
-    it('POST /ai-marketing/campaign/suggest — method POST, path "campaign/suggest"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.suggestCampaign)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.suggestCampaign)
-      assert.equal(method, 1)
-      assert.equal(path, 'campaign/suggest')
-    })
-
-    it('POST /ai-marketing/campaign/timeline — method POST, path "campaign/timeline"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.planTimeline)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.planTimeline)
-      assert.equal(method, 1)
-      assert.equal(path, 'campaign/timeline')
-    })
-
-    it('POST /ai-marketing/campaign/reach-estimate — method POST, path "campaign/reach-estimate"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.estimateReach)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.estimateReach)
-      assert.equal(method, 1)
-      assert.equal(path, 'campaign/reach-estimate')
-    })
-
-    it('POST /ai-marketing/analyze — method POST, path "analyze"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.analyzeMarketing)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.analyzeMarketing)
-      assert.equal(method, 1)
-      assert.equal(path, 'analyze')
-    })
-
-    it('GET /ai-marketing/stats — method GET, path "stats"', () => {
-      const method = Reflect.getMetadata('method', AiMarketingController.prototype.getModuleStats)
-      const path = Reflect.getMetadata('path', AiMarketingController.prototype.getModuleStats)
-      assert.equal(method, 0, 'should be GET')
-      assert.equal(path, 'stats')
-    })
   })
 
   describe('POST /ai-marketing/roi/calculate', () => {

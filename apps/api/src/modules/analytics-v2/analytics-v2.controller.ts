@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, Injectable } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query, Param, Injectable, UseGuards } from '@nestjs/common'
 import { EventCollector } from './event-collector'
 import { CDCStream } from './cdc-stream'
 import { CohortService } from './services/cohort.service'
@@ -11,6 +11,10 @@ import type {
   CohortPeriod,
   FunnelStep
 } from './analytics-v2.entity'
+import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
+import { Public } from '../foundation/identity-access/public.decorator'
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
 
 /**
  * Phase-43 T173: AnalyticsV2Controller (数据分析 API)
@@ -39,6 +43,10 @@ import type {
 
 @Controller('analytics-v2')
 @Injectable()
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions('analytics:read')
+@TenantOptional()
 export class AnalyticsV2Controller {
   constructor(
     private readonly eventCollector: EventCollector,
@@ -52,6 +60,7 @@ export class AnalyticsV2Controller {
   // ─── Event Collection ───
 
   @Post('event/collect')
+  @Public()
   collectEvent(@Body() body: {
     tenantId: TenantId
     eventId: string
@@ -60,18 +69,19 @@ export class AnalyticsV2Controller {
     what: string
     memberId?: string
     sessionId?: string
-    where?: Record<string, any>
+    where?: Record<string, unknown>
     why?: string
     how?: string
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
     revenueCents?: number
     timestamp?: string
   }) {
-    const r = this.eventCollector.collect(body as any)
+    const r = this.eventCollector.collect(body)
     return r
   }
 
   @Post('event/batch')
+  @Public()
   collectBatch(@Body() body: { events: Parameters<EventCollector['collect']>[0][] }) {
     const results = this.eventCollector.collectBatch(body.events)
     return { results, count: results.length }
@@ -86,11 +96,13 @@ export class AnalyticsV2Controller {
   // ─── CDC ───
 
   @Post('cdc/apply')
+  @RequirePermissions('analytics:update')
   applyCDC(@Body() body: Parameters<CDCStream['apply']>[0]) {
     return this.cdcStream.apply(body)
   }
 
   @Post('cdc/replay')
+  @RequirePermissions('analytics:update')
   replayCDC(@Body() body: Parameters<CDCStream['replay']>[0]) {
     return this.cdcStream.replay(body)
   }
@@ -109,6 +121,7 @@ export class AnalyticsV2Controller {
   // ─── Cohort ───
 
   @Post('cohort/register')
+  @RequirePermissions('analytics:update')
   registerMember(@Body() body: {
     tenantId: TenantId
     period: CohortPeriod
@@ -124,11 +137,12 @@ export class AnalyticsV2Controller {
   }
 
   @Post('cohort/track')
+  @RequirePermissions('analytics:update')
   trackActivity(@Body() body: {
     tenantId: TenantId
     memberId: string
     activityType: EventType
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
   }) {
     return this.cohortService.trackMemberActivity(body)
   }
@@ -152,6 +166,7 @@ export class AnalyticsV2Controller {
   // ─── Funnel ───
 
   @Post('funnel/create')
+  @RequirePermissions('analytics:update')
   createFunnel(@Body() body: {
     tenantId: TenantId
     name: string
@@ -179,6 +194,7 @@ export class AnalyticsV2Controller {
   // ─── Retention ───
 
   @Post('retention/generate')
+  @RequirePermissions('analytics:update')
   generateRetention(@Body() body: { tenantId: TenantId; period: CohortPeriod }) {
     const report = this.retentionService.generateReport(body.tenantId, body.period)
     return { report }

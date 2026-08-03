@@ -14,6 +14,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
 import { LowcodeService } from './lowcode.service'
@@ -26,10 +27,12 @@ import {
   PageImportDto,
   DashboardStatsDto,
 } from './lowcode.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @ApiTags('低代码聚合管理')
 @ApiBearerAuth()
 @Controller('api/lowcode/admin')
+@UseGuards(TenantGuard)
 export class LowcodeController {
   constructor(
     private readonly lowcodeService: LowcodeService,

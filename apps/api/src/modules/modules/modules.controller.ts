@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ModulesService } from './modules.service';
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('modules')
+@UseGuards(TenantGuard)
 export class ModulesController {
   constructor(private readonly svc: ModulesService) {}
 

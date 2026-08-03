@@ -3,32 +3,20 @@
  * 角色视角: 🧾 仓管/售后
  * 功能: 详情展示、状态流转（质检→通过/拒绝→退款/换货/关闭）、编辑/删除
  */
-import { View, Text, Button, ScrollView, Textarea, Picker } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { View, Text, Button, ScrollView, Textarea } from '@tarojs/components';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
+import {
+  executeMiniappPurchaseReturnAction,
+  loadMiniappPurchaseReturnDetail,
+  type MiniappReturnOrderDetail,
+} from '../../../supplychain-runtime';
+import { DetailSkeleton, TriStateContainer, useTriState } from '../../../components/TriStateComponents';
 
 // ---- 类型 ----
 
-type ReturnStatus = 'pending' | 'inspecting' | 'approved' | 'rejected' | 'refunded' | 'exchanged' | 'closed';
-
-interface ReturnOrderDetail {
-  id: string;
-  returnNo: string;
-  customerName: string;
-  phone: string;
-  productName: string;
-  spec: string;
-  qty: number;
-  reason: string;
-  description: string;
-  amount: number;
-  status: ReturnStatus;
-  createdDate: string;
-  processedDate?: string;
-  processor?: string;
-  remark?: string;
-  evidenceImages?: string[];
-}
+type ReturnStatus = MiniappReturnOrderDetail['status'];
+type ReturnOrderDetail = MiniappReturnOrderDetail;
 
 // ---- 常量 ----
 
@@ -53,6 +41,12 @@ const STATUS_COLORS: Record<ReturnStatus, string> = {
 };
 
 const STATUS_STEPS = ['pending', 'inspecting', 'approved', 'refunded'] as const;
+
+function getStatusStepIndex(status: ReturnStatus): number {
+  if (status === 'exchanged') return STATUS_STEPS.indexOf('approved');
+  if (status === 'rejected' || status === 'closed') return STATUS_STEPS.indexOf('inspecting');
+  return STATUS_STEPS.findIndex((s) => s === status);
+}
 
 const NEXT_ACTION_LABELS: Record<string, string> = {
   inspecting: '开始质检',
@@ -84,7 +78,7 @@ const MOCK_DETAIL: ReturnOrderDetail = {
 // ---- 子组件：状态步骤条 ----
 
 function StatusSteps({ status }: { status: ReturnStatus }) {
-  const currentIdx = STATUS_STEPS.findIndex((s) => s === status);
+  const currentIdx = getStatusStepIndex(status);
 
   return (
     <View style={{ display: 'flex', alignItems: 'center', padding: '12px 0' }}>
@@ -149,7 +143,7 @@ function ActionButtons({
 }) {
   const nextStatuses = STATUS_FLOW[status];
 
-  const actionStyle = (color: string): React.CSSProperties => ({
+  const actionStyle = (color: string): CSSProperties => ({
     padding: '8px 18px',
     borderRadius: 10,
     border: 'none',
@@ -237,15 +231,64 @@ function RemarkSection({
   );
 }
 
+function resolveCurrentReturnId(): string {
+  return Taro.getCurrentInstance()?.router?.params?.id ?? MOCK_DETAIL.id;
+}
+
 // ---- 主组件 ----
 
 export default function ReturnOrderDetailPage() {
-  const [detail] = useState<ReturnOrderDetail>(MOCK_DETAIL);
+  const [detail, setDetail] = useState<ReturnOrderDetail>(MOCK_DETAIL);
+  const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示退货详情。');
+  const [localStatus, setLocalStatus] = useState<ReturnStatus>(MOCK_DETAIL.status);
   const [remark, setRemark] = useState('');
+  const returnId = useMemo(() => resolveCurrentReturnId(), []);
+
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading();
+    loadMiniappPurchaseReturnDetail(returnId, MOCK_DETAIL)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setDetail(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载退货单详情失败');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [returnId, setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseReturnDetail(returnId, MOCK_DETAIL)
+      .then((snapshot) => {
+        setDetail(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [returnId, setLoading, setError, setSuccess]);
+
+  useEffect(() => {
+    setLocalStatus(detail.status);
+  }, [detail.status]);
 
   const currentStepIndex = useMemo(
-    () => STATUS_STEPS.findIndex((s) => s === detail.status),
-    [detail.status],
+    () => getStatusStepIndex(localStatus),
+    [localStatus],
   );
 
   const handleAction = (action: ReturnStatus) => {
@@ -255,7 +298,22 @@ export default function ReturnOrderDetailPage() {
       content: `确定要${actionLabel}该退货单吗？${remark ? `\n备注: ${remark}` : ''}`,
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: `${actionLabel}成功`, icon: 'success' });
+          void executeMiniappPurchaseReturnAction(returnId, action, remark).then((result) => {
+            setDeliveryNote(result.note);
+            if (result.success) {
+              setLocalStatus(result.nextStatus);
+              Taro.showToast({
+                title: `${actionLabel}已同步`,
+                icon: 'success',
+              });
+              return;
+            }
+
+            Taro.showToast({
+              title: `${actionLabel}失败`,
+              icon: 'none',
+            });
+          });
         }
       },
     });
@@ -267,28 +325,35 @@ export default function ReturnOrderDetailPage() {
       content: '确定要删除该退货单？此操作不可撤销。',
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '删除成功', icon: 'success' });
-          setTimeout(() => Taro.navigateBack(), 1500);
+          Taro.showToast({ title: '暂未开放删除', icon: 'none' });
         }
       },
     });
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="退货单详情加载失败"
+      errorMessage="无法加载退货单详情，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<DetailSkeleton />}
+    >
     <ScrollView style={{ padding: 16, background: '#0f172a', minHeight: '100vh', color: '#e2e8f0' }}>
       {/* 头部：单号 + 状态 */}
       <View style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <Text style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9' }}>{detail.returnNo}</Text>
         <View style={{
           padding: '4px 12px', borderRadius: 12,
-          background: `${STATUS_COLORS[detail.status]}22`,
-          border: `1px solid ${STATUS_COLORS[detail.status]}44`,
+          background: `${STATUS_COLORS[localStatus]}22`,
+          border: `1px solid ${STATUS_COLORS[localStatus]}44`,
         }}>
-          <Text style={{ fontSize: 13, fontWeight: 600, color: STATUS_COLORS[detail.status] }}>
-            {STATUS_LABELS[detail.status]}
+          <Text style={{ fontSize: 13, fontWeight: 600, color: STATUS_COLORS[localStatus] }}>
+            {STATUS_LABELS[localStatus]}
           </Text>
         </View>
       </View>
+      <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{deliveryNote}</Text>
 
       {/* 状态步骤条 */}
       {currentStepIndex >= 0 && currentStepIndex < STATUS_STEPS.length && (
@@ -297,7 +362,7 @@ export default function ReturnOrderDetailPage() {
           background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.08)',
           marginBottom: 16,
         }}>
-          <StatusSteps status={detail.status} />
+          <StatusSteps status={localStatus} />
         </View>
       )}
 
@@ -339,7 +404,7 @@ export default function ReturnOrderDetailPage() {
       <RemarkSection remark={remark} onChange={setRemark} />
 
       {/* 操作按钮 */}
-      <ActionButtons status={detail.status} onAction={handleAction} onDelete={handleDelete} />
+      <ActionButtons status={localStatus} onAction={handleAction} onDelete={handleDelete} />
 
       {/* 操作历史 */}
       <View style={{
@@ -355,11 +420,11 @@ export default function ReturnOrderDetailPage() {
               <Text style={{ fontSize: 11, color: '#64748b' }}>{detail.createdDate} 由 {detail.customerName}</Text>
             </View>
           </View>
-          {detail.status !== 'pending' && (
+          {localStatus !== 'pending' && (
             <View style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, background: STATUS_COLORS[detail.status], marginTop: 6 }} />
+              <View style={{ width: 6, height: 6, borderRadius: 3, background: STATUS_COLORS[localStatus], marginTop: 6 }} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, color: '#cbd5e1' }}>{STATUS_LABELS[detail.status]}</Text>
+                <Text style={{ fontSize: 12, color: '#cbd5e1' }}>{STATUS_LABELS[localStatus]}</Text>
                 <Text style={{ fontSize: 11, color: '#64748b' }}>
                   {detail.processedDate || '处理中'} {detail.processor ? `由 ${detail.processor}` : ''}
                 </Text>
@@ -369,5 +434,6 @@ export default function ReturnOrderDetailPage() {
         </View>
       </View>
     </ScrollView>
+    </TriStateContainer>
   );
 }

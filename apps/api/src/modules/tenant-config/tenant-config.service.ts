@@ -32,6 +32,7 @@ import {
   type ConfigItemDefinition,
   type ConfigLevel,
   type ConfigSensitivity,
+  type ConfigCategory,
   type EffectiveConfig,
   type GetConfigRequest,
   type SetConfigRequest,
@@ -40,6 +41,8 @@ import {
 } from './tenant-config.entity'
 import { TenantConfigCacheService } from './tenant-config-cache.service'
 import { TenantConfigRepository, type ConfigAuditLogInput } from './tenant-config.repository'
+
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
 
 const SUPPORTED_I18N_LOCALES = ['zh-CN', 'en-US', 'ja-JP'] as const
 
@@ -144,7 +147,7 @@ export class TenantConfigService implements OnModuleInit {
    * P1-F1: 同步构建二级索引 (从 instances 派生, O(n) 一次)
    */
   async onModuleInit(): Promise<void> {
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[debug:init] TenantConfigService.onModuleInit begin')
     }
     if (!this.repo) return
@@ -163,7 +166,7 @@ export class TenantConfigService implements OnModuleInit {
       // eslint-disable-next-line no-console
       console.warn('[TenantConfigService] warm-up failed:', (err as Error).message)
     } finally {
-      if (process.env.NODE_ENV !== 'production') {
+      if (SHOULD_LOG_INIT_DEBUG) {
         console.log('[debug:init] TenantConfigService.onModuleInit end')
       }
     }
@@ -1186,7 +1189,7 @@ export class TenantConfigService implements OnModuleInit {
           key,
           value,
           encrypted: false,
-          category: category as any,
+          category: category as ConfigCategory,
           level: 'brand' as const,
           ownerId: brandId,
           inherits: false,
@@ -1254,7 +1257,7 @@ export class TenantConfigService implements OnModuleInit {
           key,
           value,
           encrypted: false,
-          category: key.split('.')[0] as any,
+          category: key.split('.')[0] as ConfigCategory,
           level: 'store' as const,
           ownerId: storeId,
           inherits: false,

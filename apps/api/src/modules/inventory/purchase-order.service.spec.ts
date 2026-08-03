@@ -376,4 +376,63 @@ describe('PurchaseOrderService', () => {
       expect(getHistory(po2.id, t2)).toHaveLength(2)
     })
   })
+
+  // ─── 取消历史 ──────────────────────────────────────────
+
+  describe('cancel history', () => {
+    it('should record cancellation with reason', () => {
+      const po = createPO(tenant)
+      const h = cancelPO(po.id, tenant, 'Supplier unavailable')
+      expect(h.action).toBe('CANCEL')
+      expect(h.detail).toBe('Supplier unavailable')
+      const history = getHistory(po.id, tenant)
+      const cancelRecord = history.find((h) => h.action === 'CANCEL')
+      expect(cancelRecord).toBeDefined()
+    })
+
+    it('should record cancellation without reason', () => {
+      const po = createPO(tenant)
+      const h = cancelPO(po.id, tenant)
+      expect(h.action).toBe('CANCEL')
+      expect(h.detail).toBe('Cancelled')
+    })
+  })
+
+  // ─── 完整流程历史 ──────────────────────────────────────
+
+  describe('full flow history', () => {
+    it('should track complete lifecycle: create→submit→approve→place→cancel', () => {
+      const po = createPO(tenant)
+      submitPO(po.id, tenant)
+      approvePO(po.id, tenant, { approverName: 'Admin', comment: 'Approved' })
+      placeOrder(po.id, tenant)
+      cancelPO(po.id, tenant, 'Supplier issue')
+
+      const history = getHistory(po.id, tenant)
+      expect(history).toHaveLength(5)
+      expect(history.map((h) => h.action)).toEqual([
+        'CREATE',
+        'SUBMIT',
+        'APPROVE',
+        'PLACE_ORDER',
+        'CANCEL',
+      ])
+    })
+  })
+
+  // ─── 时间线 ───────────────────────────────────────────
+
+  describe('timeline ordering', () => {
+    it('should return events in chronological order', () => {
+      const po = createPO(tenant)
+      submitPO(po.id, tenant)
+      approvePO(po.id, tenant, { approverName: 'Admin' })
+
+      const timeline = getTimeline(po.id, tenant)
+      expect(timeline.length).toBeGreaterThanOrEqual(3)
+      for (let i = 1; i < timeline.length; i++) {
+        expect(timeline[i].date >= timeline[i - 1].date).toBe(true)
+      }
+    })
+  })
 })

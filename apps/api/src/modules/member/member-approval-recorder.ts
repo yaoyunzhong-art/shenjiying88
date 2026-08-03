@@ -49,9 +49,20 @@ export class MemberApprovalOutcomeRecorder implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    this.governanceApprovalService.registerApprovalOutcomeHook(
-      RESOURCE_TYPE,
-      (event) => this.recordOutcome(event)
+    const registerHook =
+      this.governanceApprovalService?.registerApprovalOutcomeHook
+
+    if (typeof registerHook !== 'function') {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          '[member-approval-recorder] governance approval hook unavailable, skip outcome registration'
+        )
+      }
+      return
+    }
+
+    registerHook.call(this.governanceApprovalService, RESOURCE_TYPE, (event) =>
+      this.recordOutcome(event)
     )
   }
 

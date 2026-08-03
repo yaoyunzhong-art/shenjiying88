@@ -6,6 +6,8 @@
  * DomainVerificationMethod: DNS TXT 校验
  */
 
+export type DomainScopeType = 'TENANT' | 'BRAND' | 'STORE'
+
 export type DomainStatus =
   | 'pending_verification'  // 用户配置域名, 等待 TXT 校验
   | 'active'                // TXT 校验通过, 域名已激活
@@ -18,7 +20,12 @@ export type SslProvider = 'letsencrypt' | 'custom'
 
 export interface DomainMapping {
   id: string
+  scopeType: DomainScopeType
   tenantId: string
+  brandId?: string
+  storeId?: string
+  portalSiteId?: string
+  isPrimary?: boolean
   /** 自定义域名 (例: acme.shenjiying88.com) */
   domain: string
   /** DNS TXT 校验 token (用户需在 DNS 添加该 TXT 记录) */

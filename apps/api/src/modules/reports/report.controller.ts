@@ -1,17 +1,10 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-  HttpCode,
-  HttpStatus
-} from '@nestjs/common'
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common'
+import { Public } from '../foundation/identity-access/public.decorator'
 import { randomUUID } from 'node:crypto'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   type ReportDefinition,
   type CreateReportDefinitionInput,
@@ -34,6 +27,11 @@ import { PaymentMixService } from './reports/payment-mix.service'
 import { HourlyHeatmapService } from './reports/hourly-heatmap.service'
 import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
+import { TenantGuard } from '../agent/tenant.guard'
+import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
+
+const REPORT_READ_PERMISSION = 'report:read'
+const REPORT_EXPORT_PERMISSION = 'report:export'
 
 /**
  * Phase-39 T169: 报表中心 Controller
@@ -69,9 +67,13 @@ interface QueryParams {
   type?: ReportType
   status?: 'pending' | 'processing' | 'completed' | 'failed'
   noCache?: string
+  approvalTicket?: string
 }
 
 @Controller('api/reports')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(REPORT_READ_PERMISSION)
 export class ReportController {
   private definitions = new Map<string, ReportDefinition>()
 
@@ -89,7 +91,8 @@ export class ReportController {
     private readonly paymentMix: PaymentMixService,
     private readonly hourlyHeatmap: HourlyHeatmapService,
     private readonly channelFunnel: ChannelFunnelService,
-    private readonly inventoryAlert: InventoryAlertService
+    private readonly inventoryAlert: InventoryAlertService,
+    private readonly governanceApprovalService: GovernanceApprovalService,
   ) {}
 
   // ─── 10 个内置报表 ──────────────────────────────────────
@@ -148,6 +151,7 @@ export class ReportController {
 
   @Post('definitions')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   createDefinition(@Body() input: CreateReportDefinitionInput): ReportDefinition {
     const now = new Date().toISOString()
     const def: ReportDefinition = {
@@ -175,6 +179,7 @@ export class ReportController {
   }
 
   @Put('definitions/:id')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   updateDefinition(
     @Param('id') id: string,
     @Query() q: QueryParams & { version?: string },
@@ -196,6 +201,7 @@ export class ReportController {
   }
 
   @Delete('definitions/:id')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   deleteDefinition(@Param('id') id: string, @Query() q: QueryParams) {
     const def = this.definitions.get(id)
     if (!def || def.tenantId !== q.tenantId) return { deleted: false }
@@ -222,10 +228,51 @@ export class ReportController {
 
   @Post('exports')
   @HttpCode(HttpStatus.ACCEPTED)
-  async createBatchExportTask(@Body() body: QueryParams) {
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
+  async createBatchExportTask(@Body() body: QueryParams): Promise<any> {
     this.validateBatchExportRequest(body)
     const format = this.normalizeBatchExportFormat(body.format)
     const result = await this.generateReportResult(body)
+    const rowCount = result.rows.length
+
+    if (this.exportSvc.requiresApproval(rowCount)) {
+      const approval = await this.governanceApprovalService.materializeApproval({
+        operation: 'report.export.bulk',
+        resourceType: 'report-export',
+        resourceKey: this.buildExportApprovalResourceKey(body, format),
+        approvalRequired: true,
+        approvalTicket: body.approvalTicket,
+        tenantId: body.tenantId!,
+        requestedBy: 'ops.admin-web',
+        requestPayload: {
+          tenantId: body.tenantId,
+          type: body.type,
+          from: body.from,
+          to: body.to,
+          format,
+          rowCount,
+        },
+        summary: {
+          reportType: body.type,
+          exportFormat: format,
+          rowCount,
+          threshold: this.exportSvc.getApprovalThreshold(),
+          requestEndpoint: '/api/reports/exports',
+          approvalReason: 'row-count-exceeds-threshold',
+        },
+      })
+
+      if (approval.status !== 'APPROVED') {
+        return {
+          approvalRequired: true,
+          approvalTicket: approval.ticket,
+          approvalStatus: approval.status,
+          rowCount,
+          approvalThreshold: this.exportSvc.getApprovalThreshold(),
+          blockedReason: `Export row count ${rowCount} exceeds approval threshold ${this.exportSvc.getApprovalThreshold()}`,
+        }
+      }
+    }
 
     return this.exportSvc.createBatchExportTaskFromResult({
       tenantId: body.tenantId!,
@@ -270,6 +317,7 @@ export class ReportController {
   }
 
   @Delete('exports/:taskId')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   deleteBatchExportTask(@Param('taskId') taskId: string, @Query() q: QueryParams) {
     if (!q.tenantId) {
       return { deleted: false }
@@ -287,6 +335,7 @@ export class ReportController {
   // ─── 缓存管理 ──────────────────────────────────────────
 
   @Post('cache/invalidate')
+  @RequirePermissions(REPORT_EXPORT_PERMISSION)
   invalidateCache(@Body() body: { tenantId: string; type?: ReportType }) {
     const count = this.cache.invalidate(body.tenantId, body.type)
     return { invalidated: count }
@@ -337,5 +386,18 @@ export class ReportController {
       return normalized
     }
     throw new BadRequestException(`Unsupported batch export format: ${normalized}`)
+  }
+
+  private buildExportApprovalResourceKey(
+    q: QueryParams,
+    format: 'csv' | 'json' | 'html',
+  ): string {
+    return [
+      q.tenantId ?? 'unknown-tenant',
+      q.type ?? 'unknown-type',
+      q.from ?? 'unknown-from',
+      q.to ?? 'unknown-to',
+      format,
+    ].join(':')
   }
 }

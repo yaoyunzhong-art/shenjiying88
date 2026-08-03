@@ -14,7 +14,7 @@ export interface ErrorBoundaryProps {
   /** Visual severity */
   severity?: ErrorBoundarySeverity;
   /** Custom fallback renderer; receives error + reset callback */
-  fallback?: (args: ErrorBoundaryFallbackArgs) => React.ReactNode;
+  fallback?: React.ReactNode | ((args: ErrorBoundaryFallbackArgs) => React.ReactNode);
   /** Text for the reset/retry button (block / inline modes) */
   retryLabel?: string;
   /** Extra text shown below the error message (block mode) */
@@ -133,7 +133,10 @@ export class ErrorBoundary extends React.Component<
 
     // Custom fallback takes priority
     if (fallback) {
-      return fallback({ error: this.state.error, resetError: this.resetError });
+      if (typeof fallback === 'function') {
+        return fallback({ error: this.state.error, resetError: this.resetError });
+      }
+      return fallback;
     }
 
     if (severity === 'toast') {

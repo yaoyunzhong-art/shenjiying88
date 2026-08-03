@@ -59,7 +59,7 @@ function createHealthControllerWithComponents(
   }
 
   return {
-    controller: new HealthController({
+    controller: new HealthController({} as any, {
       check: () => Promise.resolve(defaultResult),
       ping: () => Promise.resolve({ alive: true, timestamp: new Date().toISOString() })
     } as never)

@@ -240,7 +240,7 @@ export default function RecommendationsPage() {
               <div style={styles.cardHeader}>
                 <div style={styles.cardTitleRow}>
                   <h3 style={styles.cardTitle}>{rec.productName}</h3>
-                  <Tag variant={STATUS_COLORS[rec.status] as any}>
+                  <Tag variant={STATUS_COLORS[rec.status]}>
                     {STATUS_LABELS[rec.status]}
                   </Tag>
                 </div>

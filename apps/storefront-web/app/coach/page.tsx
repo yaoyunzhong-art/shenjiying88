@@ -1,9 +1,9 @@
+'use client';
 /**
  * 教练工作台页 — Coach Dashboard (Next.js App Router Page)
  * 角色: 教练/导玩员视角，展示接待指标、推广任务、待跟进会员
  * 功能: 数据面板/指标卡/会员跟进表格/推广任务进度/个人排名
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { PageShell, StatusBadge } from '@m5/ui';

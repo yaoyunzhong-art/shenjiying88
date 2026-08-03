@@ -5,12 +5,18 @@ import {
   TeamRegistrationStatus,
   TournamentStatus,
   TournamentType,
+  RedemptionStatus,
+  PredictionStatus,
   type Match,
   type Ranking,
   type TeamRegistration,
   type Tournament,
   type TournamentPrizes,
-  type TournamentRules
+  type TournamentRules,
+  type RedemptionRecord,
+  type PredictionRecord,
+  type VoteRecord,
+  type PopularityEntry
 } from './tournament.entity'
 
 // ── In-memory stores ──
@@ -19,6 +25,14 @@ const tournamentStore = new Map<string, Tournament>()
 const matchStore = new Map<string, Match>()
 const rankingStore = new Map<string, Ranking>()
 const teamRegistrationStore = new Map<string, TeamRegistration>()
+const redemptionStore = new Map<string, RedemptionRecord>()
+const predictionStore = new Map<string, PredictionRecord>()
+const voteStore = new Map<string, VoteRecord>()
+
+// Participant points store (userId → points)
+const participantPointsStore = new Map<string, Map<string, number>>()
+// Prize stock store (prizeId → stock count)
+const prizeStockStore = new Map<string, number>()
 
 @Injectable()
 export class TournamentService {
@@ -37,6 +51,9 @@ export class TournamentService {
     startDate: string
     endDate: string
     maxParticipants: number
+    minParticipants?: number
+    entryFee?: number
+    prizePool?: number
     rules?: TournamentRules
     prizes?: TournamentPrizes
     bannerImage?: string
@@ -59,6 +76,9 @@ export class TournamentService {
       rules: input.rules ?? {},
       prizes: input.prizes ?? {},
       bannerImage: input.bannerImage,
+      minParticipants: input.minParticipants ?? 2,
+      entryFee: input.entryFee ?? 0,
+      prizePool: input.prizePool ?? 0,
       createdAt: now,
       updatedAt: now
     }
@@ -77,6 +97,9 @@ export class TournamentService {
       startDate?: string
       endDate?: string
       maxParticipants?: number
+      minParticipants?: number
+      entryFee?: number
+      prizePool?: number
       rules?: TournamentRules
       prizes?: TournamentPrizes
       bannerImage?: string
@@ -91,6 +114,9 @@ export class TournamentService {
     if (input.startDate !== undefined) tournament.startDate = input.startDate
     if (input.endDate !== undefined) tournament.endDate = input.endDate
     if (input.maxParticipants !== undefined) tournament.maxParticipants = input.maxParticipants
+    if (input.minParticipants !== undefined) tournament.minParticipants = input.minParticipants
+    if (input.entryFee !== undefined) tournament.entryFee = input.entryFee
+    if (input.prizePool !== undefined) tournament.prizePool = input.prizePool
     if (input.rules !== undefined) tournament.rules = input.rules
     if (input.prizes !== undefined) tournament.prizes = input.prizes
     if (input.bannerImage !== undefined) tournament.bannerImage = input.bannerImage
@@ -507,6 +533,314 @@ export class TournamentService {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // 1. Redemption (兑换)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Redeem points for a prize in a tournament.
+   * Validates: user has enough points, prize stock is available, tournament is ongoing.
+   */
+  redeem(input: {
+    tournamentId: string
+    tenantId: string
+    userId: string
+    prizeId: string
+    points: number
+  }): {
+    success: boolean
+    redemptionId: string
+    remainingPoints: number
+    estimatedDelivery: string
+  } {
+    const tournament = this.requireTournament(input.tournamentId, input.tenantId)
+
+    if (tournament.status !== TournamentStatus.Ongoing) {
+      throw new Error('Tournament is not ongoing; redemptions are only available during active tournaments')
+    }
+
+    // Check user points
+    const userPoints = this.getUserPoints(input.tournamentId, input.userId)
+    if (userPoints < input.points) {
+      throw new Error(`Insufficient points: user has ${userPoints}, needs ${input.points}`)
+    }
+
+    // Check prize stock
+    const stock = this.getPrizeStock(input.prizeId)
+    if (stock <= 0) {
+      throw new Error(`Prize ${input.prizeId} is out of stock`)
+    }
+
+    // Deduct points
+    this.deductUserPoints(input.tournamentId, input.userId, input.points)
+
+    // Reduce prize stock
+    prizeStockStore.set(input.prizeId, stock - 1)
+
+    // Determine prize label
+    const prizeLabel = this.resolvePrizeLabel(tournament.prizes, input.prizeId)
+
+    const now = new Date().toISOString()
+    const estimatedDelivery = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days
+    const redemption: RedemptionRecord = {
+      id: `redemption-${randomUUID()}`,
+      tournamentId: input.tournamentId,
+      userId: input.userId,
+      prizeId: input.prizeId,
+      prizeLabel,
+      pointsCost: input.points,
+      status: RedemptionStatus.Pending,
+      estimatedDelivery,
+      createdAt: now,
+      updatedAt: now
+    }
+    redemptionStore.set(redemption.id, redemption)
+
+    // Async: trigger prize dispatch (simulated)
+    this.triggerPrizeDispatch(redemption.id)
+
+    return {
+      success: true,
+      redemptionId: redemption.id,
+      remainingPoints: this.getUserPoints(input.tournamentId, input.userId),
+      estimatedDelivery
+    }
+  }
+
+  /**
+   * Query all redemption records for a tournament.
+   */
+  listRedemptions(tournamentId: string, tenantId: string): RedemptionRecord[] {
+    this.requireTournament(tournamentId, tenantId)
+    return Array.from(redemptionStore.values())
+      .filter((r) => r.tournamentId === tournamentId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  /**
+   * Get a single redemption record by id.
+   */
+  getRedemption(redemptionId: string): RedemptionRecord | undefined {
+    return redemptionStore.get(redemptionId)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 2. Enhanced Join (观众加入)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Enhanced join tournament — supports spectator mode alongside existing participant registration.
+   */
+  joinTournament(input: {
+    tournamentId: string
+    tenantId: string
+    userId: string
+    joinType: 'PARTICIPANT' | 'SPECTATOR'
+  }): Tournament {
+    const tournament = this.requireTournament(input.tournamentId, input.tenantId)
+
+    if (input.joinType === 'SPECTATOR') {
+      // Spectator join: no ranking entry, just mark presence
+      // No capacity or duplicate checks needed for spectators
+      return tournament
+    }
+
+    // Participant: delegate to existing register method
+    return this.registerParticipant(input.tournamentId, input.userId, input.tenantId)
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 3. Prediction (竞猜预测)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Place a prediction on a match. Points are locked immediately.
+   * If the prediction is correct, the stake is doubled and returned.
+   */
+  placePrediction(input: {
+    tournamentId: string
+    tenantId: string
+    userId: string
+    matchId: string
+    prediction: string
+    stake: number
+  }): PredictionRecord {
+    const tournament = this.requireTournament(input.tournamentId, input.tenantId)
+
+    if (tournament.status !== TournamentStatus.Ongoing) {
+      throw new Error('Tournament is not ongoing; predictions are only available during active tournaments')
+    }
+
+    // Validate the match exists and belongs to this tournament
+    const match = matchStore.get(input.matchId)
+    if (!match || match.tournamentId !== input.tournamentId) {
+      throw new Error(`Match not found: ${input.matchId}`)
+    }
+
+    // Check user points
+    const userPoints = this.getUserPoints(input.tournamentId, input.userId)
+    if (userPoints < input.stake) {
+      throw new Error(`Insufficient points for prediction: user has ${userPoints}, needs ${input.stake}`)
+    }
+
+    // Lock the stake (deduct from available points)
+    this.deductUserPoints(input.tournamentId, input.userId, input.stake)
+
+    const now = new Date().toISOString()
+    const prediction: PredictionRecord = {
+      id: `prediction-${randomUUID()}`,
+      tournamentId: input.tournamentId,
+      matchId: input.matchId,
+      userId: input.userId,
+      prediction: input.prediction,
+      stake: input.stake,
+      status: PredictionStatus.Locked,
+      createdAt: now,
+      updatedAt: now
+    }
+    predictionStore.set(prediction.id, prediction)
+
+    return prediction
+  }
+
+  /**
+   * Settle all predictions for a completed match.
+   * Winners get double their stake back.
+   */
+  settlePredictions(matchId: string, winnerPrediction: string, tenantId: string): number {
+    const match = matchStore.get(matchId)
+    if (!match) throw new Error(`Match not found: ${matchId}`)
+    this.requireTournament(match.tournamentId, tenantId)
+
+    const tournamentPredictions = Array.from(predictionStore.values()).filter(
+      (p) => p.matchId === matchId && p.status === PredictionStatus.Locked
+    )
+
+    let settledCount = 0
+    for (const pred of tournamentPredictions) {
+      if (pred.prediction === winnerPrediction) {
+        // Won: double stake back
+        pred.status = PredictionStatus.Won
+        const winnings = pred.stake * 2
+        this.addUserPoints(match.tournamentId, pred.userId, winnings)
+      } else {
+        // Lost: stake forfeited
+        pred.status = PredictionStatus.Lost
+      }
+      pred.updatedAt = new Date().toISOString()
+      predictionStore.set(pred.id, pred)
+      settledCount++
+    }
+
+    return settledCount
+  }
+
+  /**
+   * Query predictions for a match or user.
+   */
+  getPredictions(filter: {
+    tournamentId?: string
+    matchId?: string
+    userId?: string
+  }): PredictionRecord[] {
+    return Array.from(predictionStore.values()).filter((p) => {
+      if (filter.tournamentId && p.tournamentId !== filter.tournamentId) return false
+      if (filter.matchId && p.matchId !== filter.matchId) return false
+      if (filter.userId && p.userId !== filter.userId) return false
+      return true
+    }).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 4. Vote (人气投票)
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Cast votes for a contestant. Each vote costs 1 point.
+   */
+  castVote(input: {
+    tournamentId: string
+    tenantId: string
+    userId: string
+    contestantId: string
+    votes: number
+  }): VoteRecord {
+    const tournament = this.requireTournament(input.tournamentId, input.tenantId)
+
+    if (tournament.status !== TournamentStatus.Ongoing) {
+      throw new Error('Tournament is not ongoing; voting is only available during active tournaments')
+    }
+
+    // Check user points
+    const userPoints = this.getUserPoints(input.tournamentId, input.userId)
+    if (userPoints < input.votes) {
+      throw new Error(`Insufficient points for voting: user has ${userPoints}, needs ${input.votes}`)
+    }
+
+    // Deduct points (1 point per vote)
+    this.deductUserPoints(input.tournamentId, input.userId, input.votes)
+
+    const now = new Date().toISOString()
+    const vote: VoteRecord = {
+      id: `vote-${randomUUID()}`,
+      tournamentId: input.tournamentId,
+      contestantId: input.contestantId,
+      userId: input.userId,
+      votes: input.votes,
+      createdAt: now
+    }
+    voteStore.set(vote.id, vote)
+
+    return vote
+  }
+
+  /**
+   * Get popularity rankings for a tournament.
+   */
+  getPopularityRankings(tournamentId: string, tenantId: string): PopularityEntry[] {
+    this.requireTournament(tournamentId, tenantId)
+
+    const voteTotals = new Map<string, number>()
+    for (const vote of voteStore.values()) {
+      if (vote.tournamentId === tournamentId) {
+        const current = voteTotals.get(vote.contestantId) ?? 0
+        voteTotals.set(vote.contestantId, current + vote.votes)
+      }
+    }
+
+    return Array.from(voteTotals.entries())
+      .map(([contestantId, totalVotes]) => ({ contestantId, totalVotes }))
+      .sort((a, b) => b.totalVotes - a.totalVotes)
+  }
+
+  /**
+   * Set prize stock for a prize id (for test setup).
+   */
+  setPrizeStock(prizeId: string, stock: number): void {
+    prizeStockStore.set(prizeId, stock)
+  }
+
+  /**
+   * Add points to a user's balance for a tournament (for test setup).
+   */
+  addUserPoints(tournamentId: string, userId: string, points: number): void {
+    if (!participantPointsStore.has(tournamentId)) {
+      participantPointsStore.set(tournamentId, new Map())
+    }
+    const userPoints = participantPointsStore.get(tournamentId)!
+    const current = userPoints.get(userId) ?? 0
+    userPoints.set(userId, current + points)
+  }
+
+  /**
+   * Get a user's current points balance for a tournament.
+   */
+  getUserPoints(tournamentId: string, userId: string): number {
+    const userPoints = participantPointsStore.get(tournamentId)
+    if (!userPoints) return 0
+    return userPoints.get(userId) ?? 0
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // Internals
   // ═══════════════════════════════════════════════════════════════════
 
@@ -551,6 +885,33 @@ export class TournamentService {
       ;[result[i], result[j]] = [result[j], result[i]]
     }
     return result
+  }
+
+  private deductUserPoints(tournamentId: string, userId: string, points: number): void {
+    if (!participantPointsStore.has(tournamentId)) {
+      participantPointsStore.set(tournamentId, new Map())
+    }
+    const userPoints = participantPointsStore.get(tournamentId)!
+    const current = userPoints.get(userId) ?? 0
+    if (current < points) {
+      throw new Error(`Insufficient points: user has ${current}, needs ${points}`)
+    }
+    userPoints.set(userId, current - points)
+  }
+
+  private getPrizeStock(prizeId: string): number {
+    return prizeStockStore.get(prizeId) ?? 0
+  }
+
+  private resolvePrizeLabel(prizes: TournamentPrizes, prizeId: string): string {
+    const prize = prizes[prizeId]
+    if (prize) return prize.label
+    return `Prize ${prizeId}`
+  }
+
+  private triggerPrizeDispatch(_redemptionId: string): void {
+    // Async prize dispatch — in production this would enqueue a message
+    // For now, this is a no-op that can be extended
   }
 
   private updatePlayerRanking(
@@ -626,5 +987,10 @@ export class TournamentService {
     matchStore.clear()
     rankingStore.clear()
     teamRegistrationStore.clear()
+    redemptionStore.clear()
+    predictionStore.clear()
+    voteStore.clear()
+    participantPointsStore.clear()
+    prizeStockStore.clear()
   }
 }

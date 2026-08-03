@@ -8,7 +8,8 @@ import {
   UsePipes,
   ValidationPipe,
   NotFoundException,
-  BadRequestException
+  BadRequestException,
+  UseGuards,
 } from '@nestjs/common'
 import { TrainingService } from './training.service'
 import {
@@ -20,8 +21,10 @@ import {
   GenerateCertificateDto
 } from './training.dto'
 import type { Course, Enrollment, QuizAttempt, UserStats } from './training.entity'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('training')
+@UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class TrainingController {
   constructor(private readonly trainingService: TrainingService) {}

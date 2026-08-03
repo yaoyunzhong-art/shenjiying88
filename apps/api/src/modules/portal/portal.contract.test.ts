@@ -11,7 +11,9 @@ it('contract mapper: portal contracts preserve provided primaryDomain', () => {
   const storePortal = toStorePortalContract(createStorePortalFixture() as never)
 
   assert.equal(tenantPortal.primaryDomain, 'tenant-demo.cn-mainland.b2b.local')
+  assert.equal(tenantPortal.domainSource, 'custom')
   assert.equal(storePortal.primaryDomain, 'store-001.brand-demo.tenant-demo.cn-mainland.local')
+  assert.equal(storePortal.domainSource, 'custom')
 })
 
 it('contract mapper: portal contracts backfill missing primaryDomain', () => {
@@ -21,6 +23,7 @@ it('contract mapper: portal contracts backfill missing primaryDomain', () => {
   } as never)
 
   assert.equal(storePortal.primaryDomain, 'store-001.cn-mainland.local')
+  assert.equal(storePortal.domainSource, 'default')
 })
 
 it('contract mapper: Tob portal backfills with scopeCode.marketCode.b2b.local', () => {
@@ -31,6 +34,7 @@ it('contract mapper: Tob portal backfills with scopeCode.marketCode.b2b.local', 
 
   assert.ok(tenantPortal.primaryDomain.endsWith('.b2b.local'))
   assert.ok(tenantPortal.primaryDomain.includes('tenant-demo'))
+  assert.equal(tenantPortal.domainSource, 'default')
 })
 
 it('contract mapper: store portal backfills with storeCode.marketCode.local', () => {
@@ -42,6 +46,7 @@ it('contract mapper: store portal backfills with storeCode.marketCode.local', ()
   assert.ok(storePortal.primaryDomain.endsWith('.local'))
   assert.ok(!storePortal.primaryDomain.includes('b2b'))
   assert.ok(storePortal.primaryDomain.startsWith('store-001'))
+  assert.equal(storePortal.domainSource, 'default')
 })
 
 it('contract mapper: store portal has required fields', () => {

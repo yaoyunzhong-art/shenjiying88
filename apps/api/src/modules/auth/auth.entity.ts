@@ -21,30 +21,30 @@ export class AuthUser {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'user_id', unique: true, length: 64 })
+  @Column({ name: 'user_id', type: 'varchar', unique: true, length: 64 })
   userId!: string
 
-  @Column({ name: 'tenant_id', length: 64 })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   tenantId!: string
 
   @Index({ unique: true })
-  @Column({ length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 20, nullable: true })
   mobile?: string
 
   @Index({ unique: true })
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   email?: string
 
-  @Column({ name: 'wechat_open_id', length: 64, nullable: true })
+  @Column({ name: 'wechat_open_id', type: 'varchar', length: 64, nullable: true })
   wechatOpenId?: string
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   nickname!: string
 
-  @Column({ name: 'password_hash', length: 255, default: '' })
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, default: '' })
   passwordHash!: string
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   avatar?: string
 
   @Column('simple-array')
@@ -53,13 +53,13 @@ export class AuthUser {
   @Column('simple-array')
   permissions!: string[]
 
-  @Column({ default: true, name: 'is_active' })
+  @Column({ type: 'boolean', default: true, name: 'is_active' })
   isActive!: boolean
 
   @Column({ nullable: true, name: 'last_login_at', type: 'timestamp' })
   lastLoginAt?: Date
 
-  @Column({ nullable: true, name: 'failed_attempts', default: 0 })
+  @Column({ type: 'int', nullable: true, name: 'failed_attempts', default: 0 })
   failedAttempts!: number
 
   @Column({ nullable: true, name: 'locked_until', type: 'timestamp' })
@@ -82,31 +82,31 @@ export class AuthSession {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'session_id', unique: true, length: 64 })
+  @Column({ name: 'session_id', type: 'varchar', unique: true, length: 64 })
   sessionId!: string
 
-  @Column({ name: 'user_id', length: 64 })
+  @Column({ name: 'user_id', type: 'varchar', length: 64 })
   userId!: string
 
-  @Column({ name: 'tenant_id', length: 64 })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64 })
   tenantId!: string
 
-  @Column({ name: 'device_type', length: 20, default: 'web' })
+  @Column({ name: 'device_type', type: 'varchar', length: 20, default: 'web' })
   deviceType!: string
 
-  @Column({ name: 'device_id', length: 64, nullable: true })
+  @Column({ name: 'device_id', type: 'varchar', length: 64, nullable: true })
   deviceId?: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   browser?: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 64, nullable: true })
   os?: string
 
-  @Column({ length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip?: string
 
-  @Column({ name: 'user_agent', length: 512, nullable: true })
+  @Column({ name: 'user_agent', type: 'varchar', length: 512, nullable: true })
   userAgent?: string
 
   @Column({ name: 'access_token', type: 'text', nullable: true })
@@ -115,11 +115,12 @@ export class AuthSession {
   @Column({ name: 'refresh_token', type: 'text', nullable: true })
   refreshToken?: string
 
-  @Column({ name: 'login_type', length: 30, default: 'mobile_password' })
+  @Column({ name: 'login_type', type: 'varchar', length: 30, default: 'mobile_password' })
   loginType!: string
 
   @Column({
     name: 'status',
+    type: 'varchar',
     length: 20,
     default: 'active',
   })
@@ -145,13 +146,13 @@ export class AuthTokenBlacklist {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'jti', length: 64, unique: true })
+  @Column({ name: 'jti', type: 'varchar', length: 64, unique: true })
   jti!: string
 
-  @Column({ name: 'user_id', length: 64 })
+  @Column({ name: 'user_id', type: 'varchar', length: 64 })
   userId!: string
 
-  @Column({ name: 'token_type', length: 20 })
+  @Column({ name: 'token_type', type: 'varchar', length: 20 })
   tokenType!: 'access' | 'refresh'
 
   @Column({ name: 'revoked_at', type: 'bigint' })

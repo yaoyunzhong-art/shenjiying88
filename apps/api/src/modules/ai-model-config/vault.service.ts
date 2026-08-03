@@ -41,8 +41,8 @@ export class VaultService {
       this.keyFetchedAt = new Date()
       this.logger.log('Successfully fetched encryption key from Vault')
       return vaultKey
-    } catch(error: any){
-      this.logger.warn(`Failed to fetch from Vault: ${error.message}`)
+    } catch (error: unknown){
+      this.logger.warn(`Failed to fetch from Vault: ${(error as Error).message}`)
       
       // 检查环境
       if (process.env.NODE_ENV === 'production') {
@@ -104,7 +104,7 @@ export class VaultService {
         ok: !!key,
         source: key === DEV_FALLBACK_KEY ? 'dev-fallback' : 'vault',
       }
-    } catch(error: any){
+    } catch (error: unknown){
       return { ok: false, source: 'error' }
     }
   }

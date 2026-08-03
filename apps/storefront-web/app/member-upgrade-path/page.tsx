@@ -524,7 +524,7 @@ export default function MemberUpgradePathPage() {
 
       <MemberUpgradeSummary currentTierKey={currentTierKey} />
 
-      <ErrorBoundary fallback={() => <MemberUpgradeErrorFallback />}>
+      <ErrorBoundary fallback={<MemberUpgradeErrorFallback />}>
         <Suspense fallback={<MemberUpgradeLoadingFallback />}>
           {DEFAULT_TIERS && DEFAULT_TIERS.length > 0 ? (
             <MemberUpgradePath

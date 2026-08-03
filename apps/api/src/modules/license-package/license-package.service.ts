@@ -49,7 +49,7 @@ export class LicensePackageService {
   /**
    * 查询套餐列表
    */
-  async findAll(queryDto: PackageQueryDto): Promise<any> {
+  async findAll(queryDto: PackageQueryDto): Promise<PackageListResponseDto> {
     const { page = 1, pageSize = 10, keyword, isActive } = queryDto
 
     const where: any = {}
@@ -74,7 +74,7 @@ export class LicensePackageService {
       total,
       page,
       pageSize,
-    } as any
+    } as unknown as PackageListResponseDto
   }
 
   /**

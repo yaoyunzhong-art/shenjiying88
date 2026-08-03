@@ -2,7 +2,18 @@
 // 创建: 2026-06-26 · Pulse-自动
 // 状态: IMPLEMENTED · Leads 控制器
 
-import { Controller, Get, Post, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { LeadsService } from './leads.service';
 import {
   IngestWebhookDto,
@@ -11,6 +22,7 @@ import {
   RegisterRuleDto,
 } from './leads.dto';
 
+@UseGuards(TenantGuard)
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}

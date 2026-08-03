@@ -17,13 +17,26 @@ import {
   Post,
   Body,
   Param,
-  Logger
+  Logger,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PurchaseOrderService } from './purchase-order.service'
 
+const INVENTORY_PURCHASE_READ_PERMISSION = 'inventory.purchase.read'
+const INVENTORY_PURCHASE_WRITE_PERMISSION = 'inventory.purchase.write'
+
+@UseGuards(TenantGuard)
 @Controller('inventory/purchase-orders')
+@RequireTenantScope()
+@RequirePermissions(INVENTORY_PURCHASE_READ_PERMISSION)
 export class PurchaseOrderController {
   private readonly logger = new Logger(PurchaseOrderController.name)
 
@@ -68,6 +81,7 @@ export class PurchaseOrderController {
    * POST /api/inventory/purchase-orders/batch-approve
    */
   @Post('batch-approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   batchApprove(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: {

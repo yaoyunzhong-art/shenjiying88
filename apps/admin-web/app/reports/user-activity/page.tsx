@@ -1,12 +1,11 @@
-'use client'
+import UserActivityClient from './user-activity-client'
+import { loadUserActivitySnapshot } from './user-activity-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function UserActivityPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>👥 用户活跃度报表</h1>
-      <p>用户活跃度与留存分析</p>
-    </div>
-  )
+export default async function UserActivityPage() {
+  const snapshot = await loadUserActivitySnapshot()
+
+  return <UserActivityClient snapshot={snapshot} />
 }

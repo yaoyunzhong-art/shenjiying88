@@ -16,6 +16,13 @@ export class GatewayModule implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
+    if (!this.analyticsService || typeof this.analyticsService.setLogSource !== 'function') {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[gateway] analytics service unavailable, skip log source wiring')
+      }
+      return
+    }
+
     this.analyticsService.setLogSource(this.apiGateway)
   }
 }

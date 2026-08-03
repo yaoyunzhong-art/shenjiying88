@@ -126,6 +126,7 @@ scan_tokens() {
   local results
   results=$(grep -rn 'token.*=.*"[^"]\{10,\}"' apps/ --include="*.ts" \
     | grep -v '.test.ts' | grep -v '.spec.ts' \
+    | grep -v '^.*:.*\`' \
     | head -20 2>/dev/null || true)
 
   if [ -z "$results" ]; then

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 采购单详情页 — Purchase Order Detail Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 采购单详情查看、状态流转、编辑、删除
  */
-'use client';
 
 import React, { use, useState, useCallback } from 'react';
 import Link from 'next/link';

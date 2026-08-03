@@ -60,7 +60,8 @@ describe('foundation-page: 正例 (positive cases)', () => {
     });
 
     it('should default to healthy for unknown status', () => {
-      assert.strictEqual(formatFoundationHealthLabel(undefined as unknown as any), '健康');
+      // @ts-expect-error -- 测试 undefined 的 fallback 行为
+      assert.strictEqual(formatFoundationHealthLabel(undefined as unknown as 'healthy'), '健康');
     });
   });
 
@@ -81,7 +82,7 @@ describe('foundation-page: 正例 (positive cases)', () => {
 
     it('should handle zero capabilities', () => {
       const result = summarizeFoundationModule({
-        key: 'trust-governance' as any,
+        key: 'trust-governance',
         name: 'Empty',
         purpose: '-',
         inboundContracts: [],

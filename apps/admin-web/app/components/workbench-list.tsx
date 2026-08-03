@@ -10,7 +10,17 @@ import { normalizeWorkbenchRoleKey } from '../bootstrap';
  * 支持按 title / description / channel 进行搜索过滤。
  * 无数据时使用 EmptyState 统一占位，搜索无匹配时给出专业空结果提示。
  */
-export function WorkbenchList({ workbenches }: { workbenches: RoleWorkbenchContract[] }) {
+interface WorkbenchListProps {
+  workbenches: RoleWorkbenchContract[];
+  deliveryMode?: 'api' | 'fallback';
+  sourceLabel?: string;
+}
+
+export function WorkbenchList({
+  workbenches,
+  deliveryMode,
+  sourceLabel,
+}: WorkbenchListProps) {
   const { searchTerm, setSearchTerm, filteredItems, matchedCount, totalCount } = useSearchFilter(
     workbenches,
     ['title', 'description', 'channel']
@@ -28,6 +38,26 @@ export function WorkbenchList({ workbenches }: { workbenches: RoleWorkbenchContr
 
   return (
     <div>
+      {deliveryMode ? (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: '10px 12px',
+            borderRadius: 12,
+            background: 'rgba(15, 23, 42, 0.25)',
+            border: '1px solid rgba(148, 163, 184, 0.12)',
+            fontSize: 13,
+          }}
+        >
+          <div style={{ color: '#e2e8f0' }}>
+            Delivery {deliveryMode} · 工作台列表来源: {sourceLabel ?? 'snapshot.workbenches'}
+          </div>
+          <div style={{ marginTop: 6, color: '#94a3b8' }}>
+            当前列表已显式区分实时工作台快照与 fallback 工作台目录，避免首页工作台入口被误判为纯实时数据。
+          </div>
+        </div>
+      ) : null}
+
       <SearchFilterInput
         value={searchTerm}
         onChange={setSearchTerm}
@@ -70,6 +100,11 @@ export function WorkbenchList({ workbenches }: { workbenches: RoleWorkbenchContr
               <div style={{ marginTop: 8, fontSize: 13, color: '#cbd5e1' }}>
                 市场作用域：{workbench.marketCodes.join(' / ')}
               </div>
+              {deliveryMode ? (
+                <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>
+                  来源: {deliveryMode === 'api' ? '实时工作台快照' : 'fallback 工作台目录'}
+                </div>
+              ) : null}
             </Link>
           ))}
         </div>

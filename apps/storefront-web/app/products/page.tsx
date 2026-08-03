@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 
 import {
   PageShell,
@@ -22,6 +22,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -515,6 +517,22 @@ function ProductDetailDialog({ productId, onClose }: { productId: string | null;
 // ---- 页面 ----
 
 export default function ProductsPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageData, setPageData] = useState<Product[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<Product[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_PRODUCTS), 300);
+      }),
+    ).then((data) => {
+      if (data) setPageData(data);
+      setPageReady(true);
+    });
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ProductStatus | 'ALL'>('ALL');
@@ -524,9 +542,9 @@ export default function ProductsPage() {
 
   // 搜索
   const searched = useMemo(() => {
-    if (!searchTerm.trim()) return MOCK_PRODUCTS;
+    if (!searchTerm.trim()) return pageData;
     const lower = searchTerm.toLowerCase();
-    return MOCK_PRODUCTS.filter(
+    return pageData.filter(
       (p) =>
         p.name.toLowerCase().includes(lower) ||
         CATEGORY_LABELS[p.category].includes(lower) ||
@@ -563,11 +581,11 @@ export default function ProductsPage() {
 
   // 统计
   const stats = useMemo(() => {
-    const onSale = MOCK_PRODUCTS.filter((p) => p.status === 'on_sale').length;
-    const outOfStock = MOCK_PRODUCTS.filter((p) => p.status === 'out_of_stock').length;
-    const totalStock = MOCK_PRODUCTS.reduce((s, p) => s + p.stock, 0);
-    const avgRating = MOCK_PRODUCTS.reduce((s, p) => s + p.rating, 0) / MOCK_PRODUCTS.length;
-    return { total: MOCK_PRODUCTS.length, onSale, outOfStock, totalStock, avgRating: Math.round(avgRating * 10) / 10 };
+    const onSale = pageData.filter((p) => p.status === 'on_sale').length;
+    const outOfStock = pageData.filter((p) => p.status === 'out_of_stock').length;
+    const totalStock = pageData.reduce((s, p) => s + p.stock, 0);
+    const avgRating = pageData.reduce((s, p) => s + p.rating, 0) / pageData.length;
+    return { total: pageData.length, onSale, outOfStock, totalStock, avgRating: Math.round(avgRating * 10) / 10 };
   }, []);
 
   return (
@@ -580,6 +598,21 @@ export default function ProductsPage() {
         </div>
       }
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={pageData.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<Product[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_PRODUCTS), 300);
+            }),
+          ).then((data) => {
+            if (data) setPageData(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div style={{
         display: 'grid',
@@ -758,6 +791,7 @@ export default function ProductsPage() {
 
       {/* 商品详情弹窗 */}
       <ProductDetailDialog productId={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      </TriStateRenderer>
     </PageShell>
   );
 }

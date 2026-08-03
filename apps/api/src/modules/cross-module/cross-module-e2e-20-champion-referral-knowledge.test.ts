@@ -80,58 +80,58 @@ class TestController {
   @Post('referrals')
   createReferral(@Req() req: Request, @Body() body: { referrerId: string; refereeId: string; code?: string }) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return (this.referralService as any).createReferral(tc, body.referrerId, body.refereeId, body.code)
+    return (this.referralService as ReferralService).createReferral(tc, body.referrerId, body.refereeId, body.code)
   }
 
   @Post('referrals/resolve')
   resolveReferral(@Req() req: Request, @Body() body: { code: string }) {
-    return (this.referralService as any).getReferral(body.code)
+    return (this.referralService as ReferralService).getReferral(body.code)
   }
 
   @Get('referrals/funnel')
   getFunnel(@Req() req: Request) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return (this.referralService as any).getFunnelMetrics(tc)
+    return (this.referralService as ReferralService).getFunnelMetrics(tc)
   }
 
   @Get('referrals/:code')
   getReferral(@Param('code') code: string) {
-    return (this.referralService as any).getReferral(code)
+    return (this.referralService as ReferralService).getReferral(code)
   }
 
   @Post('referrals/:code/click')
   trackClick(@Req() req: Request, @Param('code') code: string) {
-    return (this.referralService as any).trackClick({ shortCode: code, source: 'link' })
+    return (this.referralService as ReferralService).trackClick({ shortCode: code, source: 'link' })
   }
 
   @Get('referrals/referrer/:referrerId')
   getReferrerReferrals(@Req() req: Request, @Param('referrerId') referrerId: string) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return (this.referralService as any).getReferrerReferrals(referrerId, tc)
+    return (this.referralService as ReferralService).getReferrerReferrals(referrerId, tc)
   }
 
   // ── Knowledge Indexer ──
   @Post('knowledge/documents')
   indexDocument(@Body() body: { sourcePath: string; content: string; metadata?: Record<string, unknown> }) {
-    const metadata = body.metadata as any || {}
-    return (this.knowledgeIndexerService as any).indexDocument({
+    const metadata = (body.metadata as unknown as { kind?: string; tags?: string[] }) ?? {} as { kind?: string; tags?: string[] }
+    return (this.knowledgeIndexerService as KnowledgeIndexerService).indexDocument({
       sourcePath: body.sourcePath,
       content: body.content,
-      kind: metadata.kind ?? 'doc',
+      kind: (metadata.kind ?? 'doc') as 'doc' | 'spec' | 'lesson' | 'pattern' | 'decision' | 'anti-pattern',
       tags: metadata.tags ?? undefined,
     })
   }
 
   @Get('knowledge/query')
   queryKnowledge(@Req() req: Request) {
-    const query = (req as any).query?.q || ''
-    return (this.knowledgeIndexerService as any).query({ query: query as string, topK: 5 })
+    const query = (req as unknown as { query: { q?: string } }).query?.q ?? ''
+    return (this.knowledgeIndexerService as KnowledgeIndexerService).query({ query, topK: 5 })
   }
 
   @Get('knowledge/documents')
   listDocuments() {
-    const stats = (this.knowledgeIndexerService as any).getStats()
-    return { documents: (this.knowledgeIndexerService as any).listDocuments?.() ?? [] }
+    const stats = (this.knowledgeIndexerService as KnowledgeIndexerService).getStats()
+    return { documents: (this.knowledgeIndexerService as KnowledgeIndexerService).listDocuments() ?? [] }
   }
 }
 

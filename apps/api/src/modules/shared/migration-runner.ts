@@ -3,6 +3,8 @@ import { readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { ViewModelService } from './view-model.service'
 
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
+
 /**
  * Phase-34: Migration Runner
  *
@@ -33,11 +35,11 @@ export class MigrationRunner implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[debug:init] MigrationRunner.onModuleInit begin')
     }
     await this.runAllMigrations()
-    if (process.env.NODE_ENV !== 'production') {
+    if (SHOULD_LOG_INIT_DEBUG) {
       console.log('[debug:init] MigrationRunner.onModuleInit end')
     }
   }

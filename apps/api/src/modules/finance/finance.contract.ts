@@ -3,8 +3,17 @@
  *
  * Transforms internal finance entities into serialisation-safe contract
  * shapes that can be consumed by clients (front-end, SDK, cross-module).
+ * Finance ledger/account/settlement/summary contracts should align to SDK truth source.
  */
 
+import type {
+  BusinessFinanceAccountRecord,
+  BusinessFinanceInvoiceRecord,
+  BusinessFinanceLedgerRecord,
+  BusinessFinanceSettlementRecord,
+  BusinessDailyRevenueSummary,
+  BusinessRevenueSummary,
+} from '@m5/sdk'
 import type {
   Account,
   DailyRevenue,
@@ -14,86 +23,19 @@ import type {
   Settlement,
 } from './finance.entity'
 
-// ── Contract Types (self-contained, no @m5/types dependency needed) ──
+// ── Contract Types ──
 
-export interface LedgerContract {
-  id: string
-  tenantId: string
-  brandId?: string
-  storeId?: string
-  type: string
-  amount: number
-  balance: number
-  orderId?: string
-  transactionId?: string
-  description: string
-  category?: string
-  recordedAt: string
-  createdAt: string
-}
+export type LedgerContract = BusinessFinanceLedgerRecord
 
-export interface AccountContract {
-  id: string
-  tenantId: string
-  storeId?: string
-  name: string
-  type: string
-  balance: number
-  status: string
-  createdAt: string
-  updatedAt: string
-}
+export type AccountContract = BusinessFinanceAccountRecord
 
-export interface SettlementContract {
-  id: string
-  tenantId: string
-  storeId?: string
-  startDate: string
-  endDate: string
-  totalRevenue: number
-  totalExpense: number
-  netProfit: number
-  settlementStatus: string
-  settledAt?: string
-  createdAt: string
-}
+export type SettlementContract = BusinessFinanceSettlementRecord
 
-export interface InvoiceContract {
-  id: string
-  tenantId: string
-  storeId?: string
-  orderId?: string
-  invoiceNo: string
-  amount: number
-  taxAmount: number
-  totalAmount: number
-  type: string
-  status: string
-  issuedAt?: string
-  buyerInfo?: Record<string, unknown>
-  createdAt: string
-}
+export type InvoiceContract = BusinessFinanceInvoiceRecord
 
-export interface RevenueSummaryContract {
-  storeId?: string
-  totalRevenue: number
-  totalExpense: number
-  totalRefund: number
-  netRevenue: number
-  transactionCount: number
-  periodStart: string
-  periodEnd: string
-}
+export type RevenueSummaryContract = BusinessRevenueSummary
 
-export interface DailyRevenueContract {
-  date: string
-  storeId?: string
-  revenue: number
-  expense: number
-  refund: number
-  netRevenue: number
-  transactionCount: number
-}
+export type DailyRevenueContract = BusinessDailyRevenueSummary
 
 // ── Mappers ──
 

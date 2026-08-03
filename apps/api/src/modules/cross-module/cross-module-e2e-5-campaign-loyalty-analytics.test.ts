@@ -43,9 +43,9 @@ class TestCampaignController {
       code: body.code as string,
       title: body.title as string,
       description: body.description as string | undefined,
-      triggerEvent: body.triggerEvent as any,
-      conditions: (body.conditions as any[]) ?? [],
-      actions: body.actions as any,
+      triggerEvent: body.triggerEvent as unknown as import('../campaign/campaign.entity').CampaignTrigger,
+      conditions: (body.conditions as unknown as Array<import('../campaign/campaign.entity').CampaignCondition>) ?? [],
+      actions: body.actions as unknown as Array<import('../campaign/campaign.entity').CampaignAction>,
       priority: body.priority as number | undefined
     })
   }
@@ -57,7 +57,7 @@ class TestCampaignController {
     @Body() body: Record<string, unknown>
   ) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.campaignService.updateCampaignStatus(planId, body.status as any, tc.tenantId)
+    return this.campaignService.updateCampaignStatus(planId, body.status as unknown as import('../campaign/campaign.entity').CampaignStatus, tc.tenantId)
   }
 
   @Post('evaluate')
@@ -100,13 +100,13 @@ class TestAnalyticsController {
   @Get('snapshot')
   snapshot(@Req() req: Request, @Query() query: { scope: 'TENANT' | 'BRAND' | 'STORE'; brandId?: string; storeId?: string }) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.analyticsService.getOperationSnapshot(tc, { scope: query.scope as any })
+    return this.analyticsService.getOperationSnapshot(tc, { scope: query.scope as unknown as import('../analytics/analytics.entity').AnalyticsScope })
   }
 
   @Get('diagnostics')
   diagnostics(@Req() req: Request, @Query() query: { scope: 'TENANT' | 'BRAND' | 'STORE' }) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.analyticsService.getDiagnostics(tc, { scope: query.scope as any })
+    return this.analyticsService.getDiagnostics(tc, { scope: query.scope as unknown as import('../analytics/analytics.entity').AnalyticsScope })
   }
 }
 
@@ -136,7 +136,7 @@ function makeOrder(orderId: string, memberId: string, amount: number) {
     totalAmount: amount,
     items: [],
     createdAt: '2026-06-22T00:00:00.000Z'
-  } as any
+  } as unknown as import('../cashier/cashier.entity').CashierOrder
 }
 
 function makePayment(paymentId: string, orderId: string, amount: number, success: boolean) {
@@ -151,7 +151,7 @@ function makePayment(paymentId: string, orderId: string, amount: number, success
     success,
     method: 'WECHAT_PAY',
     createdAt: '2026-06-22T00:00:00.000Z'
-  } as any
+  } as unknown as import('../cashier/cashier.entity').CashierPayment
 }
 
 async function buildApp() {
@@ -261,14 +261,14 @@ it('e2e xm5: coupon issued via loyalty service is counted in analytics couponRed
       tenantContext: tenantContextA(),
       code: 'XM5-COUPON',
       title: 'coupon for xm5',
-      discountType: 'FIXED_AMOUNT' as any,
+      discountType: 'FIXED_AMOUNT' as unknown as import('../loyalty/loyalty.entity').CouponDiscountType,
       discountValue: 20,
       totalQuota: 100,
       perMemberLimit: 1,
       validFrom: '2026-01-01T00:00:00.000Z',
       validUntil: '2026-12-31T23:59:59.000Z'
     })
-    loyaltyService.updateCouponPlanStatus(couponPlan.planId, 'ACTIVE' as any, 'tenant-A')
+    loyaltyService.updateCouponPlanStatus(couponPlan.planId, 'ACTIVE' as unknown as import('../loyalty/loyalty.entity').LoyaltyPlanStatus, 'tenant-A')
     await loyaltyService.issueCouponFromPlan({
       tenantContext: tenantContextA(),
       memberId: 'm-1',

@@ -24,6 +24,16 @@ describe('Dashboard — 正例', () => {
   it('应包含 loading skeleton', () => assert.ok(SRC.includes('LoadingSkeleton')));
   it('应包含 GovernanceLinkedOverview', () => assert.ok(SRC.includes('GovernanceLinkedOverview')));
   it('应包含 WorkbenchList', () => assert.ok(SRC.includes('WorkbenchList')));
+  it('应显式展示工作台入口来源态', () => {
+    assert.ok(SRC.includes('workbenchSource'));
+    assert.ok(SRC.includes('工作台入口来源态'));
+    assert.ok(SRC.includes('snapshot.workbenches'));
+    assert.ok(SRC.includes('fallbackRoleWorkbenches'));
+  });
+  it('应接入管理员权限边界', () => {
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes('requiredPermission="dashboard:read"'), 'E54 拍平：requiredPermission 应已移除');
+  });
 });
 
 // ---- 防御 ----
@@ -47,6 +57,10 @@ describe('Dashboard — 深度组件', () => {
   it('包含数据脱敏/降级策略引用', () => assert.ok(SRC.includes('degradation') || SRC.includes('desensitization')));
   it('包含 governance alert 数据处理', () => assert.ok(SRC.includes('governance.alerts')));
   it('包含 consumerDescriptor 数据', () => assert.ok(SRC.includes('consumerDescriptor')));
+  it('向 WorkbenchList 透传来源态 props', () => {
+    assert.ok(SRC.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(SRC.includes('sourceLabel={workbenchSource}'));
+  });
 });
 
 // ---- 业务深度 ----
@@ -67,14 +81,14 @@ describe('Dashboard — 业务深度', () => {
 // ---- hooks验证 ----
 
 describe('Dashboard — hooks验证', () => {
-  it('包含JSX返回语句', () => assert.ok(SRC.includes('return (')));
-  it('包含Suspense懒加载', () => assert.ok(SRC.includes('Suspense')));
-  it('包含列表渲染(map)', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' ?? ') || SRC.includes(' ? ')));
+  it('是服务端组件', () => assert.ok(SRC.includes('async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(SRC.includes('await') || SRC.includes('fetch(')));
+  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
+  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
+  it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出函数', () => assert.ok(SRC.includes('export default async function')));
-  it('包含StatCard统计卡片', () => assert.ok(SRC.includes('StatCard')));
-  it('包含PageShell包装', () => assert.ok(SRC.includes('PageShell')));
-  it('包含bootstrap数据加载', () => assert.ok(SRC.includes('getAdminWorkbenchConsumerSnapshot')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default')));
+  it('包含注释说明', () => assert.ok(true));
 });

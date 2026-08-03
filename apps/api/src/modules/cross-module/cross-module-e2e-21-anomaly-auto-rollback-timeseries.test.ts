@@ -43,9 +43,17 @@ import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.
 import { buildCrossModuleTestApp, DEFAULT_TENANT_CONTEXT } from './test-helpers'
 
 // ─── Helper: unwrap ResponseInterceptor data ───
-function data(response: request.Response) {
-  // ResponseInterceptor wraps result as { success: true, data: <result> }
-  return (response.body as any).data ?? response.body
+interface AnomalyResult {
+  metricKey: string; value: number; baseline: number; deviation: number; score: number;
+  severity: string; detectors: Record<string, unknown>; whitelisted: boolean; reason: string; detectedAt: string
+}
+interface RollbackRecord {
+  id: string; status: string; requiresConfirmation: boolean;
+  history: Array<Record<string, unknown>>
+}
+function data(response: request.Response): Record<string, unknown> {
+  const body = response.body as Record<string, unknown>
+  return (body.data ?? body) as Record<string, unknown>
 }
 
 // ─── TestController ───
@@ -61,7 +69,7 @@ class TestController {
   // ── Time Series ──
   @Post('timeseries/points')
   addDataPoint(@Body() body: { metricKey: string; value: number; timestamp?: string; labels?: Record<string, string> }) {
-    return (this.timeSeriesService as any).recordMetric({
+    return (this.timeSeriesService as unknown as Record<string, (p: { metricName: string; value: number; timestamp: string }) => unknown>).recordMetric({
       metricName: body.metricKey,
       value: body.value,
       timestamp: body.timestamp || new Date().toISOString(),
@@ -70,21 +78,21 @@ class TestController {
 
   @Get('timeseries/points/:metricKey')
   getPoints(@Param('metricKey') metricKey: string) {
-    return (this.timeSeriesService as any).query({ metricName: metricKey, window: '1h' })
+    return (this.timeSeriesService as unknown as Record<string, (p: { metricName: string; window: string }) => unknown>).query({ metricName: metricKey, window: '1h' })
   }
 
   @Get('timeseries/stats/:metricKey')
   getStats(@Param('metricKey') metricKey: string) {
-    const result = (this.timeSeriesService as any).query({ metricName: metricKey, window: '1h' })
+    const result = (this.timeSeriesService as unknown as Record<string, (p: { metricName: string; window: string }) => Record<string, unknown> | null>).query({ metricName: metricKey, window: '1h' })
     return result ? result.aggregate : null
   }
 
   // ── Anomaly Detector ──
   @Post('anomaly/detect')
   detectAnomaly(@Body() body: { metricKey: string; value: number }) {
-    const history = (this.timeSeriesService as any).query({ metricName: body.metricKey, window: '1h' })
+    const history = (this.timeSeriesService as unknown as Record<string, (p: { metricName: string; window: string }) => { points: Array<unknown> } | null>).query({ metricName: body.metricKey, window: '1h' })
     const points = history ? history.points || [] : []
-    return (this.anomalyDetectorService as any).detect({
+    return (this.anomalyDetectorService as unknown as Record<string, (p: { metricKey: string; value: number; history: Array<unknown> }) => unknown>).detect({
       metricKey: body.metricKey,
       value: body.value,
       history: points,
@@ -93,7 +101,7 @@ class TestController {
 
   @Post('anomaly/config')
   updateConfig(@Body() body: any) {
-    return (this.anomalyDetectorService as any).configure(body)
+    return (this.anomalyDetectorService as unknown as Record<string, (body: Record<string, unknown>) => unknown>).configure(body)
   }
 
   // ── Auto Rollback ──
@@ -106,7 +114,7 @@ class TestController {
     anomalyValue: number;
     baselineValue: number;
   }) {
-    return (this.autoRollbackService as any).trigger({
+    return (this.autoRollbackService as unknown as Record<string, (p: { reason: string; severity: string; metricKey: string; anomalyValue: number; baselineValue: number }) => unknown>).trigger({
       reason: body.reason,
       severity: body.severity,
       metricKey: body.metricKey,
@@ -118,23 +126,23 @@ class TestController {
   @Post('rollback/:id/confirm')
   @HttpCode(200)
   confirmRollback(@Param('id') id: string) {
-    return (this.autoRollbackService as any).confirm(id)
+    return (this.autoRollbackService as unknown as Record<string, (id: string) => unknown>).confirm(id)
   }
 
   @Get('rollback/:id')
   getRollback(@Param('id') id: string) {
-    return (this.autoRollbackService as any).getRecord(id)
+    return (this.autoRollbackService as unknown as Record<string, (id: string) => unknown>).getRecord(id)
   }
 
   @Get('rollbacks')
   listRollbacks() {
-    return (this.autoRollbackService as any).listRecords()
+    return (this.autoRollbackService as unknown as Record<string, () => unknown>).listRecords()
   }
 
   @Post('rollback/:id/cancel')
   @HttpCode(200)
   cancelRollback(@Param('id') id: string) {
-    return (this.autoRollbackService as any).cancel(id, 'Manual cancellation via test')
+    return (this.autoRollbackService as unknown as Record<string, (id: string, reason: string) => unknown>).cancel(id, 'Manual cancellation via test')
   }
 }
 
@@ -169,7 +177,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
       .post('/anomaly/detect')
       .send({ metricKey: 'http.p95.latency', value: 105 })
     assert.equal(resp.statusCode, 201)
-    const body = data(resp)
+    const body = data(resp) as unknown as AnomalyResult
     assert.equal(body.severity, 'NORMAL')
   })
 
@@ -187,7 +195,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
       .post('/anomaly/detect')
       .send({ metricKey: 'http.p99.latency', value: 900 })
     assert.equal(anomalyResp.statusCode, 201)
-    const anomaly = data(anomalyResp)
+    const anomaly = data(anomalyResp) as unknown as AnomalyResult
     assert.notEqual(anomaly.severity, 'NORMAL')
     assert.ok(anomaly.score > 0.5, `expected score > 0.5, got ${anomaly.score}`)
     assert.ok(anomaly.deviation > 0, `expected deviation > 0, got ${anomaly.deviation}`)
@@ -207,7 +215,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
         baselineValue: anomaly.baseline || 200
       })
     assert.equal(rollbackResp.statusCode, 201)
-    const rollback = data(rollbackResp)
+    const rollback = data(rollbackResp) as unknown as RollbackRecord
     assert.equal(rollback.status, 'AWAITING_CONFIRM')
     assert.ok(rollback.id)
     assert.equal(rollback.requiresConfirmation, true) // CRITICAL 默认需要二次确认
@@ -225,7 +233,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
         baselineValue: 100
       })
     assert.equal(r.statusCode, 201)
-    const rb = data(r)
+    const rb = data(r) as unknown as RollbackRecord
     const rbId = rb.id
     assert.equal(rb.status, 'AWAITING_CONFIRM')
     assert.equal(rb.requiresConfirmation, true)
@@ -234,7 +242,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
     const confirmResp = await request(app.getHttpServer())
       .post(`/rollback/${rbId}/confirm`)
     assert.equal(confirmResp.statusCode, 200)
-    const confirmed = data(confirmResp)
+    const confirmed = data(confirmResp) as unknown as RollbackRecord
     // confirm() 返回当前 record，状态从 AWAITING_CONFIRM 变为 PENDING（同步变更）
     assert.ok(confirmed.status)
     assert.ok(confirmed.history && confirmed.history.length >= 1)
@@ -245,8 +253,8 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
     // 查询最终状态
     const getResp = await request(app.getHttpServer()).get(`/rollback/${rbId}`)
     assert.equal(getResp.statusCode, 200)
-    const getRb = data(getResp)
-    assert.equal(getRb.id, rbId)
+    const getRb = data(getResp) as unknown as RollbackRecord
+    assert.equal(getRb.id as string, rbId)
     // 异步执行后应进入 COMPLETED 或 FAILED
     assert.ok(
       ['COMPLETED', 'FAILED'].includes(getRb.status),
@@ -286,14 +294,14 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
 
     // 取消第二个
     const cancel = await request(app.getHttpServer())
-      .post(`/rollback/${data(r2).id}/cancel`)
+      .post(`/rollback/${(data(r2) as unknown as RollbackRecord).id}/cancel`)
     assert.equal(cancel.statusCode, 200)
-    assert.equal(data(cancel).status, 'CANCELLED')
+    assert.equal((data(cancel) as unknown as RollbackRecord).status, 'CANCELLED')
 
     // 列出所有
     const listResp = await request(app.getHttpServer()).get('/rollbacks')
     assert.equal(listResp.statusCode, 200)
-    const list = data(listResp)
+    const list = data(listResp) as unknown as Array<Record<string, unknown>>
     assert.ok(Array.isArray(list))
     assert.ok(list.length >= 2)
 
@@ -314,7 +322,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
         baselineValue: 100
       })
     assert.equal(r.statusCode, 201)
-    const rb = data(r)
+    const rb = data(r) as unknown as RollbackRecord
     // WARNING 默认 requiresConfirmation = false
     assert.equal(rb.requiresConfirmation, false)
     // WARNING 初始状态为 PENDING（然后异步执行）
@@ -325,7 +333,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
 
     // 再次查询，状态应推进到 COMPLETED 或 FAILED
     const getResp = await request(app.getHttpServer()).get(`/rollback/${rb.id}`)
-    const getRb = data(getResp)
+    const getRb = data(getResp) as unknown as RollbackRecord
     assert.notEqual(getRb.status, 'PENDING')
   })
 
@@ -335,7 +343,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
     const statsAResp = await request(app.getHttpServer())
       .get('/timeseries/stats/http.p95.latency')
       .set('x-tenant-id', 'tenant-A')
-    const statsA = data(statsAResp)
+    const statsA = data(statsAResp) as unknown as { count: number }
     assert.ok(statsA !== null, 'statsA should not be null')
     assert.ok(typeof statsA.count === 'number', `statsA.count should be number, got ${typeof statsA.count}`)
     assert.ok(statsA.count > 0, `statsA.count should be > 0, got ${statsA.count}`)
@@ -344,7 +352,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
     const statsBResp = await request(app.getHttpServer())
       .get('/timeseries/stats/http.p95.latency')
       .set('x-tenant-id', 'tenant-B')
-    const statsB = data(statsBResp)
+    const statsB = data(statsBResp) as unknown as { count: number }
     // Tenant isolation is soft here: both tenants share the same in-memory Map
     // because the controller doesn't pass tenantId to recordMetric/query
     assert.ok(statsB !== null)
@@ -363,7 +371,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
         baselineValue: 100
       })
     assert.equal(r1.statusCode, 201)
-    const rb1 = data(r1)
+    const rb1 = data(r1) as unknown as RollbackRecord
 
     // Wait for async execution
     await new Promise(resolve => setTimeout(resolve, 200))
@@ -381,7 +389,7 @@ describe('E2E链#21: Anomaly Detector → Auto Rollback → Time Series 全链�
         baselineValue: 100
       })
     assert.equal(r2.statusCode, 201)
-    const rb2 = data(r2)
+    const rb2 = data(r2) as unknown as RollbackRecord
     // 当前 trigger() 不检查幂等，所以两次 id 不同
     // 如果未来实现了幂等检查，下面断言需改为：
     // assert.equal(r2.statusCode, 200)

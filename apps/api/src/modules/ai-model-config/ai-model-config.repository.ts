@@ -23,11 +23,16 @@ import type {
   AiModelStoreConfig,
   AiModelConfigHistory,
   AiModelProvider,
+  IndustryType,
+  ConfigChangeType,
 } from './ai-model-config.entity'
 
 // ============ Repository 接口 ============
 
 export interface AiModelConfigRepository {
+  // 历史维护 (Phase-FP)
+  deleteHistoryBefore(cutoffDate: Date): Promise<number>
+  getHistoryStats(): Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }>
   // 预设 (跨租户共享, 只读)
   listPresets(filter?: { provider?: AiModelProvider; industry?: string }): Promise<AiModelPreset[]>
   getPreset(id: string): Promise<AiModelPreset | null>
@@ -224,6 +229,33 @@ class PgRepository implements AiModelConfigRepository {
     })
   }
 
+  async deleteHistoryBefore(cutoffDate: Date): Promise<number> {
+    const ctx = requireTenantContext()
+    return withTenantSession(ctx, async (client) => {
+      const result = await client.query(
+        'DELETE FROM ai_model_config_history WHERE changed_at < $1',
+        [cutoffDate.toISOString()],
+      )
+      return result.rowCount ?? 0
+    })
+  }
+
+  async getHistoryStats(): Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }> {
+    const ctx = requireTenantContext()
+    return withTenantSession(ctx, async (client) => {
+      const countResult = await client.query('SELECT COUNT(*) AS cnt FROM ai_model_config_history')
+      const totalCount = Number(countResult.rows[0]?.cnt ?? 0)
+      const rangeResult = await client.query('SELECT MIN(changed_at) AS oldest, MAX(changed_at) AS newest FROM ai_model_config_history')
+      const distinctResult = await client.query('SELECT COUNT(DISTINCT config_id) AS cnt FROM ai_model_config_history')
+      return {
+        totalCount,
+        oldestDate: rangeResult.rows[0]?.oldest ?? null,
+        newestDate: rangeResult.rows[0]?.newest ?? null,
+        uniqueConfigCount: Number(distinctResult.rows[0]?.cnt ?? 0),
+      }
+    })
+  }
+
   async rollbackToHistory(historyId: string, operatorId: string, reason: string): Promise<AiModelStoreConfig> {
     const ctx = requireTenantContext()
     return withTenantSession(ctx, async (client) => {
@@ -392,6 +424,26 @@ class MemoryRepository implements AiModelConfigRepository {
     return this.history.filter((h) => h.configId === configId).slice(-limit).reverse()
   }
 
+  async deleteHistoryBefore(cutoffDate: Date): Promise<number> {
+    const before = this.history.length
+    this.history = this.history.filter((h) => new Date(h.changedAt) >= cutoffDate)
+    return before - this.history.length
+  }
+
+  async getHistoryStats(): Promise<{ totalCount: number; oldestDate: Date | null; newestDate: Date | null; uniqueConfigCount: number }> {
+    if (this.history.length === 0) {
+      return { totalCount: 0, oldestDate: null, newestDate: null, uniqueConfigCount: 0 }
+    }
+    const sorted = [...this.history].sort((a, b) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime())
+    const uniqueConfigs = new Set(sorted.map((h) => h.configId))
+    return {
+      totalCount: sorted.length,
+      oldestDate: new Date(sorted[0].changedAt),
+      newestDate: new Date(sorted[sorted.length - 1].changedAt),
+      uniqueConfigCount: uniqueConfigs.size,
+    }
+  }
+
   async rollbackToHistory(historyId: string, operatorId: string, reason: string): Promise<AiModelStoreConfig> {
     const ctx = requireTenantContext()
     void ctx
@@ -473,57 +525,57 @@ class MemoryRepository implements AiModelConfigRepository {
 
 // ============ Row → Entity 映射 ============
 
-function mapPresetRow(row: any): AiModelPreset {
+function mapPresetRow(row: Record<string, unknown>): AiModelPreset {
   return {
-    id: row.id,
-    presetCode: row.preset_code,
-    displayName: row.display_name,
-    provider: row.provider,
-    modelName: row.model_name,
+    id: row.id as string,
+    presetCode: row.preset_code as string,
+    displayName: row.display_name as string,
+    provider: row.provider as AiModelProvider,
+    modelName: row.model_name as string,
     defaultParams: typeof row.default_params === 'string' ? JSON.parse(row.default_params) : row.default_params,
-    industry: row.industry,
-    presetId: row.preset_id ?? row.id,
-    name: row.name ?? row.display_name,
-    industryType: row.industry_type ?? row.industry,
-    isActive: row.is_active,
-    description: row.description ?? undefined,
-    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
-    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+    industry: row.industry as IndustryType,
+    presetId: (row.preset_id as string) ?? (row.id as string),
+    name: (row.name as string) ?? (row.display_name as string),
+    industryType: (row.industry_type as IndustryType) ?? (row.industry as IndustryType),
+    isActive: row.is_active as boolean,
+    description: row.description as string | undefined,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at as string,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at as string,
   }
 }
 
-function mapStoreConfigRow(row: any): AiModelStoreConfig {
+function mapStoreConfigRow(row: Record<string, unknown>): AiModelStoreConfig {
   return {
-    id: row.id,
-    tenantId: row.tenant_id,
-    storeId: row.store_id,
-    configName: row.config_name,
-    provider: row.provider,
-    endpointUrl: row.endpoint_url_enc,
-    apiKeyEncrypted: row.api_key_enc,
-    contextWindow: row.context_window,
-    temperature: typeof row.temperature === 'string' ? parseFloat(row.temperature) : row.temperature,
-    maxTokens: row.max_tokens,
+    id: row.id as string,
+    tenantId: row.tenant_id as string,
+    storeId: row.store_id as string,
+    configName: row.config_name as string,
+    provider: row.provider as AiModelProvider,
+    endpointUrl: row.endpoint_url_enc as string,
+    apiKeyEncrypted: row.api_key_enc as string,
+    contextWindow: row.context_window as number,
+    temperature: typeof row.temperature === 'string' ? parseFloat(row.temperature) : row.temperature as number,
+    maxTokens: row.max_tokens as number,
     customHeaders: row.custom_headers
-      ? typeof row.custom_headers === 'string' ? JSON.parse(row.custom_headers) : row.custom_headers
+      ? typeof row.custom_headers === 'string' ? JSON.parse(row.custom_headers) : row.custom_headers as Record<string, unknown>
       : undefined,
-    isCurrent: row.is_current,
-    createdBy: row.created_by,
-    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
-    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at,
+    isCurrent: row.is_current as boolean,
+    createdBy: row.created_by as string,
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at as string,
+    updatedAt: row.updated_at instanceof Date ? row.updated_at.toISOString() : row.updated_at as string,
   }
 }
 
-function mapHistoryRow(row: any): AiModelConfigHistory {
+function mapHistoryRow(row: Record<string, unknown>): AiModelConfigHistory {
   return {
-    id: row.id,
-    configId: row.config_id,
+    id: row.id as string,
+    configId: row.config_id as string,
     snapshot: typeof row.snapshot === 'string' ? JSON.parse(row.snapshot) : row.snapshot,
-    versionNumber: row.version_number,
-    changeType: row.change_type,
-    changedBy: row.changed_by,
-    changedAt: row.changed_at instanceof Date ? row.changed_at.toISOString() : row.changed_at,
-    reason: row.reason ?? undefined,
+    versionNumber: row.version_number as number,
+    changeType: row.change_type as ConfigChangeType,
+    changedBy: row.changed_by as string,
+    changedAt: row.changed_at instanceof Date ? row.changed_at.toISOString() : row.changed_at as string,
+    reason: (row.reason as string | undefined) ?? undefined,
   }
 }
 

@@ -74,6 +74,20 @@ export class EmployeePerformanceReviewService {
     seedMockData()
   }
 
+  /**
+   * 测试辅助：重置内部状态，清空所有种子数据
+   */
+  static resetTestState(): void {
+    performanceStore.clear()
+  }
+
+  /**
+   * 测试辅助：重新注入种子数据
+   */
+  static seedTestData(): void {
+    seedMockData()
+  }
+
   list(
     tenantContext: RequestTenantContext,
     query?: EmployeePerformanceQueryDto,

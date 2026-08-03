@@ -190,7 +190,7 @@ describe(`${ROLES.HR} recommend 角色扩展测试`, () => {
       tenantId: `${TENANT_PREFIX}-hr`,
       memberId: 'rm-hr-01',
       preferences: { category: 'wellness', tags: ['gym'] },
-    })
+    } as any)
     assert.equal(result.updated, true)
   })
 })
@@ -324,14 +324,14 @@ describe(`${ROLES.Teambuilding} recommend 角色扩展测试`, () => {
       tenantId: `${TENANT_PREFIX}-team`,
       memberId: 'rm-team-lead',
       preferences: { activity_type: 'outdoor', team_size: 15 },
-    })
+    } as any)
     assert.equal(result.updated, true)
   })
 
   it('团建更新偏好时缺少 tenantId 应抛错', () => {
     const { controller } = createTestEnv(`${TENANT_PREFIX}-team`)
     assert.throws(() => {
-      controller.updatePreferences({ memberId: 'rm-team-01' })
+      controller.updatePreferences({ memberId: 'rm-team-01' } as any)
     }, /tenantId/)
   })
 })

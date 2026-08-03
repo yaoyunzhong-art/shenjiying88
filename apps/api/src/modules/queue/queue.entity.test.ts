@@ -5,10 +5,12 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import assert from 'node:assert/strict'
 import {
-  QueueType,
+  QueueChannel,
+  QueueEntity,
+  QueueSource,
   QueueStatus,
-  QUEUE_STATUS_TRANSITIONS,
-  QueueEntity
+  QueueType,
+  QUEUE_STATUS_TRANSITIONS
 } from './queue.entity'
 
 describe('queue.entity enums', () => {
@@ -16,6 +18,18 @@ describe('queue.entity enums', () => {
     assert.equal(QueueType.Booking, 'booking')
     assert.equal(QueueType.Waiting, 'waiting')
     assert.equal(QueueType.Service, 'service')
+  })
+
+  it('QueueSource 包含 Online / Onsite', () => {
+    assert.equal(QueueSource.Online, 'online')
+    assert.equal(QueueSource.Onsite, 'onsite')
+  })
+
+  it('QueueChannel 包含 WeChat / App / Terminal / Kiosk', () => {
+    assert.equal(QueueChannel.WeChat, 'wechat')
+    assert.equal(QueueChannel.App, 'app')
+    assert.equal(QueueChannel.Terminal, 'terminal')
+    assert.equal(QueueChannel.Kiosk, 'kiosk')
   })
 
   it('QueueStatus 包含 6 种状态', () => {
@@ -83,6 +97,8 @@ describe('queue.entity QueueEntity class', () => {
       estimatedWaitMin: 15,
       actualWaitMin: undefined,
       remark: '靠近窗户',
+      source: QueueSource.Online,
+      channel: QueueChannel.WeChat,
       createdAt: now,
       updatedAt: now
     })
@@ -118,6 +134,8 @@ describe('queue.entity QueueEntity class', () => {
       status: QueueStatus.Called,
       priority: 1,
       estimatedWaitMin: 5,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       createdAt: new Date(),
       updatedAt: new Date()
     })
@@ -149,6 +167,8 @@ describe('queue.entity QueueEntity class', () => {
       calledAt: new Date('2026-06-23T10:00:00Z'),
       servedAt: new Date('2026-06-23T10:03:00Z'),
       completedAt: new Date('2026-06-23T10:08:00Z'),
+      source: QueueSource.Online,
+      channel: QueueChannel.App,
       createdAt: new Date('2026-06-23T09:55:00Z'),
       updatedAt: new Date('2026-06-23T10:08:00Z')
     })

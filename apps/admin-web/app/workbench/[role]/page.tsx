@@ -1,21 +1,28 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { mapToBackendRole } from '@m5/types';
 import { FoundationConsumerWiringSection, GovernanceQuickViewSection, LoadingSkeleton, WorkspaceBreadcrumb, DetailClosureBar } from '@m5/ui';
 import { GovernanceLinkedOverview } from '../../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../../components/runtime-governance-panel';
-import { getAdminWorkbenchConsumerSnapshot, getRoleWorkbench } from '../../bootstrap';
+import { getAdminWorkbenchConsumerSnapshot, getRoleWorkbench, normalizeWorkbenchRoleKey } from '../../bootstrap';
 import { accessMeta, buildCapabilityEntrypoints, isStoreScopedWorkbenchRole, loadStoreCapabilityAccessSnapshot, readinessMeta } from '../../lyt-capability-access';
 import { DetailPageActions } from '../../components/detail-page-actions';
 import { buildStandardBreadcrumb, buildStandardClosureLinks } from '../../components/detail-workspace-registry';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function RoleWorkbenchPage({
-  params
+  params,
 }: {
   params: Promise<{ role: string }>;
 }) {
   const { role } = await params;
-  const [workbench, snapshot] = await Promise.all([getRoleWorkbench(role), getAdminWorkbenchConsumerSnapshot()]);
+  const [workbench, snapshot] = await Promise.all([
+    getRoleWorkbench(role),
+    getAdminWorkbenchConsumerSnapshot(),
+  ]);
 
   if (!workbench) {
     notFound();
@@ -27,8 +34,23 @@ export default async function RoleWorkbenchPage({
     ? await loadStoreCapabilityAccessSnapshot(capabilityStoreId, snapshot.tenantContext)
     : null;
   const visibleEntrypoints = capabilitySnapshot
-    ? buildCapabilityEntrypoints(capabilityStoreId, capabilitySnapshot.capabilityAccess).filter((item) => item.visibility === 'visible')
+    ? buildCapabilityEntrypoints(capabilityStoreId, capabilitySnapshot.capabilityAccess).filter(
+        (item) => item.visibility === 'visible',
+      )
     : [];
+  const backendRole = mapToBackendRole(workbench.role);
+  const normalizedRole = normalizeWorkbenchRoleKey(workbench.role);
+  const matchedSnapshotWorkbench = snapshot.workbenches.find(
+    (item) => normalizeWorkbenchRoleKey(item.role) === normalizedRole,
+  );
+  const workbenchDeliveryMode =
+    snapshot.deliveryMode === 'api' && matchedSnapshotWorkbench ? 'api' : 'fallback';
+  const workbenchSource = matchedSnapshotWorkbench
+    ? snapshot.deliveryMode === 'api'
+      ? 'snapshot.workbenches'
+      : 'fallbackRoleWorkbenches'
+    : 'fallbackWorkbenchMap';
+  const usesOperatorBridge = backendRole === 'operator';
 
   return (
     <main style={{ maxWidth: 1120, margin: '0 auto', padding: 32 }}>
@@ -40,12 +62,47 @@ export default async function RoleWorkbenchPage({
           borderRadius: 24,
           padding: 28,
           color: '#f8fafc',
-          background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)'
+          background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
         }}
       >
         <div style={{ fontSize: 13, color: '#93c5fd' }}>{workbench.channel}</div>
         <h1 style={{ marginBottom: 12 }}>{workbench.title}</h1>
         <p style={{ marginTop: 0, color: '#cbd5e1' }}>{workbench.description}</p>
+        <section
+          style={{
+            marginBottom: 20,
+            borderRadius: 18,
+            padding: 18,
+            background: 'rgba(15, 23, 42, 0.35)',
+            border: '1px solid rgba(148, 163, 184, 0.18)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: 12,
+                color: '#e2e8f0',
+                padding: '4px 10px',
+                borderRadius: 999,
+                border: '1px solid rgba(148, 163, 184, 0.18)',
+              }}
+            >
+              Delivery {workbenchDeliveryMode}
+            </span>
+            <span style={{ fontSize: 12, color: '#cbd5e1' }}>
+              工作台来源: {workbenchSource}
+            </span>
+          </div>
+          <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 13, lineHeight: 1.7 }}>
+            tenant-config 角色映射: {backendRole ?? '未映射'} · navItems: {workbench.navItems.length} ·
+            snapshot delivery: {snapshot.deliveryMode}
+          </div>
+          <div style={{ marginTop: 8, color: '#94a3b8', fontSize: 13 }}>
+            {usesOperatorBridge
+              ? '当前角色工作台主数据已补齐来源态证据，但 tenant-config 角色仍通过 operator 桥接，属于 E54 M1 过渡态。'
+              : '当前角色工作台主数据已补齐来源态证据，可区分 snapshot/api 与 fallbackWorkbenchMap 路径。'}
+          </div>
+        </section>
 
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
           {workbench.navItems.map((item) => (
@@ -68,43 +125,77 @@ export default async function RoleWorkbenchPage({
               borderRadius: 18,
               padding: 20,
               background: 'rgba(15, 23, 42, 0.35)',
-              border: '1px solid rgba(148, 163, 184, 0.18)'
+              border: '1px solid rgba(148, 163, 184, 0.18)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>门店能力入口治理</div>
                 <div style={{ marginTop: 8, color: '#cbd5e1', fontSize: 14 }}>
-                  当前门店 {capabilityStoreId} 的 capability access 已接入工作台首页，数据源：{capabilitySnapshot.deliveryMode === 'api' ? '真实 access view' : 'fallback access view'}。
+                  当前门店 {capabilityStoreId} 的 capability access 已接入工作台首页，数据源：
+                  {capabilitySnapshot.deliveryMode === 'api' ? '真实 access view' : 'fallback access view'}。
                 </div>
               </div>
               <Link href={`/stores/${capabilityStoreId}/capability-access`} style={{ color: '#93c5fd' }}>
                 查看完整能力矩阵
               </Link>
             </div>
-            <div style={{ marginTop: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+            <div
+              style={{
+                marginTop: 16,
+                display: 'grid',
+                gap: 12,
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              }}
+            >
               {visibleEntrypoints.slice(0, 4).map((entry) => (
                 <article
                   key={entry.key}
-                  style={{ borderRadius: 16, padding: 16, background: 'rgba(15, 23, 42, 0.38)', border: '1px solid rgba(148, 163, 184, 0.18)' }}
+                  style={{
+                    borderRadius: 16,
+                    padding: 16,
+                    background: 'rgba(15, 23, 42, 0.38)',
+                    border: '1px solid rgba(148, 163, 184, 0.18)',
+                  }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      alignItems: 'flex-start',
+                    }}
+                  >
                     <div>
                       <div style={{ fontSize: 16, fontWeight: 700 }}>{entry.label}</div>
                       <div style={{ marginTop: 6, color: '#94a3b8', fontSize: 13 }}>{entry.description}</div>
                     </div>
                     <span>{accessMeta[entry.access].label}</span>
                   </div>
-                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', color: '#cbd5e1', fontSize: 13 }}>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: 'flex',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                      color: '#cbd5e1',
+                      fontSize: 13,
+                    }}
+                  >
                     <span>{entry.capability}</span>
                     <span>·</span>
                     <span>{readinessMeta[entry.readiness].label}</span>
                     <span>·</span>
                     <span>{accessMeta[entry.access].label}</span>
                   </div>
-                  <div style={{ marginTop: 10, color: '#cbd5e1', lineHeight: 1.6, fontSize: 13 }}>{entry.reason}</div>
+                  <div style={{ marginTop: 10, color: '#cbd5e1', lineHeight: 1.6, fontSize: 13 }}>
+                    {entry.reason}
+                  </div>
                   {entry.isNavigable ? (
-                    <Link href={entry.href} style={{ marginTop: 12, display: 'inline-block', color: '#93c5fd' }}>
+                    <Link
+                      href={entry.href}
+                      style={{ marginTop: 12, display: 'inline-block', color: '#93c5fd' }}
+                    >
                       {entry.actionLabel}
                     </Link>
                   ) : (
@@ -134,7 +225,10 @@ export default async function RoleWorkbenchPage({
           highRiskLine={`高风险入口：${snapshot.consumerDescriptor.highRiskEntrypoints.join(' / ')}`}
           touchpointsLine={`治理触点：${snapshot.consumerDescriptor.governanceTouchpoints.slice(0, 3).join(' / ')}`}
         />
-        <RuntimeGovernancePanel tenantContext={snapshot.tenantContext} />
+        <RuntimeGovernancePanel
+          tenantContext={snapshot.tenantContext}
+          deliveryMode={snapshot.deliveryMode}
+        />
       </section>
 
       <DetailPageActions
@@ -155,9 +249,9 @@ export default async function RoleWorkbenchPage({
               key: 'pad',
               title: '查看 Pad 版',
               subtitle: `Pad 端 ${workbench.title} 工作台`,
-              href: `/pad/${role}`
-            }
-          ]
+              href: `/pad/${role}`,
+            },
+          ],
         })}
       />
     </main>

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 盘点 — Stocktaking (storefront-web)
  * 角色视角: 👔店长 / 🛒前台
  * 功能: 盘点列表、差异对比、搜索过滤、分类统计、开始盘点、完成盘点、空/加载状态、分页、批量操作
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

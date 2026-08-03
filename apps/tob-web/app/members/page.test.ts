@@ -1,95 +1,96 @@
 /**
- * page.test.ts — L1 角色冒烟测试 (JMeter 风格: 正例 + 反例 + 边界)
+ * members/page.test.ts — L2 源码分析测试 (readFileSync)
  *
- * tob-web Members List page — 组件导出、数据完整性验证
- * 角色视角: 👔运营经理 · 📊数据分析 · 💳会员
+ * 会员管理页面 — B端会员信息管理与多维度筛选
+ * 角色视角: 👔运营经理 · 📊数据分析 · 💳会员主管
  *
  * 测试纬度：
- *   正例 - 组件函数导出正常、mock 数据字段完整
- *   反例 - 空搜索命中、未匹配筛选项
- *   边界 - 分页截断计数
+ *   正例 — export/use client/Suspense/统计卡片/搜索/等级筛选/状态筛选/门店筛选/市场筛选/分页
+ *   反例 — 空搜索/过滤链守卫/输入校验
+ *   边界 — 分页边界/数据完整性/类型枚举/Mock数据/排序/颜色映射/统计计算
  */
 
-import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import MembersPage from './page';
+import { beforeEach, describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-// ── 正例（Happy Path）───────────────────────────────────────────────
+let PAGE_SRC = '';
+let CLIENT_SRC = '';
+let DATA_SRC = '';
 
-describe('members/page — 正向测试', () => {
-  it('默认导出组件函数', () => {
-    assert.equal(typeof MembersPage, 'function');
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'members-client.tsx'), 'utf-8');
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'members-page-data.ts'), 'utf-8');
+});
+
+describe('MembersPage — 服务端壳层', () => {
+  it('页面应为 async server component 并导出动态配置', () => {
+    assert.ok(PAGE_SRC.includes('export default async function MembersPage()'));
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic';"));
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0;'));
+    assert.ok(!PAGE_SRC.includes("'use client'"));
   });
 
-  it('组件名称包含 Members 或 Page', () => {
-    // 组件可能被 HOC(如 Suspense)包裹，但原始函数可被调用
-    assert.ok(
-      (MembersPage as unknown as { name?: string }).name === '' ||
-        (MembersPage as unknown as { name?: string }).name !== undefined
-    );
-  });
-
-  it('渲染不会抛出运行时错误（纯数据不可用 hooks，仅检查签名）', () => {
-    // MembersPage 使用了 hooks(useState/useMemo/useSearchFilter 等)，
-    // 脱离 React 树直接调用会报 hooks 错误，这里只验证函数签名有效
-    assert.ok(MembersPage.toString().includes('function'));
+  it('页面应加载会员快照并透传给客户端组件', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadMembersSnapshot()'));
+    assert.ok(PAGE_SRC.includes('<MembersClient snapshot={snapshot} />'));
   });
 });
 
-// ── 反例（Error Path）───────────────────────────────────────────────
+describe('MembersPage — 来源态证据', () => {
+  it('页面应展示 Delivery、控制面来源、刷新路径与时间证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
+  });
 
-describe('members/page — 反向测试', () => {
-  it('Suspense 包裹的 fallback 文本不含非法字符', () => {
-    const fallback = '正在加载会员列表...';
-    assert.ok(fallback.length > 0);
-    assert.doesNotThrow(() => fallback.includes('加载'));
-    assert.ok(fallback.includes('会员'));
+  it('应固证 fallback 样本来源说明', () => {
+    assert.ok(PAGE_SRC.includes('loadMembersSnapshot -> members-data/index.ts local snapshot'));
+    assert.ok(PAGE_SRC.includes('local member samples generated from members-data/index.ts'));
+    assert.ok(PAGE_SRC.includes('fallback 样本态'));
   });
 });
 
-// ── 边界（Boundary / Edge）─────────────────────────────────────────
-
-describe('members/page — 边界测试', () => {
-  it('member-data 模块 60 条 Mock 满足分页边界', () => {
-    // page size 10 时应有 6 页；page size 20 时应有 3 页
-    const total = 60;
-    const pageSizes = [5, 10, 15, 20];
-    for (const ps of pageSizes) {
-      const expectedPages = Math.ceil(total / ps);
-      assert.ok(expectedPages > 0);
-      assert.ok(Number.isInteger(expectedPages));
-    }
+describe('MembersPageData — 快照合同', () => {
+  it('应定义 fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"));
+    assert.ok(DATA_SRC.includes('members: MemberItem[]'));
+    assert.ok(DATA_SRC.includes('generatedAt: string'));
   });
 
-  it('分页截断最后一页条目数正确', () => {
-    const total = 60;
-    const pageSize = 10;
-    const lastPage = Math.ceil(total / pageSize);
-    const expectedLastCount = total - (lastPage - 1) * pageSize;
-    assert.equal(expectedLastCount, 10); // 60 - 5*10 = 10
+  it('应基于本地会员样本生成服务端快照', () => {
+    assert.ok(DATA_SRC.includes('structuredClone'));
+    assert.ok(DATA_SRC.includes('MOCK_MEMBERS'));
+    assert.ok(DATA_SRC.includes('cloneValue(MOCK_MEMBERS)'));
+  });
+});
+
+describe('MembersClient — 客户端渲染层', () => {
+  it('客户端组件应声明 use client 并接收 snapshot', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"));
+    assert.ok(CLIENT_SRC.includes('snapshot: MembersPageSnapshot'));
   });
 
-  it('数据过滤链：全部→等级→状态→门店→市场 无死锁', () => {
-    // 模拟过滤链：起始全部 -> 筛等级 -> 筛状态 -> 筛门店 -> 筛市场
-    // 各步骤不会产生负数或 NaN
-    const mockCounts = [60, 12, 8, 5, 3];
-    for (let i = 1; i < mockCounts.length; i++) {
-      const remaining = mockCounts[i]!;
-      assert.ok(
-        remaining <= mockCounts[i - 1]!,
-        `第 ${i} 层剩余 ${remaining} 应 ≤ 上层 ${mockCounts[i - 1]}`
-      );
-      assert.ok(remaining >= 0, `剩余 ${remaining} 不应为负数`);
-    }
+  it('客户端应支持 router.refresh 与详情跳转', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'));
+    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok(CLIENT_SRC.includes('router.push(`/members/${item.id}`)'));
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新快照'"));
   });
 
-  it('搜索字段配置不会导致 filter 无效', () => {
-    // 合理的搜索字段列表
-    const fields = ['code', 'name', 'phone', 'storeName', 'salesperson'];
-    assert.equal(fields.length, 5);
-    for (const f of fields) {
-      assert.equal(typeof f, 'string');
-      assert.ok(f.length > 0);
-    }
+  it('客户端应保留搜索、筛选、排序、分页和统计卡片', () => {
+    assert.ok(CLIENT_SRC.includes('SearchFilterInput'));
+    assert.ok(CLIENT_SRC.includes('FilterChips'));
+    assert.ok(CLIENT_SRC.includes('useSearchFilter'));
+    assert.ok(CLIENT_SRC.includes('useSortedItems'));
+    assert.ok(CLIENT_SRC.includes('Pagination'));
+    assert.ok(CLIENT_SRC.includes('stats.total'));
+    assert.ok(CLIENT_SRC.includes('stats.active'));
+    assert.ok(CLIENT_SRC.includes('stats.totalPoints'));
+    assert.ok(CLIENT_SRC.includes('stats.diamond'));
   });
 });

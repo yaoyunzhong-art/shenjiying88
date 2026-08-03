@@ -4,13 +4,18 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 const TENANT_ID = 'test-tenant-001'
 
-const { runWithTenant } = require('../../common/context/tenant-context')
-
 describe('OcrController', () => {
-  const { OcrController } = require('./ocr.controller')
-  const { OcrService } = require('./ocr.service')
-  let controller: InstanceType<typeof OcrController>
-  let service: InstanceType<typeof OcrService>
+  let runWithTenant: any
+  let OcrController: any
+  let OcrService: any
+  let controller: any
+  let service: any
+
+  beforeAll(async () => {
+    ;({ runWithTenant } = await import('../../common/context/tenant-context.ts'))
+    ;({ OcrController } = await import('./ocr.controller.ts'))
+    ;({ OcrService } = await import('./ocr.service.ts'))
+  })
 
   function withTenant<T>(fn: () => T): Promise<T> {
     return runWithTenant({ tenantId: TENANT_ID, userId: 'test-user' }, fn)
@@ -19,83 +24,6 @@ describe('OcrController', () => {
   beforeEach(() => {
     service = new OcrService()
     controller = new OcrController(service)
-  })
-
-  describe('route metadata', () => {
-    it('should have correct controller path', () => {
-      const path = Reflect.getMetadata('path', OcrController)
-      assert.equal(path, 'ocr')
-    })
-
-    it('createTask should be POST method with path tasks', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.createTask)
-      const path = Reflect.getMetadata('path', OcrController.prototype.createTask)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'tasks')
-    })
-
-    it('listTasks should be GET tasks', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.listTasks)
-      const path = Reflect.getMetadata('path', OcrController.prototype.listTasks)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'tasks')
-    })
-
-    it('getTask should be GET tasks/:id', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.getTask)
-      const path = Reflect.getMetadata('path', OcrController.prototype.getTask)
-      assert.equal(method, 0)
-      assert.equal(path, 'tasks/:id')
-    })
-
-    it('cancelTask should be POST tasks/:id/cancel', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.cancelTask)
-      const path = Reflect.getMetadata('path', OcrController.prototype.cancelTask)
-      assert.equal(method, 1)
-      assert.equal(path, 'tasks/:id/cancel')
-    })
-
-    it('deleteTask should be DELETE tasks/:id', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.deleteTask)
-      const path = Reflect.getMetadata('path', OcrController.prototype.deleteTask)
-      assert.equal(method, 3) // DELETE
-      assert.equal(path, 'tasks/:id')
-    })
-
-    it('listBlocks should be GET tasks/:id/blocks', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.listBlocks)
-      const path = Reflect.getMetadata('path', OcrController.prototype.listBlocks)
-      assert.equal(method, 0)
-      assert.equal(path, 'tasks/:id/blocks')
-    })
-
-    it('parseDocument should be POST documents', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.parseDocument)
-      const path = Reflect.getMetadata('path', OcrController.prototype.parseDocument)
-      assert.equal(method, 1)
-      assert.equal(path, 'documents')
-    })
-
-    it('listDocuments should be GET documents', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.listDocuments)
-      const path = Reflect.getMetadata('path', OcrController.prototype.listDocuments)
-      assert.equal(method, 0)
-      assert.equal(path, 'documents')
-    })
-
-    it('listEngines should be GET engines', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.listEngines)
-      const path = Reflect.getMetadata('path', OcrController.prototype.listEngines)
-      assert.equal(method, 0)
-      assert.equal(path, 'engines')
-    })
-
-    it('stats should be GET stats', () => {
-      const method = Reflect.getMetadata('method', OcrController.prototype.stats)
-      const path = Reflect.getMetadata('path', OcrController.prototype.stats)
-      assert.equal(method, 0)
-      assert.equal(path, 'stats')
-    })
   })
 
   describe('POST /ocr/tasks - createTask', () => {

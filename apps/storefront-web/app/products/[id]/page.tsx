@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   PageShell,
   DetailShell,
@@ -13,6 +13,8 @@ import {
   useFormSubmit,
   type DetailShellAction,
 } from '@m5/ui';
+import { useTriState } from '../../_components/useTriState';
+import { TriStateRenderer } from '../../_components/TriStateRenderer';
 
 // ── 类型 ──
 
@@ -247,10 +249,22 @@ export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [offering, setOffering] = useState<StoreOffering | undefined>(() =>
-    getOfferingById(params.id),
-  );
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [offering, setOffering] = useState<StoreOffering | undefined>(undefined);
+  const [pageReady, setPageReady] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<StoreOffering | undefined>((resolve) => {
+        setTimeout(() => resolve(getOfferingById(params.id)), 300);
+      }),
+    ).then((data) => {
+      setOffering(data);
+      setPageReady(true);
+    });
+  }, [params.id]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
 
@@ -305,12 +319,32 @@ export default function ProductDetailPage() {
     [offering, transitionStatus],
   );
 
+  if (!offering && pageReady) {
+    return (
+      <PageShell title="产品详情" description="">
+        <TriStateRenderer
+          loading={false}
+          empty={true}
+          error={error}
+          onRetry={() =>
+            wrapLoad(
+              new Promise<StoreOffering | undefined>((resolve) => {
+                setTimeout(() => resolve(getOfferingById(params.id)), 300);
+              }),
+            ).then((data) => {
+              setOffering(data);
+              setPageReady(true);
+            })
+          }
+        ><></></TriStateRenderer>
+      </PageShell>
+    );
+  }
+
   if (!offering) {
     return (
       <PageShell title="产品详情" description="">
-        <div style={{ textAlign: 'center', padding: 64, color: '#64748b', fontSize: 14 }}>
-          未找到产品 (ID: {params.id})
-        </div>
+        <TriStateRenderer loading={loading} empty={false} error={error}><></></TriStateRenderer>
       </PageShell>
     );
   }
@@ -349,8 +383,8 @@ export default function ProductDetailPage() {
     <PageShell
       title={offering.name}
       description={`${CATEGORY_LABELS[offering.category]} · ${offering.storeName}`}
-
     >
+      <TriStateRenderer loading={loading} empty={false} error={error}><>
       <DetailShell title={offering.name} subtitle={`${CATEGORY_LABELS[offering.category]} · ${offering.storeName}`} actions={detailActions}>
         {/* 基本信息 */}
         <InfoSection title="基本信息">
@@ -399,6 +433,7 @@ export default function ProductDetailPage() {
           itemName={offering.name}
         />
       )}
+      </></TriStateRenderer>
     </PageShell>
   );
 }

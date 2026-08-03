@@ -10,7 +10,7 @@ import {
   type ConfigurationSecretMetadata,
   buildConfigurationHref
 } from '@m5/types';
-import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { ApiClient, buildActorHeaders, getDefaultApiBaseUrl } from '@m5/sdk';
 
 export interface ConfigurationSnapshotDelivery {
   deliveryMode: 'api' | 'fallback';
@@ -29,6 +29,14 @@ const FALLBACK_SCOPE: ConfigurationScope = {
 };
 
 const FALLBACK_TENANT_ID = 'tenant-demo';
+const CONFIGURATION_GOVERNANCE_ACTOR = {
+  actorId: 'admin-configuration-governance',
+  actorType: 'employee-user',
+  actorName: 'Admin Configuration Governance',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['foundation.governance.read'],
+  authenticated: true
+} as const;
 
 function createClient(): ApiClient {
   return new ApiClient({
@@ -36,7 +44,13 @@ function createClient(): ApiClient {
     tenantId: FALLBACK_TENANT_ID,
     brandId: 'brand-demo',
     storeId: 'store-001',
-    marketCode: 'cn-mainland'
+    marketCode: 'cn-mainland',
+    headers: buildActorHeaders({
+      ...CONFIGURATION_GOVERNANCE_ACTOR,
+      tenantId: FALLBACK_TENANT_ID,
+      brandId: 'brand-demo',
+      storeId: 'store-001'
+    })
   });
 }
 

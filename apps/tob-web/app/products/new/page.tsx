@@ -1,10 +1,10 @@
+'use client';
 /**
  * products/new/page.tsx — ToB 新建商品页面
  *
  * 使用 FormPageScaffold 构建带验证的商品创建表单
  * 支持填写基础信息、定价、库存、供应商关联等
  */
-'use client';
 
 import React from 'react';
 

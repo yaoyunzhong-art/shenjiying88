@@ -32,6 +32,37 @@ export const API_ENDPOINTS = {
   },
 }
 
+export const TIMEOUTS = {
+  short: 5000,
+  medium: 10000,
+  long: 30000,
+  api: 15000,
+}
+
+export const TEST_LICENSES = {
+  valid: {
+    id: 'lic-valid-001',
+    type: 'paid',
+    status: 'active',
+  },
+  expired: {
+    id: 'lic-expired-001',
+    type: 'trial',
+    status: 'expired',
+  },
+  suspended: {
+    id: 'lic-suspended-001',
+    type: 'paid',
+    status: 'suspended',
+  },
+}
+
+export const TEST_ACTIVATION_CODES = {
+  valid: 'ABCD-EFGH-IJKL-MNOP',
+  expired: 'WXYZ-1234-5678-9012',
+  invalid: 'INVALID-CODE',
+}
+
 export const SELECTORS = {
   common: {
     toast: '[data-testid="toast-message"]',

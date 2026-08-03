@@ -8,7 +8,7 @@ import type { PaymentMethod } from '@m5/types'
  * PaymentChannelBootstrap · 启动时注册默认 Mock 通道
  *
  * 设计目的:
- *   - 默认租户 ('default') 自动有 WECHAT/ALIPAY/CARD 3 个 mock 通道
+ *   - 仅在显式开启时,默认租户 ('default') 自动注册 WECHAT/ALIPAY/CARD 3 个 mock 通道
  *   - 真实租户在生产环境由 admin-web 配置后台 → 调 register API 注册真实通道
  *   - 当前 MVP: 所有租户 fallback 到 'default' 租户的通道
  *
@@ -30,6 +30,17 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
   ) {}
 
   onApplicationBootstrap(): void {
+    const shouldBootstrapMockChannels = process.env.ENABLE_MOCK_PAYMENT_CHANNELS === 'true'
+
+    if (!shouldBootstrapMockChannels) {
+      return
+    }
+
+    if (!this.mockGateway || typeof this.mockGateway.createPrepay !== 'function') {
+      this.logger.warn('Mock payment gateway unavailable, skip default mock channel bootstrap')
+      return
+    }
+
     for (const method of DEFAULT_METHODS) {
       this.registerMockChannel(DEFAULT_TENANT_ID, method, 0)
     }
@@ -46,6 +57,11 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
    *   3. 调用 registry.register(port)
    */
   registerMockChannel(tenantId: string, method: PaymentMethod, priority: number): void {
+    const gatewayName =
+      typeof this.mockGateway?.gatewayName === 'string' && this.mockGateway.gatewayName.length > 0
+        ? this.mockGateway.gatewayName
+        : 'mock'
+
     const config: PaymentChannelConfig = {
       tenantId,
       channel: method,
@@ -56,7 +72,7 @@ export class PaymentChannelBootstrap implements OnApplicationBootstrap {
     }
     const port: PaymentChannelPort = {
       ...config,
-      gatewayName: this.mockGateway.gatewayName,
+      gatewayName,
       tenantId,
       config,
       createPrepay: (order, m) => this.mockGateway.createPrepay(order, m),

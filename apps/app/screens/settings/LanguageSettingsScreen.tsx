@@ -3,7 +3,7 @@
  * Language Settings Screen
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,19 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { i18nService, SUPPORTED_LANGUAGES } from '../../services/I18n';
 
 export function LanguageSettingsScreen() {
   const [currentLocale, setCurrentLocale] = useState(i18nService.getCurrentLocale());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const timer = setTimeout(() => setLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLanguageSelect = (locale: string) => {
     Alert.alert(
@@ -34,6 +42,15 @@ export function LanguageSettingsScreen() {
       ]
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#059669" />
+        <Text style={styles.loadingText}>语言设置加载中...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -236,5 +253,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
     lineHeight: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 12,
   },
 });

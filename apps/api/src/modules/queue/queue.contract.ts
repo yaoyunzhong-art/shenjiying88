@@ -1,4 +1,4 @@
-import type { QueueEntity } from './queue.entity'
+import type { QueueChannel, QueueEntity, QueueSource } from './queue.entity'
 
 export interface QueueEntryContract {
   id: string
@@ -19,6 +19,10 @@ export interface QueueEntryContract {
   servedAt?: string
   completedAt?: string
   remark?: string
+  /** WP-12A: 双模排队来源 */
+  source: QueueSource
+  /** WP-12A: 排队渠道 */
+  channel: QueueChannel
   createdAt: string
   updatedAt: string
 }
@@ -42,6 +46,30 @@ export interface PaginatedResultContract<T> {
   totalPages: number
 }
 
+/** WP-12A: 双模排队统计合约 */
+export interface DualModeStatsContract {
+  online: { waiting: number; called: number; serving: number }
+  onsite: { waiting: number; called: number; serving: number }
+  byChannel: Record<string, { waiting: number }>
+  total: number
+}
+
+/** WP-12A: 同步状态合约 */
+export interface SyncStatusContract {
+  entries: QueueEntryContract[]
+  hasActiveQueue: boolean
+  activeEntry: QueueEntryContract | null
+}
+
+/** WP-12A: 等待时间预估合约 */
+export interface EstimatedWaitContract {
+  onlineAhead: number
+  onsiteAhead: number
+  onlineWaitMin: number
+  onsiteWaitMin: number
+  totalWaitMin: number
+}
+
 export function toQueueEntryContract(entry: QueueEntity): QueueEntryContract {
   return {
     id: entry.id,
@@ -62,6 +90,8 @@ export function toQueueEntryContract(entry: QueueEntity): QueueEntryContract {
     servedAt: entry.servedAt?.toISOString(),
     completedAt: entry.completedAt?.toISOString(),
     remark: entry.remark,
+    source: entry.source,
+    channel: entry.channel,
     createdAt: entry.createdAt.toISOString(),
     updatedAt: entry.updatedAt.toISOString()
   }

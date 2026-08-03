@@ -1,45 +1,48 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell } from '@m5/ui';
-import { readIdentityAccessRoleDetailParam } from '@m5/types';
-import { loadIdentityAccessRoleDetail } from '../../../identity-access-detail-view-model';
-import IdentityAccessRoleDetailClient from './identity-access-role-detail-client';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell } from '@m5/ui'
+import { readIdentityAccessRoleDetailParam } from '@m5/types'
+import { loadIdentityAccessRoleDetail } from '../../../identity-access-detail-view-model'
+import IdentityAccessRoleDetailClient from './identity-access-role-detail-client'
 
 interface IdentityAccessRoleDetailPageProps {
-  params: Promise<{ role?: string | string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<{ role?: string | string[] }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 function readRole(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) {
-    return readIdentityAccessRoleDetailParam(value);
+    return readIdentityAccessRoleDetailParam(value)
   }
-  return readIdentityAccessRoleDetailParam(value);
+  return readIdentityAccessRoleDetailParam(value)
 }
 
 function readQueryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
-    return value[0];
+    return value[0]
   }
-  return value;
+  return value
 }
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function IdentityAccessRoleDetailPage({
   params,
-  searchParams
+  searchParams,
 }: IdentityAccessRoleDetailPageProps) {
-  const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams]);
-  const role = readRole(resolvedParams.role);
+  const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams])
+  const role = readRole(resolvedParams.role)
 
   const query = {
     tenantId: readQueryParam(resolvedSearch.tenantId),
     brandId: readQueryParam(resolvedSearch.brandId),
     storeId: readQueryParam(resolvedSearch.storeId),
-    marketCode: readQueryParam(resolvedSearch.marketCode)
-  };
+    marketCode: readQueryParam(resolvedSearch.marketCode),
+  }
 
   const snapshot = role
     ? await loadIdentityAccessRoleDetail(role, query, { cache: 'no-store' })
-    : await loadIdentityAccessRoleDetail('', query, { cache: 'no-store' });
+    : await loadIdentityAccessRoleDetail('', query, { cache: 'no-store' })
 
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
@@ -56,5 +59,5 @@ export default async function IdentityAccessRoleDetailPage({
         </Suspense>
       </PageShell>
     </main>
-  );
+  )
 }

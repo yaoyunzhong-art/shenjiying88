@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import type {
@@ -11,8 +11,10 @@ import type {
 } from './lyt.dto'
 import { LytService } from './lyt.service'
 import type { LytDevice } from './lyt.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('lyt')
+@UseGuards(TenantGuard)
 export class LytController {
   constructor(private readonly lytService: LytService) {}
 

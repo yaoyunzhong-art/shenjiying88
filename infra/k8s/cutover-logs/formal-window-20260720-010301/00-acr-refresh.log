@@ -1,0 +1,31 @@
+==> 使用 KUBECONFIG: /Users/yaoyunzhong/.kube/m5-prod-config
+==> ACR Registry: shenjiying88acr20260717-registry.cn-hangzhou.cr.aliyuncs.com
+==> Namespace:    m5
+==> Region:       cn-hangzhou
+
+ℹ️  检测到 aliyun CLI，尝试自动获取新的 ACR 临时令牌...
+  发现实例 ID: cri-fbhgbsvn0w6tpbhg
+  ✅ 已通过 aliyun CLI 获取新的临时令牌
+==> 替换 secret: acr-regcred
+secret "acr-regcred" deleted
+secret/acr-regcred created
+  ✅ secret acr-regcred 已更新
+
+=== 重启 Deployment (ns=m5) ===
+  ✅ deployment.apps/m5-admin-web restarted
+  ✅ deployment.apps/m5-api restarted
+  ✅ deployment.apps/m5-storefront-web restarted
+  ✅ deployment.apps/m5-tob-web restarted
+
+=== 等待就绪（最长 120s）===
+Waiting for deployment "m5-admin-web" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "m5-admin-web" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "m5-admin-web" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "m5-admin-web" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "m5-admin-web" rollout to finish: 1 old replicas are pending termination...
+deployment "m5-admin-web" successfully rolled out
+deployment "m5-api" successfully rolled out
+deployment "m5-storefront-web" successfully rolled out
+deployment "m5-tob-web" successfully rolled out
+
+✅ acr-regcred 刷新完成 — 所有 Pod 已就绪

@@ -70,6 +70,26 @@ export default async function StockListPage() {
   const defaultData = await fetchMockStockData(1, 25);
   const summary = generateSummary();
 
+  // 三态守卫
+  if (!defaultData || !defaultData.items) {
+    return (
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>📦</div>
+        <div>数据获取失败: 无法加载库存数据</div>
+      </div>
+    );
+  }
+
+  if (defaultData.items.length === 0) {
+    return (
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>📦</div>
+        <div>暂无数据</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 8 }}>当前暂无库存商品</div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* 内联库存总览看板 */}

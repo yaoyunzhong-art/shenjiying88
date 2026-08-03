@@ -22,7 +22,10 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { LicenseRenewalService } from './license-renewal.service'
 import type {
   CreateRenewalRecordDto,
@@ -36,6 +39,7 @@ import type {
   RenewalStatsResponseDto,
 } from './license-renewal.dto'
 
+@UseGuards(TenantGuard)
 @Controller('license-renewal')
 export class LicenseRenewalController {
   private readonly logger = new Logger(LicenseRenewalController.name)

@@ -54,7 +54,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'title',
       heroSubtitle: '',
       solutionTags: [],
-      loginEntry: { label: '登录', loginPath: '/cn-mainland/t/login', ssoEnabled: true },
+      loginEntry: { label: '登录', loginPath: '/cn-mainland/t/login', ssoEnabled: true }, domainSource: 'default'
     },
     brandPortal: {
       audience: 'TOB',
@@ -70,7 +70,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'title',
       heroSubtitle: '',
       solutionTags: [],
-      loginEntry: { label: '登录', loginPath: '/cn-mainland/t/b/login', ssoEnabled: true },
+      loginEntry: { label: '登录', loginPath: '/cn-mainland/t/b/login', ssoEnabled: true }, domainSource: 'default'
     },
     storePortal: {
       audience: 'TOC',
@@ -86,6 +86,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
       supportedLanguages: ['zh-CN'],
       supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      domainSource: 'default',
     },
     marketProfile: {
       marketCode: 'cn-mainland',

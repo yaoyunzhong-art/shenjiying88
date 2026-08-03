@@ -13,7 +13,8 @@
  *     (适应 admin-web 的批量对账场景)
  */
 
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
+import { FinanceReconciliationDbService } from './reconciliation-db.service'
 
 // ─── 类型定义 ─────────────────────────────────────────────
 
@@ -267,6 +268,11 @@ export class ReconciliationService {
   private lastReport: ReconciliationReport | null = null
   /** 对账历史报告缓存 */
   private reportCache = new Map<string, ReconciliationCacheEntry>()
+
+  constructor(
+    @Optional() private readonly dbService?: FinanceReconciliationDbService
+  ) {}
+
   /** 对账状态 */
   private reconciliationStatus: {
     inProgress: boolean
@@ -647,6 +653,125 @@ export class ReconciliationService {
       totalHits += entry.hits
     }
     return { entryCount: this.reportCache.size, dates: dates.sort(), totalHits }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // 跨实体联表查询 (JOIN 增强)
+  // ═══════════════════════════════════════════════════════
+
+  /**
+   * 跨实体对账: 合并 Ledger, Settlement, Reconciliation 数据
+   *
+   * 当 dbService 可用时, 使用 Prisma 原生 JOIN 查询;
+   * 否则回退到 in-memory 汇总
+   *
+   * (P-38 联表增强核心方法)
+   */
+  async crossEntityReconcile(params: {
+    tenantId: string
+    storeId?: string
+    startDate: string
+    endDate: string
+    groupBy?: 'week' | 'month'
+  }) {
+    const { isDiffResolved, markDiffResolved, ...svc } = this
+    if (this.dbService) {
+      return this.dbService.getCrossEntityReconciliation(params)
+    }
+    // Fallback: aggregate from cached reports
+    const reports = Array.from(this.reportCache.values())
+      .filter((ce) => ce.report.date >= params.startDate && ce.report.date <= params.endDate)
+      .map((ce) => ce.report)
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+    const totalDiffCents = reports.reduce((s, r) => s + r.totalDiffCents, 0)
+    const matchedCount = reports.reduce((s, r) => s + r.matchedCount, 0)
+    const diffCount = reports.reduce((s, r) => s + r.diffs.length, 0)
+    const totalRevenue = reports.reduce((s, r) => s + r.internalTotalCents / 100, 0)
+    const totalExpense = reports.reduce((s, r) => s + r.externalTotalCents / 100, 0)
+
+    return {
+      periodStart: params.startDate,
+      periodEnd: params.endDate,
+      rows: [{
+        periodLabel: `${params.startDate}~${params.endDate}`,
+        startDate: params.startDate,
+        endDate: params.endDate,
+        totalRevenue,
+        totalExpense,
+        netLedgerProfit: totalRevenue - totalExpense,
+        settlementTotalRevenue: 0,
+        settlementTotalExpense: 0,
+        settlementNetProfit: 0,
+        settlementStatus: 'FALLBACK',
+        reconciliationMatched: matchedCount,
+        reconciliationDiffs: diffCount,
+        reconciliationTotalDiffCents: totalDiffCents,
+        ledgerVsSettlementDiff: totalRevenue,
+        reconciliationDiffRate: totalRevenue > 0
+          ? Math.round((Math.abs(totalDiffCents) / (totalRevenue * 100)) * 10000) / 100
+          : 0,
+      }],
+      aggregatedRevenue: totalRevenue,
+      aggregatedExpense: totalExpense,
+      aggregatedMatchedCount: matchedCount,
+      aggregatedDiffCount: diffCount,
+    }
+  }
+
+  /**
+   * 增强的对账: 将对账结果持久化到 DB (当 dbService 可用时)
+   */
+  async runAndPersist(options: ReconciliationRunOptions & { tenantId?: string }): Promise<ReconciliationReport> {
+    const report = await this.run(options)
+    if (this.dbService) {
+      await this.dbService.saveReport(report, options.tenantId)
+    }
+    return report
+  }
+
+  /**
+   * 从 DB 加载对账报告
+   */
+  async loadPersistedReport(date: string): Promise<ReconciliationReport | null> {
+    if (this.dbService) {
+      return this.dbService.loadReport(date)
+    }
+    return this.getCachedReport(date)
+  }
+
+  /**
+   * 内存 → DB 迁移
+   */
+  async migrateToDb(): Promise<{ syncedReports: number; syncedDiffs: number }> {
+    if (!this.dbService) return { syncedReports: 0, syncedDiffs: 0 }
+    return this.dbService.migrateAll(
+      new Map(Array.from(this.reportCache.entries()).map(([k, v]) => [k, v.report])),
+      new Map(Array.from(this.resolvedDiffs.entries()).map(([k, v]) => [k, {
+        diffKey: v.diffKey,
+        resolvedAt: v.resolvedAt,
+        resolvedBy: v.resolvedBy,
+        note: v.note,
+      }]))
+    )
+  }
+
+  /**
+   * 持久化的差异解决 (同步到 DB)
+   */
+  async markDiffResolvedPersistent(
+    diffKey: string,
+    options?: { resolvedBy?: string; note?: string }
+  ): Promise<boolean> {
+    const result = this.markDiffResolved(diffKey, options)
+    if (result && this.dbService) {
+      await this.dbService.saveResolvedDiff({
+        diffKey,
+        resolvedBy: options?.resolvedBy,
+        note: options?.note,
+      })
+    }
+    return result
   }
 
   // ═══════════════════════════════════════════════════════

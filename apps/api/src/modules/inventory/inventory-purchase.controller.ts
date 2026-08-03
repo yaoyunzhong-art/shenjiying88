@@ -22,14 +22,37 @@ import {
   Body,
   Param,
   Query,
-  Logger
+  Logger,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  CurrentActor,
+  RequirePermissions,
+  RequireTenantScope,
+  type CurrentActorValue
+} from '../foundation/identity-access/identity-access.decorator'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { InventoryPurchaseService } from './inventory-purchase.service'
 import { PurchaseOrderService } from './purchase-order.service'
 
+function resolveActorId(actorContext: CurrentActorValue, fallback?: string) {
+  return actorContext?.actorId ?? fallback
+}
+
+function resolveActorName(actorContext: CurrentActorValue, fallback?: string) {
+  return actorContext?.actorName ?? actorContext?.actorId ?? fallback
+}
+
+const INVENTORY_PURCHASE_READ_PERMISSION = 'inventory.purchase.read'
+const INVENTORY_PURCHASE_WRITE_PERMISSION = 'inventory.purchase.write'
+
+@UseGuards(TenantGuard)
 @Controller('inventory/purchase')
+@RequireTenantScope()
+@RequirePermissions(INVENTORY_PURCHASE_READ_PERMISSION)
 export class InventoryPurchaseController {
   private readonly logger = new Logger(InventoryPurchaseController.name)
 
@@ -47,8 +70,10 @@ export class InventoryPurchaseController {
    * 创建采购单
    */
   @Post('orders')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createPurchaseOrder(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       supplierId?: string
       supplierName?: string
@@ -67,7 +92,10 @@ export class InventoryPurchaseController {
       createdBy?: string
     }
   ) {
-    return this.orderService.createWithHistory(tenantContext, body)
+    return this.orderService.createWithHistory(tenantContext, {
+      ...body,
+      createdBy: resolveActorName(actorContext, body.createdBy)
+    })
   }
 
   /**
@@ -89,7 +117,7 @@ export class InventoryPurchaseController {
       offset?: number
     } = {}
   ) {
-    return this.purchaseService.listPurchaseOrders(tenantContext, query as any)
+    return this.purchaseService.listPurchaseOrders(tenantContext, query as unknown as Record<string, unknown>)
   }
 
   /**
@@ -109,6 +137,7 @@ export class InventoryPurchaseController {
    * 更新采购单
    */
   @Put('orders/:orderId')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   updatePurchaseOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -136,6 +165,7 @@ export class InventoryPurchaseController {
    * 删除采购单 (仅草稿)
    */
   @Delete('orders/:orderId')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   deletePurchaseOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -153,12 +183,18 @@ export class InventoryPurchaseController {
    * 提交审批
    */
   @Post('orders/:orderId/submit')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   submitForApproval(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { submittedBy?: string } = {}
   ) {
-    return this.orderService.submitWithHistory(orderId, tenantContext, body.submittedBy)
+    return this.orderService.submitWithHistory(
+      orderId,
+      tenantContext,
+      resolveActorName(actorContext, body.submittedBy)
+    )
   }
 
   /**
@@ -166,12 +202,18 @@ export class InventoryPurchaseController {
    * 审批通过
    */
   @Post('orders/:orderId/approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   approveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { approverId: string; approverName: string; comment?: string }
   ) {
-    return this.orderService.approveWithHistory(orderId, tenantContext, body)
+    return this.orderService.approveWithHistory(orderId, tenantContext, {
+      ...body,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? ''
+    })
   }
 
   /**
@@ -179,12 +221,18 @@ export class InventoryPurchaseController {
    * 驳回
    */
   @Post('orders/:orderId/reject')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   rejectOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { approverId: string; approverName: string; comment: string }
   ) {
-    return this.orderService.rejectWithHistory(orderId, tenantContext, body)
+    return this.orderService.rejectWithHistory(orderId, tenantContext, {
+      ...body,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? ''
+    })
   }
 
   /**
@@ -192,12 +240,18 @@ export class InventoryPurchaseController {
    * 下单 (Approved → Ordered)
    */
   @Post('orders/:orderId/place')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   placeOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { placedBy?: string } = {}
   ) {
-    return this.orderService.placeWithHistory(orderId, tenantContext, body.placedBy)
+    return this.orderService.placeWithHistory(
+      orderId,
+      tenantContext,
+      resolveActorName(actorContext, body.placedBy)
+    )
   }
 
   /**
@@ -205,12 +259,17 @@ export class InventoryPurchaseController {
    * 取消
    */
   @Post('orders/:orderId/cancel')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   cancelOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { cancelledBy?: string; reason?: string } = {}
   ) {
-    return this.orderService.cancelWithHistory(orderId, tenantContext, body)
+    return this.orderService.cancelWithHistory(orderId, tenantContext, {
+      ...body,
+      cancelledBy: resolveActorName(actorContext, body.cancelledBy)
+    })
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -222,16 +281,22 @@ export class InventoryPurchaseController {
    * 收货
    */
   @Post('orders/:orderId/receive')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   receiveOrder(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       items: Array<{ productId: string; receivedQuantity: number; damagedQuantity: number }>
       warehouseNote?: string
       operatorId?: string
     }
   ) {
-    const receiveInput = { purchaseOrderId: orderId, ...body } as any
+    const receiveInput: import('./inventory-purchase.types').PurchaseReceiveRequest = {
+      purchaseOrderId: orderId,
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId)
+    } as import('./inventory-purchase.types').PurchaseReceiveRequest
     return this.orderService.receiveWithHistory(orderId, tenantContext, receiveInput)
   }
 
@@ -244,8 +309,10 @@ export class InventoryPurchaseController {
    * 记录付款
    */
   @Post('payments')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   recordPayment(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       purchaseOrderId: string
       amount: number
@@ -255,7 +322,10 @@ export class InventoryPurchaseController {
       operatorId?: string
     }
   ) {
-    return this.purchaseService.recordPayment(tenantContext, body)
+    return this.purchaseService.recordPayment(tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId)
+    })
   }
 
   /**
@@ -279,12 +349,18 @@ export class InventoryPurchaseController {
    * 添加备注
    */
   @Post('orders/:orderId/notes')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   addNote(
     @Param('orderId') orderId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { content: string; authorId?: string; authorName?: string }
   ) {
-    return this.purchaseService.addNote(orderId, tenantContext, body)
+    return this.purchaseService.addNote(orderId, tenantContext, {
+      ...body,
+      authorId: resolveActorId(actorContext, body.authorId),
+      authorName: resolveActorName(actorContext, body.authorName)
+    })
   }
 
   /**
@@ -308,8 +384,10 @@ export class InventoryPurchaseController {
    * 创建退货单
    */
   @Post('returns')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createReturn(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       purchaseOrderId: string
       items: Array<{
@@ -322,7 +400,10 @@ export class InventoryPurchaseController {
       appliedBy?: string
     }
   ) {
-    return this.purchaseService.createReturn(tenantContext, body as any)
+    return this.purchaseService.createReturn(tenantContext, {
+      ...body,
+      appliedBy: resolveActorName(actorContext, body.appliedBy)
+    } as import('./inventory-purchase.types').PurchaseReturnRequest)
   }
 
   /**
@@ -330,19 +411,121 @@ export class InventoryPurchaseController {
    * 审批退货
    */
   @Post('returns/:returnId/approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   approveReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: { approverId: string; approverName: string }
   ) {
-    return this.purchaseService.approveReturn(returnId, tenantContext, body)
+    return this.purchaseService.approveReturn(returnId, tenantContext, {
+      ...body,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? ''
+    })
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/inspect
+   * 退货质检
+   */
+  @Post('returns/:returnId/inspect')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
+  inspectReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
+    @Body() body: { inspectorId: string; inspectorName: string; comment?: string }
+  ) {
+    return this.purchaseService.inspectReturn(returnId, tenantContext, {
+      ...body,
+      inspectorId: resolveActorId(actorContext, body.inspectorId) ?? '',
+      inspectorName: resolveActorName(actorContext, body.inspectorName) ?? ''
+    })
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/reject
+   * 驳回退货
+   */
+  @Post('returns/:returnId/reject')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
+  rejectReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
+    @Body() body: { reviewerId: string; reviewerName: string; comment?: string }
+  ) {
+    return this.purchaseService.rejectReturn(returnId, tenantContext, {
+      ...body,
+      reviewerId: resolveActorId(actorContext, body.reviewerId) ?? '',
+      reviewerName: resolveActorName(actorContext, body.reviewerName) ?? ''
+    })
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/refund
+   * 退款
+   */
+  @Post('returns/:returnId/refund')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
+  refundReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
+    @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
+  ) {
+    return this.purchaseService.refundReturn(returnId, tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId),
+      operatorName: resolveActorName(actorContext, body.operatorName)
+    })
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/exchange
+   * 换货
+   */
+  @Post('returns/:returnId/exchange')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
+  exchangeReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
+    @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
+  ) {
+    return this.purchaseService.exchangeReturn(returnId, tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId),
+      operatorName: resolveActorName(actorContext, body.operatorName)
+    })
+  }
+
+  /**
+   * POST /api/inventory/purchase/returns/:returnId/close
+   * 关闭退货
+   */
+  @Post('returns/:returnId/close')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
+  closeReturn(
+    @Param('returnId') returnId: string,
+    @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
+    @Body() body: { operatorId?: string; operatorName?: string; comment?: string } = {}
+  ) {
+    return this.purchaseService.closeReturn(returnId, tenantContext, {
+      ...body,
+      operatorId: resolveActorId(actorContext, body.operatorId),
+      operatorName: resolveActorName(actorContext, body.operatorName)
+    })
   }
 
   /**
    * POST /api/inventory/purchase/returns/:returnId/complete
-   * 完成退货
+   * 完成退货（兼容旧接口，内部收口到 close）
    */
   @Post('returns/:returnId/complete')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   completeReturn(
     @Param('returnId') returnId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -359,6 +542,7 @@ export class InventoryPurchaseController {
    * 创建供应商
    */
   @Post('suppliers')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   createSupplier(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: {
@@ -413,6 +597,7 @@ export class InventoryPurchaseController {
    * 更新供应商
    */
   @Put('suppliers/:supplierId')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   updateSupplier(
     @Param('supplierId') supplierId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -504,8 +689,10 @@ export class InventoryPurchaseController {
    * 批量审批
    */
   @Post('orders/batch-approve')
+  @RequirePermissions(INVENTORY_PURCHASE_WRITE_PERMISSION)
   batchApprove(
     @TenantContext() tenantContext: RequestTenantContext,
+    @CurrentActor() actorContext: CurrentActorValue,
     @Body() body: {
       orderIds: string[]
       approverId: string
@@ -514,9 +701,9 @@ export class InventoryPurchaseController {
     }
   ) {
     return this.orderService.batchApprove(body.orderIds, tenantContext, {
-      approverId: body.approverId,
-      approverName: body.approverName,
-      comment: body.comment,
+      approverId: resolveActorId(actorContext, body.approverId) ?? '',
+      approverName: resolveActorName(actorContext, body.approverName) ?? '',
+      comment: body.comment
     })
   }
 }

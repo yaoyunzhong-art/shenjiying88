@@ -45,6 +45,36 @@ import {
   AiModelConfig,
   AiPromptTemplate,
   AiExecutionRecord,
+  SecretAsset,
+  CertificateAsset,
+  EdgeNode,
+  EdgeSyncTask,
+  FeatureFlag,
+  BackupSnapshot,
+  RestoreRun,
+  PiiPolicy,
+  NotificationTemplate,
+  NotificationDispatch,
+  RateLimitPolicy,
+  QuotaLedger,
+  FileAsset,
+  OpenPlatformApp,
+  ConfigValueType,
+  SecretKind,
+  SecretProvider,
+  CertificateFormat,
+  EdgeNodeStatus,
+  EdgeSyncDirection,
+  FeatureFlagStatus,
+  RolloutStrategy,
+  BackupStatus,
+  RestoreStatus,
+  PiiLevel,
+  QuotaPeriod,
+  NotificationChannelType,
+  NotificationStatus,
+  OpenPlatformAppType,
+  FileAssetKind,
 } from './index';
 
 // ─── 1. Enum Integrity Tests ─────────────────────────────────────────
@@ -599,5 +629,258 @@ describe('Cross-Module Contracts', () => {
     };
     assert.ok(typeof executionOutput.summary === 'string');
     assert.ok(Array.isArray(executionOutput.keyPoints));
+  });
+
+  it('SecretAsset ↔ CertificateAsset ↔ EdgeNode infrastructure assets', () => {
+    const scope: FoundationScope = {
+      scopeType: FoundationScopeType.Tenant,
+      scopeId: 'T001',
+    };
+
+    // 1. Secret asset
+    const secret: SecretAsset = {
+      id: 'sec-001',
+      key: 'prod/api/v1/key',
+      kind: SecretKind.ApiKey,
+      provider: SecretProvider.Database,
+      scope,
+      version: 3,
+      reference: 'secret-ref/prod-api-key',
+      rotatedAt: new Date().toISOString(),
+      expiresAt: '2027-01-01T00:00:00Z',
+      metadata: { environment: 'production' },
+    };
+    assert.strictEqual(secret.kind, SecretKind.ApiKey);
+    assert.strictEqual(secret.version, 3);
+
+    // 2. Certificate asset
+    const cert: CertificateAsset = {
+      id: 'cert-001',
+      name: 'wildcard-m5-local',
+      format: CertificateFormat.Pem,
+      scope,
+      domains: ['*.m5.local'],
+      secretRef: secret.id,
+      expiresAt: '2027-01-01T00:00:00Z',
+      autoRenew: true,
+    };
+    assert.strictEqual(cert.format, CertificateFormat.Pem);
+    assert.strictEqual(cert.autoRenew, true);
+    assert.ok(new Date(cert.expiresAt) > new Date('2026-01-01T00:00:00Z'));
+
+    // 3. Edge node references secrets
+    const edgeNode: EdgeNode = {
+      id: 'edge-001',
+      code: 'cn-east-1',
+      tenantId: 'T001',
+      brandId: 'B001',
+      status: EdgeNodeStatus.Online,
+      lastSeenAt: new Date().toISOString(),
+      capabilities: ['compute', 'cache'],
+    };
+    assert.strictEqual(edgeNode.status, EdgeNodeStatus.Online);
+  });
+
+  it('FeatureFlag ↔ BackupSnapshot ↔ RestoreRun disaster recovery chain', () => {
+    const scope: FoundationScope = {
+      scopeType: FoundationScopeType.Tenant,
+      scopeId: 'T001',
+    };
+
+    // 1. Feature flag controls backup feature
+    const flag: FeatureFlag = {
+      id: 'flag-001',
+      key: 'enable-auto-backup',
+      name: 'Enable Auto Backup',
+      status: FeatureFlagStatus.Active,
+      scope,
+      strategy: RolloutStrategy.All,
+      enabled: true,
+    };
+    assert.strictEqual(flag.enabled, true);
+    assert.strictEqual(flag.strategy, RolloutStrategy.All);
+    assert.strictEqual(flag.status, FeatureFlagStatus.Active);
+
+    // 2. Backup snapshot created
+    const snapshot: BackupSnapshot = {
+      id: 'bkp-001',
+      resourceType: 'database',
+      resourceId: 'tenant-demo-db',
+      scope,
+      status: BackupStatus.Succeeded,
+      storageUri: 's3://m5-backups/daily/bkp-001',
+      capturedAt: '2026-07-15T02:15:00Z',
+      expiresAt: '2026-08-14T02:15:00Z',
+    };
+    assert.strictEqual(snapshot.status, BackupStatus.Succeeded);
+    assert.strictEqual(snapshot.capturedAt, '2026-07-15T02:15:00Z');
+
+    // 3. Restore run from backup
+    const restoreRun: RestoreRun = {
+      id: 'rest-001',
+      backupSnapshotId: snapshot.id,
+      scope,
+      status: RestoreStatus.Succeeded,
+      requestedBy: 'admin',
+      targetEnvironment: 'staging',
+      startedAt: '2026-07-15T03:00:00Z',
+      finishedAt: '2026-07-15T03:12:00Z',
+    };
+    assert.strictEqual(restoreRun.backupSnapshotId, snapshot.id);
+    assert.strictEqual(restoreRun.status, RestoreStatus.Succeeded);
+    assert.ok(restoreRun.finishedAt! > restoreRun.startedAt!);
+  });
+
+  it('NotificationTemplate ↔ NotificationDispatch notification pipeline', () => {
+    const scope: FoundationScope = {
+      scopeType: FoundationScopeType.Tenant,
+      scopeId: 'T001',
+    };
+
+    // 1. Template
+    const template: NotificationTemplate = {
+      id: 'tpl-001',
+      code: 'order-confirmation',
+      channel: NotificationChannelType.Sms,
+      marketCode: 'CN-MAIN',
+      locale: LanguageCode.ZhCn,
+      bodyTemplate: '您的订单 {{orderNo}} 已确认，预计 {{deliveryDate}} 送达。',
+      variables: ['orderNo', 'deliveryDate'],
+    };
+    assert.strictEqual(template.code, 'order-confirmation');
+    assert.strictEqual(template.channel, NotificationChannelType.Sms);
+    assert.ok(template.variables.includes('orderNo'));
+
+    // 2. Dispatched notification
+    const dispatch: NotificationDispatch = {
+      id: 'disp-001',
+      templateId: template.id,
+      channel: NotificationChannelType.Sms,
+      scope,
+      recipient: '13800138001',
+      payload: { rendered: '您的订单 ORD-001 已确认，预计 2026-07-20 送达。' },
+      status: NotificationStatus.Sent,
+      sentAt: '2026-07-15T10:00:00Z',
+      scheduledAt: '2026-07-15T10:00:00Z',
+    };
+    assert.strictEqual(dispatch.templateId, template.id);
+    assert.strictEqual(dispatch.status, NotificationStatus.Sent);
+    assert.strictEqual(dispatch.channel, NotificationChannelType.Sms);
+  });
+
+  it('RateLimitPolicy ↔ QuotaLedger rate limiting data model', () => {
+    const scope: FoundationScope = {
+      scopeType: FoundationScopeType.Tenant,
+      scopeId: 'T001',
+    };
+
+    const policy: RateLimitPolicy = {
+      id: 'rl-001',
+      code: 'api-rate-limit',
+      scope,
+      period: QuotaPeriod.Minute,
+      limit: 1000,
+      burstLimit: 2000,
+      dimensionKeys: ['tenant', 'endpoint'],
+    };
+    assert.strictEqual(policy.limit, 1000);
+    assert.strictEqual(policy.period, QuotaPeriod.Minute);
+
+    const ledger: QuotaLedger = {
+      id: 'ql-001',
+      policyId: policy.id,
+      subjectKey: 'tenant-demo',
+      period: QuotaPeriod.Minute,
+      consumed: 250,
+      remaining: 750,
+      resetAt: '2026-07-15T11:00:00Z',
+    };
+    assert.strictEqual(ledger.policyId, policy.id);
+    assert.strictEqual(ledger.consumed, 250);
+    assert.strictEqual(ledger.remaining, 750);
+  });
+
+  it('EdgeNodeStatus / EdgeSyncDirection / FileAssetKind enum integrity', () => {
+    const statuses = Object.values(EdgeNodeStatus);
+    assert.ok(statuses.includes(EdgeNodeStatus.Online));
+    assert.ok(statuses.includes(EdgeNodeStatus.Offline));
+    assert.ok(statuses.includes(EdgeNodeStatus.Degraded));
+    assert.ok(statuses.includes(EdgeNodeStatus.Maintenance));
+
+    const directions = Object.values(EdgeSyncDirection);
+    assert.ok(directions.includes(EdgeSyncDirection.Upstream));
+    assert.ok(directions.includes(EdgeSyncDirection.Downstream));
+    assert.ok(directions.includes(EdgeSyncDirection.Bidirectional));
+
+    const kinds = Object.values(FileAssetKind);
+    assert.strictEqual(new Set(kinds).size, kinds.length);
+  });
+
+  it('PiiPolicy covers all required data governance fields', () => {
+    const scope: FoundationScope = {
+      scopeType: FoundationScopeType.Tenant,
+      scopeId: 'T001',
+    };
+
+    const policy: PiiPolicy = {
+      id: 'pii-001',
+      fieldName: 'phone',
+      piiLevel: PiiLevel.Restricted,
+      scope,
+      maskingStrategy: 'mask_middle_4',
+      retentionDays: 365,
+      purposeLimit: ['customer-support', 'delivery'],
+    };
+    assert.strictEqual(policy.piiLevel, PiiLevel.Restricted);
+    assert.strictEqual(policy.retentionDays, 365);
+    assert.strictEqual(policy.maskingStrategy, 'mask_middle_4');
+  });
+
+  it('OpenPlatformApp ↔ FileAsset ↔ EdgeSyncTask integration contract', () => {
+    const scope: FoundationScope = {
+      scopeType: FoundationScopeType.Tenant,
+      scopeId: 'T001',
+    };
+
+    const app: OpenPlatformApp = {
+      id: 'app-001',
+      appType: OpenPlatformAppType.Internal,
+      name: 'Internal Tool',
+      appKey: 'app-key-001',
+      scope,
+      redirectUris: ['https://app.example.com/callback'],
+      webhookTopics: ['order.created'],
+      sandboxEnabled: false,
+    };
+    assert.strictEqual(app.name, 'Internal Tool');
+    assert.strictEqual(app.appType, OpenPlatformAppType.Internal);
+
+    const asset: FileAsset = {
+      id: 'file-001',
+      kind: FileAssetKind.Image,
+      scope,
+      bucket: 'm5-assets',
+      objectKey: 'assets/logo.png',
+      mimeType: 'image/png',
+      size: 204800,
+      checksum: 'md5-aabbcc',
+      tags: ['logo', 'brand'],
+    };
+    assert.strictEqual(asset.kind, FileAssetKind.Image);
+    assert.strictEqual(asset.mimeType, 'image/png');
+    assert.strictEqual(asset.size, 204800);
+
+    const syncTask: EdgeSyncTask = {
+      id: 'sync-001',
+      edgeNodeId: 'edge-001',
+      direction: EdgeSyncDirection.Upstream,
+      aggregateType: 'FileAsset',
+      aggregateId: asset.id,
+      status: EventStatus.Pending,
+      payload: { action: 'sync_asset', assetId: asset.id },
+      retryCount: 0,
+    };
+    assert.strictEqual(syncTask.direction, EdgeSyncDirection.Upstream);
+    assert.strictEqual(syncTask.status, EventStatus.Pending);
   });
 });

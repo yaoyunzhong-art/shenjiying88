@@ -4,22 +4,18 @@
  * 功能: 列表搜索、状态筛选、分页浏览
  */
 import { View, Text, Button, Input, Picker } from '@tarojs/components';
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import Taro from '@tarojs/taro';
+import {
+  loadMiniappPurchaseOrders,
+  type MiniappPurchaseOrderListItem,
+} from '../../supplychain-runtime';
+import { TriStateContainer, useTriState, PageSkeleton, EmptyState } from '../../components/TriStateComponents';
 
 // ---- 类型 ----
 
-type OrderStatus = 'draft' | 'submitted' | 'confirmed' | 'shipped' | 'received' | 'cancelled';
-
-interface PurchaseOrder {
-  id: string;
-  orderNo: string;
-  supplier: string;
-  totalAmount: number;
-  status: OrderStatus;
-  itemsCount: number;
-  orderDate: string;
-}
+type OrderStatus = MiniappPurchaseOrderListItem['status'];
+type PurchaseOrder = MiniappPurchaseOrderListItem;
 
 const STATUS_OPTIONS = ['全部', '草稿', '已提交', '已确认', '已发货', '已收货', '已取消'] as const;
 const STATUS_MAP: Record<string, OrderStatus | 'ALL'> = {
@@ -58,36 +54,83 @@ const MOCK_ORDERS: PurchaseOrder[] = [
 const PAGE_SIZE = 5;
 
 export default function PurchaseOrdersPage() {
+  const { status: pageStatus, setLoading, setError, setEmpty, setSuccess } = useTriState('loading');
+  const [orders, setOrders] = useState<PurchaseOrder[]>(MOCK_ORDERS);
+  const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示采购单数据。');
   const [searchText, setSearchText] = useState('');
   const [statusIdx, setStatusIdx] = useState(0);
   const [page, setPage] = useState(1);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseOrders(MOCK_ORDERS)
+      .then((snapshot) => {
+        setOrders(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        if (snapshot.data.length === 0) {
+          setEmpty();
+        } else {
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setEmpty, setSuccess]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading();
+    loadMiniappPurchaseOrders(MOCK_ORDERS)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setOrders(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          if (snapshot.data.length === 0) {
+            setEmpty();
+          } else {
+            setSuccess();
+          }
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载采购单失败');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const statusLabel = (STATUS_OPTIONS[statusIdx] ?? '全部') as string;
   const statusFilter: OrderStatus | 'ALL' = STATUS_MAP[statusLabel] ?? 'ALL';
 
   const filtered = useMemo(() => {
     const raw = searchText
-      ? MOCK_ORDERS.filter(
+      ? orders.filter(
           (o) =>
             o.orderNo.toLowerCase().includes(searchText.toLowerCase()) ||
             o.supplier.includes(searchText),
         )
-      : MOCK_ORDERS;
+      : orders;
     return statusFilter === 'ALL'
       ? raw
       : raw.filter((o) => o.status === statusFilter);
-  }, [searchText, statusFilter]);
+  }, [orders, searchText, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const stats = useMemo(() => {
-    const total = MOCK_ORDERS.length;
-    const totalAmount = MOCK_ORDERS.reduce((s, o) => s + o.totalAmount, 0);
-    const received = MOCK_ORDERS.filter((o) => o.status === 'received').length;
+    const total = orders.length;
+    const totalAmount = orders.reduce((s, o) => s + o.totalAmount, 0);
+    const received = orders.filter((o) => o.status === 'received').length;
     return { total, totalAmount, received };
-  }, []);
+  }, [orders]);
 
   const handleSearch = () => {
     setPage(1);
@@ -99,7 +142,7 @@ export default function PurchaseOrdersPage() {
   };
 
   const goToDetail = (id: string) => {
-    Taro.showToast({ title: `查看采购单 ${id}`, icon: 'none' });
+    void Taro.navigateTo({ url: `/pages/purchase-orders/detail/index?id=${id}` });
   };
 
   const formatAmount = (v: number): string => {
@@ -108,9 +151,22 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="采购单加载失败"
+      errorMessage="无法加载采购单数据，请检查网络后重试"
+      onRetry={handleRetry}
+      emptyIcon="📋"
+      emptyTitle="暂无采购单"
+      emptyDescription="当前没有符合条件的采购单数据"
+      loadingComponent={<PageSkeleton />}
+    >
     <View style={{ padding: '16px', color: '#e2e8f0', background: '#0f172a', minHeight: '100vh' }}>
       {/* 标题 */}
       <Text style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9' }}>采购单</Text>
+      <View style={{ marginTop: 8 }}>
+        <Text style={{ fontSize: 12, color: '#94a3b8' }}>{deliveryNote}</Text>
+      </View>
 
       {/* 统计卡片 */}
       <View style={{ display: 'flex', gap: '8px', marginTop: 16 }}>
@@ -178,10 +234,13 @@ export default function PurchaseOrdersPage() {
 
       {/* 列表 */}
       <View style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {pageItems.length === 0 ? (
-          <View style={{ padding: 24, textAlign: 'center' }}>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>暂无符合条件的采购单</Text>
-          </View>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={searchText ? '🔍' : '📋'}
+            title={searchText || statusIdx > 0 ? '未找到匹配结果' : '暂无采购单'}
+            description={searchText || statusIdx > 0 ? '尝试修改搜索关键词或筛选条件' : undefined}
+            compact
+          />
         ) : (
           pageItems.map((order) => (
             <View
@@ -264,10 +323,11 @@ export default function PurchaseOrdersPage() {
         </Text>
       </View>
     </View>
+    </TriStateContainer>
   );
 }
 
-const cardStyle: React.CSSProperties = {
+const cardStyle: CSSProperties = {
   flex: 1,
   padding: '12px',
   borderRadius: 10,

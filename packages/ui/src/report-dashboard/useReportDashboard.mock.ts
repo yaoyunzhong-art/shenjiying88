@@ -2,7 +2,7 @@
  * useReportDashboard Mock (V10 Day 7)
  */
 
-import type { ReportDefinition, DashboardLayout, ReportPeriod, ReportQueryResponse } from './types'
+import type { ReportDefinition, DashboardLayout, ReportPeriod, ReportQueryResponse, ReportMetric } from './types'
 
 const MOCK_REPORTS: ReportDefinition[] = [
   { id: 'rpt-sales', name: '销售日报', period: 'daily', metrics: ['sales.amount'], dimensions: ['store'], source: 'orders', cacheTtl: 60, createdBy: 'system', createdAt: '2026-06-28', updatedAt: '2026-06-28' },
@@ -31,7 +31,7 @@ function genData(reportId: string, period: ReportPeriod): ReportQueryResponse {
     for (const store of ['store-001', 'store-002', 'store-003']) {
       data.push({
         bucket: dateStr, dimension: store,
-        metric: (reportId === 'rpt-ai' ? 'ai.tokens' : 'sales.amount') as any,
+        metric: (reportId === 'rpt-ai' ? 'ai.tokens' : 'sales.amount') as ReportMetric,
         value: 5000 + Math.floor(Math.random() * 1000),
       })
     }

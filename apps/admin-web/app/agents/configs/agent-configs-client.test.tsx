@@ -155,9 +155,8 @@ test('AgentConfigsClient', async (t) => {
       deliveryMode: 'api',
     }));
     assert.match(html, /已启用/);
-    // Tabs 组件始终渲染所有标签页,因此不用 doesNotMatch 校验
-    // 检测 badge 独特的 aria hidden dot 前的配色来区分 badge 与 tab label
-    assert.match(html, /rgba\(34,197,94,0\.15\).*?已启用/);
+    // StatusBadge mock 通过 data-variant="success" 标识
+    assert.match(html, /data-variant="success"/);
   });
 
   await t.test('renders "已禁用" badge for disabled configs', () => {
@@ -166,8 +165,8 @@ test('AgentConfigsClient', async (t) => {
       deliveryMode: 'api',
     }));
     assert.match(html, /已禁用/);
-    // Tabs 组件始终渲染所有标签页,因此不用 doesNotMatch 校验
-    assert.match(html, /rgba\(148,163,184,0\.10\).*?已禁用/);
+    // StatusBadge mock 通过 data-variant="neutral" 标识
+    assert.match(html, /data-variant="neutral"/);
   });
 
   // ── Fallback 降级横幅 ──
@@ -197,6 +196,17 @@ test('AgentConfigsClient', async (t) => {
       error: 'timeout after 5000ms',
     }));
     assert.match(html, /timeout after 5000ms/);
+  });
+
+  await t.test('renders source evidence banner', () => {
+    const html = render(React.createElement(AgentConfigsClient, {
+      configs: MOCK_CONFIGS,
+      deliveryMode: 'api',
+    }));
+    assert.match(html, /控制面来源/);
+    assert.match(html, /刷新路径/);
+    assert.match(html, /latestUpdatedAt/);
+    assert.match(html, /loadAgentConfigs/);
   });
 
   // ── Tab 筛选器 ──

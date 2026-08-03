@@ -1,11 +1,13 @@
 // deploy.controller.ts - 部署模块 REST 控制器
-import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, UsePipes, ValidationPipe, HttpCode, HttpStatus, NotFoundException, UseGuards } from '@nestjs/common'
 import { DeployService } from './deploy.service'
 import { GeneratePlanDto, DeployPlanDto, ServerSpecDto, CostQueryDto, ResourceQueryDto } from './deploy.dto'
 import type { DeploymentPlan, MonthlyCost, DeploymentQuote, PreflightCheckResult, ResourceSpec } from './deploy.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('deploy')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class DeployController {
   constructor(private readonly deployService: DeployService) {}
 

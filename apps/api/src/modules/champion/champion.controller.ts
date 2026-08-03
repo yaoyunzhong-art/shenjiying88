@@ -20,7 +20,10 @@ import {
   Param,
   Post,
   Query,
-} from '@nestjs/common';
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard';
 import {
   RegisterChampionDto,
   RecordContributionDto,
@@ -28,7 +31,9 @@ import {
   TimelineQueryDto,
 } from './champion.dto';
 import { ChampionService } from './champion.service';
+import { ChampionRole } from './champion.entity';
 
+@UseGuards(TenantGuard)
 @Controller('champions')
 export class ChampionController {
   constructor(private readonly championService: ChampionService) {}
@@ -37,7 +42,7 @@ export class ChampionController {
   registerChampion(@Body() body: RegisterChampionDto) {
     return this.championService.registerChampion({
       name: body.name,
-      role: body.role as any,
+      role: body.role,
       joinedAt: body.joinedAt,
     });
   }
@@ -46,7 +51,7 @@ export class ChampionController {
   recordContribution(@Body() body: RecordContributionDto) {
     return this.championService.recordContribution({
       championId: body.championId,
-      kind: body.kind as any,
+      kind: body.kind,
       refId: body.refId,
       description: body.description,
       occurredAt: body.occurredAt,
@@ -55,7 +60,7 @@ export class ChampionController {
 
   @Get()
   listChampions(@Query('role') role?: string) {
-    return this.championService.listChampions(role as any);
+    return this.championService.listChampions(role as ChampionRole);
   }
 
   @Get('ranking')

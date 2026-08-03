@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Query, Param, Injectable, NotFoundException, HttpCode } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Body, Query, Param, Injectable, NotFoundException, HttpCode, UseGuards } from '@nestjs/common'
 import { APIKeyService } from './services/api-key.service'
 import { WebhookService } from './services/webhook.service'
 import { SandboxService } from './services/sandbox.service'
@@ -11,6 +11,14 @@ import type {
   WebhookEventType,
   SandboxStatus
 } from './openapi.entity'
+import { TenantGuard } from '../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const OPENAPI_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const OPENAPI_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 /**
  * Phase-44 T174 / P-44: OpenAPIController (开放 API 网关)
@@ -55,6 +63,9 @@ import type {
  */
 
 @Controller('openapi')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(OPENAPI_GOVERNANCE_READ_PERMISSION)
 @Injectable()
 export class OpenAPIController {
   constructor(
@@ -77,6 +88,7 @@ export class OpenAPIController {
 
   @Post('keys')
   @HttpCode(201)
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   createKeyV2(@Body() body: {
     tenantId: TenantId
     environment: APIKeyEnvironment
@@ -98,6 +110,7 @@ export class OpenAPIController {
 
   @Delete('keys/:id')
   @HttpCode(204)
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   deleteKeyV2(@Query('tenantId') tenantId: TenantId, @Param('id') id: string) {
     const result = this.apiKeySvc.revoke(tenantId, id, 'deleted_via_api')
     if (!result) {
@@ -114,6 +127,7 @@ export class OpenAPIController {
   // ─── API Key ───
 
   @Post('key/create')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   createKey(@Body() body: {
     tenantId: TenantId
     environment: APIKeyEnvironment
@@ -144,6 +158,7 @@ export class OpenAPIController {
   }
 
   @Post('key/revoke')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   revokeKey(@Body() body: { tenantId: TenantId; keyId: string; reason: string }) {
     return this.apiKeySvc.revoke(body.tenantId, body.keyId, body.reason)
   }
@@ -151,6 +166,7 @@ export class OpenAPIController {
   // ─── Webhook ───
 
   @Post('webhook/subscribe')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   subscribe(@Body() body: {
     tenantId: TenantId
     url: string
@@ -170,21 +186,24 @@ export class OpenAPIController {
   }
 
   @Post('webhook/pause')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   pauseWebhook(@Body() body: { tenantId: TenantId; subId: string }) {
     return this.webhookSvc.pauseSubscription(body.tenantId, body.subId)
   }
 
   @Post('webhook/resume')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   resumeWebhook(@Body() body: { tenantId: TenantId; subId: string }) {
     return this.webhookSvc.resumeSubscription(body.tenantId, body.subId)
   }
 
   @Post('webhook/dispatch')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   async dispatchWebhook(@Body() body: {
     tenantId: TenantId
     subscriptionId: string
     eventType: WebhookEventType
-    payload: Record<string, any>
+    payload: Record<string, unknown>
   }) {
     return this.webhookSvc.dispatchEvent(body)
   }
@@ -200,6 +219,7 @@ export class OpenAPIController {
   }
 
   @Post('webhook/retry/:id')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   async retryDelivery(@Query('tenantId') tenantId: TenantId, @Param('id') id: string) {
     return this.webhookSvc.retryDelivery(tenantId, id)
   }
@@ -212,6 +232,7 @@ export class OpenAPIController {
   // ─── Sandbox ───
 
   @Post('sandbox/create')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   createSandbox(@Body() body: {
     parentTenantId: TenantId
     name: string
@@ -232,11 +253,13 @@ export class OpenAPIController {
   }
 
   @Post('sandbox/status')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   setSandboxStatus(@Body() body: { sandboxTenantId: TenantId; status: SandboxStatus }) {
     return this.sandboxSvc.setStatus(body.sandboxTenantId, body.status)
   }
 
   @Post('sandbox/cleanup')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   cleanupSandbox() {
     return this.sandboxSvc.cleanupExpired()
   }
@@ -244,6 +267,7 @@ export class OpenAPIController {
   // ─── Usage ───
 
   @Post('usage/bucket')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   createBucket(@Body() body: {
     tenantId: TenantId
     endpoint: string
@@ -255,6 +279,7 @@ export class OpenAPIController {
   }
 
   @Post('usage/check')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   checkUsage(@Body() body: { tenantId: TenantId; keyId: string; endpoint: string }) {
     return this.usageSvc.checkRequest(body)
   }
@@ -272,6 +297,7 @@ export class OpenAPIController {
   // ─── Signature ───
 
   @Post('sign/verify')
+  @RequirePermissions(OPENAPI_GOVERNANCE_WRITE_PERMISSION)
   verifySignature(@Body() body: { secret: string; request: any }) {
     return this.signValidator.validate({ secret: body.secret, request: body.request })
   }

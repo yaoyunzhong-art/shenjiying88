@@ -1,10 +1,10 @@
+'use client';
 /**
  * 会员充值页 — Member Recharge Page (Next.js App Router Page)
  * 角色视角: 🏪店长 / 🧑‍💼前台操作
  * 功能: 会员卡充值、套餐选择、支付方式选择、充值记录展示
  * 类型: D-角色操作界面 (前台操作面板)
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 

@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
 import assert from 'node:assert/strict'
 import { PortalModule } from './portal.module'
 import { PortalController } from './portal.controller'
 import { PortalService } from './portal.service'
+import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
 import { CircuitBreaker } from '../foundation/resilience-operations/circuit-breaker'
 import { TokenBucket } from '../foundation/resilience-operations/rate-limiter'
 import { HeterogeneousChannelRouter } from '../foundation/resilience-operations/heterogeneous-router'
@@ -27,7 +28,7 @@ const stubTokenBucket = {
 } as unknown as TokenBucket
 
 const stubHeterogeneousChannelRouter = {
-  route: async (req: any) => ({ channel: 'default', accepted: true }),
+  route: async (_req: any) => ({ channel: 'default', accepted: true }),
   registerChannel: () => {},
   unregisterChannel: () => {},
 } as unknown as HeterogeneousChannelRouter
@@ -57,10 +58,6 @@ const stubOutboxStore = {
   listDeadLetter: async () => [],
   getByIdempotencyKey: async () => null,
 } as unknown as InMemoryOutboxStore
-
-const stubConfigService = {
-  get: () => ({}),
-}
 
 const stubMarketService = {
   getMergedProfile: () => ({
@@ -121,5 +118,11 @@ describe('PortalModule', () => {
     const service = moduleRef.get<PortalService>(PortalService)
     assert.ok(service)
     assert.ok(service instanceof PortalService)
+  })
+
+  it('PortalService 构造函数保留 DomainResolutionService 注入位', () => {
+    const params = Reflect.getMetadata('design:paramtypes', PortalService) as unknown[] | undefined
+    assert.ok(Array.isArray(params))
+    assert.equal(params?.[3], DomainResolutionService)
   })
 })

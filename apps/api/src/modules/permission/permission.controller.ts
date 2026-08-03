@@ -13,13 +13,22 @@ import {
   HttpStatus,
   UnauthorizedException,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { PermissionService } from './permission.service'
 import {
   PermissionContext,
   ActionType,
   PermissionLevel,
 } from './permission.types'
+
+const PERMISSION_IDENTITY_ACCESS_READ_PERMISSION = 'identity-access:read'
 
 // 测试约定的 8 角色 + admin-token 兼容
 // (production 替换为 JWT 解码,本表与 permission.controller.test.ts ROLES 同步)
@@ -159,7 +168,10 @@ const TEST_ROLE_CONTEXTS: Record<string, PermissionContext> = {
   },
 }
 
+@UseGuards(TenantGuard)
 @Controller('permission')
+@RequireTenantScope()
+@RequirePermissions(PERMISSION_IDENTITY_ACCESS_READ_PERMISSION)
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 
@@ -200,7 +212,7 @@ export class PermissionController {
       resource: string
       action: string
       resourceId?: string
-      data?: Record<string, any>
+      data?: Record<string, unknown>
     },
     @Headers('authorization') auth?: string,
   ) {

@@ -1056,7 +1056,52 @@ export class FoundationService {
 
   async getOperationsOverview(tenantContext?: RequestTenantContext) {
     const [trustOverviewRaw, configurationOverviewRaw, resilienceOverviewRaw, runtimeOverviewRaw] = await Promise.all([
-      this.trustGovernanceService.getOperationsOverview(),
+      this.trustGovernanceService.getOperationsOverview().catch(() => ({
+        generatedAt: new Date().toISOString(),
+        approvals: {
+          groups: [],
+          total: 0,
+          statuses: {
+            NOT_REQUIRED: 0,
+            PENDING: 0,
+            APPROVED: 0,
+            REJECTED: 0,
+            CANCELLED: 0,
+            SUPERSEDED: 0
+          },
+          byOperation: {},
+          execution: {
+            executed: 0,
+            pending: 0,
+            withFailures: 0,
+            byExecutionStatus: {},
+            byFailureStatus: {}
+          },
+          failures: {}
+        },
+        audits: {
+          total: 0,
+          byAction: {},
+          bySource: {},
+          byRiskLevel: {
+            low: 0,
+            medium: 0,
+            high: 0
+          }
+        },
+        rateLimit: {
+          policies: {
+            total: 0,
+            tenantScoped: 0,
+            runtimeManaged: 0
+          },
+          ledgers: {
+            total: 0,
+            blocked: 0,
+            exhausted: 0
+          }
+        }
+      })),
       this.configurationGovernanceService.getOperationsOverview(),
       this.resilienceOperationsService.getOperationsOverview(),
       this.runtimeGovernanceService.getOperationsOverview(tenantContext?.tenantId)
@@ -1768,21 +1813,29 @@ export class FoundationService {
       return new Map<string, FoundationAlertTimelineEntry>()
     }
 
-    const records = await this.prisma.auditLog.findMany({
-      where: {
-        tenantId,
-        resourceType: 'foundation-alert',
-        resourceId: { in: codes },
-        action: {
-          in: [
-            'foundation.operations.alerts.ack',
-            'foundation.operations.alerts.mute',
-            'foundation.operations.alerts.unmute'
-          ]
-        }
-      },
-      orderBy: [{ createdAt: 'desc' }]
-    })
+    let records: Awaited<ReturnType<PrismaService['auditLog']['findMany']>>
+    try {
+      records = await this.prisma.auditLog.findMany({
+        where: {
+          tenantId,
+          resourceType: 'foundation-alert',
+          resourceId: { in: codes },
+          action: {
+            in: [
+              'foundation.operations.alerts.ack',
+              'foundation.operations.alerts.mute',
+              'foundation.operations.alerts.unmute'
+            ]
+          }
+        },
+        orderBy: [{ createdAt: 'desc' }]
+      })
+    } catch (error) {
+      if (!this.shouldUseFoundationReadFallback(error)) {
+        throw error
+      }
+      records = []
+    }
 
     const latestMap = new Map<string, FoundationAlertTimelineEntry>()
     for (const record of records as Array<{
@@ -1807,12 +1860,20 @@ export class FoundationService {
       return new Map<string, FoundationAlertAcknowledgement>()
     }
 
-    const acknowledgementRecords = await this.prisma.foundationAlertAcknowledgement.findMany({
-      where: {
-        tenantId,
-        code: { in: codes }
+    let acknowledgementRecords: Awaited<ReturnType<PrismaService['foundationAlertAcknowledgement']['findMany']>>
+    try {
+      acknowledgementRecords = await this.prisma.foundationAlertAcknowledgement.findMany({
+        where: {
+          tenantId,
+          code: { in: codes }
+        }
+      })
+    } catch (error) {
+      if (!this.shouldUseFoundationReadFallback(error)) {
+        throw error
       }
-    })
+      acknowledgementRecords = []
+    }
 
     return new Map<string, FoundationAlertAcknowledgement>(
       (acknowledgementRecords as Array<{
@@ -1848,12 +1909,20 @@ export class FoundationService {
 
   private async getAlertAcknowledgement(code: string, tenantContext?: RequestTenantContext) {
     const tenantId = tenantContext?.tenantId ?? 'platform'
-    const records = await this.prisma.foundationAlertAcknowledgement.findMany({
-      where: {
-        tenantId,
-        code: { in: [code] }
+    let records: Awaited<ReturnType<PrismaService['foundationAlertAcknowledgement']['findMany']>>
+    try {
+      records = await this.prisma.foundationAlertAcknowledgement.findMany({
+        where: {
+          tenantId,
+          code: { in: [code] }
+        }
+      })
+    } catch (error) {
+      if (!this.shouldUseFoundationReadFallback(error)) {
+        throw error
       }
-    })
+      records = []
+    }
     const record = (records as Array<{
       status: FoundationAlertAcknowledgementStatus
       note: string | null
@@ -1864,6 +1933,14 @@ export class FoundationService {
     }>)[0]
 
     return record ? toFoundationAlertAcknowledgement(record) : null
+  }
+
+  private shouldUseFoundationReadFallback(error: unknown) {
+    const code =
+      typeof error === 'object' && error && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined
+    return code === 'P2021' || code === 'P1010' || code === 'P1001'
   }
 }
 

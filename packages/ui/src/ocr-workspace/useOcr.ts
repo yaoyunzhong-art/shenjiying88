@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { OcrTask, OcrBlock, ParsedDocument, OcrStats, EngineInfo, OcrEngine, ParserEngine } from './types'
+import type { OcrTask, OcrBlock, ParsedDocument, OcrStats, EngineInfo, OcrEngine, ParserEngine, OcrLanguage, DocumentFormat } from './types'
 
 const MOCK_TASKS: OcrTask[] = [
   {
@@ -200,7 +200,7 @@ export function useCreateOcrTask() {
         sourceAssetId: input.sourceAssetId,
         filename: `${input.sourceAssetId}.jpg`,
         engine: input.engine ?? 'mock-paddleocr',
-        language: (input.language ?? 'auto') as any,
+        language: (input.language ?? 'auto') as OcrLanguage,
         enableLayoutAnalysis: true,
         enableTableDetection: false,
         status: 'completed',
@@ -233,7 +233,7 @@ export function useParseDocument() {
         tenantId: 'tenant-A',
         sourceAssetId: input.sourceAssetId,
         filename: `${input.sourceAssetId}.${format}`,
-        format: format as any,
+        format: format as DocumentFormat,
         parser: input.parser ?? 'mock-pdfplumber',
         status: 'parsed',
         pageCount: 1,

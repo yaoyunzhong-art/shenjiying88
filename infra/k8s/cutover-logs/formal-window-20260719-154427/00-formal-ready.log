@@ -1,0 +1,17 @@
+[2026-07-19 15:44:27] ==> formal window readiness start
+[2026-07-19 15:44:27] env_file=infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-19 15:44:27] namespace=m5
+[2026-07-19 15:44:27] tls_manifest=live-secret
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+[2026-07-19 15:44:27] ==> dns check api.m5-platform.com
+[2026-07-19 15:44:27] ==> dns check admin.m5-platform.com
+[2026-07-19 15:44:27] ==> dns check store.m5-platform.com
+[2026-07-19 15:44:28] ==> dns check tob.m5-platform.com
+[2026-07-19 15:44:28] ==> live tls secret verify
+==> Checking TLS secret metadata
+[2026-07-19 15:44:28] ==> formal window readiness blocked
+ - DNS has no A record for api.m5-platform.com
+ - DNS has no A record for admin.m5-platform.com
+ - DNS has no A record for store.m5-platform.com
+ - DNS has no A record for tob.m5-platform.com
+ - Live TLS secret is missing: m5-tls

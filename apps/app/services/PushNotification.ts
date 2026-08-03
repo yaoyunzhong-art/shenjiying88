@@ -44,7 +44,7 @@ class PushNotificationService {
   // 请求权限
   async requestPermissions(): Promise<boolean> {
     if (!Device.isDevice) {
-      console.log('Push notifications require a physical device');
+      if (__DEV__) console.warn('[push] Push notifications require a physical device');
       return false;
     }
 
@@ -57,7 +57,7 @@ class PushNotificationService {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('Push notification permission not granted');
+      if (__DEV__) console.warn('[push] Push notification permission not granted');
       return false;
     }
 

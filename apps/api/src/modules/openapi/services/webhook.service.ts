@@ -103,7 +103,7 @@ export class WebhookService {
     tenantId: TenantId
     subscriptionId: string
     eventType: WebhookEventType
-    payload: Record<string, any>
+    payload: Record<string, unknown>
   }): Promise<WebhookDelivery> {
     return this.dispatcher.dispatch(input)
   }

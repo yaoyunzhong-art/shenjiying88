@@ -99,7 +99,7 @@ export class OutboxRelay implements OnApplicationBootstrap, OnApplicationShutdow
         this.logger.error(`Outbox drain failed: ${(err as Error).message}`)
       })
     }, this.config.pollIntervalMs)
-    this.logger.log(
+    this.logger.debug(
       `OutboxRelay started (pollIntervalMs=${this.config.pollIntervalMs} batchSize=${this.config.batchSize})`
     )
   }

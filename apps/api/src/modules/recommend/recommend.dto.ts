@@ -136,7 +136,7 @@ export class CandidateDto implements Candidate {
   @IsString()
   strategy!: StrategyType
 
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export class RecommendResponseDto {

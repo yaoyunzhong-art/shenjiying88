@@ -1,3 +1,4 @@
+'use client';
 /**
  * 会员卡页面 — Member Card Page (小程序/H5)
  * Phase-FP T-FP-029 · 2026-07-03
@@ -5,7 +6,6 @@
  * 功能: 会员卡展示、等级权益、优惠券列表
  */
 
-'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -377,7 +377,7 @@ export default function MemberCardPage() {
         });
       }
     } catch (error) {
-      console.error('Load data error:', error);
+      if (process.env.NODE_ENV === 'development') console.error('Load data error:', error);
     } finally {
       setLoading(false);
     }

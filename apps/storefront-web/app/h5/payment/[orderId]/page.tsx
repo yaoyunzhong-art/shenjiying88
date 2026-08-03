@@ -1,33 +1,36 @@
+'use client';
 /**
  * h5/payment/[orderId]/page.tsx — 扫码支付页面
  * Phase-FP T-FP-027 · 2026-07-02
  */
-'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
+
+import { QRCodeDisplay } from '@m5/ui';
 import {
   MobileLayout,
   H5Card,
-  H5Badge,
   H5Button,
   useH5Back,
 } from '../../../../components/h5-components';
 import {
-  paymentService,
-  formatPrice,
-  getPaymentMethodName,
-  getPaymentMethodIcon,
-  type PaymentOrder,
-  type PaymentMethod,
-} from '../../../../lib/payment-service';
+  formatCurrency,
+  getPaymentMethodLabel,
+  getStorefrontOrderTransaction,
+  mapAggregateToPaymentView,
+  mapChannelToH5Method,
+  resolveStorefrontScope,
+  type H5PaymentMethod,
+  type PaymentViewModel,
+  type StorefrontTransactionAggregate,
+} from '../../../../lib/storefront-transactions';
 
-const PAYMENT_METHODS: { method: PaymentMethod; name: string; icon: string }[] = [
+const PAYMENT_METHODS: { method: H5PaymentMethod; name: string; icon: string }[] = [
   { method: 'wechat', name: '微信支付', icon: '💚' },
   { method: 'alipay', name: '支付宝', icon: '💙' },
-  { method: 'bankcard', name: '银行卡', icon: '💳' },
-  { method: 'points', name: '积分支付', icon: '⭐' },
+  { method: 'cash', name: '现金支付', icon: '💵' },
+  { method: 'member_card', name: '会员卡支付', icon: '🎫' },
 ];
 
 export default function PaymentPage() {
@@ -36,78 +39,149 @@ export default function PaymentPage() {
   const orderId = params.orderId as string;
   const handleBack = useH5Back();
 
-  const [payment, setPayment] = useState<PaymentOrder | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('wechat');
+  const [aggregate, setAggregate] = useState<StorefrontTransactionAggregate | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<H5PaymentMethod>('wechat');
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pollingWarning, setPollingWarning] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // 初始化支付订单
   useEffect(() => {
-    async function createPaymentOrder() {
-      setLoading(true);
-      // 模拟创建支付订单
-      const mockAmount = 9999; // 99.99元
-      const result = await paymentService.createPayment({
-        orderId: orderId || `order-${Date.now()}`,
-        amount: mockAmount,
-        method: selectedMethod,
-      });
+    let cancelled = false;
 
-      if (result.success && result.data) {
-        setPayment(result.data);
-        // 设置倒计时
-        if (result.data.expireAt) {
-          const expireTime = new Date(result.data.expireAt).getTime();
-          const updateCountdown = () => {
-            const remaining = Math.max(0, Math.floor((expireTime - Date.now()) / 1000));
-            setCountdown(remaining);
-            if (remaining === 0) {
-              setPayment((p) => p ? { ...p, status: 'expired' } : p);
-            }
-          };
-          updateCountdown();
-          const timer = setInterval(updateCountdown, 1000);
-          return () => clearInterval(timer);
+    async function loadOrderTransaction(showLoading = true) {
+      if (showLoading) {
+        setLoading(true);
+      }
+      try {
+        const scope = resolveStorefrontScope();
+        const nextAggregate = await getStorefrontOrderTransaction(orderId, scope);
+        if (cancelled) return;
+        setAggregate(nextAggregate);
+        setSelectedMethod(mapChannelToH5Method(nextAggregate.payment?.channel));
+      } catch (nextError) {
+        if (cancelled) return;
+        setError(nextError instanceof Error ? nextError.message : '加载订单失败，请稍后重试');
+      } finally {
+        if (!cancelled && showLoading) {
+          setLoading(false);
         }
       }
-      setLoading(false);
     }
 
-    createPaymentOrder();
+    setError(null);
+    void loadOrderTransaction();
+    return () => {
+      cancelled = true;
+    };
   }, [orderId]);
 
-  // 切换支付方式
-  function handleMethodChange(method: PaymentMethod) {
-    setSelectedMethod(method);
+  const payment = useMemo<PaymentViewModel | null>(() => {
+    if (!aggregate) return null;
+    return mapAggregateToPaymentView(aggregate, selectedMethod);
+  }, [aggregate, selectedMethod]);
+
+  useEffect(() => {
+    if (!payment?.expireAt || payment.status !== 'pending') {
+      setCountdown(0);
+      return;
+    }
+
+    const expireTime = new Date(payment.expireAt).getTime();
+    if (!Number.isFinite(expireTime)) {
+      setCountdown(0);
+      return;
+    }
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.floor((expireTime - Date.now()) / 1000));
+      setCountdown(remaining);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [payment?.expireAt, payment?.status]);
+
+  async function handleRefreshStatus() {
+    if (!aggregate) return;
+
+    setRefreshing(true);
+    setError(null);
+    setPollingWarning(null);
+    try {
+      const scope = resolveStorefrontScope();
+      const refreshedAggregate = await getStorefrontOrderTransaction(aggregate.order.orderId, scope);
+      setAggregate(refreshedAggregate);
+      setSelectedMethod(mapChannelToH5Method(refreshedAggregate.payment?.channel));
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '支付状态刷新失败，请稍后重试');
+    } finally {
+      setRefreshing(false);
+    }
   }
 
-  // 发起支付
-  async function handlePay() {
-    setCreating(true);
-    // 模拟支付
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setCreating(false);
-    // 跳转到支付结果页
-    router.push(`/h5/payment/${orderId}/result?status=success`);
-  }
+  useEffect(() => {
+    if (!aggregate || payment?.status !== 'pending') {
+      return;
+    }
 
-  // 取消支付
+    const timer = window.setInterval(() => {
+      const scope = resolveStorefrontScope();
+      void getStorefrontOrderTransaction(aggregate.order.orderId, scope)
+        .then((nextAggregate) => {
+          setAggregate(nextAggregate);
+          setSelectedMethod(mapChannelToH5Method(nextAggregate.payment?.channel));
+          setError(null);
+          setPollingWarning(null);
+        })
+        .catch(() => {
+          setPollingWarning('自动刷新支付状态失败，请手动刷新状态');
+        });
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [aggregate, payment?.status]);
+
   function handleCancel() {
     handleBack();
+  }
+
+  if (error) {
+    return (
+      <MobileLayout title="订单支付" showBack onBack={handleBack}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: 48,
+            color: '#f87171',
+          }}
+        >
+          <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>加载失败</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>{error}</div>
+          <button
+            onClick={() => void handleRefreshStatus()}
+            style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#2563eb', color: '#fff', fontSize: 14, cursor: 'pointer' }}
+          >
+            刷新状态
+          </button>
+        </div>
+      </MobileLayout>
+    );
   }
 
   if (loading) {
     return (
       <MobileLayout title="订单支付" showBack onBack={handleBack}>
         <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
-          正在创建支付订单...
+          正在加载真实订单...
         </div>
       </MobileLayout>
     );
   }
 
-  if (!payment) {
+  if (!loading && !error && !payment) {
     return (
       <MobileLayout title="订单支付" showBack onBack={handleBack}>
         <div style={{ textAlign: 'center', padding: 48, color: '#64748b' }}>
@@ -136,11 +210,11 @@ export default function PaymentPage() {
             fontFamily: 'Arial, sans-serif',
           }}
         >
-          {formatPrice(payment.amount)}
+          {formatCurrency(payment.amount, aggregate?.order.currency)}
         </div>
         {payment.originalAmount && (
           <div style={{ marginTop: 8, fontSize: 14, color: '#64748b' }}>
-            原价: <s>{formatPrice(payment.originalAmount)}</s>
+            原价: <s>{formatCurrency(payment.originalAmount, aggregate?.order.currency)}</s>
           </div>
         )}
       </H5Card>
@@ -164,27 +238,34 @@ export default function PaymentPage() {
       {payment.qrCode && payment.status === 'pending' && (
         <H5Card style={{ marginBottom: 16, textAlign: 'center' }}>
           <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 12 }}>
-            请使用{getPaymentMethodName(selectedMethod)}扫码支付
+            请使用{getPaymentMethodLabel(selectedMethod)}扫码支付
           </div>
-          <div
-            style={{
-              display: 'inline-block',
-              padding: 16,
-              background: '#fff',
-              borderRadius: 12,
-              marginBottom: 12,
-            }}
-          >
-            <Image
-              src={payment.qrCode}
-              alt="支付二维码"
-              width={180}
-              height={180}
-              unoptimized
-            />
+          <QRCodeDisplay
+            value={payment.qrCode}
+            type="payment"
+            label={`${getPaymentMethodLabel(selectedMethod)}扫码支付`}
+            size={180}
+          />
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>
+            打开{getPaymentMethodLabel(selectedMethod)}扫一扫完成支付
           </div>
-          <div style={{ fontSize: 12, color: '#64748b' }}>
-            打开{getPaymentMethodName(selectedMethod)}扫一扫完成支付
+        </H5Card>
+      )}
+
+      {/* 待接真实支付网关二维码时，只展示真实状态，不再前端伪造二维码 */}
+      {!payment.qrCode && payment.status === 'pending' && (
+        <H5Card style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 10 }}>
+            当前支付状态
+          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>
+            支付方式：{getPaymentMethodLabel(aggregate?.payment?.channel ?? selectedMethod)}
+          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 6 }}>
+            支付单号：{aggregate?.payment?.paymentId ?? '待生成'}
+          </div>
+          <div style={{ fontSize: 13, color: '#64748b' }}>
+            当前页面不再前端伪造二维码，请在真实支付渠道完成支付后刷新状态。
           </div>
         </H5Card>
       )}
@@ -204,50 +285,51 @@ export default function PaymentPage() {
         </H5Card>
       )}
 
-      {/* 支付方式选择 */}
+      {/* 当前支付方式 */}
       <H5Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#f8fafc', marginBottom: 12 }}>
-          选择支付方式
+          当前支付方式
         </div>
-        <div style={{ display: 'grid', gap: 10 }}>
-          {PAYMENT_METHODS.map(({ method, name, icon }) => (
+        {(() => {
+          const currentMethod =
+            PAYMENT_METHODS.find(({ method }) => method === selectedMethod) ?? PAYMENT_METHODS[0];
+          return (
             <div
-              key={method}
-              onClick={() => handleMethodChange(method)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 padding: 14,
                 borderRadius: 10,
-                background:
-                  selectedMethod === method
-                    ? 'rgba(102, 126, 234, 0.15)'
-                    : 'rgba(15, 23, 42, 0.4)',
-                border: `1px solid ${selectedMethod === method ? 'rgba(102, 126, 234, 0.4)' : 'rgba(148, 163, 184, 0.15)'}`,
-                cursor: 'pointer',
+                background: 'rgba(102, 126, 234, 0.15)',
+                border: '1px solid rgba(102, 126, 234, 0.4)',
               }}
             >
-              <span style={{ fontSize: 24 }}>{icon}</span>
-              <span style={{ flex: 1, fontSize: 14, color: '#f8fafc' }}>{name}</span>
-              {selectedMethod === method && (
-                <span style={{ color: '#667eea', fontSize: 18 }}>✓</span>
-              )}
+              <span style={{ fontSize: 24 }}>{currentMethod.icon}</span>
+              <span style={{ flex: 1, fontSize: 14, color: '#f8fafc' }}>{currentMethod.name}</span>
+              <span style={{ color: '#667eea', fontSize: 18 }}>✓</span>
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </H5Card>
 
       {/* 支付按钮 */}
       {payment.status === 'pending' && (
-        <div style={{ display: 'flex', gap: 12 }}>
-          <H5Button variant="secondary" fullWidth onClick={handleCancel}>
-            取消支付
-          </H5Button>
-          <H5Button variant="primary" fullWidth loading={creating} onClick={handlePay}>
-            确认支付 {formatPrice(payment.amount)}
-          </H5Button>
-        </div>
+        <>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <H5Button variant="secondary" fullWidth onClick={() => router.push('/h5/orders')}>
+              查看订单
+            </H5Button>
+            <H5Button variant="primary" fullWidth loading={refreshing} onClick={() => void handleRefreshStatus()}>
+              刷新支付状态
+            </H5Button>
+          </div>
+          {pollingWarning && (
+            <div style={{ marginTop: 10, fontSize: 12, color: '#fbbf24', textAlign: 'center' }}>
+              {pollingWarning}
+            </div>
+          )}
+        </>
       )}
 
       {/* 底部说明 */}

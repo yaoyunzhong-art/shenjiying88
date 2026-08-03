@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { it } from 'vitest'
 /**
  * E2E: Transactions 交易流水 HTTP 链路
  *
@@ -37,6 +37,8 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { LedgerType } from '../finance/finance.entity'
+import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
 import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
@@ -73,9 +75,22 @@ class TestTransactionsController {
   }
 
   @Get('orders')
-  listOrders(@Req() req: Request) {
+  listOrders(@Req() req: Request, @Query() query: Record<string, unknown>) {
     const tenantContext = (req as unknown as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
-    return this.transactionsService.listOrderTransactions(tenantContext)
+    return this.transactionsService.listOrderListPage(tenantContext, {
+      memberId: query.memberId as string | undefined,
+      status: query.status as string | undefined,
+      paymentStatus: query.paymentStatus as string | undefined,
+      closeReason: query.closeReason as string | undefined,
+      hasRefund: query.hasRefund === undefined
+        ? undefined
+        : String(query.hasRefund) === 'true',
+      fromDate: query.fromDate as string | undefined,
+      toDate: query.toDate as string | undefined,
+      page: query.page ? Number(query.page) : undefined,
+      pageSize: query.pageSize ? Number(query.pageSize) : undefined,
+      limit: query.limit ? Number(query.limit) : undefined
+    })
   }
 
   @Post('orders/:orderId/refunds')
@@ -231,16 +246,25 @@ class TestTransactionsController {
 async function buildApp() {
   resetMemberServiceTestState()
   resetTransactionsServiceTestState()
+  resetFinanceServiceTestState()
   const memberService = new MemberService()
   const metricsService = new MarketingMetricsService()
+  const financeService = new FinanceService()
   const loyaltyService = new LoyaltyService(memberService, undefined, metricsService)
   loyaltyService.resetLoyaltyStoresForTests()
   const cashierService = new CashierService(memberService, loyaltyService)
   cashierService.resetCashierStoresForTests()
-  const transactionsService = new TransactionsService(cashierService, loyaltyService)
+  const transactionsService = new TransactionsService(
+    cashierService,
+    loyaltyService,
+    undefined,
+    memberService,
+    financeService
+  )
   const moduleRef = await Test.createTestingModule({
     controllers: [TestTransactionsController],
     providers: [
+      { provide: FinanceService, useValue: financeService },
       { provide: MemberService, useValue: memberService },
       { provide: LoyaltyService, useValue: loyaltyService },
       { provide: CashierService, useValue: cashierService },
@@ -253,7 +277,7 @@ async function buildApp() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
   app.useGlobalInterceptors(new ResponseInterceptor())
   await app.init()
-  return { app, memberService, loyaltyService, cashierService, transactionsService, metricsService }
+  return { app, memberService, loyaltyService, cashierService, transactionsService, metricsService, financeService }
 }
 
 const TENANT_A = {
@@ -290,12 +314,12 @@ async function settleOrder(
     items: [{ skuId: 'sku-1', title: 'x', quantity: 1, price: amount }]
   } as any)
   const orderId = order.orderId
-  cashierService.createPayment(orderId, {
+  await cashierService.createPayment(orderId, {
     channel: 'wechat',
     amount,
     externalPaymentId
   } as any)
-  cashierService.applyPaymentCallback({
+  await cashierService.applyPaymentCallback({
     orderId,
     tenantId: 'tenant-A',
     externalPaymentId,
@@ -305,7 +329,7 @@ async function settleOrder(
 }
 
 it('e2e: payment callback persists order transaction', async () => {
-  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  const { app, memberService, cashierService, loyaltyService, financeService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
   try {
@@ -323,6 +347,13 @@ it('e2e: payment callback persists order transaction', async () => {
     assert.equal(callback.body.data.order.orderId, orderId)
     assert.equal(callback.body.data.order.totalAmount, 150)
     assert.equal(callback.body.data.payment.status, 'SUCCEEDED')
+
+    const ledgers = financeService.listLedgers(tenantContextA(), {
+      type: LedgerType.Revenue,
+      orderId
+    })
+    assert.equal(ledgers.length, 1)
+    assert.equal(ledgers[0]?.amount, 150)
   } finally {
     await app.close()
   }
@@ -377,22 +408,48 @@ it('e2e: list transactions scoped by tenant', async () => {
     await settleOrder(app, cashierService, memberService, loyaltyService, 'm-1', 50, 'ext-pay-list-1')
 
     const listA = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_A)
-    assert.ok(listA.body.data.length >= 1)
-    for (const tx of listA.body.data) {
-      assert.equal(tx.order.tenantContext.tenantId, 'tenant-A')
-    }
+    assert.ok(listA.body.data.items.length >= 1)
+    assert.ok(listA.body.data.total >= 1)
+    assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.itemCount === 'number'))
+    assert.ok(listA.body.data.items.every((order: any) => /^ORD\d{11}$/.test(order.orderNo)))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paymentChannel === 'string'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paidAt === 'string'))
 
     const listB = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_B)
-    for (const tx of listB.body.data) {
-      assert.equal(tx.order.tenantContext.tenantId, 'tenant-B')
-    }
+    assert.equal(listB.body.data.total, 0)
+    assert.equal(listB.body.data.items.length, 0)
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: order detail returns aggregate fields used by app screens', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  ensureMember(memberService, 'm-detail')
+
+  try {
+    const orderId = await settleOrder(app, cashierService, memberService, loyaltyService, 'm-detail', 88, 'ext-pay-detail')
+
+    const detail = await request(app.getHttpServer())
+      .get(`/transactions/orders/${orderId}`)
+      .set(TENANT_A)
+    assert.equal(detail.statusCode, 200)
+    assert.equal(detail.body.data.order.orderId, orderId)
+    assert.match(detail.body.data.order.orderNo, /^ORD\d{11}$/)
+    assert.equal(detail.body.data.memberNickname, 'User-m-detail')
+    assert.equal(detail.body.data.payment.channel, 'wechat')
+    assert.equal(typeof detail.body.data.order.paidAt, 'string')
+    assert.ok((detail.body.data.settlement?.awardedPoints ?? 0) > 0)
+    assert.ok(Array.isArray(detail.body.data.pointsLedger))
+    assert.ok(detail.body.data.pointsLedger.length >= 1)
   } finally {
     await app.close()
   }
 })
 
 it('e2e: refund request → approve → status Approved', async () => {
-  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  const { app, memberService, cashierService, loyaltyService, financeService } = await buildApp()
   ensureMember(memberService, 'm-1')
 
   try {
@@ -418,6 +475,63 @@ it('e2e: refund request → approve → status Approved', async () => {
       .get(`/transactions/refunds/${refundId}`)
       .set(TENANT_A)
     assert.equal(detail.body.data.status, 'COMPLETED')
+
+    const list = await request(app.getHttpServer())
+      .get('/transactions/orders')
+      .set(TENANT_A)
+    const refundedOrder = list.body.data.items.find((order: any) => order.orderId === orderId)
+    assert.ok(refundedOrder)
+    assert.equal(refundedOrder.status, 'COMPLETED')
+    assert.equal(typeof refundedOrder.refundRequestedAt, 'string')
+    assert.equal(typeof refundedOrder.refundCompletedAt, 'string')
+
+    const refundLedgers = financeService.listLedgers(tenantContextA(), {
+      type: LedgerType.Refund,
+      orderId
+    })
+    assert.equal(refundLedgers.length, 1)
+    assert.equal(refundLedgers[0]?.amount, 50)
+    assert.equal(refundLedgers[0]?.transactionId, refundId)
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: order detail reflects pending and completed refund timestamps', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  ensureMember(memberService, 'm-rf-detail')
+
+  try {
+    const orderId = await settleOrder(app, cashierService, memberService, loyaltyService, 'm-rf-detail', 160, 'ext-pay-rf-detail')
+
+    const refundRes = await request(app.getHttpServer())
+      .post(`/transactions/orders/${orderId}/refunds`)
+      .set(TENANT_A)
+      .send({ refundAmount: 40, reason: 'detail-refund', operator: 'op-detail' })
+    assert.equal(refundRes.statusCode, 201)
+    const refundId = refundRes.body.data.refunds[0].refundId
+    assert.equal(refundRes.body.data.payment.channel, 'wechat')
+    assert.match(refundRes.body.data.refunds[0].requestedAt, /^\d{4}-\d{2}-\d{2}T/)
+
+    const pendingDetail = await request(app.getHttpServer())
+      .get(`/transactions/orders/${orderId}`)
+      .set(TENANT_A)
+    assert.equal(pendingDetail.statusCode, 200)
+    assert.equal(pendingDetail.body.data.refunds[0].status, 'PENDING')
+    assert.match(pendingDetail.body.data.refunds[0].requestedAt, /^\d{4}-\d{2}-\d{2}T/)
+    assert.equal(pendingDetail.body.data.refunds[0].completedAt, undefined)
+
+    await request(app.getHttpServer())
+      .post(`/transactions/refunds/${refundId}/approve`)
+      .set(TENANT_A)
+      .send({ operator: 'mgr-detail', note: 'ok' })
+
+    const completedDetail = await request(app.getHttpServer())
+      .get(`/transactions/orders/${orderId}`)
+      .set(TENANT_A)
+    assert.equal(completedDetail.statusCode, 200)
+    assert.equal(completedDetail.body.data.refunds[0].status, 'COMPLETED')
+    assert.match(completedDetail.body.data.refunds[0].completedAt, /^\d{4}-\d{2}-\d{2}T/)
   } finally {
     await app.close()
   }
@@ -442,6 +556,37 @@ it('e2e: refund request → reject → status Rejected', async () => {
       .send({ operator: 'mgr-1', note: 'out-of-policy' })
     assert.equal(rejectRes.body.data.refunds[0].status, 'REJECTED')
     assert.equal(rejectRes.body.data.refunds[0].reviewedBy, 'mgr-1')
+  } finally {
+    await app.close()
+  }
+})
+
+it('e2e: rejected refund keeps requested time but does not consume refunded amount', async () => {
+  const { app, memberService, cashierService, loyaltyService } = await buildApp()
+  ensureMember(memberService, 'm-rf-rejected')
+
+  try {
+    const orderId = await settleOrder(app, cashierService, memberService, loyaltyService, 'm-rf-rejected', 100, 'ext-pay-rf-rejected')
+
+    const refundRes = await request(app.getHttpServer())
+      .post(`/transactions/orders/${orderId}/refunds`)
+      .set(TENANT_A)
+      .send({ refundAmount: 30, reason: 'reject-flow', operator: 'op-rj' })
+    const refundId = refundRes.body.data.refunds[0].refundId
+
+    await request(app.getHttpServer())
+      .post(`/transactions/refunds/${refundId}/reject`)
+      .set(TENANT_A)
+      .send({ operator: 'mgr-rj', note: 'rejected' })
+
+    const list = await request(app.getHttpServer())
+      .get('/transactions/orders')
+      .set(TENANT_A)
+    const rejectedOrder = list.body.data.items.find((order: any) => order.orderId === orderId)
+    assert.ok(rejectedOrder)
+    assert.equal(rejectedOrder.refundedAmount, 0)
+    assert.equal(rejectedOrder.refundCompletedAt, undefined)
+    assert.equal(typeof rejectedOrder.refundRequestedAt, 'string')
   } finally {
     await app.close()
   }
@@ -681,10 +826,11 @@ it('e2e: list orders scoped by tenant', async () => {
     await settleOrder(app, cashierService, memberService, loyaltyService, 'm-1', 50, 'ext-pay-scope-2')
 
     const listA = await request(app.getHttpServer()).get('/transactions/orders').set(TENANT_A)
-    assert.ok(listA.body.data.length >= 2)
-    for (const tx of listA.body.data) {
-      assert.equal(tx.order.tenantContext.tenantId, 'tenant-A')
-    }
+    assert.ok(listA.body.data.items.length >= 2)
+    assert.equal(listA.body.data.total, 2)
+    assert.ok(listA.body.data.items.every((order: any) => order.memberId === 'm-1'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paymentChannel === 'string'))
+    assert.ok(listA.body.data.items.every((order: any) => typeof order.paidAt === 'string'))
   } finally {
     await app.close()
   }
@@ -838,7 +984,8 @@ it('e2e: POST /transactions creates batch orders', async () => {
     const listOrders = await request(app.getHttpServer())
       .get('/transactions/orders')
       .set(TENANT_A)
-    assert.ok(listOrders.body.data.length >= 2)
+    assert.ok(listOrders.body.data.items.length >= 2)
+    assert.ok(listOrders.body.data.total >= 2)
   } finally {
     await app.close()
   }

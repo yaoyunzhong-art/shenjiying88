@@ -43,7 +43,7 @@ function createHealthController(overrides: {
   }
 
   return {
-    controller: new HealthController({
+    controller: new HealthController({} as any, {
       check: () => Promise.resolve(result),
       checkDegraded: () => Promise.resolve({ status: 'DEGRADED' as const, components: degradedComponents, uptimeSeconds: 3600, version: '1.0.0', lytMode: 'mock' }),
       ping: () => Promise.resolve({ alive: true, timestamp: new Date().toISOString() })

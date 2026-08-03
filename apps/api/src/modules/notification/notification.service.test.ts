@@ -523,3 +523,273 @@ describe('NotificationService - async enqueue (EventBus)', () => {
     assert.equal(bus.listenerCount(NOTIFICATION_REQUESTED_EVENT), 1, 'subscribe 后有 handler')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════
+// 树哥B — 圈梁五道箍 — Notification Service 追加测试 (18条)
+// 覆盖: sendRenewalSuccess/Failure/Reminder / template 边界 / dispatch 拦截器 / 多 tenant / eventBus 重复subscribe
+// ═══════════════════════════════════════════════════════════════
+
+describe('NotificationService — 追加 [树哥B-圈梁五道箍]', () => {
+  beforeEach(() => {
+    resetNotificationServiceTestState()
+  })
+
+  // ── sendRenewalSuccessNotification ──
+
+  it('[B1] sendRenewalSuccessNotification 创建 Email dispatch', () => {
+    const service = new NotificationService()
+    service.sendRenewalSuccessNotification({
+      tenantId: 't-001',
+      licenseId: 'lic-001',
+      packageName: 'Pro',
+      newExpireAt: new Date('2025-06-01'),
+    })
+    const dispatches = service.listDispatches({ recipient: 't-001-admin' })
+    assert.equal(dispatches.length, 1)
+    assert.equal(dispatches[0].channel, 'EMAIL')
+    assert.equal((dispatches[0].payload as any).type, 'renewal_success')
+  })
+
+  it('[B2] sendRenewalSuccessNotification 含 licenseId payload', () => {
+    const service = new NotificationService()
+    service.sendRenewalSuccessNotification({
+      tenantId: 't-002',
+      licenseId: 'lic-999',
+      packageName: 'Enterprise',
+      newExpireAt: new Date('2025-07-01'),
+    })
+    const dispatches = service.listDispatches({ tenantId: 't-002' })
+    assert.equal((dispatches[0].payload as any).licenseId, 'lic-999')
+  })
+
+  // ── sendRenewalFailureNotification ──
+
+  it('[B3] sendRenewalFailureNotification 含 errorMessage', () => {
+    const service = new NotificationService()
+    service.sendRenewalFailureNotification({
+      tenantId: 't-003',
+      licenseId: 'lic-003',
+      packageName: 'Basic',
+      errorMessage: 'Payment declined - insufficient funds',
+    })
+    const dispatches = service.listDispatches({ tenantId: 't-003' })
+    assert.equal(dispatches.length, 1)
+    assert.equal((dispatches[0].payload as any).errorMessage, 'Payment declined - insufficient funds')
+  })
+
+  it('[B4] sendRenewalFailureNotification 发送到 tenant-admin 邮箱', () => {
+    const service = new NotificationService()
+    service.sendRenewalFailureNotification({
+      tenantId: 't-004',
+      licenseId: 'lic-004',
+      packageName: 'Pro',
+      errorMessage: 'Network error',
+    })
+    const dispatches = service.listDispatches({ recipient: 't-004-admin' })
+    assert.equal(dispatches.length, 1)
+  })
+
+  // ── sendRenewalReminderNotification ──
+
+  it('[B5] sendRenewalReminderNotification 含 expireAt 和 daysBeforeExpiration', () => {
+    const service = new NotificationService()
+    service.sendRenewalReminderNotification({
+      tenantId: 't-005',
+      licenseId: 'lic-005',
+      daysBeforeExpiration: 7,
+      expireAt: new Date('2025-07-08'),
+    })
+    const dispatches = service.listDispatches({ tenantId: 't-005' })
+    assert.equal(dispatches.length, 1)
+    assert.equal((dispatches[0].payload as any).type, 'renewal_reminder')
+    assert.equal((dispatches[0].payload as any).daysBeforeExpiration, 7)
+  })
+
+  it('[B6] sendRenewalReminderNotification 不同 tenant 不同 recipient', () => {
+    const service = new NotificationService()
+    service.sendRenewalReminderNotification({
+      tenantId: 't-006',
+      licenseId: 'lic-006',
+      daysBeforeExpiration: 3,
+      expireAt: new Date('2025-06-10'),
+    })
+    service.sendRenewalReminderNotification({
+      tenantId: 't-007',
+      licenseId: 'lic-007',
+      daysBeforeExpiration: 14,
+      expireAt: new Date('2025-06-21'),
+    })
+    const t6 = service.listDispatches({ recipient: 't-006-admin' })
+    const t7 = service.listDispatches({ recipient: 't-007-admin' })
+    assert.equal(t6.length + t7.length, 2)
+  })
+
+  // ── Template 边界 ──
+
+  it('[B7] registerTemplate 不传 enabled 时默认 true', () => {
+    const service = new NotificationService()
+    const tpl = service.registerTemplate({
+      code: 'no-enabled-flag',
+      channel: NotificationChannelType.Sms,
+      scopeType: FoundationScopeType.Store,
+      locale: 'zh-CN',
+      bodyTemplate: 'test',
+    })
+    assert.equal(tpl.enabled, true)
+  })
+
+  it('[B8] registerTemplate 含 titleTemplate 可选字段', () => {
+    const service = new NotificationService()
+    const tpl = service.registerTemplate({
+      code: 'with-title',
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      locale: 'en',
+      titleTemplate: 'Hello {{name}}',
+      bodyTemplate: 'Welcome {{name}}!',
+      variables: ['name'],
+    })
+    assert.equal(tpl.titleTemplate, 'Hello {{name}}')
+    assert.equal(tpl.variables?.length, 1)
+  })
+
+  it('[B9] registerTemplate 含 marketCode', () => {
+    const service = new NotificationService()
+    const tpl = service.registerTemplate({
+      code: 'market-code-tpl',
+      channel: NotificationChannelType.Push,
+      scopeType: FoundationScopeType.Brand,
+      tenantId: 't-1',
+      brandId: 'b-1',
+      marketCode: 'MKT-2026-SUMMER',
+      locale: 'zh-CN',
+      bodyTemplate: 'promo body',
+    })
+    assert.equal(tpl.marketCode, 'MKT-2026-SUMMER')
+    assert.equal(tpl.brandId, 'b-1')
+  })
+
+  // ── Dispatch 拦截/边界 ──
+
+  it('[B10] send 返回 dispatch 含 id', () => {
+    const service = new NotificationService()
+    const d = service.send({
+      channel: NotificationChannelType.Push,
+      scopeType: FoundationScopeType.Store,
+      recipient: 'device-token-xyz',
+      payload: { alert: true },
+    })
+    assert.ok(d.id)
+    assert.equal(d.status, 'SENT')
+  })
+
+  it('[B11] send 后 dispatch 存在于 store', () => {
+    const service = new NotificationService()
+    const d = service.send({
+      channel: NotificationChannelType.Webhook,
+      scopeType: FoundationScopeType.Tenant,
+      recipient: 'https://hook.example.com/notify',
+      payload: { event: 'test' },
+    })
+    const fetched = service.getDispatch(d.id)
+    assert.ok(fetched)
+    assert.equal(fetched!.id, d.id)
+  })
+
+  it('[B12] retryDispatch 对老版本 Failed dispatch 重试正确', () => {
+    const service = new NotificationService()
+    const d = service.send({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      recipient: 'fail-retry@test.com',
+      payload: {},
+    })
+    assert.equal(d.status, 'FAILED')
+    // 重试: recipient 仍含 fail → 失败,但 retryCount +1
+    const retried = service.retryDispatch(d.id)
+    assert.ok(retried)
+    assert.equal(retried!.retryCount, d.retryCount + 1)
+  })
+
+  it('[B13] cancelDispatch 跨状态多次调用不崩溃', () => {
+    const service = new NotificationService()
+    const d = service.send({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      recipient: 'fail-cancel-twice@test.com',
+      payload: {},
+    })
+    // FAILED → cancel → CANCELLED
+    const first = service.cancelDispatch(d.id)
+    assert.equal(first!.status, 'CANCELLED')
+    // CANCELLED → cancel → CANCELLED (可重复取消)
+    const second = service.cancelDispatch(d.id)
+    assert.equal(second!.status, 'CANCELLED')
+  })
+
+  // ── 多 tenant 隔离 ──
+
+  it('[B14] listDispatches 按 tenantId 过滤准确', () => {
+    const service = new NotificationService()
+    service.send({ channel: NotificationChannelType.Email, scopeType: FoundationScopeType.Tenant, tenantId: 't-a', recipient: 'a@t.com', payload: {} })
+    service.send({ channel: NotificationChannelType.Email, scopeType: FoundationScopeType.Tenant, tenantId: 't-b', recipient: 'b@t.com', payload: {} })
+
+    const aOnly = service.listDispatches({ tenantId: 't-a' })
+    assert.equal(aOnly.length, 1)
+    assert.equal(aOnly[0].recipient, 'a@t.com')
+  })
+
+  it('[B15] listDispatches 按 recipient + status 联合筛选', () => {
+    const service = new NotificationService()
+    service.send({ channel: NotificationChannelType.Email, scopeType: FoundationScopeType.Tenant, recipient: 'fail-combo@test.com', payload: {} })
+    service.send({ channel: NotificationChannelType.Email, scopeType: FoundationScopeType.Tenant, recipient: 'ok-combo@test.com', payload: {} })
+
+    const failedMatch = service.listDispatches({ recipient: 'fail-combo@test.com', status: NotificationStatus.Failed })
+    assert.equal(failedMatch.length, 1)
+
+    const okMatch = service.listDispatches({ recipient: 'ok-combo@test.com', status: NotificationStatus.Sent })
+    assert.equal(okMatch.length, 1)
+  })
+
+  // ── enqueue 补充 ──
+
+  it('[B16] enqueue + EventBus 不重复 subscribe', () => {
+    const bus = new InMemoryEventBus()
+    const service = new NotificationService(undefined, bus)
+    service.onModuleInit()
+    const before = bus.listenerCount(NOTIFICATION_REQUESTED_EVENT)
+    // 再次调用 onModuleInit 不应重复 subscribe
+    service.onModuleInit()
+    const after = bus.listenerCount(NOTIFICATION_REQUESTED_EVENT)
+    assert.equal(after, before, 'onModuleInit 幂等,不重复 subscribe')
+  })
+
+  it('[B17] enqueue 无 cache 和 metrics 不报错', () => {
+    const service = new NotificationService()
+    const d = service.enqueue({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      recipient: 'fallback@test.com',
+      payload: {},
+    })
+    // fallback 同步 send
+    assert.equal(d.status, 'SENT')
+  })
+
+  it('[B18] enqueue 有 metrics 但无 cache 和 eventBus 不报错', () => {
+    const metrics = new MetricsService()
+    const service = new NotificationService(undefined, undefined, metrics)
+    const d = service.enqueue({
+      channel: NotificationChannelType.Email,
+      scopeType: FoundationScopeType.Tenant,
+      tenantId: 't-metrics',
+      recipient: 'metrics@test.com',
+      payload: {},
+    })
+    assert.equal(d.status, 'SENT')
+    // metrics 已写入
+    const text = metrics.render()
+    assert.ok(text.includes('notification_enqueued_total'))
+  })
+})
+

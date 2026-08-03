@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 /**
  * Phase 99 多模态存储 Service Tests (V11 Sprint 3 Day 31-32)
  *
- * 18 tests 覆盖:
+ * 18+ tests 覆盖:
  * - MIME 校验白名单 (2)
  * - 文件大小限制 (1)
  * - 资产 CRUD (3)
@@ -13,6 +13,11 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * - 默认后端设置 (1)
  * - 标签检索倒排索引 (1)
  * - 跨租户隔离 (1)
+ * - getAsset 响应 (1)
+ * - listAssets 增强过滤 (3)
+ * - 签名 URL 全流程 (2)
+ * - 资产计数 (2)
+ * - 访问日志 (1)
  */
 
 import assert from 'node:assert/strict'
@@ -428,7 +433,7 @@ describe('Phase 99 多模态存储 (V11 Sprint 3 Day 31-32)', () => {
     })
   })
 
-  // ============ 12. 统计 (1) ============
+  // ============ 12. 存储统计 (1) ============
   describe('12. 存储统计', () => {
     it('getStorageStats 聚合 byType + duplicateHits', async () => {
       await setupBackend()
@@ -439,6 +444,195 @@ describe('Phase 99 多模态存储 (V11 Sprint 3 Day 31-32)', () => {
       assert.ok(stats.totalSizeBytes >= 0)
       assert.ok(typeof stats.byType === 'object')
       assert.equal(typeof stats.duplicateHits, 'number')
+    })
+  })
+
+  // ============ 13. getAsset response (1) ============
+  describe('13. getAsset 响应', () => {
+    it('返回 AssetResponse 包含 url 和 variantCount', async () => {
+      const { asset } = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'resp-test.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 100,
+          contentHash: computeContentHash('resp-test'),
+        }),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.completeUpload(asset.id, {}),
+      )
+
+      const response = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.getAsset(asset.id),
+      )
+      assert.ok(response.id)
+      assert.ok(response.url)
+      assert.equal(typeof response.variantCount, 'number')
+    })
+  })
+
+  // ============ 14. listAssets 更多过滤 (3) ============
+  describe('14. listAssets 增强过滤', () => {
+    it('按 linkedEntityId 过滤', async () => {
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'linked.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 10,
+          contentHash: computeContentHash('linked-entity'),
+          linkedEntity: { entityType: 'product', entityId: 'prod-999' },
+        }),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'unlinked.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 10,
+          contentHash: computeContentHash('no-entity'),
+        }),
+      )
+
+      const filtered = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.listAssets({ linkedEntityId: 'prod-999' }),
+      )
+      assert.equal(filtered.length, 1)
+      assert.ok(filtered[0].originalFilename.includes('linked'))
+    })
+
+    it('limit 截断结果', async () => {
+      for (let i = 0; i < 5; i++) {
+        await runWithTenant(TENANT_A, async () =>
+          SHARED_SERVICE.createAsset({
+            originalFilename: `limit-${i}.jpg`,
+            mimeType: 'image/jpeg',
+            sizeBytes: 10,
+            contentHash: computeContentHash(`limit-test-${i}`),
+          }),
+        )
+      }
+      const limited = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.listAssets({ limit: 2 }),
+      )
+      assert.equal(limited.length, 2)
+    })
+
+    it('按 assetType 和 tags 组合过滤', async () => {
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'target.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 10,
+          contentHash: computeContentHash('combo-target'),
+          tags: ['sale', 'banner'],
+        }),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'other.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 10,
+          contentHash: computeContentHash('combo-other'),
+          tags: ['sale'],
+        }),
+      )
+
+      const result = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.listAssets({ assetType: 'image', tags: ['sale', 'banner'] }),
+      )
+      assert.equal(result.length, 1)
+    })
+  })
+
+  // ============ 15. 签名 URL 全流程 (2) ============
+  describe('15. 签名 URL 全流程', () => {
+    it('generateSignedUrlForAsset 返回 url + expiresAt', async () => {
+      const { asset } = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'sign-me.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 100,
+          contentHash: computeContentHash('sign-me-test'),
+        }),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.completeUpload(asset.id, {}),
+      )
+
+      const { url, expiresAt } = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.generateSignedUrlForAsset(asset.id, { expiresInSec: 7200 }),
+      )
+      assert.ok(url)
+      assert.ok(expiresAt > Math.floor(Date.now() / 1000))
+      assert.ok(url.includes('signature='))
+    })
+
+    it('verifySignedUrlExternal 验证一致性', async () => {
+      const { asset } = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'verify-me.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 100,
+          contentHash: computeContentHash('verify-me-test'),
+        }),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.completeUpload(asset.id, {}),
+      )
+
+      const { url, expiresAt } = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.generateSignedUrlForAsset(asset.id, { expiresInSec: 3600 }),
+      )
+      const sigMatch = url.match(/signature=([^&]+)/)
+      assert.ok(sigMatch)
+      assert.equal(
+        await runWithTenant(TENANT_A, async () =>
+          SHARED_SERVICE.verifySignedUrlExternal(url, expiresAt, sigMatch[1]),
+        ),
+        true,
+      )
+    })
+  })
+
+  // ============ 16. 资产计数 (2) ============
+  describe('16. 资产计数', () => {
+    it('countAssets / countVariants', async () => {
+      const before = SHARED_SERVICE.countAssets()
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'count-me.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 100,
+          contentHash: computeContentHash('count-me-' + Date.now()),
+        }),
+      )
+      const after = SHARED_SERVICE.countAssets()
+      assert.equal(after, before + 1)
+    })
+
+    it('countStorageBackends 返回非负整数', () => {
+      const count = SHARED_SERVICE.countStorageBackends()
+      assert.equal(typeof count, 'number')
+      assert.ok(count >= 0)
+    })
+  })
+
+  // ============ 17. 访问日志 (1) ============
+  describe('17. 访问日志', () => {
+    it('getAsset 记录 view 日志', async () => {
+      const { asset } = await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.createAsset({
+          originalFilename: 'log-me.jpg',
+          mimeType: 'image/jpeg',
+          sizeBytes: 100,
+          contentHash: computeContentHash('log-me-test'),
+        }),
+      )
+      await runWithTenant(TENANT_A, async () =>
+        SHARED_SERVICE.getAsset(asset.id),
+      )
+      const logs = SHARED_SERVICE.getAccessLogsForTesting()
+      assert.ok(logs.length > 0)
+      assert.equal(logs[logs.length - 1].assetId, asset.id)
     })
   })
 })

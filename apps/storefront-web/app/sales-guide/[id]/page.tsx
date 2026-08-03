@@ -1,9 +1,9 @@
+'use client';
 /**
  * 导购员跟进详情页 — Follow-up Client Detail (Next.js App Router Page)
  * 角色: 导购员视角，查看单个待跟进客户的完整信息和操作
  * 类型: B-详情页 (含编辑/状态流转)
  */
-'use client';
 
 import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';

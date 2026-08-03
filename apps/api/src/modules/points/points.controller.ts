@@ -7,8 +7,15 @@ import {
   Query,
   BadRequestException,
   UsePipes,
-  ValidationPipe
+  ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { PointsAtomicService } from './points-atomic.service'
 import { PointsRiskService, InflationMonitor, CircuitBreaker, ExpirationNotifier } from './points-risk.service'
 import {
@@ -38,8 +45,15 @@ import type {
   RiskAlertRecord
 } from './points.entity'
 
+const POINTS_READ_PERMISSION = 'points:read'
+const POINTS_WRITE_PERMISSION = 'points:write'
+const POINTS_ADJUST_PERMISSION = 'points:adjust'
+
+@UseGuards(TenantGuard)
 @Controller('points')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@RequireTenantScope()
+@RequirePermissions(POINTS_READ_PERMISSION)
 export class PointsController {
   private issuanceRules: Map<string, PointsIssuanceRule> = new Map()
   private redemptionRules: Map<string, PointsRedemptionRule> = new Map()
@@ -54,6 +68,7 @@ export class PointsController {
 
   /** POST /points/transaction - 积分变动（增加/扣减） */
   @Post('transaction')
+  @RequirePermissions(POINTS_WRITE_PERMISSION)
   async transaction(@Body() dto: PointsTransactionDto): Promise<{ success: boolean; data: PointsOperationResult['data']; error?: string }> {
     if (dto.delta === 0) {
       return { success: false, data: undefined, error: 'Transaction amount must be non-zero' }
@@ -92,6 +107,7 @@ export class PointsController {
 
   /** POST /points/transfer - 积分转账 */
   @Post('transfer')
+  @RequirePermissions(POINTS_WRITE_PERMISSION)
   async transfer(@Body() dto: PointsTransferDto): Promise<{ success: boolean; data: PointsOperationResult['data']; error?: string }> {
     const result = await this.atomicService.transferPointsAtomic(dto.fromMemberId, dto.toMemberId, dto.amount)
     if (!result.success) {
@@ -135,6 +151,7 @@ export class PointsController {
 
   /** POST /points/deduct - 积分抵扣（带幂等） */
   @Post('deduct')
+  @RequirePermissions(POINTS_WRITE_PERMISSION)
   async deduct(@Body() dto: PointsDeductDto): Promise<{ success: boolean; data: PointsOperationResult['data']; error?: string }> {
     const result = await this.atomicService.deductForPurchaseAtomic(dto.memberId, dto.amount, dto.orderId)
     if (!result.success) {
@@ -160,6 +177,7 @@ export class PointsController {
 
   /** POST /points/batch-award - 批量发放积分 */
   @Post('batch-award')
+  @RequirePermissions(POINTS_ADJUST_PERMISSION)
   async batchAward(@Body() dto: PointsBatchAwardDto): Promise<{ success: boolean; data: PointsOperationResult['data']; error?: string }> {
     const result = await this.atomicService.batchAwardAtomic(dto.memberIds, dto.pointsEach, dto.reason)
     if (!result.success) {
@@ -261,6 +279,7 @@ export class PointsController {
 
   /** POST /points/risk/reset - 重置风控状态 */
   @Post('risk/reset')
+  @RequirePermissions(POINTS_ADJUST_PERMISSION)
   resetRisk(): { success: boolean; message: string } {
     this.riskService.inflation.reset()
     this.riskService.circuitBreaker.resetAll()
@@ -271,6 +290,7 @@ export class PointsController {
 
   /** POST /points/risk/schedule-reminder - 安排过期提醒 */
   @Post('risk/schedule-reminder')
+  @RequirePermissions(POINTS_ADJUST_PERMISSION)
   scheduleReminder(
     @Body() body: { memberId: string; points: number; expireAt: string }
   ): { success: boolean; message: string } {
@@ -284,6 +304,7 @@ export class PointsController {
 
   /** POST /points/risk/send-reminder - 手动发送提醒 */
   @Post('risk/send-reminder')
+  @RequirePermissions(POINTS_ADJUST_PERMISSION)
   sendReminder(
     @Body() body: { memberId: string; points: number }
   ): { success: boolean; sent: boolean } {

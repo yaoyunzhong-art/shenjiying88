@@ -57,7 +57,8 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'tenant-demo 企业级经营门户',
       heroSubtitle: 'demo',
       solutionTags: [],
-      loginEntry: { label: '进入租户后台', loginPath: '/us-default/tenant-demo/login', ssoEnabled: true }
+      loginEntry: { label: '进入租户后台', loginPath: '/us-default/tenant-demo/login', ssoEnabled: true },
+      domainSource: 'default'
     },
     brandPortal: {
       audience: 'TOB',
@@ -73,7 +74,8 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'brand-demo 品牌经营官网',
       heroSubtitle: 'demo',
       solutionTags: [],
-      loginEntry: { label: '进入品牌后台', loginPath: '/us-default/tenant-demo/brand-demo/login', ssoEnabled: true }
+      loginEntry: { label: '进入品牌后台', loginPath: '/us-default/tenant-demo/brand-demo/login', ssoEnabled: true },
+      domainSource: 'default'
     },
     storePortal: {
       audience: 'TOC',
@@ -88,7 +90,8 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       name: 'store-001 门店门户',
       primaryDomain: 'store-001.brand-demo.tenant-demo.us-default.local',
       supportedLanguages: ['en-US'],
-      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      domainSource: 'default'
     },
     marketProfile: {
       marketCode: 'us-default',
@@ -118,6 +121,31 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
   };
 }
 
+function createDomainGovernanceFixture() {
+  return {
+    totalMissingPrimaryScopes: 1,
+    totalActiveWithoutPrimaryDomains: 2,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 1,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'BRAND',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'brand-demo.tenant-demo.us-default.local',
+        recommendationReason: '优先选择 active_ssl'
+      }
+    ]
+  };
+}
+
 test('native app bootstrap: fallback snapshot stays aligned to app defaults', () => {
   assert.deepEqual(createNativeAppFallbackSnapshot(), {
     deliveryMode: 'fallback',
@@ -127,12 +155,25 @@ test('native app bootstrap: fallback snapshot stays aligned to app defaults', ()
     emailProvider: 'SENDGRID',
     socialPlatforms: ['LINKEDIN', 'INSTAGRAM'],
     primaryDomain: 'store-001.brand-demo.tenant-demo.us-default.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: {
+      totalMissingPrimaryScopes: 0,
+      totalActiveWithoutPrimaryDomains: 0,
+      recommendedReadyScopes: 0,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 0,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: false,
+      lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+      currentScopes: []
+    },
+    domainGovernanceWorkspaceHref: '/saas/domains?marketCode=us-default'
   });
 });
 
 test('native app bootstrap: maps portal bootstrap into runtime snapshot', () => {
-  assert.deepEqual(toNativeAppBootstrapSnapshot(createPortalBootstrapFixture()), {
+  assert.deepEqual(toNativeAppBootstrapSnapshot(createPortalBootstrapFixture(), createDomainGovernanceFixture()), {
     deliveryMode: 'api',
     marketCode: 'us-default',
     defaultLanguage: 'en-US',
@@ -140,7 +181,11 @@ test('native app bootstrap: maps portal bootstrap into runtime snapshot', () => 
     emailProvider: 'SENDGRID',
     socialPlatforms: ['LINKEDIN', 'INSTAGRAM'],
     primaryDomain: 'store-001.brand-demo.tenant-demo.us-default.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: createDomainGovernanceFixture(),
+    domainGovernanceWorkspaceHref:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&marketCode=us-default&scopeType=BRAND'
   });
 });
 
@@ -167,7 +212,7 @@ test('native app bootstrap: falls back when portal bootstrap request fails', asy
 });
 
 test('native app bootstrap: loads runtime consumer contract from api and governance catalog', async () => {
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
 
     if (url.endsWith('/portals/bootstrap')) {
@@ -177,6 +222,22 @@ test('native app bootstrap: loads runtime consumer contract from api and governa
           message: 'OK',
           data: createPortalBootstrapFixture(),
           timestamp: '2026-06-12T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    if (url.endsWith('/portals/domain-governance')) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.equal(headers?.['x-actor-id'], 'native-app-bootstrap-operator');
+      assert.equal(headers?.['x-actor-roles'], 'OPERATIONS');
+      assert.equal(headers?.['x-actor-permissions'], 'foundation.governance.read,foundation.runtime-governance.read,foundation.runtime-governance.write');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z'
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       );
@@ -250,6 +311,8 @@ test('native app bootstrap: loads runtime consumer contract from api and governa
   const contract = await loadNativeAppRuntimeConsumerContract();
 
   assert.equal(contract.snapshot.deliveryMode, 'api');
+  assert.equal(contract.snapshot.domainSource, 'default');
+  assert.equal(contract.snapshot.domainGovernance.currentScopes[0]?.scopeType, 'BRAND');
   assert.equal(contract.scope.scopePath, 'us-default / tenant-demo / brand-demo / store-001');
   assert.equal(contract.governance.deliveryMode, 'api');
   assert.deepEqual(contract.governance.alerts.map((item) => item.code), ['approval-execution-failures']);
@@ -638,6 +701,7 @@ test('native app bootstrap: builds checkout and refund payloads for real commerc
   const refund = createNativeAppRefundPayload({
     order: {
       orderId: 'order-001',
+      orderNo: 'ON20260720001',
       memberId: 'app-member-svip-001',
       currency: 'USD',
       totalAmount: 50,
@@ -663,6 +727,186 @@ test('native app bootstrap: builds checkout and refund payloads for real commerc
 
   assert.equal(refund.refundAmount, 50);
   assert.equal(refund.reason, 'app-native-refund-rehearsal');
+});
+
+test('native app bootstrap: refund payload ignores rejected refunds and keeps remaining refundable amount', () => {
+  const refund = createNativeAppRefundPayload({
+    order: {
+      orderId: 'order-002',
+      orderNo: 'ORD20260720002',
+      memberId: 'app-member-002',
+      currency: 'CNY',
+      totalAmount: 120,
+      status: 'PAID',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z'
+    },
+    payment: {
+      paymentId: 'payment-002',
+      orderId: 'order-002',
+      channel: 'WECHAT_PAY',
+      amount: 120,
+      status: 'SUCCEEDED',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z'
+    },
+    settlement: undefined,
+    pointsLedger: [],
+    couponRedemptions: [],
+    blindboxFulfillments: [],
+    refunds: [
+      {
+        refundId: 'refund-pending-001',
+        orderId: 'order-002',
+        paymentId: 'payment-002',
+        memberId: 'app-member-002',
+        refundAmount: 30,
+        reason: '部分退款',
+        status: 'PENDING',
+        requestedAt: '2026-07-20T00:10:00.000Z'
+      },
+      {
+        refundId: 'refund-rejected-001',
+        orderId: 'order-002',
+        paymentId: 'payment-002',
+        memberId: 'app-member-002',
+        refundAmount: 20,
+        reason: '驳回退款',
+        status: 'REJECTED',
+        requestedAt: '2026-07-20T00:11:00.000Z'
+      },
+      {
+        refundId: 'refund-completed-001',
+        orderId: 'order-002',
+        paymentId: 'payment-002',
+        memberId: 'app-member-002',
+        refundAmount: 40,
+        reason: '已退款',
+        status: 'COMPLETED',
+        requestedAt: '2026-07-20T00:12:00.000Z',
+        completedAt: '2026-07-20T00:13:00.000Z'
+      }
+    ]
+  });
+
+  assert.equal(refund.refundAmount, 50);
+  assert.equal(refund.reason, 'app-native-refund-rehearsal');
+});
+
+test('native app bootstrap: refund payload falls back to order total when payment is absent', () => {
+  const refund = createNativeAppRefundPayload({
+    order: {
+      orderId: 'order-004',
+      orderNo: 'ORD20260720004',
+      memberId: 'member-004',
+      currency: 'CNY',
+      totalAmount: 88,
+      status: 'PAID',
+      createdAt: '2026-07-20T00:00:00.000Z',
+      updatedAt: '2026-07-20T00:00:00.000Z'
+    },
+    settlement: undefined,
+    pointsLedger: [],
+    couponRedemptions: [],
+    blindboxFulfillments: [],
+    refunds: [
+      {
+        refundId: 'refund-pending-004',
+        orderId: 'order-004',
+        paymentId: 'payment-004',
+        memberId: 'member-004',
+        refundAmount: 18,
+        reason: '处理中',
+        status: 'PENDING',
+        requestedAt: '2026-07-20T00:20:00.000Z'
+      },
+      {
+        refundId: 'refund-rejected-004',
+        orderId: 'order-004',
+        paymentId: 'payment-004',
+        memberId: 'member-004',
+        refundAmount: 10,
+        reason: '驳回',
+        status: 'REJECTED',
+        requestedAt: '2026-07-20T00:21:00.000Z'
+      }
+    ]
+  });
+
+  assert.equal(refund.refundAmount, 70);
+  assert.equal(refund.reason, 'app-native-refund-rehearsal');
+});
+
+test('native app bootstrap: skips refund api when aggregate has no refundable amount left', async () => {
+  let fetchCalled = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    fetchCalled = true;
+    throw new Error('should not call refund api');
+  }) as typeof fetch;
+
+  try {
+    const runtime = await requestNativeAppRefundToApi({
+      deliveryMode: 'api',
+      aggregate: {
+        order: {
+          orderId: 'order-fully-refunded',
+          orderNo: 'ORD20260720003',
+          memberId: 'member-003',
+          currency: 'CNY',
+          totalAmount: 100,
+          status: 'PAID',
+          latestPaymentId: 'payment-003',
+          createdAt: '2026-07-20T00:00:00.000Z',
+          updatedAt: '2026-07-20T00:00:00.000Z',
+          paidAt: '2026-07-20T00:01:00.000Z'
+        },
+        payment: {
+          paymentId: 'payment-003',
+          orderId: 'order-fully-refunded',
+          channel: 'WECHAT_PAY',
+          amount: 100,
+          status: 'SUCCEEDED',
+          createdAt: '2026-07-20T00:00:00.000Z',
+          updatedAt: '2026-07-20T00:01:00.000Z',
+          completedAt: '2026-07-20T00:01:00.000Z'
+        },
+        settlement: undefined,
+        pointsLedger: [],
+        couponRedemptions: [],
+        blindboxFulfillments: [],
+        refunds: [
+          {
+            refundId: 'refund-fully-001',
+            orderId: 'order-fully-refunded',
+            paymentId: 'payment-003',
+            memberId: 'member-003',
+            refundAmount: 100,
+            reason: '全额退款',
+            status: 'COMPLETED',
+            requestedAt: '2026-07-20T00:05:00.000Z',
+            completedAt: '2026-07-20T00:06:00.000Z'
+          }
+        ]
+      },
+      checkoutPayload: {
+        memberId: 'member-003',
+        items: [],
+        paymentChannel: 'WECHAT_PAY',
+        currency: 'CNY',
+        amount: 100
+      },
+      note: 'already refunded'
+    });
+
+    assert.equal(fetchCalled, false);
+    assert.equal(runtime.deliveryMode, 'api');
+    assert.equal(runtime.aggregate?.refunds.length, 1);
+    assert.equal(runtime.refundPayload?.refundAmount, undefined);
+    assert.match(runtime.note, /已无可退款金额/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('native app bootstrap: executes real transaction flow and requests refund from api', async () => {
@@ -870,6 +1114,23 @@ test('native app bootstrap: executes real transaction flow and requests refund f
   assert.equal(refunded.deliveryMode, 'api');
   assert.equal(refunded.aggregate?.refunds[0]?.status, 'PENDING');
   assert.equal(refunded.refundPayload?.reason, 'app-native-refund-rehearsal');
+});
+
+test('native app bootstrap: fallback transaction snapshot keeps ORD orderNo format', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    throw new Error('network unavailable');
+  }) as typeof fetch;
+
+  try {
+    const snapshot = toNativeAppBootstrapSnapshot(createPortalBootstrapFixture());
+    const transaction = await executeNativeAppTransactionFlow(snapshot, createNativeSession());
+
+    assert.equal(transaction.deliveryMode, 'fallback');
+    assert.match(transaction.aggregate?.order.orderNo ?? '', /^ORD\d{11}$/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('native app bootstrap: refreshes and replays runtime receipt with fallback support', async () => {

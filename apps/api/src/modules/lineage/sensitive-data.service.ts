@@ -469,7 +469,8 @@ export class ComplianceReporter {
 
     // 收集所有数据流
     const allFlows: DataFlowEdge[] = []
-    for (const [, edges] of (this.monitor as any)['flows'].entries()) {
+    const monitorFlows = (this.monitor as unknown as { flows: Map<string, DataFlowEdge[]> })['flows']
+    for (const [, edges] of monitorFlows.entries()) {
       allFlows.push(...edges)
     }
 
@@ -508,7 +509,8 @@ export class ComplianceReporter {
     const issues: string[] = []
 
     // 检查是否有未授权的数据流出
-    for (const [, edges] of (this.monitor as any)['flows'].entries()) {
+    const monitorFlows = (this.monitor as unknown as { flows: Map<string, DataFlowEdge[]> })['flows']
+    for (const [, edges] of monitorFlows.entries()) {
       for (const edge of edges) {
         if (edge.via === 'export') {
           issues.push(`数据导出: ${edge.fromTable}.${edge.fromField} -> ${edge.toTable}`)

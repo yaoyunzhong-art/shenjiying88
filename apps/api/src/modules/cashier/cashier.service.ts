@@ -1,96 +1,210 @@
 import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Optional } from '@nestjs/common'
+import type { PaymentMethod } from '@m5/types'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { CACHE_SERVICE, type CacheService } from '../../infrastructure/cache/cache.module'
+import { CashierPrismaStore } from './cashier.prisma-store'
 import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
+import { MemberLevel } from '../member/member.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import { seedMembers } from './cashier.seed'
 import type { CashierPaymentCallbackDto, CreateCashierOrderDto, CreateCashierPaymentDto } from './cashier.dto'
+import { MockPaymentGateway } from './payment.service'
+import type { ICashierStore } from './cashier-store.interface'
+import { CashierMemoryStore } from './cashier-memory-store'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
   CashierPaymentStatus,
   computeCashierOrderTotal,
+  CashierOrderEntity,
+  CashierPaymentEntity,
   type CashierOrder,
   type CashierPayment
 } from './cashier.entity'
 
-const orderStore = new Map<string, CashierOrder>()
-const paymentStore = new Map<string, CashierPayment>()
+/** 模块级单例 MemoryStore（向后兼容：保持与旧 module-level Maps 相同的行为） */
+const globalMemoryStore = new CashierMemoryStore()
+const SHOULD_LOG_INIT_DEBUG = process.env.DEBUG_INIT_LOGS === '1'
 
 @Injectable()
 export class CashierService {
   constructor(
-    private readonly memberService: MemberService,
-    @Optional()
+    @Inject(MemberService) readonly memberService: MemberService,
+    @Optional() @Inject(LoyaltyService)
     private readonly loyaltyService?: LoyaltyService,
-    @Optional()
+    @Optional() @Inject(MockPaymentGateway)
+    private readonly paymentGateway?: MockPaymentGateway,
+    @Optional() @Inject(IntegrationOrchestrationService)
     private readonly integrationOrchestrationService?: IntegrationOrchestrationService,
     @Optional() @Inject(CACHE_SERVICE)
-    private readonly cache?: CacheService
-  ) {}
+    private readonly cache?: CacheService,
+    @Optional() @InjectRepository(CashierOrderEntity)
+    private readonly orderRepo?: Repository<CashierOrderEntity>,
+    @Optional() @InjectRepository(CashierPaymentEntity)
+    private readonly paymentRepo?: Repository<CashierPaymentEntity>,
+    @Optional() @Inject('CASHIER_STORE')
+    private readonly store?: ICashierStore,
+    @Optional() private readonly prismaStore?: CashierPrismaStore
+  ) {
+    this.seedIfNeeded()
+  }
+
+  /** 获取存储实现：优先用注入的 store，否则用全局 MemoryStore */
+  private get storeInstance(): ICashierStore {
+    return this.store ?? globalMemoryStore
+  }
 
     // ── 持久化私有工具 ──────────────────────────────────────────────────
 
   /**
-   * P0-A1: write-through — 订单写入 Map + 异步 Redis
+   * P0-A1/RQ-20260720-011: write-through — 订单写入内存 + Redis + DB
+   * 保持内存 Map 作为 L1 缓存，DB 作为 L3 持久化
    */
-  private persistOrder(order: CashierOrder): void {
-    orderStore.set(order.orderId, order)
+  private async persistOrderAsync(order: CashierOrder): Promise<void> {
+    await this.storeInstance.saveOrder(order)
     this.cache?.set(`cashier:order:${order.orderId}`, order, 3600).catch(() => {
       // Redis 不可用时静默降级,不影响主流程
     })
+    await this.persistOrderToDb(order)
+  }
+
+  /** 异步 DB 持久化 */
+  private async persistOrderToDb(order: CashierOrder): Promise<void> {
+    if (!this.orderRepo) return
+    try {
+      const entity = CashierOrderEntity.fromContract(order)
+      await this.orderRepo.upsert(entity, ['orderId'])
+    } catch (e) {
+      // DB 不可用时静默降级
+    }
   }
 
   /**
-   * P0-A1: write-through — 支付写入 Map + 异步 Redis
+   * P0-A1/RQ-20260720-011: write-through — 支付写入内存 + Redis + DB
    */
-  private persistPayment(payment: CashierPayment): void {
-    paymentStore.set(payment.paymentId, payment)
+  private async persistPaymentAsync(payment: CashierPayment): Promise<void> {
+    await this.storeInstance.savePayment(payment)
     this.cache?.set(`cashier:payment:${payment.paymentId}`, payment, 3600).catch(() => {})
+    await this.persistPaymentToDb(payment)
+  }
+
+  /** 异步 DB 持久化 */
+  private async persistPaymentToDb(payment: CashierPayment): Promise<void> {
+    if (!this.paymentRepo) return
+    try {
+      const entity = CashierPaymentEntity.fromContract(payment)
+      await this.paymentRepo.upsert(entity, ['paymentId'])
+    } catch (e) {
+      // DB 不可用时静默降级
+    }
   }
 
   /**
-   * P0-A1: cache-aside — 查订单,先内存后 Redis
+   * P0-A1/RQ-20260720-011: cache-aside — 查订单,先内存后 Redis 再 DB
+   * L1: Memory → L2: Redis → L3: DB
    */
   private async loadOrder(orderId: string): Promise<CashierOrder | undefined> {
-    const fromMemory = orderStore.get(orderId)
+    const fromMemory = await this.storeInstance.getOrder(orderId, '')
     if (fromMemory) return fromMemory
 
-    if (!this.cache) return undefined
-
-    try {
-      const fromRedis = await this.cache.get<CashierOrder>(`cashier:order:${orderId}`)
-      if (fromRedis) {
-        // 回填内存
-        orderStore.set(orderId, fromRedis)
-        return fromRedis
+    // 尝试 Redis
+    if (this.cache) {
+      try {
+        const fromRedis = await this.cache.get<CashierOrder>(`cashier:order:${orderId}`)
+        if (fromRedis) {
+          await this.storeInstance.saveOrder(fromRedis)
+          return fromRedis
+        }
+      } catch {
+        // Redis 错误静默降级
       }
-    } catch {
-      // Redis 错误静默降级
     }
+
+    // 尝试 DB
+    if (this.orderRepo) {
+      try {
+        const fromDb = await this.orderRepo.findOne({ where: { orderId } })
+        if (fromDb) {
+          const contract = fromDb.toContract()
+          await this.storeInstance.saveOrder(contract)
+          return contract
+        }
+      } catch {
+        // DB 错误静默降级
+      }
+    }
+
     return undefined
   }
 
   /**
-   * P0-A1: cache-aside — 查支付,先内存后 Redis
+   * P0-A1/RQ-20260720-011: cache-aside — 查支付,先内存后 Redis 再 DB
    */
   private async loadPayment(paymentId: string): Promise<CashierPayment | undefined> {
-    const fromMemory = paymentStore.get(paymentId)
+    const fromMemory = globalMemoryStore.getPaymentSync(paymentId)
     if (fromMemory) return fromMemory
 
-    if (!this.cache) return undefined
-
-    try {
-      const fromRedis = await this.cache.get<CashierPayment>(`cashier:payment:${paymentId}`)
-      if (fromRedis) {
-        paymentStore.set(paymentId, fromRedis)
-        return fromRedis
+    if (this.cache) {
+      try {
+        const fromRedis = await this.cache.get<CashierPayment>(`cashier:payment:${paymentId}`)
+        if (fromRedis) {
+          await this.storeInstance.savePayment(fromRedis)
+          return fromRedis
+        }
+      } catch {
+        // Redis 错误静默降级
       }
-    } catch {
-      // Redis 错误静默降级
     }
+
+    if (this.paymentRepo) {
+      try {
+        const fromDb = await this.paymentRepo.findOne({ where: { paymentId } })
+        if (fromDb) {
+          const contract = fromDb.toContract()
+          await this.storeInstance.savePayment(contract)
+          return contract
+        }
+      } catch {
+        // DB 错误静默降级
+      }
+    }
+
     return undefined
+  }
+
+  /**
+   * 开发模式种子数据
+   * 在非生产环境自动填充测试会员到 MemberService
+   */
+  private seedIfNeeded() {
+    const isDev = process.env.NODE_ENV !== 'production'
+    if (!isDev) return
+
+    const tenantContext: RequestTenantContext = { tenantId: 'default' }
+
+    for (const s of seedMembers) {
+      try {
+        const profile = this.memberService.register({
+          memberId: s.id,
+          tenantContext,
+          nickname: s.name,
+        })
+        // 直接修改内存中的 profile 引用以补全字段
+        profile.mobile = s.phone
+        profile.points = s.points
+        profile.level = this.normalizeSeedTier(s.tier)
+      } catch {
+        // 已存在则跳过
+      }
+    }
+
+    if (SHOULD_LOG_INIT_DEBUG) {
+    if (process.env.NODE_ENV !== "production") process.stderr.write(`[CashierSeed] Loaded ${seedMembers.length} members\n`)
+    }
   }
 
   private async ensureMemberExists(memberId: string, tenantContext: RequestTenantContext) {
@@ -106,20 +220,49 @@ export class CashierService {
     return member
   }
 
+  private normalizeSeedTier(tier: string): MemberLevel {
+    switch (tier.toLowerCase()) {
+      case 'silver':
+        return MemberLevel.Silver
+      case 'gold':
+        return MemberLevel.Gold
+      case 'platinum':
+        return MemberLevel.Platinum
+      case 'diamond':
+        return MemberLevel.Diamond
+      default:
+        return MemberLevel.Bronze
+    }
+  }
+
   private async publishEvent(eventName: string, payload: Record<string, unknown>) {
     if (!this.integrationOrchestrationService) {
       return
     }
 
-    await this.integrationOrchestrationService.publishEvent(eventName, payload, {
-      source: 'cashier',
-      aggregateId:
-        typeof payload.orderId === 'string'
-          ? payload.orderId
-          : typeof payload.paymentId === 'string'
-            ? payload.paymentId
-            : undefined
-    })
+    try {
+      await this.integrationOrchestrationService.publishEvent(eventName, payload, {
+        source: 'cashier',
+        aggregateId:
+          typeof payload.orderId === 'string'
+            ? payload.orderId
+            : typeof payload.paymentId === 'string'
+              ? payload.paymentId
+              : undefined
+      })
+    } catch {
+      // Domain-event persistence is non-critical for local smoke flows.
+    }
+  }
+
+  private createOrderNo(tenantContext: RequestTenantContext, now: string) {
+    const datePart = now.slice(0, 10).replaceAll('-', '')
+    const currentDayCount = globalMemoryStore.listOrdersSync(tenantContext.tenantId).filter(
+      (order) =>
+        order.createdAt.startsWith(now.slice(0, 10))
+    ).length
+
+    return `ORD${datePart}${String(currentDayCount + 1).padStart(3, '0')}`
   }
 
   async createOrder(
@@ -134,6 +277,7 @@ export class CashierService {
     const now = new Date().toISOString()
     const order: CashierOrder = {
       orderId: `order-${randomUUID()}`,
+      orderNo: this.createOrderNo(tenantContext, now),
       tenantContext,
       memberId: input.memberId,
       items: input.items.map((item) => ({ ...item })),
@@ -147,7 +291,7 @@ export class CashierService {
       updatedAt: now,
       source: 'memory'
     }
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     await this.publishEvent('cashier.order-created', {
       orderId: order.orderId,
@@ -161,17 +305,32 @@ export class CashierService {
   }
 
   listOrders(tenantContext: RequestTenantContext): CashierOrder[] {
-    return Array.from(orderStore.values()).filter(
-      (order) => order.tenantContext.tenantId === tenantContext.tenantId
-    )
+    return globalMemoryStore.listOrdersSync(tenantContext.tenantId)
   }
 
   getOrder(orderId: string, tenantContext: RequestTenantContext): CashierOrder | undefined {
-    const order = orderStore.get(orderId)
+    const order = globalMemoryStore.getOrderSync(orderId)
     if (!order || order.tenantContext.tenantId !== tenantContext.tenantId) {
       return undefined
     }
     return order
+  }
+
+  private normalizePaymentMethod(channel: string): PaymentMethod | undefined {
+    const normalized = channel.trim().toUpperCase().replace(/[\s-]+/g, '_')
+    if (normalized === 'WECHAT' || normalized === 'WECHAT_PAY') {
+      return 'WECHAT'
+    }
+    if (normalized === 'ALIPAY') {
+      return 'ALIPAY'
+    }
+    if (normalized === 'CARD' || normalized === 'CREDIT_CARD' || normalized === 'BANKCARD') {
+      return 'CARD'
+    }
+    if (normalized === 'CASH') {
+      return 'CASH'
+    }
+    return undefined
   }
 
   /**
@@ -193,6 +352,21 @@ export class CashierService {
     }
 
     const now = new Date().toISOString()
+    const paymentMethod = this.normalizePaymentMethod(input.channel)
+    const prepay =
+      paymentMethod && this.paymentGateway
+        ? await this.paymentGateway.createPrepay(
+            {
+              id: order.orderId,
+              totalCents: Math.round((input.amount ?? order.totalAmount) * 100)
+            },
+            paymentMethod
+          )
+        : undefined
+    const visiblePrepayUrl =
+      prepay?.codeUrl && !prepay.codeUrl.startsWith('mock://')
+        ? prepay.codeUrl
+        : undefined
     const payment: CashierPayment = {
       paymentId: `payment-${randomUUID()}`,
       orderId,
@@ -200,14 +374,17 @@ export class CashierService {
       channel: input.channel,
       amount: input.amount ?? order.totalAmount,
       status: CashierPaymentStatus.Pending,
+      qrCodeUrl: visiblePrepayUrl,
+      paymentUrl: visiblePrepayUrl,
+      expiresAt: visiblePrepayUrl ? prepay?.expiresAt : undefined,
       createdAt: now,
       updatedAt: now
     }
-    this.persistPayment(payment)
+    await this.persistPaymentAsync(payment)
     order.status = CashierOrderStatus.PendingPayment
     order.latestPaymentId = payment.paymentId
     order.updatedAt = now
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     await this.publishEvent('cashier.payment-created', {
       orderId,
@@ -220,19 +397,16 @@ export class CashierService {
   }
 
   listPayments(tenantContext: RequestTenantContext): CashierPayment[] {
-    return Array.from(paymentStore.values()).filter((payment) => {
-      const order = orderStore.get(payment.orderId)
-      return order?.tenantContext.tenantId === tenantContext.tenantId
-    })
+    return globalMemoryStore.listPaymentsByTenantSync(tenantContext.tenantId)
   }
 
   listOrderPayments(orderId: string, tenantContext: RequestTenantContext): CashierPayment[] {
-    const order = orderStore.get(orderId)
+    const order = globalMemoryStore.getOrderSync(orderId)
     if (!order || order.tenantContext.tenantId !== tenantContext.tenantId) {
       return []
     }
 
-    return Array.from(paymentStore.values()).filter((payment) => payment.orderId === orderId)
+    return globalMemoryStore.listPaymentsByOrderSync(orderId)
   }
 
   getLatestPayment(orderId: string, tenantContext: RequestTenantContext): CashierPayment | undefined {
@@ -240,7 +414,7 @@ export class CashierService {
     if (!order?.latestPaymentId) {
       return undefined
     }
-    return paymentStore.get(order.latestPaymentId)
+    return globalMemoryStore.getPaymentSync(order.latestPaymentId)
   }
 
   /**
@@ -269,9 +443,8 @@ export class CashierService {
     }
 
     const existingPayment =
-      Array.from(paymentStore.values()).find(
+      globalMemoryStore.listPaymentsByOrderSync(input.orderId).find(
         (payment) =>
-          payment.orderId === input.orderId &&
           (input.externalPaymentId
             ? payment.externalPaymentId === input.externalPaymentId
             : payment.paymentId === order.latestPaymentId)
@@ -303,8 +476,8 @@ export class CashierService {
 
     order.latestPaymentId = existingPayment.paymentId
     order.updatedAt = now
-    this.persistPayment(existingPayment)
-    this.persistOrder(order)
+    await this.persistPaymentAsync(existingPayment)
+    await this.persistOrderAsync(order)
 
     await this.publishEvent(input.standardizedEventName, {
       orderId: order.orderId,
@@ -350,7 +523,7 @@ export class CashierService {
       payment.sourceEventName = 'cashier.payment-timeout-closed'
       payment.updatedAt = now
       payment.completedAt = now
-      this.persistPayment(payment)
+      await this.persistPaymentAsync(payment)
 
       await this.publishEvent('cashier.payment-failed', {
         orderId: order.orderId,
@@ -364,7 +537,7 @@ export class CashierService {
     order.closedAt = now
     order.closeReason = reason
     order.updatedAt = now
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     if (payment) {
       await this.loyaltyService?.settleFailedOrder(order, payment)
@@ -414,7 +587,7 @@ export class CashierService {
       payment.sourceEventName = 'cashier.payment-manual-close'
       payment.updatedAt = now
       payment.completedAt = now
-      this.persistPayment(payment)
+      await this.persistPaymentAsync(payment)
 
       await this.publishEvent('cashier.payment-failed', {
         orderId: order.orderId,
@@ -430,7 +603,7 @@ export class CashierService {
     order.closedBy = input?.operator
     order.closeNote = input?.reason
     order.updatedAt = now
-    this.persistOrder(order)
+    await this.persistOrderAsync(order)
 
     if (payment) {
       await this.loyaltyService?.settleFailedOrder(order, payment)
@@ -448,17 +621,48 @@ export class CashierService {
     return { order, payment }
   }
 
+  /**
+   * 支付渠道统计：按支付渠道聚合今日/当月金额
+   * 从 storeInstance 中读取真实数据，无数据时返回空数组
+   */
+  async getChannelStats(tenantId: string): Promise<{ channel: string; today: number; month: number }[]> {
+    const today = new Date().toISOString().slice(0, 10)
+    const monthPrefix = today.slice(0, 7)
+    const stats = new Map<string, { today: number; month: number }>()
+
+    for (const order of globalMemoryStore.allOrdersValuesSync()) {
+      if (order.tenantContext.tenantId !== tenantId) continue
+
+      const payment = order.latestPaymentId ? globalMemoryStore.getPaymentSync(order.latestPaymentId) : undefined
+      const channel = payment?.channel ?? 'CASH'
+
+      if (!stats.has(channel)) stats.set(channel, { today: 0, month: 0 })
+      const entry = stats.get(channel)!
+
+      if (order.createdAt.startsWith(today)) {
+        entry.today += order.totalAmount
+      }
+      if (order.createdAt.startsWith(monthPrefix)) {
+        entry.month += order.totalAmount
+      }
+    }
+
+    return Array.from(stats.entries()).map(([channel, amounts]) => ({
+      channel,
+      today: Math.round(amounts.today * 100) / 100,
+      month: Math.round(amounts.month * 100) / 100
+    }))
+  }
+
   resetCashierStoresForTests(): void {
-    orderStore.clear()
-    paymentStore.clear()
+    globalMemoryStore.resetForTests()
   }
 
   /**
    * P0-A1: 同时清除 Redis 缓存 (测试用)
    */
   async resetCashierCacheForTests(): Promise<void> {
-    orderStore.clear()
-    paymentStore.clear()
+    await globalMemoryStore.resetForTests()
     if (this.cache) {
       await Promise.all([
         this.cache.delByPrefix('cashier:order:'),

@@ -8,15 +8,18 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PriceMonitorService } from './price-monitor.service'
 import { PriceQueryDto } from './price-monitor.dto'
 import { PriceCategory } from './price-monitor.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('price-monitor')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class PriceMonitorController {
   constructor(private readonly priceService: PriceMonitorService) {}
 

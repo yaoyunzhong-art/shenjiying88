@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -17,8 +18,10 @@ import {
   WarehouseBinQueryDto,
 } from './warehouse-bin.dto'
 import { WarehouseBinService } from './warehouse-bin.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('warehouse-bins')
+@UseGuards(TenantGuard)
 export class WarehouseBinController {
   constructor(private readonly binService: WarehouseBinService) {}
 

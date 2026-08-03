@@ -57,7 +57,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'tenant-demo 企业级经营门户',
       heroSubtitle: 'demo',
       solutionTags: [],
-      loginEntry: { label: '进入租户后台', loginPath: '/cn-mainland/tenant-demo/login', ssoEnabled: true }
+      loginEntry: { label: '进入租户后台', loginPath: '/cn-mainland/tenant-demo/login', ssoEnabled: true }, domainSource: 'default'
     },
     brandPortal: {
       audience: 'TOB',
@@ -73,7 +73,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       heroTitle: 'brand-demo 品牌经营官网',
       heroSubtitle: 'demo',
       solutionTags: [],
-      loginEntry: { label: '进入品牌后台', loginPath: '/cn-mainland/tenant-demo/brand-demo/login', ssoEnabled: true }
+      loginEntry: { label: '进入品牌后台', loginPath: '/cn-mainland/tenant-demo/brand-demo/login', ssoEnabled: true }, domainSource: 'default'
     },
     storePortal: {
       audience: 'TOC',
@@ -88,7 +88,7 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
       name: 'store-001 门店门户',
       primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
       supportedLanguages: ['zh-CN'],
-      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+      supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'], domainSource: 'default'
     },
     marketProfile: {
       marketCode: 'cn-mainland',
@@ -118,6 +118,32 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
   };
 }
 
+function createDomainGovernanceFixture() {
+  return {
+    totalMissingPrimaryScopes: 1,
+    totalActiveWithoutPrimaryDomains: 2,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'STORE',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+        recommendationReason: '优先选择 active_ssl'
+      }
+    ]
+  };
+}
+
 test('miniapp bootstrap: fallback snapshot stays aligned to store portal defaults', () => {
   assert.deepEqual(createMiniappFallbackSnapshot(), {
     deliveryMode: 'fallback',
@@ -128,12 +154,25 @@ test('miniapp bootstrap: fallback snapshot stays aligned to store portal default
     socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: {
+      totalMissingPrimaryScopes: 0,
+      totalActiveWithoutPrimaryDomains: 0,
+      recommendedReadyScopes: 0,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 0,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: false,
+      lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+      currentScopes: []
+    },
+    domainGovernanceWorkspaceHref: '/saas/domains?marketCode=cn-mainland'
   });
 });
 
 test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
-  assert.deepEqual(toMiniappBootstrapSnapshot(createPortalBootstrapFixture()), {
+  assert.deepEqual(toMiniappBootstrapSnapshot(createPortalBootstrapFixture(), createDomainGovernanceFixture()), {
     deliveryMode: 'api',
     marketCode: 'cn-mainland',
     defaultLanguage: 'zh-CN',
@@ -142,7 +181,11 @@ test('miniapp bootstrap: maps portal bootstrap into runtime snapshot', () => {
     socialPlatforms: ['WECHAT', 'XIAOHONGSHU'],
     sharePolicy: 'DOMESTIC_SOCIAL_FIRST',
     primaryDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default',
+    domainGovernance: createDomainGovernanceFixture(),
+    domainGovernanceWorkspaceHref:
+      '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE'
   });
 });
 
@@ -220,6 +263,19 @@ test('miniapp bootstrap: non-cn fallback snapshot uses global preset', () => {
       sharePolicy: 'GLOBAL_CONTENT_FIRST',
       primaryDomain: 'store-global.brand-global.tenant-global.jp-tokyo.local',
       supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      domainSource: 'default',
+      domainGovernance: {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 0,
+        recommendedReadyScopes: 0,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 0,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: false,
+        lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+        currentScopes: []
+      },
+      domainGovernanceWorkspaceHref: '/saas/domains?marketCode=jp-tokyo',
     },
   );
 });
@@ -250,6 +306,22 @@ test('miniapp bootstrap: loads real member runtime snapshot when member api is a
             }
           ],
           timestamp: '2026-06-14T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      )
+    }
+
+    if (url.endsWith('/portals/domain-governance')) {
+      const headers = init?.headers as Record<string, string> | undefined;
+      assert.equal(headers?.['x-actor-id'], 'miniapp-bootstrap-operator');
+      assert.equal(headers?.['x-actor-roles'], 'OPERATIONS');
+      assert.equal(headers?.['x-actor-permissions'], 'foundation.governance.read,foundation.runtime-governance.read,foundation.runtime-governance.write');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z'
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       )
@@ -351,6 +423,18 @@ test('miniapp bootstrap: loads runtime consumer contract from api and governance
           message: 'OK',
           data: createPortalBootstrapFixture(),
           timestamp: '2026-06-12T00:00:00.000Z'
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    if (url.endsWith('/portals/domain-governance')) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'OK',
+          data: createDomainGovernanceFixture(),
+          timestamp: '2026-07-18T00:00:00.000Z'
         }),
         { status: 200, headers: { 'content-type': 'application/json' } }
       );

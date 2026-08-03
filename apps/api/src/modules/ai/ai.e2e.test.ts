@@ -196,11 +196,29 @@ describe('AI E2E', () => {
         assert.equal(res.statusCode, 201)
         assert.ok(Array.isArray(res.body))
         assert.ok(res.body.length >= 1)
-        // Should include education or healthcare
-        const hasRelevantKeyword = res.body.some((k: any) =>
-          k.keyword === 'education' || k.keyword === 'healthcare' || k.keyword === 'machine'
+        // Tokenizer splits on spaces: machine, learning, artificial, intelligence,
+        // healthcare, education are all separate words
+        const keywords = res.body.map((k: any) => k.keyword)
+        const hasRelevantKeyword = keywords.some((kw: string) =>
+          ['machine', 'learning', 'artificial', 'intelligence', 'healthcare', 'education'].includes(kw)
         )
         assert.ok(hasRelevantKeyword)
+      } finally {
+        await app.close()
+      }
+    })
+
+    it('中英文混合关键词提取应包含高词频词', async () => {
+      const { app } = await buildApp()
+      try {
+        const res = await request(app.getHttpServer())
+          .post('/ai/keywords')
+          .send({ text: 'software cloud software API software data software' })
+        assert.equal(res.statusCode, 201)
+        assert.ok(Array.isArray(res.body))
+        assert.ok(res.body.length >= 1)
+        // software 出现 4 次应排第一
+        assert.equal(res.body[0].keyword, 'software')
       } finally {
         await app.close()
       }

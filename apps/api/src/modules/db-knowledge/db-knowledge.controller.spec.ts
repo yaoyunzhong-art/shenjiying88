@@ -1,419 +1,377 @@
-
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 /**
  * DbKnowledgeController 单元测试
  *
- * 覆盖：
- * - 正向流程（DB 可用时正确返回数据）
- * - 降级流程（DB 不可用时返回空数组 / 降级信息）
- * - 边界条件（空查询、无效参数）
+ * 覆盖端点:
+ *   - GET /api/db-knowledge/status
+ *   - GET /api/db-knowledge/search
+ *   - GET /api/db-knowledge/documents/:kind
+ *   - GET /api/db-knowledge/experts
+ *   - GET /api/db-knowledge/pulses
+ *   - GET /api/db-knowledge/phases
+ *   - GET /api/db-knowledge/patterns
+ *   - GET /api/db-knowledge/venues
+ *   - GET /api/db-knowledge/brief/today
+ *   - POST /api/db-knowledge/search/log
  */
-import { describe, it, expect } from 'vitest'
 
-// ── Mock 服务类型 ─────────────────────────────────────────────
+import assert from 'node:assert/strict'
 
-interface MockDbKnowledgeService {
-  available: boolean
-  search: (query: string, kind?: string, limit?: number) => Promise<any[]>
-  getDocumentsByKind: (kind: string) => Promise<any[]>
-  getExperts: (groupId?: string) => Promise<any[]>
-  getRecentPulses: (limit?: number) => Promise<any[]>
-  getActivePhases: () => Promise<any[]>
-  getPatterns: (type?: 'anti-pattern' | 'positive-pattern') => Promise<any[]>
-  getVenuesByCity: (city: string) => Promise<any[]>
-  getTodayBrief: () => Promise<any>
-  logSearch: (query: string, count: number, ms: number) => Promise<void>
+// ── Type Mirrors ────────────────────────────────────────────────
+
+type SearchResult = {
+  id: string
+  title: string
+  snippet: string
+  kind: string
+  score: number
 }
 
-// ── 模拟数据工厂 ─────────────────────────────────────────────
+type KnowledgeDoc = {
+  id: string
+  kind: string
+  title: string
+  content: string
+  tags: string[]
+  updatedAt: string
+}
 
-function makeMockService(available = true): MockDbKnowledgeService {
-  const searchResult = {
-    id: 'doc-001',
-    sourcePath: '/docs/example.md',
-    title: '示例文档',
-    kind: 'guide',
-    content: '这是示例文档的内容',
-    score: 0.85,
-  }
+type ExpertProfile = {
+  id: string
+  name: string
+  specialization: string
+  groupId: string
+  rating: number
+}
 
-  const doc = {
-    id: 'doc-001',
-    sourcePath: '/docs/example.md',
-    title: '示例文档',
-    kind: 'guide',
-    tags: ['guide', 'example'],
-    content: '完整内容',
-    chunkCount: 3,
-    isArchive: false,
-    metadata: {},
-    createdAt: '2026-07-11T00:00:00Z',
-    updatedAt: '2026-07-11T12:00:00Z',
-  }
+type AcceptancePulse = {
+  id: string
+  project: string
+  status: string
+  timestamp: string
+  detail: string
+}
 
-  const expert = {
-    id: 'exp-001',
-    code: 'EXP-01',
-    name: '张专家',
-    groupId: 'group-a',
-    role: '后端架构师',
-    specialization: ['NestJS', 'PostgreSQL'],
-    activePhases: ['phase-1'],
-    activityLevel: 'high',
-    insights: [],
-    learningNotes: [],
-    feedbackLog: [],
-    evolutionLog: [],
-  }
+type PhaseRecord = {
+  id: string
+  name: string
+  phase: string
+  progress: number
+  startDate: string
+  endDate: string
+}
 
-  const pulse = {
-    id: 'pulse-001',
-    pulseNumber: 42,
-    module: 'db-knowledge',
-    status: 'passed',
-    basePass: true,
-    servicePass: true,
-    controllerPass: true,
-    ctestPass: true,
-    streakCount: 5,
-    fixCount: 0,
-    createdAt: '2026-07-11T12:00:00Z',
-  }
+type PatternRecord = {
+  id: string
+  type: 'antipattern' | 'pattern'
+  title: string
+  description: string
+}
 
-  const phase = {
-    id: 'phase-001',
-    phaseCode: 'P1',
-    name: '数据库重构',
-    owner: '树哥',
-    completionPct: 75,
-    status: '进行中',
-    storeARequired: false,
-    frontendDone: true,
-    backendDone: true,
-    testDone: false,
-    acceptanceDone: false,
-  }
+type CompetitorVenue = {
+  id: string
+  name: string
+  city: string
+  category: string
+  rating: number
+  address: string
+}
 
-  const pattern = {
-    id: 'pat-001',
-    patternType: 'positive-pattern' as const,
-    code: 'PP-001',
-    title: '带降级的 DB 封装',
-    description: '使用 try/catch 降级模式确保 DB 不可用时服务不崩溃',
-    discoveryDate: '2026-07-10',
-    relatedPhases: ['P1'],
-    resolved: true,
-  }
+type DailyBrief = {
+  date: string
+  summary: string
+  highlights: string[]
+}
 
-  const venue = {
-    id: 'ven-001',
-    city: '上海',
-    venueName: '竞争对手电竞馆',
-    sourcePlatform: '美团',
-    data9dims: {},
-  }
+// ── Inline Mocks ────────────────────────────────────────────────
 
-  const brief = {
-    id: 'brief-001',
-    date: '2026-07-11',
-    commits: 12,
-    treeCommits: 3,
-    lobsterCommits: 5,
-    expertCommits: 4,
-    acceptancePulses: 2,
-    streakMax: 7,
-    testsPass: 45,
-    testsFail: 1,
-    tscModules: 20,
-    tscPassed: 19,
-    cronsEnabled: 8,
-    highlights: [],
-    issues: [],
-  }
+function createMocks() {
+  let available = true
 
   return {
-    available,
-    search: (_q: string, _k?: string, _l?: number) =>
-      available ? Promise.resolve([searchResult]) : Promise.resolve([]),
-    getDocumentsByKind: (_k: string) =>
-      available ? Promise.resolve([doc]) : Promise.resolve([]),
-    getExperts: (_g?: string) =>
-      available ? Promise.resolve([expert]) : Promise.resolve([]),
-    getRecentPulses: (_l?: number) =>
-      available ? Promise.resolve([pulse]) : Promise.resolve([]),
-    getActivePhases: () =>
-      available ? Promise.resolve([phase]) : Promise.resolve([]),
-    getPatterns: (_t?: 'anti-pattern' | 'positive-pattern') =>
-      available ? Promise.resolve([pattern]) : Promise.resolve([]),
-    getVenuesByCity: (_c: string) =>
-      available ? Promise.resolve([venue]) : Promise.resolve([]),
-    getTodayBrief: () =>
-      available ? Promise.resolve(brief) : Promise.resolve(null),
-    logSearch: (_q: string, _c: number, _m: number) => Promise.resolve(),
+    get available() { return available },
+    setAvailable(v: boolean) { available = v },
+
+    async search(query: string, kind?: string, limit?: number): Promise<SearchResult[]> {
+      const results: SearchResult[] = [
+        { id: 'd1', title: 'NestJS 入门', snippet: 'NestJS 是一种 Node.js 框架...', kind: 'guide', score: 0.95 },
+        { id: 'd2', title: 'Prisma ORM 使用', snippet: 'Prisma 是下一代 ORM...', kind: 'guide', score: 0.88 },
+        { id: 'd3', title: '多租户设计模式', snippet: 'SaaS 多租户隔离策略...', kind: 'architecture', score: 0.92 },
+      ]
+      let filtered = results
+      if (kind) filtered = filtered.filter((r) => r.kind === kind)
+      if (query) filtered = filtered.filter((r) => r.title.toLowerCase().includes(query.toLowerCase()))
+      if (limit) filtered = filtered.slice(0, limit)
+      return filtered
+    },
+
+    async getDocumentsByKind(kind: string): Promise<KnowledgeDoc[]> {
+      const docs: Record<string, KnowledgeDoc[]> = {
+        guide: [
+          { id: 'g1', kind: 'guide', title: '快速开始', content: '安装指南...', tags: ['setup'], updatedAt: '2026-07-01' },
+          { id: 'g2', kind: 'guide', title: 'API 参考', content: '完整 API 文档...', tags: ['api'], updatedAt: '2026-07-15' },
+        ],
+        architecture: [
+          { id: 'a1', kind: 'architecture', title: '系统架构', content: '整体架构图...', tags: ['design'], updatedAt: '2026-06-01' },
+        ],
+      }
+      return docs[kind] ?? []
+    },
+
+    async getExperts(groupId?: string): Promise<ExpertProfile[]> {
+      const experts: ExpertProfile[] = [
+        { id: 'e1', name: '张三', specialization: 'NestJS', groupId: 'backend', rating: 4.8 },
+        { id: 'e2', name: '李四', specialization: 'React', groupId: 'frontend', rating: 4.5 },
+      ]
+      if (groupId) return experts.filter((e) => e.groupId === groupId)
+      return experts
+    },
+
+    async getRecentPulses(limit?: number): Promise<AcceptancePulse[]> {
+      const pulses: AcceptancePulse[] = [
+        { id: 'p1', project: 'P-31', status: 'PASS', timestamp: '2026-07-20T10:00:00Z', detail: '多租户隔离验收通过' },
+        { id: 'p2', project: 'P-35', status: 'PASS', timestamp: '2026-07-19T08:00:00Z', detail: 'LLM 配置模块验收通过' },
+      ]
+      if (limit) return pulses.slice(0, limit)
+      return pulses
+    },
+
+    async getActivePhases(): Promise<PhaseRecord[]> {
+      return [
+        { id: 'ph1', name: 'P-31 多租户隔离', phase: 'testing', progress: 90, startDate: '2026-06-01', endDate: '2026-07-31' },
+        { id: 'ph2', name: 'P-35 LLM 接入', phase: 'development', progress: 60, startDate: '2026-07-01', endDate: '2026-08-15' },
+      ]
+    },
+
+    async getPatterns(type?: string): Promise<PatternRecord[]> {
+      const patterns: PatternRecord[] = [
+        { id: 'pt1', type: 'antipattern', title: '硬编码 tenantId', description: '避免在代码中硬编码租户 ID' },
+        { id: 'pt2', type: 'pattern', title: '装饰器注入', description: '使用 @TenantContext() 注入租户上下文' },
+      ]
+      if (type) return patterns.filter((p) => p.type === type)
+      return patterns
+    },
+
+    async getVenuesByCity(city: string): Promise<CompetitorVenue[]> {
+      const venues: Record<string, CompetitorVenue[]> = {
+        '广州': [
+          { id: 'v1', name: '天河体育馆', city: '广州', category: 'sports', rating: 4.5, address: '天河路 299 号' },
+        ],
+        '深圳': [
+          { id: 'v2', name: '深圳湾体育中心', city: '深圳', category: 'sports', rating: 4.7, address: '滨海大道 3001 号' },
+        ],
+      }
+      return venues[city] ?? []
+    },
+
+    async getTodayBrief(): Promise<DailyBrief | null> {
+      return {
+        date: '2026-07-20',
+        summary: '今日无重大更新',
+        highlights: ['P-31 测试通过', 'P-35 开发中'],
+      }
+    },
+
+    async logSearch(query: string, count: number, durationMs: number): Promise<void> {
+      // no-op in test
+    },
   }
 }
 
-// ── 内联 Controller 实现 ──────────────────────────────────────
+// ── Inline Controller ───────────────────────────────────────────
 
-class DbKnowledgeController {
-  constructor(private readonly service: MockDbKnowledgeService) {}
+class InlineDbKnowledgeController {
+  constructor(private readonly service: ReturnType<typeof createMocks>) {}
 
-  status() {
+  status(): { available: boolean } {
     return { available: this.service.available }
   }
 
-  async search(query: { query: string; kind?: string; limit?: number }) {
+  async search(query: { query: string; kind?: string; limit?: number }): Promise<SearchResult[]> {
     return this.service.search(query.query, query.kind, query.limit)
   }
 
-  async getDocumentsByKind(params: { kind: string }) {
+  async getDocumentsByKind(params: { kind: string }): Promise<KnowledgeDoc[]> {
     return this.service.getDocumentsByKind(params.kind)
   }
 
-  async getExperts(query: { groupId?: string; limit?: number }) {
+  async getExperts(query: { groupId?: string }): Promise<ExpertProfile[]> {
     return this.service.getExperts(query.groupId)
   }
 
-  async getRecentPulses(query: { groupId?: string; limit?: number }) {
+  async getRecentPulses(query: { limit?: number }): Promise<AcceptancePulse[]> {
     return this.service.getRecentPulses(query.limit ?? 20)
   }
 
-  async getActivePhases() {
+  async getActivePhases(): Promise<PhaseRecord[]> {
     return this.service.getActivePhases()
   }
 
-  async getPatterns(query: { type?: 'anti-pattern' | 'positive-pattern' }) {
+  async getPatterns(query: { type?: string }): Promise<PatternRecord[]> {
     return this.service.getPatterns(query.type)
   }
 
-  async getVenuesByCity(query: { city: string }) {
+  async getVenuesByCity(query: { city: string }): Promise<CompetitorVenue[]> {
     return this.service.getVenuesByCity(query.city)
   }
 
-  async getTodayBrief() {
+  async getTodayBrief(): Promise<DailyBrief | { message: string }> {
     const brief = await this.service.getTodayBrief()
     if (!brief) return { message: '今日暂无简报数据' }
     return brief
   }
 
-  async logSearch(body: { query: string; count: number; durationMs: number }) {
+  async logSearch(body: { query: string; count: number; durationMs: number }): Promise<{ logged: boolean }> {
     await this.service.logSearch(body.query, body.count, body.durationMs)
     return { logged: true }
   }
 }
 
-// ── 测试用例 ──────────────────────────────────────────────────
+// ── Tests ───────────────────────────────────────────────────────
 
-describe('DbKnowledgeController (DB 可用)', () => {
-  let controller: DbKnowledgeController
-
-  beforeEach(() => {
-    const service = makeMockService(true)
-    controller = new DbKnowledgeController(service)
-  })
-
-  it('GET /status — 返回 available: true', () => {
-    const result = controller.status()
-    expect(result.available).toBe(true)
-  })
-
-  it('GET /search — 返回搜索结果', async () => {
-    const result = await controller.search({ query: '示例', limit: 10 })
-    expect(result).toHaveLength(1)
-    expect(result[0]).toHaveProperty('title')
-  })
-
-  it('GET /search — 空查询返回空数组', async () => {
-    const svc = makeMockService(true)
-    svc.search = () => Promise.resolve([])
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.search({ query: '不存在的查询', limit: 10 })
-    expect(result).toHaveLength(0)
-  })
-
-  it('GET /documents/:kind — 按种类查询', async () => {
-    const result = await controller.getDocumentsByKind({ kind: 'guide' })
-    expect(result).toHaveLength(1)
-    expect(result[0].kind).toBe('guide')
-  })
-
-  it('GET /experts — 查询专家列表', async () => {
-    const result = await controller.getExperts({ groupId: 'group-a' })
-    expect(result).toHaveLength(1)
-    expect(result[0].code).toBe('EXP-01')
-  })
-
-  it('GET /pulses — 获取验收脉冲', async () => {
-    const result = await controller.getRecentPulses({ limit: 5 })
-    expect(result).toHaveLength(1)
-    expect(result[0].pulseNumber).toBe(42)
-  })
-
-  it('GET /phases — 获取活跃阶段', async () => {
-    const result = await controller.getActivePhases()
-    expect(result).toHaveLength(1)
-    expect(result[0].phaseCode).toBe('P1')
-  })
-
-  it('GET /patterns — 获取模式列表（无过滤）', async () => {
-    const result = await controller.getPatterns({})
-    expect(result).toHaveLength(1)
-    expect(result[0].patternType).toBe('positive-pattern')
-  })
-
-  it('GET /venues?city=上海 — 竞品场馆', async () => {
-    const result = await controller.getVenuesByCity({ city: '上海' })
-    expect(result).toHaveLength(1)
-    expect(result[0].city).toBe('上海')
-  })
-
-  it('GET /brief/today — 今日简报', async () => {
-    const result = await controller.getTodayBrief()
-    expect(result).not.toHaveProperty('message')
-    expect(result).toHaveProperty('date')
-  })
-
-  it('POST /search/log — 记录搜索日志', async () => {
-    const result = await controller.logSearch({ query: 'test', count: 1, durationMs: 50 })
-    expect(result.logged).toBe(true)
-  })
-})
-
-describe('DbKnowledgeController (DB 不可用 — 降级)', () => {
-  let controller: DbKnowledgeController
+describe('DbKnowledgeController', () => {
+  let mock: ReturnType<typeof createMocks>
+  let controller: InlineDbKnowledgeController
 
   beforeEach(() => {
-    const service = makeMockService(false)
-    controller = new DbKnowledgeController(service)
+    mock = createMocks()
+    controller = new InlineDbKnowledgeController(mock)
   })
 
-  it('GET /status — 返回 available: false', () => {
-    const result = controller.status()
-    expect(result.available).toBe(false)
+  describe('GET /api/db-knowledge/status - status', () => {
+    it('[正例] DB 可用时返回 true', () => {
+      const result = controller.status()
+      assert.ok(result.available)
+    })
+
+    it('[反例] DB 不可用时返回 false', () => {
+      mock.setAvailable(false)
+      const result = controller.status()
+      assert.ok(!result.available)
+    })
   })
 
-  it('GET /search — 返回空数组', async () => {
-    const result = await controller.search({ query: 'anything' })
-    expect(result).toEqual([])
+  describe('GET /api/db-knowledge/search - search', () => {
+    it('[正例] 搜索返回结果', async () => {
+      const results = await controller.search({ query: 'NestJS' })
+      assert.ok(results.length > 0)
+      assert.ok(results[0].title.includes('NestJS'))
+    })
+
+    it('[正例] 按 kind 过滤', async () => {
+      const results = await controller.search({ query: '', kind: 'architecture' })
+      assert.ok(results.every((r) => r.kind === 'architecture'))
+    })
+
+    it('[正例] 按 limit 限制条数', async () => {
+      const results = await controller.search({ query: '', limit: 1 })
+      assert.equal(results.length, 1)
+    })
+
+    it('[边界] 无匹配搜索返回空数组', async () => {
+      const results = await controller.search({ query: 'zzz_does_not_exist' })
+      assert.equal(results.length, 0)
+    })
   })
 
-  it('GET /documents/:kind — 返回空数组', async () => {
-    const result = await controller.getDocumentsByKind({ kind: 'guide' })
-    expect(result).toEqual([])
+  describe('GET /api/db-knowledge/documents/:kind - getDocumentsByKind', () => {
+    it('[正例] 按种类返回文档', async () => {
+      const docs = await controller.getDocumentsByKind({ kind: 'guide' })
+      assert.ok(docs.length >= 2)
+      assert.ok(docs.every((d) => d.kind === 'guide'))
+    })
+
+    it('[边界] 不存在的种类返回空数组', async () => {
+      const docs = await controller.getDocumentsByKind({ kind: 'unknown_type' })
+      assert.deepEqual(docs, [])
+    })
   })
 
-  it('GET /experts — 返回空数组', async () => {
-    const result = await controller.getExperts({})
-    expect(result).toEqual([])
+  describe('GET /api/db-knowledge/experts - getExperts', () => {
+    it('[正例] 返回所有专家', async () => {
+      const experts = await controller.getExperts({})
+      assert.ok(experts.length > 0)
+    })
+
+    it('[正例] 按组过滤', async () => {
+      const experts = await controller.getExperts({ groupId: 'backend' })
+      assert.ok(experts.every((e) => e.groupId === 'backend'))
+    })
   })
 
-  it('GET /pulses — 返回空数组', async () => {
-    const result = await controller.getRecentPulses({})
-    expect(result).toEqual([])
+  describe('GET /api/db-knowledge/pulses - getRecentPulses', () => {
+    it('[正例] 返回验收脉冲', async () => {
+      const pulses = await controller.getRecentPulses({})
+      assert.ok(pulses.length > 0)
+      assert.ok(pulses.every((p) => p.status === 'PASS'))
+    })
+
+    it('[边界] 指定 limit 限制', async () => {
+      const pulses = await controller.getRecentPulses({ limit: 1 })
+      assert.equal(pulses.length, 1)
+    })
   })
 
-  it('GET /brief/today — 返回降级信息', async () => {
-    const result = await controller.getTodayBrief()
-    expect(result).toHaveProperty('message')
-  })
-})
-
-describe('DbKnowledgeController (边界条件)', () => {
-  it('search limit 参数为 0 时取默认值', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.search({ query: 'test' })
-    expect(Array.isArray(result)).toBe(true)
+  describe('GET /api/db-knowledge/phases - getActivePhases', () => {
+    it('[正例] 返回活跃阶段', async () => {
+      const phases = await controller.getActivePhases()
+      assert.ok(phases.length > 0)
+      assert.ok(phases.every((p) => typeof p.progress === 'number'))
+    })
   })
 
-  it('getRecentPulses 不传 limit 取默认 20', async () => {
-    const svc = makeMockService(true)
-    const spy: { calledWith: number } = { calledWith: 0 }
-    svc.getRecentPulses = (limit?: number) => {
-      spy.calledWith = limit ?? 20
-      return Promise.resolve([])
-    }
-    const ctrl = new DbKnowledgeController(svc)
-    await ctrl.getRecentPulses({})
-    expect(spy.calledWith).toBe(20)
+  describe('GET /api/db-knowledge/patterns - getPatterns', () => {
+    it('[正例] 返回所有模式', async () => {
+      const patterns = await controller.getPatterns({})
+      assert.ok(patterns.length > 0)
+    })
+
+    it('[正例] 按类型过滤', async () => {
+      const antiPatterns = await controller.getPatterns({ type: 'antipattern' })
+      assert.ok(antiPatterns.every((p) => p.type === 'antipattern'))
+    })
   })
 
-  it('venues 传空 city 应返回空数组', async () => {
-    const svc = makeMockService(true)
-    svc.getVenuesByCity = () => Promise.resolve([])
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getVenuesByCity({ city: '' })
-    expect(result).toEqual([])
+  describe('GET /api/db-knowledge/venues - getVenuesByCity', () => {
+    it('[正例] 按城市查询场馆', async () => {
+      const venues = await controller.getVenuesByCity({ city: '广州' })
+      assert.ok(venues.length > 0)
+      assert.equal(venues[0].city, '广州')
+    })
+
+    it('[边界] 无数据的城市返回空数组', async () => {
+      const venues = await controller.getVenuesByCity({ city: 'UnknownCity' })
+      assert.deepEqual(venues, [])
+    })
   })
 
-  // ── 新增: 路由结构测试 ──
+  describe('GET /api/db-knowledge/brief/today - getTodayBrief', () => {
+    it('[正例] 返回今日简报', async () => {
+      const brief = await controller.getTodayBrief()
+      assert.ok('date' in brief)
+      assert.equal((brief as DailyBrief).date, '2026-07-20')
+    })
 
-  it('getTodayBrief 委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getTodayBrief()
-    expect(Array.isArray(result)).toBe(false)
+    it('[反例] 无数据返回提示消息', async () => {
+      // Temporarily make brief return null
+      const original = mock.getTodayBrief
+      mock.getTodayBrief = async () => null
+      const result = await controller.getTodayBrief()
+      assert.ok('message' in result)
+      assert.equal((result as any).message, '今日暂无简报数据')
+      mock.getTodayBrief = original
+    })
   })
 
-  it('search 传空 query 委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.search({ query: '', limit: 10 })
-    expect(Array.isArray(result)).toBe(true)
-  })
+  describe('POST /api/db-knowledge/search/log - logSearch', () => {
+    it('[正例] 记录搜索日志', async () => {
+      const result = await controller.logSearch({ query: 'test', count: 5, durationMs: 100 })
+      assert.ok(result.logged)
+    })
 
-  it('search 传负 limit 委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.search({ query: 'test', limit: -1 })
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('search 传超大 limit 委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.search({ query: 'test', limit: 99999 })
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('getPatterns 传 undefined type 委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getPatterns({} as any)
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('PatternFilterDto 完整参数委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getPatterns({ type: 'anti-pattern' })
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('PatternFilterDto positive-pattern 委托', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getPatterns({ type: 'positive-pattern' })
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('getExperts 返回数组', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getExperts({})
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('getRecentPulses 默认 limit 委托到 service', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getRecentPulses({ limit: 10 })
-    expect(Array.isArray(result)).toBe(true)
-  })
-
-  it('getRecentPulses 传 undefined limit', async () => {
-    const svc = makeMockService(true)
-    const ctrl = new DbKnowledgeController(svc)
-    const result = await ctrl.getRecentPulses({})
-    expect(Array.isArray(result)).toBe(true)
+    it('[边界] 空查询也记录', async () => {
+      const result = await controller.logSearch({ query: '', count: 0, durationMs: 0 })
+      assert.ok(result.logged)
+    })
   })
 })

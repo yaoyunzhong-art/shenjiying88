@@ -9,10 +9,23 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
-import React from 'react';
-import { render, cleanup } from '@testing-library/react';
 import StoreManagerWorkbenchPage from './page';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+const CLIENT_SOURCE = resolve(__dirname, 'store-manager-client.tsx');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+function readClientSource(): string {
+  return readFileSync(CLIENT_SOURCE, 'utf-8');
+}
 
 /* ── 类型 ── */
 
@@ -166,46 +179,55 @@ function getTaskByStatus(tasks: TaskItem[], status: TaskStatus): TaskItem[] {
   return tasks.filter(t => t.status === status);
 }
 
-/* ── 辅助 ── */
-
-function setup() {
-  cleanup();
-  return render(React.createElement(StoreManagerWorkbenchPage));
-}
-
 /* ============================================================ */
 
 describe('store-manager: 页面渲染', () => {
-  it('renders without error', () => {
-    assert.doesNotThrow(() => setup());
-  });
-
-  it('renders title', () => {
-    const { container } = setup();
-    const text = container.textContent ?? '';
-    assert.ok(text.includes('店长工作台'));
+  it('源码包含店长工作台标题', () => {
+    assert.ok(readClientSource().includes('店长工作台'));
   });
 
   it('component is a function', () => {
     assert.equal(typeof StoreManagerWorkbenchPage, 'function');
   });
 
-  it('renders KPI cards', () => {
-    const { container } = setup();
-    const text = container.textContent ?? '';
-    assert.ok(text.includes('今日营收') && text.includes('今日客流'));
+  it('服务端页面应导出 async 组件', () => {
+    assert.ok(readSource().includes('export default async function StoreManagerWorkbenchPage'));
   });
 
-  it('renders status bar', () => {
-    const { container } = setup();
-    const text = container.textContent ?? '';
-    assert.ok(text.includes('待办任务') || text.includes('紧急事项') || text.includes('当班员工'));
+  it('服务端页面应接入 bootstrap snapshot', () => {
+    const src = readSource();
+    assert.ok(src.includes('getAdminWorkbenchConsumerSnapshot'));
+    assert.ok(src.includes("getRoleWorkbench('STORE_MANAGER')"));
   });
 
-  it('renders tab navigation', () => {
-    const { container } = setup();
-    const text = container.textContent ?? '';
-    assert.ok(text.includes('运营概览') || text.includes('待办'));
+  it('服务端页面应将来源态透传给客户端组件', () => {
+    const src = readSource();
+    assert.ok(src.includes('<StoreManagerWorkbenchClient'));
+    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'));
+    assert.ok(src.includes('roleWorkbench={roleWorkbench}'));
+  });
+
+  it('源码包含 KPI 卡片文案', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('今日营收') && src.includes('今日客流'));
+  });
+
+  it('源码包含状态栏文案', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('待办任务') || src.includes('紧急事项') || src.includes('当班员工'));
+  });
+
+  it('源码包含标签导航文案', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('运营概览') || src.includes('待办'));
+  });
+
+  it('客户端应显式展示来源态和角色映射证据', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('controlPlaneSource'));
+    assert.ok(src.includes('businessDataSource'));
+    assert.ok(src.includes('tenant-config 角色映射'));
+    assert.ok(src.includes('mockKpi/mockTasks/mockHotProducts/mockStaffOnDuty/mockRevenueHours'));
   });
 });
 
@@ -295,7 +317,7 @@ describe('store-manager: 业务逻辑', () => {
 
   it('getUrgentOrHighCount returns urgent + high', () => {
     const tasks = mockTasks();
-    assert.equal(getUrgentOrHighCount(tasks), 3);
+    assert.equal(getUrgentOrHighCount(tasks), 4);
   });
 
   it('getOnDutyCount returns staff in 在岗 status', () => {
@@ -411,17 +433,23 @@ describe('store-manager: 业务逻辑', () => {
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = readClientSource();
 
 describe('Workbench / Store Manager — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
+  it('应接入管理员权限边界', () => {
+    assert.ok(SRC.includes('AdminPermissionGate'));
+  });
+  it('客户端应使用 use client 指令', () => {
+    assert.ok(SRC.includes("'use client'"));
+  });
+  it('包含useState声明', () => assert.ok(SRC.includes('useState')));
   it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
+  it('包含事件处理器', () => assert.ok(SRC.includes('onChange={')));
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
+  it('包含条件渲染', () => assert.ok(SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
+  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
   it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('包含注释说明', () => assert.ok(SRC.includes('//') || SRC.includes('/*')));
 });

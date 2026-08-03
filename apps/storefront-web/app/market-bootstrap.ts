@@ -7,9 +7,11 @@ import {
   type FoundationGovernanceReadModel
 } from '@m5/sdk';
 import {
+  buildDomainGovernanceWorkspaceHref,
   getFoundationAppBootstrapWiring,
   type AppBootstrapWiring,
   type FoundationConsumerDescriptor,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
   type StorePortalContract
 } from '@m5/types';
@@ -21,6 +23,8 @@ export interface StorefrontConsumerSnapshot {
   wiring: AppBootstrapWiring;
   consumerDescriptor: FoundationConsumerDescriptor;
   portal: StorePortalContract;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
   foundationDependencies: string[];
   foundationContracts: string[];
   regionalOverridesCount: number;
@@ -45,6 +49,20 @@ export interface StorefrontConsumerSnapshot {
 export type StorefrontGovernanceReadModel = FoundationGovernanceReadModel;
 
 const STOREFRONT_SUPPORTED_LANGUAGES = ['zh-CN', 'en-US'];
+
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: [],
+  };
+}
 
 function getFallbackDefaultLanguage(marketCode: string): string {
   return marketCode === 'cn-mainland' ? 'zh-CN' : 'en-US';
@@ -92,7 +110,8 @@ function getFallbackStorePortal(
     name: `${storeCode} 门店门户`,
     primaryDomain: `${storeCode}.${brandCode}.${tenantCode}.${marketCode}.local`,
     supportedLanguages,
-    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE']
+    supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+    domainSource: 'default'
   };
 }
 
@@ -135,6 +154,21 @@ async function loadPortalConsumerDescriptor(
   return loadFoundationConsumerDescriptor(createStorePortalClient(marketCode, tenantCode, brandCode, storeCode), 'portal');
 }
 
+async function loadPortalDomainGovernance(
+  marketCode: string,
+  tenantCode: string,
+  brandCode: string,
+  storeCode: string
+): Promise<PortalDomainGovernanceSummaryContract> {
+  try {
+    return await createStorePortalClient(marketCode, tenantCode, brandCode, storeCode).getPortalDomainGovernanceSummary({
+      cache: 'no-store',
+    });
+  } catch {
+    return createFallbackDomainGovernanceSummary();
+  }
+}
+
 export const loadStorefrontGovernanceReadModel: (
   marketCode: string,
   tenantCode: string,
@@ -148,10 +182,11 @@ export async function getStorefrontConsumerSnapshot(
   brandCode: string,
   storeCode: string
 ): Promise<StorefrontConsumerSnapshot> {
-  const [bootstrap, governance, consumerDescriptor] = await Promise.all([
+  const [bootstrap, governance, consumerDescriptor, domainGovernance] = await Promise.all([
     loadPortalBootstrap(marketCode, tenantCode, brandCode, storeCode),
     loadStorefrontGovernanceReadModel(marketCode, tenantCode, brandCode, storeCode),
-    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode, storeCode)
+    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode, storeCode),
+    loadPortalDomainGovernance(marketCode, tenantCode, brandCode, storeCode),
   ]);
   const portal =
     bootstrap?.storePortal ?? getFallbackStorePortal(marketCode, tenantCode, brandCode, storeCode, bootstrap);
@@ -164,6 +199,8 @@ export async function getStorefrontConsumerSnapshot(
   return {
     ...snapshotBase,
     portal,
+    domainGovernance,
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(domainGovernance, portal.marketCode),
     scope: {
       scopePath: `${portal.marketCode} / ${portal.tenantCode} / ${portal.brandCode} / ${portal.storeCode}`,
       ...snapshotBase.scope

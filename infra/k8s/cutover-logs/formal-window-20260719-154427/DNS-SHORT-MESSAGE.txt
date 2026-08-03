@@ -1,0 +1,10 @@
+【G8阻塞催办｜DNS】
+最新正式窗口 readiness 已在 formal-window-20260719-154427 失败。
+DNS 实测阻塞如下：
+- DNS has no A record for api.m5-platform.com
+- DNS has no A record for admin.m5-platform.com
+- DNS has no A record for store.m5-platform.com
+- DNS has no A record for tob.m5-platform.com
+请在 24h 内确认 m5-platform.com 托管位置，并为 api/admin/store/tob 四个 host 创建 A 记录。
+目标 IP：121.41.69.154 / 120.26.66.40
+完成标准：四个 host 的 dig +short A 均返回生产 NLB IP，之后重跑 G8 readiness。

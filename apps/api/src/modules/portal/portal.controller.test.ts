@@ -5,6 +5,7 @@ import { PortalController } from './portal.controller'
 import type { PortalService } from './portal.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { LanguageCode, PortalAudience, PortalChannel, PortalScopeType, StorefrontSurface } from '@m5/domain'
+import { DECORATORS } from '@nestjs/swagger/dist/constants'
 
 // ---- metadata assertions ----
 
@@ -13,33 +14,58 @@ it('portal controller path metadata is set', () => {
   assert.equal(path, 'portals')
 })
 
+it('portal controller swagger tags metadata is set', () => {
+  const tags = Reflect.getMetadata(DECORATORS.API_TAGS, PortalController) as string[] | undefined
+  assert.deepEqual(tags, ['portal'])
+})
+
 it('portal controller getBootstrap route has GET metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getBootstrap)
   const path = Reflect.getMetadata('path', PortalController.prototype.getBootstrap)
+  const operation = Reflect.getMetadata(
+    DECORATORS.API_OPERATION,
+    PortalController.prototype.getBootstrap,
+  ) as { summary?: string; description?: string } | undefined
 
   assert.equal(method, 0) // GET = 0 in RequestMethod enum
   assert.equal(path, 'bootstrap')
+  assert.equal(operation?.summary, '获取门户 bootstrap 信息')
 })
 
 it('portal controller getTenantPortal route metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getTenantPortal)
   const path = Reflect.getMetadata('path', PortalController.prototype.getTenantPortal)
+  const operation = Reflect.getMetadata(
+    DECORATORS.API_OPERATION,
+    PortalController.prototype.getTenantPortal,
+  ) as { summary?: string } | undefined
   assert.equal(method, 0)
   assert.equal(path, 'tenant-portal')
+  assert.equal(operation?.summary, '获取租户级门户')
 })
 
 it('portal controller getBrandPortal route metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getBrandPortal)
   const path = Reflect.getMetadata('path', PortalController.prototype.getBrandPortal)
+  const operation = Reflect.getMetadata(
+    DECORATORS.API_OPERATION,
+    PortalController.prototype.getBrandPortal,
+  ) as { summary?: string } | undefined
   assert.equal(method, 0)
   assert.equal(path, 'brand-portal')
+  assert.equal(operation?.summary, '获取品牌级门户')
 })
 
 it('portal controller getStorePortal route metadata', () => {
   const method = Reflect.getMetadata('method', PortalController.prototype.getStorePortal)
   const path = Reflect.getMetadata('path', PortalController.prototype.getStorePortal)
+  const operation = Reflect.getMetadata(
+    DECORATORS.API_OPERATION,
+    PortalController.prototype.getStorePortal,
+  ) as { summary?: string } | undefined
   assert.equal(method, 0)
   assert.equal(path, 'store-portal')
+  assert.equal(operation?.summary, '获取门店级门户')
 })
 
 // ---- runtime behaviour tests ----

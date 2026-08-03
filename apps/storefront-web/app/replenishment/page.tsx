@@ -1,9 +1,9 @@
+'use client';
 /**
  * 补货管理 — Replenishment (storefront-web)
  * 角色视角: 👔店长 / 💳采购
  * 功能: 补货预警、采购下单、供应商管理、到货跟踪、历史记录、搜索筛选
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

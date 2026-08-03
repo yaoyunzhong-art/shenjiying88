@@ -12,21 +12,21 @@
 # ═══════════════════════════════════════════════════════════════
 
 # ─── 基础镜像 ─────────────────────────────────────────────
-FROM node:22-alpine AS base
+FROM docker.m.daocloud.io/library/node:22-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
 
+RUN apk add --no-cache tini
 RUN corepack enable && corepack prepare pnpm@10.14.0 --activate
-RUN apk add --no-cache openssl tini curl wget
 
 WORKDIR /workspace
 
 # ─── 依赖层 ──────────────────────────────────────────────
 FROM base AS deps
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json turbo.json eslint.config.mjs ./
 
 # 复制所有 apps/package.json (结构声明,不含源码)
 COPY apps/api/package.json         apps/api/
@@ -46,6 +46,19 @@ COPY packages/config-typescript/package.json packages/config-typescript/
 
 # API 特有的 prisma schema (用于 generate)
 COPY apps/api/prisma                apps/api/prisma
+
+# 构建阶段需要 devDependencies (eslint 等编译工具链)
+ENV NODE_ENV=development
+
+RUN pnpm config set registry https://registry.npmmirror.com
+
+# 使用默认 linker（非 hoisted），每个包有自己的 node_modules
+# hoisted 模式会导致 next build 找不到 next/bin
+
+# Prisma engines default to upstream binaries; pin to the mirror in CI/Kaniko
+# to avoid intermittent engine download resets in mainland regions.
+ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
@@ -72,12 +85,14 @@ COPY apps/api/src                  apps/api/src
 COPY apps/api/tsconfig.json        apps/api/
 COPY apps/api/tsconfig.build.json  apps/api/
 
+COPY apps/app/                     apps/app/
+COPY apps/miniapp/                 apps/miniapp/
 COPY apps/admin-web/               apps/admin-web/
 COPY apps/storefront-web/          apps/storefront-web/
 COPY apps/tob-web/                 apps/tob-web/
 
-# 构建全部 monorepo turbo 任务
-RUN pnpm build
+# 构建 API 及其依赖（三个前端各自由 apps/*/Dockerfile 构建）
+RUN pnpm turbo build --filter=@m5/api...
 
 # ──────────────────────────────────────────────────────────
 # 🎯 目标: api-prod
@@ -89,14 +104,15 @@ WORKDIR /app
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
 # 使用 pnpm deploy 提取最小生产依赖
-RUN --mount=type=bind,from=deps,source=/workspace,target=/deps \
-    cp -r /deps/node_modules ./node_modules && \
-    cp -r /deps/packages ./packages
+COPY --from=deps /workspace/node_modules ./node_modules
+COPY --from=deps /workspace/packages ./packages
+COPY --from=build /workspace/packages/domain/dist ./packages/domain/dist
+COPY --from=build /workspace/packages/types/dist ./packages/types/dist
+RUN mkdir -p node_modules/@m5 && ln -sf ../../packages/types node_modules/@m5/types && ln -sf ../../packages/domain node_modules/@m5/domain
 
-RUN --mount=type=bind,from=build,source=/workspace,target=/build \
-    cp -r /build/apps/api/dist ./dist && \
-    cp -r /build/apps/api/prisma ./prisma && \
-    cp /build/apps/api/package.json ./
+COPY --from=build /workspace/apps/api/dist ./dist
+COPY --from=build /workspace/apps/api/prisma ./prisma
+COPY --from=build /workspace/apps/api/package.json ./
 
 ENV NODE_ENV=production
 ENV API_PORT=3001
@@ -105,12 +121,10 @@ USER app
 
 EXPOSE 3001
 
-ENTRYPOINT ["/sbin/tini", "--"]
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3001/api/v1/health/ping || exit 1
+  CMD node -e "fetch('http://127.0.0.1:3001/api/v1/health/ping').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/apps/api/src/main.js"]
 
 # ──────────────────────────────────────────────────────────
 # 🎯 目标: admin-prod
@@ -121,23 +135,9 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
-RUN --mount=type=bind,from=build,source=/workspace/apps/admin-web,target=/src \
-    cp -r /src/.next ./.next && \
-    cp -r /src/public ./public 2>/dev/null || true && \
-    cp /src/package.json ./ && \
-    cp /src/next.config.mjs ./ && \
-    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
-    mkdir -p .next/standalone
-
-# Next.js standalone output stitching
-RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
-    if [ -d /ws/apps/admin-web/.next/standalone ]; then \
-      cp -r /ws/apps/admin-web/.next/standalone/. ./ ; \
-    fi && \
-    if [ -f /ws/apps/admin-web/.next/server/pages-manifest.json ]; then \
-      mkdir -p .next/server && \
-      cp /ws/apps/admin-web/.next/server/pages-manifest.json .next/server/ ; \
-    fi
+COPY --from=build /workspace/apps/admin-web/.next ./.next
+COPY --from=build /workspace/apps/admin-web/package.json ./
+COPY --from=build /workspace/apps/admin-web/next.config.mjs ./
 
 ENV NODE_ENV=production
 ENV PORT=3002
@@ -162,18 +162,9 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
-RUN --mount=type=bind,from=build,source=/workspace/apps/storefront-web,target=/src \
-    cp -r /src/.next ./.next && \
-    cp -r /src/public ./public 2>/dev/null || true && \
-    cp /src/package.json ./ && \
-    cp /src/next.config.mjs ./ && \
-    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
-    mkdir -p .next/standalone
-
-RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
-    if [ -d /ws/apps/storefront-web/.next/standalone ]; then \
-      cp -r /ws/apps/storefront-web/.next/standalone/. ./ ; \
-    fi
+COPY --from=build /workspace/apps/storefront-web/.next ./.next
+COPY --from=build /workspace/apps/storefront-web/package.json ./
+COPY --from=build /workspace/apps/storefront-web/next.config.mjs ./
 
 ENV NODE_ENV=production
 ENV PORT=3003
@@ -198,18 +189,9 @@ WORKDIR /app
 
 RUN addgroup -g 1001 -S app && adduser -S app -u 1001 -G app
 
-RUN --mount=type=bind,from=build,source=/workspace/apps/tob-web,target=/src \
-    cp -r /src/.next ./.next && \
-    cp -r /src/public ./public 2>/dev/null || true && \
-    cp /src/package.json ./ && \
-    cp /src/next.config.mjs ./ && \
-    cp /src/next-env.d.ts ./ 2>/dev/null || true && \
-    mkdir -p .next/standalone
-
-RUN --mount=type=bind,from=build,source=/workspace,target=/ws \
-    if [ -d /ws/apps/tob-web/.next/standalone ]; then \
-      cp -r /ws/apps/tob-web/.next/standalone/. ./ ; \
-    fi
+COPY --from=build /workspace/apps/tob-web/.next ./.next
+COPY --from=build /workspace/apps/tob-web/package.json ./
+COPY --from=build /workspace/apps/tob-web/next.config.mjs ./
 
 ENV NODE_ENV=production
 ENV PORT=3011

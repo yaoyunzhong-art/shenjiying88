@@ -109,7 +109,7 @@ class TestController {
     return this.aiRecommendService.generateRecommendations({
       memberId: body.memberId,
       strategyId: body.strategyId ?? 'strategy-hybrid-v1',
-      type: (body.type as any) ?? 'game',
+      type: (body.type ?? 'game') as 'game',
       limit: body.limit ?? 5,
       storeId: tc.storeId
     })
@@ -134,7 +134,7 @@ class TestController {
   ) {
     const tc = (req as unknown as TenantAwareRequest).tenantContext as RequestTenantContext
     return this.campaignService.evaluateTriggers({
-      eventName: body.eventName as any,
+      eventName: body.eventName as unknown as string,
       tenantContext: tc,
       memberId: body.memberId,
       orderId: body.orderId,
@@ -311,7 +311,7 @@ it('e2e-10: full ai-recommend → member → campaign → cashier chain', async 
       .set(TENANT_A)
     assert.equal(memberRes.statusCode, 200)
     assert.ok(memberRes.body.data, '会员存在')
-    const points = (memberRes.body.data as any).points ?? 0
+    const points = (memberRes.body.data as Record<string, unknown>).points as number ?? 0
     assert.ok(points >= 50, `积分应 >= 50 (实际 ${points})`)
 
     // 7. 二次推荐: 验证个性化 (有 profile + 积分)

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁新闻资讯中心
  * BigAnts News & Press Center
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

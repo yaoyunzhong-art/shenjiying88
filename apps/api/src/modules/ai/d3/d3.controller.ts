@@ -17,6 +17,7 @@ import {
   Query,
   UsePipes,
   ValidationPipe,
+UseGuards,
 } from '@nestjs/common'
 import { D3Service } from './d3.service'
 import {
@@ -32,9 +33,11 @@ import {
   RecommendContext,
   RecommendPeriod,
 } from './d3.dto'
+import { TenantGuard } from '../../agent/tenant.guard'
 
 @Controller('ai/d3')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class D3Controller {
   constructor(private readonly d3Service: D3Service) {}
 

@@ -16,7 +16,7 @@
  */
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { Button, LoadingSkeleton, EmptyState, ErrorBoundary, Tabs } from '@m5/ui';
+import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
 import { ReportsPage } from './components/ReportsPage';
 
 export const metadata: Metadata = {
@@ -150,20 +150,7 @@ function ReportsCategoryTabs() {
             border: `1px solid ${t.key === 'all' ? 'rgba(245,158,11,0.3)' : 'rgba(148,163,184,0.08)'}`,
             color: t.key === 'all' ? '#f59e0b' : '#cbd5e1',
             fontSize: 13,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(245,158,11,0.1)';
-            e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)';
-            e.currentTarget.style.color = '#f59e0b';
-          }}
-          onMouseLeave={(e) => {
-            if (t.key !== 'all') {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-              e.currentTarget.style.borderColor = 'rgba(148,163,184,0.08)';
-              e.currentTarget.style.color = '#cbd5e1';
-            }
+            cursor: 'default',
           }}
         >
           {t.label} <span style={{ color: '#64748b', fontSize: 11 }}>({t.count})</span>
@@ -259,15 +246,60 @@ export default async function ReportsListPage() {
           alignItems: 'center',
         }}
       >
-        <Button variant="primary" size="sm" onClick={() => alert('跳转至新建报表页')}>
+        <a
+          href="/reports/create"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 32,
+            padding: '0 14px',
+            borderRadius: 8,
+            background: '#2563eb',
+            color: '#fff',
+            fontSize: 13,
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
           📄 新建报表
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => alert('跳转至导出中心')}>
+        </a>
+        <a
+          href="/reports/export"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 32,
+            padding: '0 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.16)',
+            color: '#cbd5e1',
+            fontSize: 13,
+            fontWeight: 500,
+            textDecoration: 'none',
+          }}
+        >
           📥 批量导出
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => alert('跳转至对比分析页')}>
+        </a>
+        <a
+          href="/reports/compare"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 32,
+            padding: '0 14px',
+            borderRadius: 8,
+            border: '1px solid rgba(148,163,184,0.16)',
+            color: '#cbd5e1',
+            fontSize: 13,
+            fontWeight: 500,
+            textDecoration: 'none',
+          }}
+        >
           📊 对比分析
-        </Button>
+        </a>
         <span style={{ color: '#64748b', fontSize: 12, marginLeft: 'auto' }}>
           最近更新：{new Date().toLocaleDateString('zh-CN')}
         </span>
@@ -339,7 +371,7 @@ export default async function ReportsListPage() {
       </div>
 
       {/* 主列表 */}
-      <ErrorBoundary fallback={() => <ReportsListErrorFallback />}>
+      <ErrorBoundary fallback={<ReportsListErrorFallback />}>
         <Suspense fallback={<ReportsListLoadingFallback />}>
           {MOCK_REPORTS && MOCK_REPORTS.length > 0 ? (
             <ReportsPage

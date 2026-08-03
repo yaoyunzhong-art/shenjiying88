@@ -1,11 +1,14 @@
 import { View, Text, Button } from '@tarojs/components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Taro from '@tarojs/taro';
 import type {
+  DomainGovernanceDisplayModel,
   FoundationAlertCatalogItem,
   FoundationAlertDrilldownResponse,
   FoundationAlertMutationResponse,
   RuntimeGovernanceReceipt
 } from '@m5/types';
+import { buildDomainGovernanceDisplayModel } from '@m5/types';
 import {
   appendMiniappSubmitHistory,
   buildMiniappAuthEnvelope,
@@ -43,6 +46,18 @@ import {
   type MiniappSubmitHistoryEntry,
   type MiniappSubmitOutcome
 } from '../../market-bootstrap';
+import { DomainGovernancePanel } from '../../components/DomainGovernancePanel';
+import { CardSkeleton, TriStateContainer, useTriState } from '../../components/TriStateComponents';
+
+const OPERATION_SHORTCUTS = [
+  { label: '采购单', route: '/pages/purchase-orders/index' },
+  { label: '退货售后', route: '/pages/return-orders/index' },
+] as const;
+
+const G6_LINKAGE_SHORTCUTS = [
+  { label: '导购工具', route: '/pages/sales-tools/index' },
+  { label: '客服工作台', route: '/pages/customer-service/index' },
+] as const;
 
 export default function IndexPage() {
   const [consumerContract, setConsumerContract] = useState<MiniappRuntimeConsumerContract>(
@@ -61,6 +76,11 @@ export default function IndexPage() {
   const [alertDrilldown, setAlertDrilldown] = useState<FoundationAlertDrilldownResponse | null>(null);
   const [alertMutation, setAlertMutation] = useState<FoundationAlertMutationResponse | null>(null);
   const bootstrap = consumerContract.snapshot;
+  const domainGovernanceDisplayModel: DomainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    bootstrap.domainSource,
+    bootstrap.domainGovernance,
+    bootstrap.domainGovernanceWorkspaceHref,
+  );
   const actionPlans = listMiniappActionPlans(bootstrap, session);
   const activePlan = actionPlans.find((plan) => plan.action === activeAction) ?? null;
   const decision = activePlan?.decision ?? null;
@@ -105,23 +125,63 @@ export default function IndexPage() {
     setGovernanceGeneratedAt(contract.governance.generatedAt);
   }
 
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
   useEffect(() => {
     let cancelled = false;
 
-    loadMiniappRuntimeConsumerContract().then((contract) => {
-      if (!cancelled) {
-        setConsumerContract(contract);
-        setGovernanceAlerts(contract.governance.alerts);
-        setGovernanceGeneratedAt(contract.governance.generatedAt);
-      }
-    });
+    setLoading();
+    loadMiniappRuntimeConsumerContract()
+      .then((contract) => {
+        if (!cancelled) {
+          setConsumerContract(contract);
+          setGovernanceAlerts(contract.governance.alerts);
+          setGovernanceGeneratedAt(contract.governance.generatedAt);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载失败');
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappRuntimeConsumerContract()
+      .then((contract) => {
+        setConsumerContract(contract);
+        setGovernanceAlerts(contract.governance.alerts);
+        setGovernanceGeneratedAt(contract.governance.generatedAt);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [setLoading, setError, setSuccess]);
+
+  const openOperationalPage = (route: string, label: string) => {
+    if (!session.authenticated) {
+      Taro.showToast({ title: `请先登录后进入${label}`, icon: 'none' });
+      return;
+    }
+
+    void Taro.navigateTo({ url: route });
+  };
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="首页加载失败"
+      errorMessage="无法获取运行态合约，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<CardSkeleton />}
+    >
     <View style={{ padding: '32px', color: '#e2e8f0', background: '#020617', minHeight: '100vh' }}>
       <Text>
         M5 门店小程序骨架已就位，当前市场为 {bootstrap.marketCode}，交付模式为 {bootstrap.deliveryMode}，后续按 tenant /
@@ -143,9 +203,49 @@ export default function IndexPage() {
         <Text>门店域名：{bootstrap.primaryDomain}</Text>
       </View>
       <View style={{ marginTop: '8px' }}>
+        <Text>域名来源：{bootstrap.domainSource}</Text>
+      </View>
+      <View style={{ marginTop: '8px' }}>
         <Text>
           当前会员态：{session.memberTier} / {session.authenticated ? '已登录' : '未登录'}
         </Text>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(15, 23, 42, 0.55)',
+        }}
+      >
+        <Text>经营高频入口</Text>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {OPERATION_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
+      </View>
+      <View
+        style={{
+          marginTop: '16px',
+          padding: '16px',
+          borderRadius: '16px',
+          background: 'rgba(30, 41, 59, 0.55)',
+        }}
+      >
+        <Text>G6 联动入口</Text>
+        <View style={{ marginTop: '8px' }}>
+          <Text>从首页直接进入导购工具与客服工作台，补齐活动/营销/会员/门店联动验收链。</Text>
+        </View>
+        <View style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+          {G6_LINKAGE_SHORTCUTS.map((item) => (
+            <Button key={item.route} onClick={() => openOperationalPage(item.route, item.label)}>
+              {item.label}
+            </Button>
+          ))}
+        </View>
       </View>
       <View style={{ marginTop: '8px' }}>
         <Text>Scope：{consumerContract.scope.scopePath} / {consumerContract.scope.mismatchStrategy}</Text>
@@ -164,6 +264,13 @@ export default function IndexPage() {
       <View style={{ marginTop: '8px' }}>
         <Text>当前告警焦点：{selectedAlertCode}</Text>
       </View>
+      <DomainGovernancePanel
+        heading="域名治理摘要"
+        model={domainGovernanceDisplayModel}
+        background={
+          domainGovernanceDisplayModel.requiresAttention ? 'rgba(127, 29, 29, 0.35)' : 'rgba(15, 23, 42, 0.45)'
+        }
+      />
       <View style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
         <Button onClick={() => {
           setSession(createGuestMemberSession());
@@ -749,5 +856,6 @@ export default function IndexPage() {
         </View>
       ) : null}
     </View>
+    </TriStateContainer>
   )
 }

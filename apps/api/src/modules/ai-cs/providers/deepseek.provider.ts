@@ -35,9 +35,9 @@ export class DeepSeekProvider extends BaseAIProvider {
     try {
       // 生产环境: const res = await fetch('https://api.deepseek.com/v1/models', ...)
       return { available: this.healthy, latencyMs: Date.now() - start }
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.healthy = false
-      return { available: false, errorMessage: e.message }
+      return { available: false, errorMessage: (e as Error).message }
     }
   }
 
@@ -55,9 +55,9 @@ export class DeepSeekProvider extends BaseAIProvider {
       const confidence = this.estimateConfidence(lastUserMsg)
 
       return this.buildResponse(content, 'deepseek', start, 90, confidence)
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.healthy = false
-      throw new Error(`DeepSeek failed: ${e.message}`)
+      throw new Error(`DeepSeek failed: ${(e as Error).message}`)
     }
   }
 

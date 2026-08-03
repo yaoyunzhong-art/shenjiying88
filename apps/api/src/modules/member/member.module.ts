@@ -11,9 +11,11 @@ import { MemberCrossTenantService } from './member.cross-tenant'
 import { MemberCrossTenantController } from './member.cross-tenant.controller'
 import { GovernanceApprovalModule } from '../foundation/governance-approval/governance-approval.module'
 import { MarketingMetricsModule } from '../marketing-metrics/marketing-metrics.module'
+import { MemberLevelModule } from '../member-level/member-level.module'
+import { MemberTierBridgeService } from './member-tier-bridge.service'
 
 @Module({
-  imports: [GovernanceApprovalModule, MarketingMetricsModule],
+  imports: [GovernanceApprovalModule, MarketingMetricsModule, MemberLevelModule],
   controllers: [
     MemberController,
     MemberConfigController,
@@ -26,7 +28,8 @@ import { MarketingMetricsModule } from '../marketing-metrics/marketing-metrics.m
     MemberApprovalOutcomeRecorder,
     MemberDormancyService,    // T166-2: 状态机 service
     MemberDormancyCron,       // T166-2: cron 调度
-    MemberCrossTenantService  // T166-3: 跨租户识别 service
+    MemberCrossTenantService,  // T166-3: 跨租户识别 service
+    MemberTierBridgeService    // BS-0115: member ↔ member-level 桥接
   ],
   exports: [
     MemberService,
@@ -34,7 +37,8 @@ import { MarketingMetricsModule } from '../marketing-metrics/marketing-metrics.m
     MemberApprovalOutcomeRecorder,
     MemberDormancyService,
     MemberDormancyCron,
-    MemberCrossTenantService  // T166-3: 暴露给订单/支付模块 (跨租户会员识别)
+    MemberCrossTenantService,  // T166-3: 暴露给订单/支付模块 (跨租户会员识别)
+    MemberTierBridgeService    // BS-0115: 桥接服务
   ]
 })
 export class MemberModule {}

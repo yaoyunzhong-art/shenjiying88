@@ -28,7 +28,10 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { OmnichannelReachService, SMSDualChannelService, InternationalEmailService } from './omnichannel.service'
 import type {
   ReachRequest,
@@ -43,6 +46,7 @@ import type {
 import type { ChannelType } from './omnichannel.entity'
 import { DEFAULT_CHANNEL_CONFIGS } from './omnichannel.entity'
 
+@UseGuards(TenantGuard)
 @Controller('omnichannel')
 export class OmnichannelController {
   constructor(

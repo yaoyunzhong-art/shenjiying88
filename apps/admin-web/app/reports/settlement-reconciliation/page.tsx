@@ -1,12 +1,11 @@
-'use client'
+import SettlementReconciliationClient from './settlement-reconciliation-client'
+import { loadSettlementReconciliationSnapshot } from './settlement-reconciliation-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function SettlementReconciliationPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>💰 结算对账报表</h1>
-      <p>结算数据对账与差异分析</p>
-    </div>
-  )
+export default async function SettlementReconciliationPage() {
+  const snapshot = await loadSettlementReconciliationSnapshot()
+
+  return <SettlementReconciliationClient snapshot={snapshot} />
 }

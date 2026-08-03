@@ -4,6 +4,7 @@
 
 import {
   Controller, Get, Post, Patch, Delete, Param, Body, HttpCode, HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { CdnCacheService } from './cdn.service'
 import type {
@@ -11,8 +12,19 @@ import type {
   RuleListResponse, NodeListResponse, MatchRuleResponse,
   InvalidationListResponse, EdgeNodeStatsResponse,
 } from './cdn.dto'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const CDN_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const CDN_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('cdn')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(CDN_GOVERNANCE_READ_PERMISSION)
 export class CdnCacheController {
   /** @internal exposed as public for testing */
   constructor(readonly service: CdnCacheService) {}
@@ -20,6 +32,7 @@ export class CdnCacheController {
   // ============ 规则管理 ============
   @Post('rules')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(CDN_GOVERNANCE_WRITE_PERMISSION)
   async createRule(@Body() body: CreateRuleDto) { return this.service.createRule(body) }
 
   @Get('rules')
@@ -29,12 +42,14 @@ export class CdnCacheController {
   async getRule(@Param('id') id: string) { return this.service.getRule(id) }
 
   @Patch('rules/:id')
+  @RequirePermissions(CDN_GOVERNANCE_WRITE_PERMISSION)
   async updateRule(@Param('id') id: string, @Body() body: UpdateRuleDto) {
     return this.service.updateRule(id, body)
   }
 
   @Delete('rules/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(CDN_GOVERNANCE_WRITE_PERMISSION)
   async deleteRule(@Param('id') id: string) { await this.service.deleteRule(id) }
 
   // ============ 路由匹配 (网关/CDN 用) ============
@@ -51,6 +66,7 @@ export class CdnCacheController {
   // ============ 边缘节点 ============
   @Post('nodes')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(CDN_GOVERNANCE_WRITE_PERMISSION)
   async addNode(@Body() body: AddEdgeNodeDto) { return this.service.addEdgeNode(body) }
 
   @Get('nodes')
@@ -61,11 +77,13 @@ export class CdnCacheController {
 
   @Delete('nodes/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(CDN_GOVERNANCE_WRITE_PERMISSION)
   async removeNode(@Param('id') id: string) { await this.service.removeEdgeNode(id) }
 
   // ============ 主动失效 ============
   @Post('invalidate')
   @HttpCode(HttpStatus.ACCEPTED)
+  @RequirePermissions(CDN_GOVERNANCE_WRITE_PERMISSION)
   async invalidate(@Body() body: InvalidateDto) { return this.service.invalidate(body) }
 
   @Get('invalidate')

@@ -130,6 +130,9 @@ it('toCashierPaymentContract maps succeeded payment', () => {
   assert.equal(contract.channel, 'wechat')
   assert.equal(contract.amount, 99.8)
   assert.equal(contract.status, CashierPaymentStatus.Succeeded)
+  assert.equal(contract.qrCodeUrl, undefined)
+  assert.equal(contract.paymentUrl, undefined)
+  assert.equal(contract.expiresAt, undefined)
   assert.equal(contract.transactionNo, 'txn-001')
   assert.equal(contract.sourceEventName, 'cashier.payment-succeeded')
   assert.equal(contract.failureReason, undefined)
@@ -167,6 +170,9 @@ it('toCashierPaymentContract maps pending payment', () => {
     channel: 'unionpay',
     amount: 50,
     status: CashierPaymentStatus.Pending,
+    qrCodeUrl: 'https://pay.example.com/qrcode/payment-3.png',
+    paymentUrl: 'https://pay.example.com/pay/payment-3',
+    expiresAt: '2026-06-23T07:15:00.000Z',
     transactionNo: undefined,
     sourceEventName: undefined,
     failureReason: undefined,
@@ -176,6 +182,9 @@ it('toCashierPaymentContract maps pending payment', () => {
   }
   const contract = toCashierPaymentContract(payment)
   assert.equal(contract.status, CashierPaymentStatus.Pending)
+  assert.equal(contract.qrCodeUrl, 'https://pay.example.com/qrcode/payment-3.png')
+  assert.equal(contract.paymentUrl, 'https://pay.example.com/pay/payment-3')
+  assert.equal(contract.expiresAt, '2026-06-23T07:15:00.000Z')
   assert.equal(contract.completedAt, undefined)
   assert.equal(contract.sourceEventName, undefined)
   assert.equal(contract.failureReason, undefined)

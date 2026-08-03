@@ -1,10 +1,10 @@
+'use client';
 /**
  * stock/inbound/page.tsx — 入库接收列表页 (Next.js App Router Page)
  * 角色视角: 🏭库房管理员
  * 类型: B-页面创建
  * 功能: 入库单列表 / 搜索 / 状态筛选 / 分页 / 导航到详情
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';

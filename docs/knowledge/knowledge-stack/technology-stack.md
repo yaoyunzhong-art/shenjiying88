@@ -1,101 +1,127 @@
-# 🏗️ shenjiying88 技术栈全景
+# 🏗️ shenjiying88 技术栈全景 (V24)
 
-> 最后更新: 2026-07-14 11:12
+> 最后更新: 2026-07-29 01:26 CST
 > 维护: 🦞 龙虾哥
 
 ---
 
-## 一、Monorepo 架构
+## 一、仓库规模
 
-```
-shenjiying88/                          pnpm workspace root
-├── apps/
-│   ├── api/            @m5/api        NestJS 后端 (Core)
-│   ├── admin-web/      @m5/admin      Next.js 管理后台
-│   ├── storefront-web/ @m5/store      Next.js 门店前台
-│   ├── tob-web/        @m5/tob        Next.js TOB门户
-│   ├── miniapp/        @m5/miniapp    微信/抖音小程序
-│   ├── app/            @m5/app        Expo React Native (通用)
-│   └── mobile/         @m5/mobile     Expo React Native (移动端)
-├── packages/           共享库
-│   ├── ui/             @m5/ui         统一UI组件
-│   ├── types/          @m5/types      共享类型定义
-│   ├── sdk/            @m5/sdk        API SDK
-│   └── domain/         @m5/domain     领域模型
-└── docs/               知识库
-```
+| 指标 | 数值 |
+|:-----|:---:|
+| 总代码文件 (.ts/.tsx) | **9,598** |
+| 总测试文件 | **4,500+** |
+| 模块数 | **191** |
+| Service 文件 | **394** |
+| Controller 文件 | **228** |
+| README 文档 | **289+** |
+| E2E 端到端测试链 | **41条** (journey 38 + chain 3) |
+| AuthGuard 覆盖率 | **100%** (224/224) |
+| RLS 多租户 | **83%** (54/65表) |
+| 安全基线 | **8/8 锁定 v2.4** |
 
-**构建工具**: pnpm workspaces + Turborepo (并行流水线)
-**缓存策略**: Turbo Remote Cache (CI/本地共享)
+## 二、7大应用
 
-## 二、技术栈明细
+| 应用 | 框架 | 路径 |
+|:-----|:-----|:-----|
+| admin-web | Next.js App Router | `apps/admin-web/` |
+| storefront-web | Next.js App Router | `apps/storefront-web/` |
+| tob-web | Next.js | `apps/tob-web/` |
+| api | NestJS | `apps/api/` |
+| app | React Native | `apps/app/` |
+| miniapp | 小程序 | `apps/miniapp/` |
+| mobile | H5 | `apps/mobile/` |
 
-### 后端 (apps/api)
+## 三、5大共享包
 
-| 层 | 技术 | 用途 |
-|---|------|------|
-| 框架 | NestJS 11 | 模块化后端架构 |
-| ORM | Prisma 6 | 数据库建模/迁移 |
-| 数据库 | PostgreSQL 16 | 主业务数据库 |
-| 缓存 | Redis 7 | 热数据缓存/会话 |
-| 消息队列 | RabbitMQ | 异步任务/事件总线 |
-| 时序库 | ClickHouse | 运营分析/报表 |
-| 向量库 | Qdrant | AI语义搜索/RAG |
-| API风格 | REST (OpenAPI 3.0自动生成) | 接口标准 |
-| 认证 | JWT + OAuth2 + 微信OAuth | 多云认证策略 |
-| 实时通信 | WebSocket (Socket.IO) | 门店实时推送 |
+| 包 | 说明 |
+|:----|:-----|
+| `packages/domain` | 领域模型/业务实体 |
+| `packages/sdk` | 统一SDK (contract类型+API客户端) |
+| `packages/ui` | 共享UI组件库 |
+| `packages/types` | 共享TypeScript类型 |
+| `packages/config-typescript` | TS配置基座 |
+
+## 四、技术栈
+
+### 后端
+| 技术 | 版本 | 用途 |
+|:-----|:---:|:-----|
+| NestJS | v10+ | API框架 |
+| Prisma | v5+ | ORM + 数据库迁移 |
+| PostgreSQL | — | 主数据库 (通过阿里云 RDS) |
+| Vitest | v1+ | 单元测试 |
+| class-validator | — | DTO验证 |
+| class-transformer | — | DTO转换 |
 
 ### 前端
+| 技术 | 版本 | 用途 |
+|:-----|:---:|:-----|
+| Next.js | v14+ | SSR框架 |
+| React | v18 | UI框架 |
+| @testing-library/react | — | 组件测试 |
+| Vitest | v1+ | 单元测试 |
 
-| 应用 | 框架 | 状态管理 |
-|:----|:----|:---------|
-| admin-web | Next.js App Router | React Context + SWR |
-| storefront-web | Next.js App Router | Zustand |
-| tob-web | Next.js App Router | Zustand |
-| @m5/app | Expo (React Native) | Zustand |
-| @m5/mobile | Expo (React Native) | Zustand |
-| @m5/miniapp | 微信原生 + Taro | 小程序stores |
-
-### AI/ML 栈
-
-| 组件 | 技术 | 用途 |
-|:----|:-----|:-----|
-| LLM | OpenAI / DeepSeek / Ollama | 智能客服/内容生成 |
-| RAG | Qdrant + 混合检索 | 知识库检索增强 |
-| 双引擎 | Rule Engine + Diagnosis Engine | 业务规则+诊断推理 |
-| 推荐 | 协同过滤 + 内容推荐 | 商品/活动推荐 |
+### E2E 测试
+| 技术 | 说明 |
+|:-----|:-----|
+| Playwright | 浏览器端到端测试 |
+| Vitest + fetch | API端到端测试 (41条链) |
 
 ### 基础设施
+| 技术 | 说明 |
+|:-----|:-----|
+| 阿里云 ECS | 香港节点 (47.239.159.30) |
+| 阿里云 ACK RDS | PostgreSQL 托管 |
+| kaniko | 容器构建 |
+| k8s | 容器编排 |
 
-| 组件 | 方案 |
-|:----|:-----|
-| 容器化 | Docker |
-| CI/CD | GitHub Actions |
-| 部署 | 多平台 (launchd/systemd) |
-| 监控 | Prometheus + Grafana |
-| 日志 | ELK (Elasticsearch + Logstash + Kibana) |
+## 五、开发模式
 
-## 三、核心架构设计
+### 圈梁五道箍
+- **树哥A**: 文档线 (README + ACCEPTANCE + PRD)
+- **树哥B**: 单元测试线 (Service 测试 15+)
+- **树哥C**: E2E 测试线 (端到端 25+)
+- 每天早上 06:00-08:00 派单，全天三路并行
 
-### 1. 多租户隔离
-- **方案**: Shared Table + tenant_id (已验证)
-- **演进**: 混合模式 (关键表Schema隔离)
-- **中间件**: 自动注入tenant context (X-Tenant-Id Header)
+### 保底续产
+- 每30分钟自动检查工作区
+- 有未提交变更 → commit
+- 无变更 → 跳过
 
-### 2. 模块化架构
-- **核心**: 112个API模块 → 25个Phase组
-- **分层**: Entity(DTO) → Service → Controller → Module
-- **圈梁**: PRD→代码→测试→审计 四道箍
+### 龙虾哥文档体系
+- 09:30 对齐检查
+- 10:30 对齐自进化
+- 17:00 开发推进检查
+- 20:00 晚会6道门签署
 
-### 3. 开发模式
-- **三级体系**: 👑大飞哥(需求) → 🦞龙虾哥(规划/验收) → 🐜树哥(代码)
-- **验收脉冲**: 30min自动验证 TSC + 测试
-- **专家审查**: 6道Gate签署 (架构/业务/数据/体验/合规/治理)
+### 安全体系
+- 07:30 每日安全基线扫描
+- 07:50 AI 知识简报
+- AuthGuard 100% 覆盖 + 默认拒绝策略
 
-### 4. 测试体系
-- **三层**: L1单元 → L2流程/角色 → L3跨模块E2E
-- **8角色视角**: 店长/前台/HR/安监/导玩员/运行/团建/营销
+## 六、V23→V24 新增
+
+| 模块 | 状态 | Phase |
+|:-----|:----:|:-----|
+| brand-custom (版本/脚本/字体/多语言) | ✅ | V24 P1 |
+| brand-analytics (KPI/归因/声量/ROI) | ✅ | V24 P1 |
+| brand-workspace (布局/任务/审批/日历) | ✅ | V24 P1 |
+| logistics-supplement (运输/路线/维保/油耗) | ✅ | V24 P1 |
+| stock-transfer (调拨全生命周期) | ✅ | V24 P1 |
+| minor-protection (年龄验证/消费限制/盲盒拦截) | ✅ | V24 P2 |
+
+## 七、当前债
+
+| 债项 | 状态 |
+|:-----|:----:|
+| RLS 11表待补 tenant_id | 🟡 SQL已生成, 待DB |
+| admin-web ~363 假阳 | 🟡 清零路线已出 |
+| storefront 1 checkout偏差 | 🟡 RCA已出 |
+| 177模块缺 ACCEPTANCE | 🟡 |
+| 阿里云节点不通 | 🔴 需人工 |
+| 订单内存→DB迁移 | 🟡 推进中 |
 
 ---
 
-*🦞 龙虾哥 · 技术栈文档 · 2026-07-14*
+*🦞 龙虾哥 · V24 · 2026-07-29 01:26 CST*

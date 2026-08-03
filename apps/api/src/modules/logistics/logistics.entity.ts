@@ -126,3 +126,74 @@ export interface MaterialRequestEntity {
   createdAt: string
   updatedAt: string
 }
+
+// ── 设备维保 (P-30 扩展) ────────────────────────────────────────────────────
+
+export type MaintenanceOrderStatus = 'pending' | 'in_progress' | 'pending_acceptance' | 'completed'
+
+export interface MaintenanceOrderEntity {
+  id: string
+  tenantId: string
+  storeId?: string
+  equipmentId: string
+  equipmentName: string
+  issueDescription: string
+  status: MaintenanceOrderStatus
+  reporterId: string
+  reporterName: string
+  assigneeId?: string
+  assigneeName?: string
+  startedAt?: string
+  completionNote?: string
+  completedAt?: string
+  acceptanceNote?: string
+  acceptedAt?: string
+  acceptedBy?: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ── 耗材采购 (P-30 扩展, 对接P-37审批流) ───────────────────────────────────
+
+export type ProcurementRequestStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'ordered' | 'received'
+
+export interface ProcurementApproval {
+  approvalTicket?: string // P-37 审批工单号
+  approverId: string
+  approverName: string
+  note: string
+  approvedAt: string
+}
+
+export interface ProcurementOrderRecord {
+  orderNumber: string
+  vendorName: string
+  orderedAt: string
+  operatorId: string
+  operatorName: string
+}
+
+export interface ProcurementReceiveRecord {
+  receivedAt: string
+  receivedBy: string
+  receivedByName: string
+  note?: string
+}
+
+export interface ProcurementRequestEntity {
+  id: string
+  tenantId: string
+  storeId?: string
+  requesterId: string
+  requesterName: string
+  department?: string
+  purpose: string
+  vendorName?: string
+  notes?: string
+  status: ProcurementRequestStatus
+  approval?: ProcurementApproval
+  orderRecord?: ProcurementOrderRecord
+  receiveRecord?: ProcurementReceiveRecord
+  createdAt: string
+  updatedAt: string
+}

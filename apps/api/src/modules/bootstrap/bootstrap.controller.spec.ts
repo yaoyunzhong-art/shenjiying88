@@ -223,8 +223,11 @@ describe('🎮 导玩员 Game Guide', () => {
   });
 
   it('AC-10: 健康检查 uptime 与进程 uptime 一致', () => {
+    const before = process.uptime();
     const result = createController().getHealth();
-    assert.ok(result.uptime > 0.1);
+    const after = process.uptime();
+    assert.ok(result.uptime >= before);
+    assert.ok(result.uptime <= after);
   });
 
   it('AC-9b [导玩员]: 连续调用 getBootstrapMetadata 返回独立对象', () => {

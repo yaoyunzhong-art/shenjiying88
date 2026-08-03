@@ -1,10 +1,12 @@
 import { notFound } from 'next/navigation';
-import { PortalConsumerGovernanceSection } from '@m5/ui';
+import { PortalConsumerGovernanceSection, PortalDomainGovernanceCard } from '@m5/ui';
+import { buildDomainGovernanceDisplayModel, resolveDomainGovernanceDisplayPreset } from '@m5/types';
 import { getStorePortal, getStorefrontConsumerSnapshot } from '../market-bootstrap';
 import { GovernanceLinkedSection } from '../components/governance-linked-overview';
 import { RuntimeGovernancePanel } from '../components/runtime-governance-panel';
 import { resolveStoreScope } from '../store-scope';
 import { StoreShowcaseClient } from '../components/store-showcase-client';
+import { StorefrontScopePersistor } from '../_components/StorefrontScopePersistor';
 
 // ============================================================
 // 门店官网聚合页 — Store Site Portal (Server Component)
@@ -252,11 +254,28 @@ export default async function StoreSitePage({
   const isH5 = storeScope[storeScope.length - 1] === 'h5';
   const resolved = resolveStoreScope(isH5 ? storeScope.slice(0, -1) : storeScope);
 
+  // 三态守卫
   if (!resolved) {
     notFound();
   }
 
+  if (!storeScope || storeScope.length === 0) {
+    return (
+      <main style={{ maxWidth: 720, margin: '0 auto', padding: 48, textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
+        <div>暂无数据</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 8 }}>缺少门店路径参数</div>
+      </main>
+    );
+  }
+
   const { marketCode, tenantCode, brandCode, storeCode } = resolved;
+  const storefrontScope = {
+    marketCode,
+    tenantId: tenantCode,
+    brandId: brandCode,
+    storeId: storeCode,
+  };
 
   // ============================================================
   // H5 渲染路径
@@ -265,6 +284,7 @@ export default async function StoreSitePage({
     if (storeScope.length === 4) {
       return (
         <main style={{ maxWidth: 720, margin: '0 auto', padding: 20 }}>
+          <StorefrontScopePersistor scope={storefrontScope} />
           <SiteMetadataScript storeName="门店 H5 触达中台" marketCode={marketCode} />
           <StoreInfoHeader
             marketCode={marketCode}
@@ -332,9 +352,19 @@ export default async function StoreSitePage({
 
     // H5 with snapshot
     const snapshot = await getStorefrontConsumerSnapshot(marketCode, tenantCode, brandCode, storeCode);
+    const domainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+      snapshot.portal.domainSource,
+      snapshot.domainGovernance,
+      snapshot.domainGovernanceWorkspaceHref,
+    );
+    const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+      'STOREFRONT_H5',
+      domainGovernanceDisplayModel.requiresAttention,
+    );
 
     return (
       <main style={{ maxWidth: 720, margin: '0 auto', padding: 20 }}>
+        <StorefrontScopePersistor scope={storefrontScope} />
         <SiteMetadataScript storeName={snapshot.portal?.storeName ?? '门店 H5'} marketCode={marketCode} />
         <StoreInfoHeader
           marketCode={marketCode}
@@ -371,6 +401,12 @@ export default async function StoreSitePage({
               attentionRecoveryPlans: snapshot.governance.summary.attentionRecoveryPlans,
               staleDrills: snapshot.governance.summary.staleDrills,
             }}
+          />
+
+          <PortalDomainGovernanceCard
+            model={domainGovernanceDisplayModel}
+            preset={domainGovernanceDisplayPreset}
+            style={{ marginBottom: 16 }}
           />
 
           <PortalConsumerGovernanceSection
@@ -437,6 +473,7 @@ export default async function StoreSitePage({
 
     return (
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
+        <StorefrontScopePersistor scope={storefrontScope} />
         <SiteMetadataScript storeName={portal.storeName} marketCode={marketCode} />
         <StoreInfoHeader
           marketCode={marketCode}
@@ -537,9 +574,19 @@ export default async function StoreSitePage({
 
   const snapshot = await getStorefrontConsumerSnapshot(marketCode, tenantCode, brandCode, storeCode);
   const { portal } = snapshot;
+  const domainGovernanceDisplayModel = buildDomainGovernanceDisplayModel(
+    portal.domainSource,
+    snapshot.domainGovernance,
+    snapshot.domainGovernanceWorkspaceHref,
+  );
+  const domainGovernanceDisplayPreset = resolveDomainGovernanceDisplayPreset(
+    'STOREFRONT_PC',
+    domainGovernanceDisplayModel.requiresAttention,
+  );
 
   return (
     <main style={{ maxWidth: 1180, margin: '0 auto', padding: 32 }}>
+      <StorefrontScopePersistor scope={storefrontScope} />
       <SiteMetadataScript storeName={portal.storeName} marketCode={marketCode} />
       <StoreInfoHeader
         marketCode={marketCode}
@@ -612,6 +659,12 @@ export default async function StoreSitePage({
             attentionRecoveryPlans: snapshot.governance.summary.attentionRecoveryPlans,
             staleDrills: snapshot.governance.summary.staleDrills,
           }}
+        />
+
+        <PortalDomainGovernanceCard
+          model={domainGovernanceDisplayModel}
+          preset={domainGovernanceDisplayPreset}
+          style={{ marginBottom: 16 }}
         />
 
         <PortalConsumerGovernanceSection

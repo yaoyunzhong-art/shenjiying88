@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UsePipes,
+  ValidationPipe,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { CurrencyService } from './currency.service'
 import type { CurrencyCode, Money, ConvertResponse, SetRateRequest, RateItem } from './currency.entity'
 import {
@@ -8,6 +19,7 @@ import {
   ConfigUpdateDto
 } from './currency.dto'
 
+@UseGuards(TenantGuard)
 @Controller('currency')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class CurrencyController {

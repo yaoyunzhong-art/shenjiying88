@@ -4,6 +4,7 @@ import {
   LeaveType,
   LeaveStatus,
   type LeaveRequest,
+  type LeaveStats,
 } from './leave-request.entity'
 
 // ── In-memory store ──
@@ -27,6 +28,8 @@ export class LeaveRequestService {
     reason: string
     approver: string
     remark?: string
+    status?: LeaveStatus
+    approvedAt?: string
   }): LeaveRequest {
     const now = new Date().toISOString()
     const leave: LeaveRequest = {
@@ -34,13 +37,14 @@ export class LeaveRequestService {
       employeeId: input.employeeId,
       employeeName: input.employeeName,
       type: input.type,
-      status: LeaveStatus.Pending,
+      status: input.status ?? LeaveStatus.Pending,
       startDate: input.startDate,
       endDate: input.endDate,
       days: input.days,
       reason: input.reason,
       approver: input.approver,
       remark: input.remark,
+      approvedAt: input.approvedAt,
       tenantId: input.tenantId,
       createdAt: now,
     }
@@ -76,6 +80,95 @@ export class LeaveRequestService {
       if (filters?.toDate && l.endDate > filters.toDate) return false
       return true
     })
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Statistics
+  // ═══════════════════════════════════════════════════════════════════════
+
+  getStats(tenantId: string): LeaveStats {
+    const leaves = this.listLeaves(tenantId)
+
+    // byStatus
+    const byStatus = {
+      [LeaveStatus.Pending]: 0,
+      [LeaveStatus.Approved]: 0,
+      [LeaveStatus.Rejected]: 0,
+      [LeaveStatus.Cancelled]: 0,
+    }
+    for (const l of leaves) {
+      byStatus[l.status]++
+    }
+
+    // byType
+    const byType = {
+      [LeaveType.Annual]: 0,
+      [LeaveType.Sick]: 0,
+      [LeaveType.Personal]: 0,
+      [LeaveType.Maternity]: 0,
+      [LeaveType.Marriage]: 0,
+      [LeaveType.Bereavement]: 0,
+      [LeaveType.Other]: 0,
+    }
+    for (const l of leaves) {
+      byType[l.type]++
+    }
+
+    // totalDays & approvedDays & pendingDays
+    const totalDays = leaves.reduce((acc, l) => acc + l.days, 0)
+    const approvedDays = leaves.filter((l) => l.status === LeaveStatus.Approved)
+      .reduce((acc, l) => acc + l.days, 0)
+    const pendingDays = leaves.filter((l) => l.status === LeaveStatus.Pending)
+      .reduce((acc, l) => acc + l.days, 0)
+
+    // rejectionRate
+    const decidedCount = byStatus[LeaveStatus.Approved] + byStatus[LeaveStatus.Rejected]
+    const rejectionRate = decidedCount > 0
+      ? byStatus[LeaveStatus.Rejected] / decidedCount
+      : 0
+
+    // monthlyTrend
+    const monthMap = new Map<string, { count: number; days: number }>()
+    for (const l of leaves) {
+      const month = l.startDate.slice(0, 7) // YYYY-MM
+      const cur = monthMap.get(month) ?? { count: 0, days: 0 }
+      cur.count++
+      cur.days += l.days
+      monthMap.set(month, cur)
+    }
+    const monthlyTrend = Array.from(monthMap.entries())
+      .map(([month, data]) => ({ month, ...data }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+
+    // employeeStats
+    const empMap = new Map<string, {
+      employeeId: string; employeeName: string
+      totalLeaves: number; totalDays: number; approvedLeaves: number
+    }>()
+    for (const l of leaves) {
+      const cur = empMap.get(l.employeeId) ?? {
+        employeeId: l.employeeId, employeeName: l.employeeName,
+        totalLeaves: 0, totalDays: 0, approvedLeaves: 0,
+      }
+      cur.totalLeaves++
+      cur.totalDays += l.days
+      if (l.status === LeaveStatus.Approved) cur.approvedLeaves++
+      empMap.set(l.employeeId, cur)
+    }
+    const employeeStats = Array.from(empMap.values())
+      .sort((a, b) => b.totalDays - a.totalDays)
+
+    return {
+      total: leaves.length,
+      byStatus,
+      byType,
+      totalDays,
+      approvedDays,
+      pendingDays,
+      rejectionRate,
+      monthlyTrend,
+      employeeStats,
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -299,7 +392,17 @@ export class LeaveRequestService {
     for (const m of mockLeaves) {
       this.createLeave({
         tenantId,
-        ...m,
+        employeeId: m.employeeId,
+        employeeName: m.employeeName,
+        type: m.type,
+        status: m.status,
+        startDate: m.startDate,
+        endDate: m.endDate,
+        days: m.days,
+        reason: m.reason,
+        approver: m.approver,
+        remark: m.remark,
+        approvedAt: m.status !== LeaveStatus.Pending ? new Date().toISOString() : undefined,
       })
     }
   }

@@ -1,12 +1,23 @@
 // health-dashboard.controller.ts - Phase-19 T35
 // 用途: 健康度仪表板 REST API
 
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { HealthScoreService } from './health-score.service';
 import { HealthDashboardService } from './health-dashboard.service';
 import { EvaluateHealthDto, AlertConfigDto, GrafanaQueryDto, TenantHealthInputDto } from './health-dashboard.dto';
 import type { TenantHealthInput } from './health-dashboard.entity';
 
+@UseGuards(TenantGuard)
 @Controller('health-dashboard')
 export class HealthDashboardController {
   constructor(

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   AIExperimentOptimizationPanel,
   StatusBadge,
@@ -155,6 +155,8 @@ function VariantComparisonBar({ winner, v1, v2 }: { winner: string; v1: string; 
 // ==================== 页面组件 ====================
 
 export default function AIExperimentsPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showDetails, setShowDetails] = useState(false);
 
@@ -187,6 +189,10 @@ export default function AIExperimentsPage() {
     const cfg = map[status] || { variant: 'neutral', label: status };
     return <StatusBadge variant={cfg.variant as 'success' | 'info' | 'warning' | 'neutral' | 'danger'} label={cfg.label} />;
   }, []);
+
+  if (loading) return <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 32px', textAlign: 'center', paddingTop: 60, color: '#94a3b8' }}>加载中...</div>;
+  if (error) return <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 32px', textAlign: 'center', paddingTop: 60, color: '#f87171' }}>数据获取失败: {error}</div>;
+  if (!MOCK_EXPERIMENTS || MOCK_EXPERIMENTS.length === 0) return <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 32px', textAlign: 'center', paddingTop: 60, color: '#94a3b8' }}>暂无数据</div>;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 32px' }}>

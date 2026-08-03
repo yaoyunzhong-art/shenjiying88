@@ -48,9 +48,15 @@ describe('cashier.entity', () => {
       channel: 'wechat-pay',
       amount: 50,
       status: CashierPaymentStatus.Succeeded,
+      qrCodeUrl: 'https://pay.example.com/qr/payment-1.png',
+      paymentUrl: 'https://pay.example.com/pay/payment-1',
+      expiresAt: '2026-06-14T00:15:00.000Z',
       createdAt: '2026-06-14T00:00:00.000Z',
       updatedAt: '2026-06-14T00:00:00.000Z'
     }
     assert.equal(payment.status, CashierPaymentStatus.Succeeded)
+    assert.equal(payment.qrCodeUrl, 'https://pay.example.com/qr/payment-1.png')
+    assert.equal(payment.paymentUrl, 'https://pay.example.com/pay/payment-1')
+    assert.equal(payment.expiresAt, '2026-06-14T00:15:00.000Z')
   })
 })

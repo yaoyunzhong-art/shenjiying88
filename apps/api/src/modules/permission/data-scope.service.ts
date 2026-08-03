@@ -80,8 +80,8 @@ export class DataScopeService {
   applyDataScopeFilter(
     scope: DataScope,
     context: PermissionContext,
-    query: Record<string, any>,
-  ): Record<string, any> {
+    query: Record<string, unknown>,
+  ): Record<string, unknown> {
     const filteredQuery = { ...query }
 
     switch (scope.scopeType) {
@@ -198,6 +198,6 @@ export class DataScopeService {
     // 模拟导购只分配了一个门店
     this.userStores.set('sales_guide_001', new Set(['store_001']))
 
-    this.logger.log('Initialized mock user-store assignments')
+    this.logger.debug('Initialized mock user-store assignments')
   }
 }

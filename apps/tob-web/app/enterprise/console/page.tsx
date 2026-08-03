@@ -4,7 +4,14 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageShell, StatCard } from '@m5/ui';
-import type { EnterpriseUser } from '../../../lib/enterprise-auth-service';
+import { enterpriseAuthService, type EnterpriseUser } from '../../../lib/enterprise-auth-service';
+import {
+  clearEnterpriseSession,
+  getCachedEnterpriseUser,
+  getEnterpriseAccessToken,
+  normalizeEnterpriseUser,
+  storeEnterpriseSession,
+} from '../lib/enterprise-session';
 
 export default function EnterpriseConsolePage() {
   const router = useRouter();
@@ -12,30 +19,38 @@ export default function EnterpriseConsolePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 检查登录状态
-    const token = localStorage.getItem('enterprise_access_token');
-    const userStr = localStorage.getItem('enterprise_user');
+    const token = getEnterpriseAccessToken();
+    const cachedUser = getCachedEnterpriseUser();
 
-    if (!token || !userStr) {
+    if (!token || !cachedUser) {
+      clearEnterpriseSession();
       router.push('/enterprise/login');
-      return;
-    }
-
-    try {
-      const userData = JSON.parse(userStr) as EnterpriseUser;
-      setUser(userData);
-    } catch {
-      router.push('/enterprise/login');
-      return;
-    } finally {
       setLoading(false);
+      return;
     }
+
+    setUser(cachedUser);
+    setLoading(false);
+
+    void enterpriseAuthService.getCurrentUser(token).then((result) => {
+      if (!result.success || !result.data) {
+        clearEnterpriseSession();
+        router.push('/enterprise/login');
+        return;
+      }
+
+      const normalizedUser = normalizeEnterpriseUser(result.data);
+      storeEnterpriseSession({
+        accessToken: token,
+        refreshToken: localStorage.getItem('enterprise_refresh_token') ?? '',
+        user: normalizedUser,
+      });
+      setUser(normalizedUser);
+    });
   }, [router]);
 
   function handleLogout() {
-    localStorage.removeItem('enterprise_access_token');
-    localStorage.removeItem('enterprise_refresh_token');
-    localStorage.removeItem('enterprise_user');
+    clearEnterpriseSession();
     router.push('/enterprise/login');
   }
 
@@ -126,6 +141,23 @@ export default function EnterpriseConsolePage() {
                   {role}
                 </span>
               ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 13, color: '#94a3b8', width: 80 }}>权限</span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {user?.permissions?.length ? (
+                user.permissions.map((permission: string) => (
+                  <span
+                    key={permission}
+                    style={{ fontSize: 12, padding: '4px 8px', borderRadius: 4, background: 'rgba(34, 197, 94, 0.16)', color: '#86efac' }}
+                  >
+                    {permission}
+                  </span>
+                ))
+              ) : (
+                <span style={{ fontSize: 12, color: '#64748b' }}>暂无权限</span>
+              )}
             </div>
           </div>
         </div>

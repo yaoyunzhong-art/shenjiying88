@@ -216,3 +216,35 @@ export class ReconciliationStatsQueryDto {
   @IsDateString()
   declare dateTo?: string
 }
+
+// ─── 对账历史查询 ───────────────────────────────────────────
+
+export class ReconciliationQueryDto {
+  @IsOptional()
+  @IsDateString()
+  declare dateFrom?: string
+
+  @IsOptional()
+  @IsDateString()
+  declare dateTo?: string
+
+  @IsOptional()
+  @IsEnum(ReconciliationChannel)
+  declare channel?: ReconciliationChannel
+
+  @IsOptional()
+  @IsEnum(ReconciliationStatus)
+  declare status?: ReconciliationStatus
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  declare limit?: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  declare offset?: number
+}

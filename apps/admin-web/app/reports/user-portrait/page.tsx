@@ -1,12 +1,11 @@
-'use client'
+import UserPortraitClient from './user-portrait-client'
+import { loadUserPortraitSnapshot } from './user-portrait-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function UserPortraitPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>🧑 用户画像报表</h1>
-      <p>用户画像特征分布分析</p>
-    </div>
-  )
+export default async function UserPortraitPage() {
+  const snapshot = await loadUserPortraitSnapshot()
+
+  return <UserPortraitClient snapshot={snapshot} />
 }

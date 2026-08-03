@@ -91,6 +91,37 @@ describe('🔄 AutoRollback Simulator', () => {
       // 历史应包含多个状态变更
       assert.ok(after.history.length >= 4);
     });
+
+    it('should handle extremely large deviation for WARNING', async () => {
+      const record = service.trigger({
+        reason: 'Extreme anomaly',
+        severity: 'WARNING',
+        metricKey: 'test.extreme',
+        anomalyValue: 100000,
+        baselineValue: 100,
+      });
+
+      await new Promise((r) => setTimeout(r, 100));
+      const after = service.getRecord(record.id);
+      assert.ok(after);
+      assert.equal(after.status, 'FAILED');
+    });
+
+    it('should handle anomaly value exactly at tolerance boundary for WARNING', async () => {
+      // deviation = |120 - 100| = 20, baseline*0.2 = 20, exactly at boundary => COMPLETED
+      const record = service.trigger({
+        reason: 'Boundary case',
+        severity: 'WARNING',
+        metricKey: 'test.boundary',
+        anomalyValue: 120,
+        baselineValue: 100,
+      });
+
+      await new Promise((r) => setTimeout(r, 100));
+      const after = service.getRecord(record.id);
+      assert.ok(after);
+      assert.equal(after.status, 'COMPLETED');
+    });
   });
 
   // ──────────── 场景 2: CRITICAL 需要确认 ────────────
@@ -176,6 +207,28 @@ describe('🔄 AutoRollback Simulator', () => {
       const active = service.listRecords();
       assert.equal(active.find((r) => r.id === record.id)?.status, 'CANCELLED');
     });
+
+    it('should proceed with confirm and complete when anomaly is within tolerance', async () => {
+      service.configure({ confirmationDelayMs: 60000 });
+
+      const record = service.trigger({
+        reason: 'CRITICAL with mild anomaly',
+        severity: 'CRITICAL',
+        metricKey: 'test.mild',
+        anomalyValue: 110,
+        baselineValue: 100,
+      });
+
+      assert.equal(record.status, 'AWAITING_CONFIRM');
+      const confirmed = service.confirm(record.id);
+      assert.ok(confirmed);
+
+      await new Promise((r) => setTimeout(r, 100));
+      const after = service.getRecord(record.id);
+      assert.ok(after);
+      // anomaly=110, baseline=100, deviation=10, tolerance=20 => <=20 => COMPLETED
+      assert.equal(after.status, 'COMPLETED');
+    });
   });
 
   // ──────────── 场景 3: 快照创建与查询 ────────────
@@ -204,6 +257,25 @@ describe('🔄 AutoRollback Simulator', () => {
     it('should return undefined for non-existent snapshot', () => {
       const snapshot = service.getSnapshot('nonexistent-snap');
       assert.equal(snapshot, undefined);
+    });
+
+    it('should create snapshot with correct kind during sync execution', async () => {
+      // 使用 executeRollbackSync 设置特定 kind
+      service.configure({ criticalRequiresConfirm: false });
+      const record = service.trigger({
+        reason: 'DB snapshot test',
+        severity: 'CRITICAL',
+        metricKey: 'test.db',
+        anomalyValue: 110,
+        baselineValue: 100,
+      });
+
+      const result = await service.executeRollbackSync(record.id, 'DB');
+      assert.ok(result);
+      assert.ok(result.snapshotId);
+      const snapshot = service.getSnapshot(result.snapshotId);
+      assert.ok(snapshot);
+      assert.equal(snapshot.kind, 'DB');
     });
   });
 
@@ -287,6 +359,31 @@ describe('🔄 AutoRollback Simulator', () => {
 
       const byStatus = service.listRecords({ status: 'AWAITING_CONFIRM' });
       assert.equal(byStatus.length, 1);
+    });
+
+    it('should return empty array when no records match', () => {
+      const records = service.listRecords({ metricKey: 'nonexistent' });
+      assert.equal(records.length, 0);
+    });
+
+    it('should sort records by createdAt descending', () => {
+      service.trigger({ reason: 'r1', severity: 'WARNING', metricKey: 'm', anomalyValue: 110, baselineValue: 100 });
+      service.trigger({ reason: 'r2', severity: 'WARNING', metricKey: 'm', anomalyValue: 110, baselineValue: 100 });
+      const records = service.listRecords();
+      assert.equal(records.length, 2);
+      assert.ok(new Date(records[0].createdAt).getTime() >= new Date(records[1].createdAt).getTime());
+    });
+
+    it('should apply single field config changes', () => {
+      service.configure({ confirmationDelayMs: 5000 });
+      const record = service.trigger({
+        reason: 'config test',
+        severity: 'CRITICAL',
+        metricKey: 'test.config2',
+        anomalyValue: 999,
+        baselineValue: 100,
+      });
+      assert.equal(record.confirmationDelayMs, 5000);
     });
   });
 
@@ -376,6 +473,18 @@ describe('🔄 AutoRollback Simulator', () => {
       const result = await service.executeRollbackSync('non-existent');
       assert.equal(result, undefined);
     });
+
+    it('should handle zero baseline without division by zero', () => {
+      // baseline=0, tolerance = |0| * 0.2 = 0, anomaly=100 => deviation=100 > 0 => FAILED
+      const record = service.trigger({
+        reason: 'zero baseline edge case',
+        severity: 'WARNING',
+        metricKey: 'test.zero',
+        anomalyValue: 100,
+        baselineValue: 0,
+      });
+      assert.ok(record.id);
+    });
   });
 
   // ──────────── 场景 6: 验证逻辑 ────────────
@@ -406,6 +515,85 @@ describe('🔄 AutoRollback Simulator', () => {
       await new Promise((r) => setTimeout(r, 100));
       const after = service.getRecord(record.id);
       assert.equal(after?.status, 'FAILED');
+    });
+
+    it('should verify against tolerance when anomaly is less than baseline', async () => {
+      // deviation = |80 - 100| = 20, baseline*0.2 = 20, 20 <= 20 => COMPLETED
+      const record = service.trigger({
+        reason: 'Anomaly below baseline',
+        severity: 'WARNING',
+        metricKey: 'test.below',
+        anomalyValue: 80,
+        baselineValue: 100,
+      });
+      await new Promise((r) => setTimeout(r, 100));
+      const after = service.getRecord(record.id);
+      assert.equal(after?.status, 'COMPLETED');
+    });
+
+    it('should fail when anomaly far below baseline', async () => {
+      // deviation = |0 - 100| = 100, baseline*0.2 = 20, 100 > 20 => FAILED
+      const record = service.trigger({
+        reason: 'Metric dropped to zero',
+        severity: 'WARNING',
+        metricKey: 'test.zeroed',
+        anomalyValue: 0,
+        baselineValue: 100,
+      });
+      await new Promise((r) => setTimeout(r, 100));
+      const after = service.getRecord(record.id);
+      assert.equal(after?.status, 'FAILED');
+    });
+  });
+
+  // ──────────── 场景 7: 查询与状态机 ────────────
+  describe('Scenario 7: Query and state machine', () => {
+    it('should getRecordById return correct record', () => {
+      const record = service.trigger({
+        reason: 'query test',
+        severity: 'WARNING',
+        metricKey: 'test.query',
+        anomalyValue: 110,
+        baselineValue: 100,
+      });
+      const found = service.getRecord(record.id);
+      assert.ok(found);
+      assert.equal(found.id, record.id);
+      assert.equal(found.reason, 'query test');
+    });
+
+    it('should return undefined for non-existent record', () => {
+      const found = service.getRecord('non-existent-id');
+      assert.equal(found, undefined);
+    });
+
+    it('should handle multiple confirms on the same record', () => {
+      service.configure({ confirmationDelayMs: 60000 });
+      const record = service.trigger({
+        reason: 'double confirm test',
+        severity: 'CRITICAL',
+        metricKey: 'test.double',
+        anomalyValue: 999,
+        baselineValue: 100,
+      });
+      assert.equal(record.status, 'AWAITING_CONFIRM');
+      const c1 = service.confirm(record.id);
+      assert.ok(c1);
+      const c2 = service.confirm(record.id);
+      assert.ok(c2);
+    });
+
+    it('should handle cancel on a non-AWAITING_CONFIRM record gracefully', () => {
+      const record = service.trigger({
+        reason: 'cancel test',
+        severity: 'WARNING',
+        metricKey: 'test.cancel_warn',
+        anomalyValue: 110,
+        baselineValue: 100,
+      });
+      // WARNING starts execution; cancel should be safe
+      const cancelled = service.cancel(record.id, 'cancel during WARNING');
+      assert.ok(cancelled);
     });
   });
 });

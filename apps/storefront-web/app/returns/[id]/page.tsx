@@ -1,10 +1,10 @@
+'use client';
 /**
  * 退货单详情页 — Return Detail Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🛒客服 / 💰财务
  * 功能: 退货单详情查看、状态流转、编辑、删除
  * 类型: B-详情页 (含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';

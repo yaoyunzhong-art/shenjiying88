@@ -3,6 +3,38 @@
 
 import { getDefaultApiBaseUrl } from '@m5/sdk';
 
+const DEFAULT_TENANT_ID = 'demo-tenant';
+
+function trimTrailingSlash(value: string): string {
+  return value.replace(/\/+$/, '');
+}
+
+function resolveEnterpriseTenantId(explicitTenantId?: string): string {
+  const configured =
+    explicitTenantId ??
+    process.env.M5_TOB_TENANT_ID ??
+    process.env.NEXT_PUBLIC_M5_TOB_TENANT_ID ??
+    process.env.M5_TENANT_ID ??
+    process.env.NEXT_PUBLIC_M5_TENANT_ID ??
+    DEFAULT_TENANT_ID;
+
+  const normalized = configured.trim();
+  return normalized.length > 0 ? normalized : DEFAULT_TENANT_ID;
+}
+
+async function readJsonBody(response: Response): Promise<Record<string, any>> {
+  const text = await response.text();
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text) as Record<string, any>;
+  } catch {
+    return { message: text };
+  }
+}
+
 export interface EnterpriseLoginRequest {
   email: string;
   password: string;
@@ -53,6 +85,7 @@ export interface EnterpriseUser {
   mobile?: string;
   nickname?: string;
   roles: string[];
+  permissions: string[];
   avatar?: string;
 }
 
@@ -62,9 +95,18 @@ export interface EnterpriseUser {
  */
 export class EnterpriseAuthService {
   private baseUrl: string;
+  private tenantId: string;
 
-  constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl ?? getDefaultApiBaseUrl();
+  constructor(baseUrl?: string, tenantId?: string) {
+    this.baseUrl = trimTrailingSlash(baseUrl ?? getDefaultApiBaseUrl());
+    this.tenantId = resolveEnterpriseTenantId(tenantId);
+  }
+
+  private createHeaders(extraHeaders?: HeadersInit): HeadersInit {
+    return {
+      'x-tenant-id': this.tenantId,
+      ...(extraHeaders ?? {}),
+    };
   }
 
   /**
@@ -77,9 +119,9 @@ export class EnterpriseAuthService {
     try {
       const response = await fetch(`${this.baseUrl}/auth/login/password`, {
         method: 'POST',
-        headers: {
+        headers: this.createHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         body: JSON.stringify({
           email,
           password,
@@ -87,7 +129,7 @@ export class EnterpriseAuthService {
         }),
       });
 
-      const data = await response.json();
+      const data = await readJsonBody(response);
 
       if (!response.ok) {
         return {
@@ -151,7 +193,7 @@ export class EnterpriseAuthService {
     try {
       const response = await fetch(`${this.baseUrl}/auth/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.createHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           email: request.email,
           password: request.password,
@@ -162,7 +204,7 @@ export class EnterpriseAuthService {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await readJsonBody(response);
         return {
           success: true,
           data: data.data ?? {
@@ -173,7 +215,7 @@ export class EnterpriseAuthService {
         };
       }
 
-      const errData = await response.json().catch(() => ({}));
+      const errData = await readJsonBody(response);
       return {
         success: false,
         error: {
@@ -204,13 +246,13 @@ export class EnterpriseAuthService {
     try {
       const response = await fetch(`${this.baseUrl}/auth/refresh`, {
         method: 'POST',
-        headers: {
+        headers: this.createHeaders({
           'Content-Type': 'application/json',
-        },
+        }),
         body: JSON.stringify({ refreshToken }),
       });
 
-      const data = await response.json();
+      const data = await readJsonBody(response);
 
       if (!response.ok) {
         return {
@@ -250,15 +292,15 @@ export class EnterpriseAuthService {
     try {
       const response = await fetch(`${this.baseUrl}/auth/logout`, {
         method: 'POST',
-        headers: {
+        headers: this.createHeaders({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
-        },
+        }),
         body: JSON.stringify({ sessionId }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await readJsonBody(response);
         return {
           success: false,
           error: {
@@ -289,12 +331,12 @@ export class EnterpriseAuthService {
     try {
       const response = await fetch(`${this.baseUrl}/auth/me`, {
         method: 'GET',
-        headers: {
+        headers: this.createHeaders({
           Authorization: `Bearer ${accessToken}`,
-        },
+        }),
       });
 
-      const data = await response.json();
+      const data = await readJsonBody(response);
 
       if (!response.ok) {
         return {

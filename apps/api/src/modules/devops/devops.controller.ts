@@ -31,6 +31,7 @@ import {
   Param,
   Post,
   Put,
+UseGuards,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { DevopsService } from './devops.service'
@@ -47,9 +48,11 @@ import type {
   BuildJobListResponse,
   ExecuteActionDto,
 } from './devops.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @ApiTags('devops')
 @Controller('devops')
+@UseGuards(TenantGuard)
 export class DevopsController {
   constructor(private readonly devopsService: DevopsService) {}
 

@@ -1,11 +1,15 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -16,8 +20,10 @@ import {
   UpdateShiftStatusDto,
 } from './shift-scheduler.dto'
 import { ShiftSchedulerService } from './shift-scheduler.service'
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('shift-schedules')
+@UseGuards(TenantGuard)
 export class ShiftSchedulerController {
   constructor(private readonly shiftService: ShiftSchedulerService) {}
 
@@ -74,6 +80,15 @@ export class ShiftSchedulerController {
     @Body() body: UpdateShiftScheduleDto,
   ) {
     return this.shiftService.updateShift(shiftId, tenantContext.tenantId, body)
+  }
+
+  @Delete(':shiftId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteShift(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Param('shiftId') shiftId: string,
+  ): void {
+    return this.shiftService.deleteShift(shiftId, tenantContext.tenantId)
   }
 
   @Patch(':shiftId/status')

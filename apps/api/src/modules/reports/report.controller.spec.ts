@@ -19,6 +19,7 @@ import { OrderAdapter } from './datasources/order.adapter'
 import { InventoryAdapter } from './datasources/inventory.adapter'
 import { MemberAdapter } from './datasources/member.adapter'
 import { RefundAdapter } from './datasources/refund.adapter'
+import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
 import * as assert from 'node:assert'
 
 describe('ReportController', () => {
@@ -73,6 +74,27 @@ describe('ReportController', () => {
     const cache = new ReportCacheService()
     const exportSvc = new ReportExportService()
     const querySvc = new ReportQueryService()
+    const governanceApprovalService = {
+      async materializeApproval(input: { approvalTicket?: string }) {
+        return {
+          approvalId: input.approvalTicket === 'APPROVED-EXPORT' ? 'apr-approved' : 'apr-pending',
+          operation: 'report.export.bulk',
+          resourceType: 'report-export',
+          resourceKey: 'report-export-resource',
+          required: true,
+          version: 1,
+          requestedBy: 'ops.admin-web',
+          ticket: input.approvalTicket ?? 'APR-PENDING-001',
+          status: input.approvalTicket === 'APPROVED-EXPORT' ? 'APPROVED' : 'PENDING',
+          submitted: true,
+          persisted: true,
+          decidedBy: input.approvalTicket === 'APPROVED-EXPORT' ? 'ops.approver' : null,
+          decidedAt: input.approvalTicket === 'APPROVED-EXPORT' ? new Date().toISOString() : null,
+          updatedAt: new Date().toISOString(),
+          summary: null,
+        }
+      },
+    } as unknown as GovernanceApprovalService
 
     const revenue = new RevenueReportService(agg, cache, paymentAdapter)
     const invTurn = new InventoryTurnoverService(inventoryAdapter, orderAdapter)
@@ -100,6 +122,7 @@ describe('ReportController', () => {
       hourlyHeat,
       channelFun,
       invAlert,
+      governanceApprovalService,
     )
   }
 
@@ -294,6 +317,61 @@ describe('ReportController', () => {
       assert.equal(typeof task?.createdAt, 'string')
       assert.equal(typeof task?.expiresAt, 'string')
       assert.equal(typeof task?.completedAt, 'string')
+    })
+
+    it('exports — 超过 500 行时先返回审批票据而不是直接创建任务', async () => {
+      controller['revenue'].generate = async () => ({
+        type: 'revenue',
+        tenantId: TENANT,
+        period: { from: '2025-06-01', to: '2025-06-30' },
+        columns: [{ field: 'amount', alias: '金额', type: 'metric' as const }],
+        rows: Array.from({ length: 501 }, (_, index) => ({ amount: index + 1 })),
+        totals: { amount: 501 },
+        generatedAt: new Date().toISOString(),
+        cached: false,
+      })
+
+      const created = await controller.createBatchExportTask({
+        tenantId: TENANT,
+        from: '2025-06-01',
+        to: '2025-06-30',
+        type: 'revenue',
+        format: 'csv',
+      })
+
+      assert.equal(created.approvalRequired, true)
+      assert.equal(created.approvalStatus, 'PENDING')
+      assert.equal(created.approvalTicket, 'APR-PENDING-001')
+      assert.equal(created.rowCount, 501)
+      assert.equal(created.taskId, undefined)
+
+      const list = controller.listBatchExportTasks({ tenantId: TENANT })
+      assert.equal(list.total, 0)
+    })
+
+    it('exports — 带已审批 approvalTicket 的超量导出可继续创建任务', async () => {
+      controller['revenue'].generate = async () => ({
+        type: 'revenue',
+        tenantId: TENANT,
+        period: { from: '2025-06-01', to: '2025-06-30' },
+        columns: [{ field: 'amount', alias: '金额', type: 'metric' as const }],
+        rows: Array.from({ length: 501 }, (_, index) => ({ amount: index + 1 })),
+        totals: { amount: 501 },
+        generatedAt: new Date().toISOString(),
+        cached: false,
+      })
+
+      const created = await controller.createBatchExportTask({
+        tenantId: TENANT,
+        from: '2025-06-01',
+        to: '2025-06-30',
+        type: 'revenue',
+        format: 'csv',
+        approvalTicket: 'APPROVED-EXPORT',
+      })
+
+      assert.ok(created.taskId)
+      assert.equal(created.tenantId, TENANT)
     })
 
     it('exports list — 正常租户仅能看到自己的导出任务', async () => {

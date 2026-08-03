@@ -14,13 +14,28 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException
 } from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
+import { TENANT_OPTIONAL_KEY } from './tenant-guard.decorator'
 
 @Injectable()
 export class TenantGuard implements CanActivate {
+  constructor(@Inject(Reflector) private readonly reflector?: Reflector) {}
+
   canActivate(context: ExecutionContext): boolean {
+    const tenantOptional =
+      this.reflector?.getAllAndOverride<boolean>(TENANT_OPTIONAL_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? false
+
+    if (tenantOptional) {
+      return true
+    }
+
     const request = context.switchToHttp().getRequest()
     const tenantId =
       request.headers['x-tenant-id'] ||

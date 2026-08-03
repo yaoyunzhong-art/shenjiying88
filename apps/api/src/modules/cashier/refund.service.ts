@@ -144,8 +144,9 @@ export class RefundService {
     this.idemIndex.set(idemKey, refund.id)
     this.logger.log(`Created refund ${refund.id} order=${order.id} amount=${input.amountCents}c`)
 
-    // 模拟调微信退款 → 立即 SUCCESS (mock 模式)
-    this.confirm(refund.id, opts.tenantId)
+    this.logger.log(
+      `Refund ${refund.id} created in PENDING state, awaiting provider callback or manual confirmation`
+    )
 
     // 计费: 成功创建后扣费
     if (this.billingWall) {
@@ -161,7 +162,7 @@ export class RefundService {
   }
 
   /**
-   * 确认退款 (webhook / mock 立即)
+   * 确认退款 (webhook / 人工确认)
    */
   confirm(id: string, tenantId: string): Refund {
     const refund = this.refunds.get(id)

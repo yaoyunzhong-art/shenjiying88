@@ -1,9 +1,9 @@
+'use client';
 /**
  * stores/new/page.tsx — 新增门店表单页 (ToB Next.js App Router Page)
  * 角色视角: 企业管理员 / 品牌运营者
  * 功能: 表单验证、提交、错误处理、成功后跳转
  */
-'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';

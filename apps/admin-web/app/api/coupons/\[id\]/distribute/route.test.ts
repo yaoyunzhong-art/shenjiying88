@@ -1,7 +1,8 @@
 /**
- * api/coupons/[id]/distribute/route.test.ts — 优惠券分发代理层 L1 测试
+ * api/coupons/[id]/distribute/route.test.ts — 优惠券分发 API L1 测试
  *
- * 覆盖: 正例·边界·防御
+ * 覆盖: POST — 正例·边界·防御
+ * 策略: 静态源码分析
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -10,32 +11,51 @@ import { resolve } from 'node:path';
 
 const SRC = readFileSync(resolve(import.meta.dirname, 'route.ts'), 'utf-8');
 
-describe('coupons/[id]/distribute — 正例', () => {
-  it('应导出 POST 方法分发优惠券', () => {
+describe('coupons/[id]/distribute — POST 正例', () => {
+  it('D1. 应导出 POST 方法', () => {
     assert.ok(SRC.includes('export const POST'), '缺少 POST 导出');
   });
 
-  it('应引用 _proxy/utils 的 createProxyHandler', () => {
-    assert.ok(SRC.includes('createProxyHandler'), '缺少 createProxyHandler');
-    assert.ok(SRC.includes('../../../_proxy/utils'), '应从 _proxy/utils 导入');
+  it('D2. 应使用 createProxyHandler 代理', () => {
+    assert.ok(SRC.includes('createProxyHandler'), '缺少代理处理器');
   });
 
-  it('应包含 getDistributeApi 函数构建分发 URL', () => {
-    assert.ok(SRC.includes('getDistributeApi'), '缺少 getDistributeApi');
-    assert.ok(SRC.includes('params.id'), '应使用 params.id');
-    assert.ok(SRC.includes('/distribute'), '应包含 distribute 路径');
+  it('D3. 应构造 /coupons/:id/distribute URL', () => {
+    assert.ok(SRC.includes("`${API_BASE_URL}/coupons/"), '缺少 API URL');
+    assert.ok(SRC.includes('/distribute'), '缺少 distribute 路径');
+  });
+
+  it('D4. 应请求 POST 方法', () => {
+    assert.ok(SRC.includes("'POST'"), '缺少 POST 请求方法');
+  });
+
+  it('D5. 应接收 params.id 获取优惠券 ID', () => {
+    assert.ok(SRC.includes('params.id'), '缺少 params.id');
   });
 });
 
-describe('coupons/[id]/distribute — 防御', () => {
-  it('应使用 createProxyHandler 代理', () => {
-    assert.ok(SRC.includes('createProxyHandler(getDistributeApi('), '应使用代理');
+describe('coupons/[id]/distribute — 防御 & 边界', () => {
+  it('E1. 应从 ../_proxy/utils 导入', () => {
+    assert.ok(SRC.includes('_proxy/utils'), '缺少 utils 导入');
   });
 
-  it('不应手动实现 fetch 调用', () => {
-    assert.ok(!SRC.includes('async function POST'), '不应手动实现 POST');
+  it('E2. 函数签名包含 params.id 类型', () => {
+    assert.ok(SRC.includes('params: { id: string }'), '缺少 params 类型');
   });
 
-  it('无危险 HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-  it('无 any 类型', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
+  it('E3. 应透传 req 给代理处理器', () => {
+    assert.ok(SRC.includes('handler(req)'), '缺少 handler(req)');
+  });
+
+  it('E4. 无危险 HTML', () => {
+    assert.ok(!SRC.includes('dangerouslySetInnerHTML'));
+  });
+
+  it('E5. 无 any 类型', () => {
+    assert.ok(!/:\s*any\b/.test(SRC));
+  });
+
+  it('E6. 应包含 API_BASE_URL 引用', () => {
+    assert.ok(SRC.includes('API_BASE_URL'), '缺少 API_BASE_URL');
+  });
 });

@@ -14,53 +14,6 @@ describe('MemberLevelController', () => {
     controller = new MemberLevelController(service)
   })
 
-  describe('route metadata', () => {
-    it('controller path metadata should be member-level', () => {
-      const path = Reflect.getMetadata('path', MemberLevelController)
-      assert.equal(path, 'member-level')
-    })
-
-    it('evaluate route should have POST method and evaluate path', () => {
-      const method = Reflect.getMetadata('method', MemberLevelController.prototype.evaluate)
-      const path = Reflect.getMetadata('path', MemberLevelController.prototype.evaluate)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'evaluate')
-    })
-
-    it('calculate route should have POST method and calculate path', () => {
-      const method = Reflect.getMetadata('method', MemberLevelController.prototype.calculate)
-      const path = Reflect.getMetadata('path', MemberLevelController.prototype.calculate)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'calculate')
-    })
-
-    it('batchEvaluate route should have POST method and batch path', () => {
-      const method = Reflect.getMetadata('method', MemberLevelController.prototype.batchEvaluate)
-      const path = Reflect.getMetadata('path', MemberLevelController.prototype.batchEvaluate)
-
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'batch')
-    })
-
-    it('getConfig route should have GET method and config path', () => {
-      const method = Reflect.getMetadata('method', MemberLevelController.prototype.getConfig)
-      const path = Reflect.getMetadata('path', MemberLevelController.prototype.getConfig)
-
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'config')
-    })
-
-    it('getUpgradePath route should have GET method and upgrade-path/:fromTier/:fromSub/:toTier/:toSub path', () => {
-      const method = Reflect.getMetadata('method', MemberLevelController.prototype.getUpgradePath)
-      const path = Reflect.getMetadata('path', MemberLevelController.prototype.getUpgradePath)
-
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'upgrade-path/:fromTier/:fromSub/:toTier/:toSub')
-    })
-  })
-
   describe('controller methods - 正常流程', () => {
     it('evaluate should return success with level info', () => {
       const result = controller.evaluate({

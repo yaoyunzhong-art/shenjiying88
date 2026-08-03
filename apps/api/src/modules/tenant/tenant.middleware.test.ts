@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { it } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { randomUUID } from 'node:crypto'
 import { TenantMiddleware } from './tenant.middleware'
 
 function makeReq(headers: Record<string, string> = {}): Record<string, any> {
@@ -53,6 +52,58 @@ it('TenantMiddleware use() reads tenantContext from headers', () => {
   assert.equal(req.tenantContext.brandId, 'brand-custom')
   assert.equal(req.tenantContext.storeId, 'store-custom')
   assert.equal(req.tenantContext.marketCode, 'zh-cn')
+})
+
+it('TenantMiddleware use() resolves tenantContext from host before headers', () => {
+  const middleware = new TenantMiddleware({
+    resolveHost(host: string) {
+      if (host === 'brand.example.com') {
+        return {
+          tenantId: 'tenant-host',
+          brandId: 'brand-host',
+          storeId: 'store-host',
+        }
+      }
+      return null
+    },
+  } as any)
+  const req = makeReq({
+    host: 'brand.example.com',
+    'x-tenant-id': 'tenant-header',
+    'x-brand-id': 'brand-header',
+    'x-store-id': 'store-header',
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.tenantContext.tenantId, 'tenant-host')
+  assert.equal(req.tenantContext.brandId, 'brand-host')
+  assert.equal(req.tenantContext.storeId, 'store-host')
+})
+
+it('TenantMiddleware use() reads x-forwarded-host before host', () => {
+  const middleware = new TenantMiddleware({
+    resolveHost(host: string) {
+      if (host === 'forwarded.example.com') {
+        return {
+          tenantId: 'tenant-forwarded',
+          brandId: 'brand-forwarded',
+        }
+      }
+      return null
+    },
+  } as any)
+  const req = makeReq({
+    host: 'ignored.example.com',
+    'x-forwarded-host': 'forwarded.example.com',
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.tenantContext.tenantId, 'tenant-forwarded')
+  assert.equal(req.tenantContext.brandId, 'brand-forwarded')
 })
 
 it('TenantMiddleware use() trims whitespace from header values', () => {
@@ -281,4 +332,39 @@ it('TenantMiddleware use() supports x-role and x-permission as singular aliases'
 
   assert.deepStrictEqual(req.actorContext?.roles, ['admin'])
   assert.deepStrictEqual(req.actorContext?.permissions, ['tenant:*'])
+})
+
+it('TenantMiddleware use() supports x-actor-roles/x-actor-permissions aliases and direct actor scope headers', () => {
+  const middleware = new TenantMiddleware()
+  const req = makeReq({
+    'x-actor-id': 'actor-alias',
+    'x-actor-brand-id': 'brand-alias',
+    'x-actor-store-id': 'store-alias',
+    'x-actor-roles': 'OPERATIONS,TENANT_ADMIN',
+    'x-actor-permissions': 'foundation.governance.read,foundation.runtime-governance.read'
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.actorContext?.brandId, 'brand-alias')
+  assert.equal(req.actorContext?.storeId, 'store-alias')
+  assert.deepStrictEqual(req.actorContext?.roles, ['OPERATIONS', 'TENANT_ADMIN'])
+  assert.deepStrictEqual(req.actorContext?.permissions, [
+    'foundation.governance.read',
+    'foundation.runtime-governance.read'
+  ])
+})
+
+it('TenantMiddleware use() honors x-actor-authenticated=false', () => {
+  const middleware = new TenantMiddleware()
+  const req = makeReq({
+    'x-actor-id': 'actor-auth-flag',
+    'x-actor-authenticated': 'false'
+  })
+  const res = {} as any
+
+  middleware.use(req, res, () => {})
+
+  assert.equal(req.actorContext?.authenticated, false)
 })

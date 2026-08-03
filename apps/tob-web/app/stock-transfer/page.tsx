@@ -1,9 +1,9 @@
+'use client';
 /**
  * 库存调拨列表页 — Stock Transfer List Page (ToB Next.js App Router Page)
  * 角色视角: 👔品牌运营 / 📦仓库管理员 / 💳采购经理
  * 功能: 搜索、状态筛选、类型筛选、分页浏览调拨单
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 

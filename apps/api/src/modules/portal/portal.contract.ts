@@ -3,6 +3,7 @@ import type { StorePortalContract, TobPortalContract } from '@m5/types'
 
 export function toTobPortalContract(portal: TobPortal): TobPortalContract {
   const primaryDomain = portal.primaryDomain ?? `${portal.scopeCode}.${portal.marketCode}.b2b.local`
+  const domainSource = portal.domainSource ?? (portal.primaryDomain ? 'custom' : 'default')
 
   return {
     audience: portal.audience,
@@ -14,6 +15,7 @@ export function toTobPortalContract(portal: TobPortal): TobPortalContract {
     channel: portal.channel,
     name: portal.name,
     primaryDomain,
+    domainSource,
     supportedLanguages: portal.supportedLanguages,
     heroTitle: portal.heroTitle,
     heroSubtitle: portal.heroSubtitle,
@@ -24,6 +26,7 @@ export function toTobPortalContract(portal: TobPortal): TobPortalContract {
 
 export function toStorePortalContract(portal: StorePortal): StorePortalContract {
   const primaryDomain = portal.primaryDomain ?? `${portal.storeCode}.${portal.marketCode}.local`
+  const domainSource = portal.domainSource ?? (portal.primaryDomain ? 'custom' : 'default')
 
   return {
     audience: portal.audience,
@@ -37,8 +40,8 @@ export function toStorePortalContract(portal: StorePortal): StorePortalContract 
     channel: portal.channel,
     name: portal.name,
     primaryDomain,
+    domainSource,
     supportedLanguages: portal.supportedLanguages,
     supportedSurfaces: portal.supportedSurfaces
   }
 }
-

@@ -1,174 +1,25 @@
-/**
- * analytics/page.test.tsx — 门店分析看板 L1+L2 测试
- * 覆盖: 正例·反例·边界·防御·数据校验
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
+describe('stores/[id]/analytics/page.tsx 结构固证', () => {
+  it('page 应保持最小 server wrapper 并桥接快照到 client', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function AnalyticsPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadAnalyticsSnapshot'))
+    assert.ok(PAGE_SRC.includes('<AnalyticsClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
+  })
 
-// ---- 正例 ----
-
-describe('analytics — 正例', () => {
-  it('应导出一个默认组件 AnalyticsPage', () => {
-    const src = readSource();
-    assert.ok(src.includes('export default function AnalyticsPage'), '缺少默认导出组件');
-  });
-
-  it('应包含 Statistic 今日营收指标', () => {
-    const src = readSource();
-    assert.ok(src.includes('今日营收'), '缺少今日营收指标');
-  });
-
-  it('应包含客流统计指标', () => {
-    const src = readSource();
-    assert.ok(src.includes('今日客流'), '缺少今日客流统计');
-  });
-
-  it('应包含坪效指标', () => {
-    const src = readSource();
-    assert.ok(src.includes('坪效'), '缺少坪效指标');
-  });
-
-  it('应包含本月同比统计数据', () => {
-    const src = readSource();
-    assert.ok(src.includes('本月同比'), '缺少本月同比统计');
-  });
-
-  it('Statistic 应设置 value 属性', () => {
-    const src = readSource();
-    // Statistic 组件应有 value 属性
-    const matches = src.match(/Statistic\s+title=/g);
-    assert.ok(matches && matches.length >= 4, `Statistic 数量不足: ${matches?.length ?? 0}`);
-  });
-});
-
-// ---- 反例 ----
-
-describe('analytics — 反例', () => {
-  it('不应导出非默认函数', () => {
-    const src = readSource();
-    assert.ok(!src.includes('export function '), '不应存在命名导出');
-  });
-
-  it('不应使用 class 组件', () => {
-    const src = readSource();
-    assert.ok(!src.includes('extends Component') && !src.includes('React.Component'), '不应使用 class 组件');
-  });
-
-  it('不应使用 any 类型', () => {
-    const src = readSource();
-    assert.ok(!/: any\b/.test(src), '不应使用 any 类型');
-  });
-});
-
-// ---- 边界 ----
-
-describe('analytics — 边界', () => {
-  it('应包含时段客流分析', () => {
-    const src = readSource();
-    assert.ok(src.includes('早班') || src.includes('时段客流'), '缺少时段客流分析');
-  });
-
-  it('应包含设备使用率分析', () => {
-    const src = readSource();
-    assert.ok(src.includes('设备使用率'), '缺少设备使用率分析');
-  });
-
-  it('应包含支付方式分布', () => {
-    const src = readSource();
-    assert.ok(src.includes('支付方式'), '缺少支付方式分布');
-  });
-
-  it('支付方式应覆盖所有主流渠道', () => {
-    const src = readSource();
-    const count = (src.match(/^(?!.*Card\b).*%/gm) || []).length;
-    const hasWechat = src.includes('微信');
-    const hasAlipay = src.includes('支付宝');
-    assert.ok(hasWechat && hasAlipay, '缺少微信或支付宝支付方式');
-  });
-
-  it('应包含日报/周报/月报导出按钮', () => {
-    const src = readSource();
-    assert.ok(src.includes('日报'), '缺少日报按钮');
-    assert.ok(src.includes('周报'), '缺少周报按钮');
-    assert.ok(src.includes('月报'), '缺少月报按钮');
-  });
-});
-
-// ---- 防御 ----
-
-describe('analytics — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
-  });
-
-  it('应包含 PageShell 布局组件', () => {
-    const src = readSource();
-    assert.ok(src.includes('PageShell'), '缺少 PageShell');
-  });
-
-  it('不应使用 dangerouslySetInnerHTML', () => {
-    const src = readSource();
-    assert.ok(!src.includes('dangerouslySetInnerHTML'), '不应使用 dangerouslySetInnerHTML');
-  });
-
-  it('营收应前缀 ¥ 符号', () => {
-    const src = readSource();
-    const statUsage = src.indexOf('Statistic');
-    const afterStat = src.slice(statUsage);
-    // 检查是否使用 prefix="¥"
-    assert.ok(afterStat.includes('prefix="¥"') || afterStat.includes("prefix='¥'"), '营收缺少 ¥ 前缀');
-  });
-
-  it('坪效应有提醒颜色', () => {
-    const src = readSource();
-    assert.ok(src.includes('#f59e0b'), '坪效应有 warning 颜色');
-  });
-});
-
-// ---- 数据校验 ----
-
-describe('analytics — 数据校验', () => {
-  it('营收/同比/客流/坪效应各占 Col span 6', () => {
-    const src = readSource();
-    const span6Count = (src.match(/span=\{6\}/g) || []).length;
-    assert.ok(span6Count >= 4, `Col span={6} 数量不足: ${span6Count}`);
-  });
-
-  it('应消费 useState', () => {
-    const src = readSource();
-    assert.ok(src.includes('useState'), '缺少 useState');
-  });
-
-  it('PageShell 应被正确包裹', () => {
-    const src = readSource();
-    const firstContent = src.indexOf('return (');
-    const afterReturn = src.slice(firstContent);
-    assert.ok(afterReturn.includes('<PageShell'), '渲染应包裹 PageShell');
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe('Stores / Analytics — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
-});
+  it('page 应保留服务端参数解包', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(!PAGE_SRC.includes('searchParams'))
+  })
+})

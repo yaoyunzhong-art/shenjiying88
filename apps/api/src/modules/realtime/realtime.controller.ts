@@ -39,13 +39,15 @@
  *  GET    /realtime/health                   健康检查
  */
 
-import { Controller, Get, Post, Body, Param, Injectable } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Injectable, UseGuards } from '@nestjs/common'
 import { CollaborativeEditor, PresenceService, ConflictResolver, CollabService } from './collab.service'
 import { CRDTDocument, WebSocketSessionManager, MultiDeviceSyncService, type CRDTOperation, type CRDTDocumentState } from './crdt.service'
 import type { RealtimeCollabOperation } from './realtime.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('realtime')
 @Injectable()
+@UseGuards(TenantGuard)
 export class RealtimeController {
   constructor(
     private readonly collabEditor: CollaborativeEditor,

@@ -26,7 +26,7 @@ export interface InventoryItem {
   unitPriceCents: number
   status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED'
   version: number        // 乐观锁 (DR-36 决策 3)
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   createdAt: string
   updatedAt: string
 }
@@ -86,7 +86,7 @@ export interface CreateInventoryItemInput {
   totalQty: number
   lowStockThreshold?: number
   unitPriceCents: number
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   performedBy?: string
 }
 

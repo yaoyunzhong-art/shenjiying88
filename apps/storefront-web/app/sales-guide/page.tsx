@@ -1,10 +1,10 @@
+'use client';
 /**
  * 导购员工作台页 — Sales Guide Dashboard (Next.js App Router Page)
  * 角色: 导购员视角，展示个人接待数据、待跟进客户、推荐话术、快速查询会员、排名
  */
-'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { PageShell, StatusBadge, SalesClerkTool } from '@m5/ui';
 import type {
   DailyReceptionStats,
@@ -312,6 +312,8 @@ function ScriptCard({
 // ============================================================
 
 export default function SalesGuidePage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [followUpFilter, setFollowUpFilter] = useState<string>('ALL');
 
@@ -350,6 +352,10 @@ export default function SalesGuidePage() {
     if (followUpFilter === 'ALL') return MOCK_FOLLOW_UPS;
     return MOCK_FOLLOW_UPS.filter((c) => c.priority === followUpFilter);
   }, [followUpFilter]);
+
+  if (loading) return <PageShell title="导购员工具" description="导购员专属工作台 · 朝阳旗舰店"><div style={{ padding: 60, textAlign: 'center', color: '#6b7280' }}>加载中...</div></PageShell>;
+  if (error) return <PageShell title="导购员工具" description="导购员专属工作台 · 朝阳旗舰店"><div style={{ padding: 60, textAlign: 'center', color: '#dc2626' }}>数据获取失败: {error}</div></PageShell>;
+  if (!MOCK_STATS) return <PageShell title="导购员工具" description="导购员专属工作台 · 朝阳旗舰店"><div style={{ padding: 60, textAlign: 'center', color: '#6b7280' }}>暂无数据</div></PageShell>;
 
   return (
     <PageShell title="导购员工具" description="导购员专属工作台 · 朝阳旗舰店">

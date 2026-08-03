@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -34,6 +33,12 @@ import { TicketWorkplaceScreen } from '../screens/cs/TicketWorkplaceScreen';
 import { KnowledgeBaseScreen } from '../screens/cs/KnowledgeBaseScreen';
 import { CustomerFeedbackScreen } from '../screens/cs/CustomerFeedbackScreen';
 import { OfflineIndicator } from '../components/OfflineIndicator';
+import type {
+  OrderDetailRouteParams,
+  OrderRuntimeRouteParams,
+  PaymentRouteParams,
+  RefundRouteParams,
+} from '../utils/order-route';
 
 // Settings stack types
 export type SettingsStackParamList = {
@@ -56,10 +61,10 @@ export type RootTabParamList = {
 // Work stack types
 export type WorkStackParamList = {
   WorkHome: undefined;
-  Payment: { orderId?: string };
-  Refund: { orderId?: string; orderNo?: string; amount?: number; reason?: string };
-  Orders: undefined;
-  OrderDetail: { orderId: string };
+  Payment: PaymentRouteParams | undefined;
+  Refund: RefundRouteParams | undefined;
+  Orders: OrderRuntimeRouteParams | undefined;
+  OrderDetail: OrderDetailRouteParams;
   Inventory: undefined;
   InventoryScan: undefined;
   Scan: undefined;
@@ -211,7 +216,7 @@ function WorkHomeScreen() {
           <View key={item.screen} style={{ width: '30%' }}>
             <TouchableOpacity
               style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}
-              onPress={() => navigation.navigate(item.screen as any)}
+              onPress={() => navigation.navigate(item.screen as never)}
             >
               <Text style={{ fontSize: 32 }}>{item.icon}</Text>
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B', marginTop: 8 }}>{item.label}</Text>

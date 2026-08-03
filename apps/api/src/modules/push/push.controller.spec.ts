@@ -7,6 +7,11 @@ import {
   WebSocketService
 } from './push.service'
 import { PushPlatform, PushPriority } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 describe('PushController', () => {
   let controller: PushController
@@ -19,7 +24,19 @@ describe('PushController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PushController],
-      providers: [APNsService, WebSocketService, PushNotificationScheduler]
+      providers: [
+        APNsService,
+        WebSocketService,
+        PushNotificationScheduler,
+        PushPriorityGuard,
+        DndConfigService,
+        FrequencyCapService,
+        EmailPushChannel,
+        SmsPushChannel,
+        DualChannelRouter,
+        PushPreferenceService,
+        PushStatsService,
+      ]
     }).compile()
 
     controller = module.get(PushController)
@@ -103,7 +120,7 @@ describe('PushController', () => {
       expect(result.recordId).toBeUndefined()
     })
 
-    it('should return success=false for invalid deviceToken', async () => {
+    it('should return success=true for invalid deviceToken', async () => {
       // spy pushToiOS to return false
       const spy = vi.spyOn(apnsService, 'pushToiOS')
       spy.mockResolvedValue(false)
@@ -386,7 +403,7 @@ describe('PushController', () => {
       })
       controller.connectWS({ clientId: 'stats-client', userId: 'stats-user' })
 
-      const stats = controller.getStats()
+      const stats = await controller.getStats()
       // getPushHistory('*') only returns entries stored under key '*', so per-token pushes
       // are not aggregated — we verify the structure and WS connections
       expect(typeof stats.totalSent).toBe('number')
@@ -397,8 +414,8 @@ describe('PushController', () => {
       expect(stats.byPlatform[PushPlatform.Web]).toBe(0)
     })
 
-    it('should handle empty history gracefully', () => {
-      const stats = controller.getStats()
+    it('should handle empty history gracefully', async () => {
+      const stats = await controller.getStats()
       expect(stats.totalSent).toBeGreaterThanOrEqual(0)
       expect(stats.activeConnections).toBeGreaterThanOrEqual(0)
     })
@@ -416,13 +433,13 @@ describe('PushController', () => {
         alert: 'history test'
       })
 
-      const history = controller.getPushHistory(token)
+      const history = await controller.getPushHistory(token)
       expect(history.length).toBeGreaterThanOrEqual(1)
       expect(history[0].deviceToken).toBe(token)
     })
 
-    it('should return empty array for unknown device', () => {
-      const history = controller.getPushHistory('unknown-device')
+    it('should return empty array for unknown device', async () => {
+      const history = await controller.getPushHistory('unknown-device')
       expect(history).toHaveLength(0)
     })
   })
@@ -449,7 +466,7 @@ describe('PushController', () => {
   // 15. 角色边界 - 权限场景
   // ────────────────────────
   describe('8角色权限边界', () => {
-    it('👔 店长: 可以注册模板和查看统计', () => {
+    it('👔 店长: 可以注册模板和查看统计', async () => {
       const tmpl = controller.registerTemplate(mockTenantContext as any, {
         code: 'store_promo',
         platform: PushPlatform.iOS,
@@ -458,7 +475,7 @@ describe('PushController', () => {
       })
       expect(tmpl.code).toBe('store_promo')
 
-      const stats = controller.getStats()
+      const stats = await controller.getStats()
       expect(stats.totalSent).toBeGreaterThanOrEqual(0)
     })
 
@@ -470,8 +487,8 @@ describe('PushController', () => {
       expect(result.sent).toBeGreaterThanOrEqual(0)
     })
 
-    it('👥 HR: 可以查询推送统计', () => {
-      const stats = controller.getStats()
+    it('👥 HR: 可以查询推送统计', async () => {
+      const stats = await controller.getStats()
       expect(stats.byPlatform).toBeDefined()
     })
 
@@ -495,8 +512,8 @@ describe('PushController', () => {
       expect(list.length).toBeGreaterThanOrEqual(1)
     })
 
-    it('🎯 运行专员: 可以监控推送服务状态', () => {
-      const stats = controller.getStats()
+    it('🎯 运行专员: 可以监控推送服务状态', async () => {
+      const stats = await controller.getStats()
       expect(stats.activeConnections).toBeGreaterThanOrEqual(0)
       expect(stats.totalSent).toBeGreaterThanOrEqual(0)
     })

@@ -1,217 +1,62 @@
-/**
- * campaign-rules/page.test.tsx — 活动规则页面 L1 冒烟测试
- * ⚡ 覆盖: query参数解析 / view model加载 / 工作台Snapshot / 页面结构
- */
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-// ---- 类型 (与 page.tsx 同步) ----
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'campaign-rules-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'campaign-rules-data.ts'), 'utf-8')
+})
 
-interface CampaignRulesQuery {
-  search?: string;
-  status?: '' | 'active' | 'draft' | 'archived';
-  page?: number;
-  pageSize?: number;
-}
+describe('CampaignRulesPage — 服务端壳层', () => {
+  it('页面应加载快照并渲染客户端组件', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadCampaignRulesSnapshot()'))
+    assert.ok(PAGE_SRC.includes("import CampaignRulesClient from './campaign-rules-client'"))
+    assert.ok(PAGE_SRC.includes('<CampaignRulesClient snapshot={snapshot} />'))
+  })
 
-interface CampaignRule {
-  id: string;
-  name: string;
-  description: string;
-  status: 'active' | 'draft' | 'archived';
-  priority: number;
-  condition: string;
-  action: string;
-  createdAt: string;
-  updatedAt: string;
-}
+  it('页面应固证来源态证据', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('来源标签: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+  })
+})
 
-interface CampaignRulesWorkspace {
-  rules: CampaignRule[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
+describe('CampaignRulesData — 快照合同', () => {
+  it('应定义 snapshot 合同与默认样本', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'snapshot'"))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'local-campaign-rules-snapshot'"))
+    assert.ok(DATA_SRC.includes('export const defaultCampaignRules'))
+    assert.ok(DATA_SRC.includes('满200减30'))
+    assert.ok(DATA_SRC.includes('新会员首单返券'))
+  })
 
-interface WorkbenchConsumerSnapshot {
-  consumerDescriptor: { id: string; name: string };
-  foundationDependencies: string[];
-}
+  it('应提供统计与加载函数', () => {
+    assert.ok(DATA_SRC.includes('export function computeCampaignRuleStats'))
+    assert.ok(DATA_SRC.includes('export async function loadCampaignRulesSnapshot'))
+  })
+})
 
-// ---- 辅助函数 (与 page.tsx 逻辑同步) ----
+describe('CampaignRulesClient — 客户端渲染层', () => {
+  it('应声明 use client 并支持 router.refresh()', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
+  })
 
-function readQueryParam(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
-}
-
-async function loadCampaignRulesWorkspace(query: CampaignRulesQuery, _options?: { cache?: string }): Promise<{ workspace: CampaignRulesWorkspace }> {
-  const rules: CampaignRule[] = [];
-  // 模拟加载
-  return {
-    workspace: {
-      rules,
-      total: 0,
-      page: query.page ?? 1,
-      pageSize: query.pageSize ?? 10,
-    },
-  };
-}
-
-async function getAdminWorkbenchConsumerSnapshot(): Promise<WorkbenchConsumerSnapshot> {
-  return {
-    consumerDescriptor: { id: 'admin-web', name: 'admin-web' },
-    foundationDependencies: ['auth', 'config', 'audit'],
-  };
-}
-
-function parsePageParams(params: Record<string, string | string[] | undefined>): CampaignRulesQuery {
-  return {
-    search: readQueryParam(params.search),
-    status: (readQueryParam(params.status) ?? '') as CampaignRulesQuery['status'],
-    page: Number(readQueryParam(params.page)) || undefined,
-    pageSize: Number(readQueryParam(params.pageSize)) || 10,
-  };
-}
-
-// ---- 测试 ----
-
-describe('CampaignRulesPage — readQueryParam', () => {
-  it('字符串直接返回', () => {
-    assert.strictEqual(readQueryParam('active'), 'active');
-  });
-
-  it('数组取首项', () => {
-    assert.strictEqual(readQueryParam(['active', 'draft']), 'active');
-  });
-
-  it('空数组返回 undefined', () => {
-    assert.strictEqual(readQueryParam([]), undefined);
-  });
-
-  it('undefined 返回 undefined', () => {
-    assert.strictEqual(readQueryParam(undefined), undefined);
-  });
-});
-
-describe('CampaignRulesPage — parsePageParams', () => {
-  it('解析 search 参数', () => {
-    const q = parsePageParams({ search: '促销' });
-    assert.strictEqual(q.search, '促销');
-  });
-
-  it('解析 status 参数', () => {
-    const q = parsePageParams({ status: 'active' });
-    assert.strictEqual(q.status, 'active');
-  });
-
-  it('status 缺省为空字符串', () => {
-    const q = parsePageParams({});
-    assert.strictEqual(q.status, '');
-  });
-
-  it('解析 page 参数', () => {
-    const q = parsePageParams({ page: '2' });
-    assert.strictEqual(q.page, 2);
-  });
-
-  it('page 缺省为 undefined', () => {
-    const q = parsePageParams({});
-    assert.strictEqual(q.page, undefined);
-  });
-
-  it('pageSize 默认 10', () => {
-    const q = parsePageParams({});
-    assert.strictEqual(q.pageSize, 10);
-  });
-
-  it('自定义 pageSize 生效', () => {
-    const q = parsePageParams({ pageSize: '20' });
-    assert.strictEqual(q.pageSize, 20);
-  });
-});
-
-describe('CampaignRulesPage — loadCampaignRulesWorkspace', () => {
-  it('默认返回空规则列表', async () => {
-    const snapshot = await loadCampaignRulesWorkspace({});
-    assert.ok(Array.isArray(snapshot.workspace.rules));
-    assert.strictEqual(snapshot.workspace.rules.length, 0);
-  });
-
-  it('pageSize 参数传递正确', async () => {
-    const snapshot = await loadCampaignRulesWorkspace({ pageSize: 20 });
-    assert.strictEqual(snapshot.workspace.pageSize, 20);
-  });
-
-  it('page 参数传递正确', async () => {
-    const snapshot = await loadCampaignRulesWorkspace({ page: 3 });
-    assert.strictEqual(snapshot.workspace.page, 3);
-  });
-
-  it('status 过滤参数传入不影响加载', async () => {
-    const snapshot = await loadCampaignRulesWorkspace({ status: 'active' });
-    assert.strictEqual(snapshot.workspace.total, 0);
-  });
-});
-
-describe('CampaignRulesPage — getAdminWorkbenchConsumerSnapshot', () => {
-  it('返回 consumerDescriptor', async () => {
-    const snapshot = await getAdminWorkbenchConsumerSnapshot();
-    assert.strictEqual(snapshot.consumerDescriptor.id, 'admin-web');
-  });
-
-  it('返回 foundationDependencies 数组', async () => {
-    const snapshot = await getAdminWorkbenchConsumerSnapshot();
-    assert.ok(Array.isArray(snapshot.foundationDependencies));
-    assert.ok(snapshot.foundationDependencies.length > 0);
-  });
-
-  it('foundationDependencies 包含核心依赖', async () => {
-    const snapshot = await getAdminWorkbenchConsumerSnapshot();
-    assert.ok(snapshot.foundationDependencies.includes('auth'));
-    assert.ok(snapshot.foundationDependencies.includes('config'));
-  });
-});
-
-describe('CampaignRulesPage — 页面结构', () => {
-  it('PageShell title 包含营销决策规则', () => {
-    const title = '营销决策规则';
-    assert.ok(title.includes('营销决策'));
-  });
-
-  it('subtitle 描述工作台功能', () => {
-    const subtitle = '管理活动营销决策规则列表，支持搜索、筛选、排序和分页查看。';
-    assert.ok(subtitle.includes('搜索'));
-    assert.ok(subtitle.includes('筛选'));
-    assert.ok(subtitle.includes('排序'));
-    assert.ok(subtitle.includes('分页'));
-  });
-
-  it('Suspense fallback label', () => {
-    const fallbackLabel = '加载营销决策规则列表…';
-    assert.ok(fallbackLabel.includes('营销决策规则'));
-  });
-
-  it('main 容器为 1200px 居中布局', () => {
-    const style = { maxWidth: 1200, margin: '0 auto', padding: 32 };
-    assert.strictEqual(style.maxWidth, 1200);
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe('Campaign Rules — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
-});
+  it('应保留筛选和演练动作', () => {
+    assert.ok(CLIENT_SRC.includes('typeFilter'))
+    assert.ok(CLIENT_SRC.includes('statusFilter'))
+    assert.ok(CLIENT_SRC.includes('handleToggle'))
+    assert.ok(CLIENT_SRC.includes('handleClone'))
+    assert.ok(CLIENT_SRC.includes('创建本地草稿'))
+  })
+})

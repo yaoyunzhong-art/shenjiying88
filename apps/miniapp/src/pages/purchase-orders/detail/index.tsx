@@ -4,39 +4,21 @@
  * 功能: 详情展示、状态流转、编辑/删除操作
  */
 import { View, Text, Button, ScrollView } from '@tarojs/components';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Taro from '@tarojs/taro';
+import {
+  deleteMiniappPurchaseOrder,
+  executeMiniappPurchaseOrderAction,
+  loadMiniappPurchaseOrderDetail,
+  type MiniappPurchaseOrderDetail,
+} from '../../../supplychain-runtime';
+import { DetailSkeleton, TriStateContainer, useTriState } from '../../../components/TriStateComponents';
 
 // ---- 类型 ----
 
-type OrderStatus = 'draft' | 'submitted' | 'confirmed' | 'shipped' | 'received' | 'cancelled';
-
-interface PurchaseOrderItem {
-  sku: string;
-  name: string;
-  spec: string;
-  qty: number;
-  unit: string;
-  unitPrice: number;
-  amount: number;
-}
-
-interface PurchaseOrderDetail {
-  id: string;
-  orderNo: string;
-  supplier: string;
-  supplierContact: string;
-  supplierPhone: string;
-  totalAmount: number;
-  status: OrderStatus;
-  items: PurchaseOrderItem[];
-  itemsCount: number;
-  orderDate: string;
-  expectedDate: string;
-  remark: string;
-  creator: string;
-  approver: string;
-}
+type OrderStatus = MiniappPurchaseOrderDetail['status'];
+type PurchaseOrderItem = MiniappPurchaseOrderDetail['items'][number];
+type PurchaseOrderDetail = MiniappPurchaseOrderDetail;
 
 // ---- 常量 ----
 
@@ -88,11 +70,59 @@ function getStatusActions(status: OrderStatus): OrderStatus[] {
   return STATUS_TRANSITIONS[status] ?? [];
 }
 
+function resolveCurrentOrderId(): string {
+  return Taro.getCurrentInstance()?.router?.params?.id ?? MOCK_DETAIL.id;
+}
+
 // ---- 组件 ----
 
-const PurchaseOrderDetailPage: React.FC = () => {
-  const [detail] = useState<PurchaseOrderDetail>(MOCK_DETAIL);
+const PurchaseOrderDetailPage = () => {
+  const [detail, setDetail] = useState<PurchaseOrderDetail>(MOCK_DETAIL);
+  const [deliveryNote, setDeliveryNote] = useState('当前展示本地演示采购单详情。');
   const [localStatus, setLocalStatus] = useState<OrderStatus>(detail.status);
+  const orderId = useMemo(() => resolveCurrentOrderId(), []);
+
+  const { status: pageStatus, setLoading, setError, setSuccess } = useTriState('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading();
+    loadMiniappPurchaseOrderDetail(orderId, MOCK_DETAIL)
+      .then((snapshot) => {
+        if (!cancelled) {
+          setDetail(snapshot.data);
+          setDeliveryNote(snapshot.note);
+          setSuccess();
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '加载采购单详情失败');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, setLoading, setError, setSuccess]);
+
+  const handleRetry = useCallback(() => {
+    setLoading();
+    loadMiniappPurchaseOrderDetail(orderId, MOCK_DETAIL)
+      .then((snapshot) => {
+        setDetail(snapshot.data);
+        setDeliveryNote(snapshot.note);
+        setSuccess();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : '重试失败');
+      });
+  }, [orderId, setLoading, setError, setSuccess]);
+
+  useEffect(() => {
+    setLocalStatus(detail.status);
+  }, [detail.status]);
 
   const handleStatusChange = (newStatus: OrderStatus) => {
     Taro.showModal({
@@ -100,8 +130,22 @@ const PurchaseOrderDetailPage: React.FC = () => {
       content: `确定将订单状态变更为「${STATUS_LABELS[newStatus]}」吗？`,
       success: (res) => {
         if (res.confirm) {
-          setLocalStatus(newStatus);
-          Taro.showToast({ title: '状态更新成功', icon: 'success' });
+          void executeMiniappPurchaseOrderAction(orderId, newStatus, detail).then((result) => {
+            setDeliveryNote(result.note);
+            if (result.success) {
+              setLocalStatus(result.nextStatus);
+              Taro.showToast({
+                title: '状态已同步',
+                icon: 'success',
+              });
+              return;
+            }
+
+            Taro.showToast({
+              title: '同步失败',
+              icon: 'none',
+            });
+          });
         }
       },
     });
@@ -117,8 +161,16 @@ const PurchaseOrderDetailPage: React.FC = () => {
       content: '删除后无法恢复，是否继续？',
       success: (res) => {
         if (res.confirm) {
-          Taro.showToast({ title: '删除成功', icon: 'success' });
-          Taro.navigateBack();
+          void deleteMiniappPurchaseOrder(orderId).then((result) => {
+            setDeliveryNote(result.note);
+            if (result.success) {
+              Taro.showToast({ title: '删除成功', icon: 'success' });
+              Taro.navigateBack();
+              return;
+            }
+
+            Taro.showToast({ title: '删除失败', icon: 'none' });
+          });
         }
       },
     });
@@ -127,6 +179,13 @@ const PurchaseOrderDetailPage: React.FC = () => {
   const availableActions = getStatusActions(localStatus);
 
   return (
+    <TriStateContainer
+      status={pageStatus}
+      errorTitle="采购单详情加载失败"
+      errorMessage="无法加载采购单详情，请检查网络后重试"
+      onRetry={handleRetry}
+      loadingComponent={<DetailSkeleton />}
+    >
     <ScrollView className='purchase-order-detail' style={{ padding: 16, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       {/* 订单头部 */}
       <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 }}>
@@ -138,6 +197,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
         </View>
         <Text style={{ fontSize: 12, color: '#999' }}>创建日期: {detail.orderDate}</Text>
         <Text style={{ fontSize: 12, color: '#999', marginTop: 4 }}>预计到货: {detail.expectedDate}</Text>
+        <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{deliveryNote}</Text>
       </View>
 
       {/* 供应商信息 */}
@@ -242,6 +302,7 @@ const PurchaseOrderDetailPage: React.FC = () => {
         )}
       </View>
     </ScrollView>
+    </TriStateContainer>
   );
 };
 
@@ -262,5 +323,5 @@ function InfoRow({ label, value }: InfoRowProps) {
 }
 
 export default PurchaseOrderDetailPage;
-export { formatAmount, getStatusActions, MOCK_DETAIL };
+export { formatAmount, getStatusActions, MOCK_DETAIL, resolveCurrentOrderId };
 export type { PurchaseOrderDetail, PurchaseOrderItem, OrderStatus, InfoRowProps };

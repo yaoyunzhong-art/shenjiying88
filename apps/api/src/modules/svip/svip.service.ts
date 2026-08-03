@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { SVIPPlan, SVIPSubscription, SVIPBenefit, SVIPStatus, SVIPBenefitType } from './svip.entity';
+import { SVIPPlan, SVIPSubscription, SVIPBenefit, SVIPStatus, SVIPBenefitType, RenewalTierDiscount, RenewalDiscountResult } from './svip.entity';
+import { PushNotificationScheduler } from '../push/push.service';
 
 interface CreatePlanInput {
   name: string;
@@ -25,6 +26,10 @@ export class SvipService {
   private readonly subscriptions: Map<string, SVIPSubscription> = new Map();
   private readonly benefits: Map<string, SVIPBenefit[]> = new Map();
   private readonly userSubscriptions: Map<string, string> = new Map();
+
+  constructor(
+    @Optional() private readonly pushScheduler?: PushNotificationScheduler,
+  ) {}
 
   listPlans(): Observable<SVIPPlan[]> {
     return of(Array.from(this.plans.values()))
@@ -116,6 +121,9 @@ export class SvipService {
     return of(subscription);
   }
 
+  /**
+   * BS-0266: 检查并过期 SVIP 订阅，过期时推送到期通知（P1 级别）
+   */
   checkAndExpire(): Observable<number> {
     const now = new Date();
     let expiredCount = 0;
@@ -125,6 +133,15 @@ export class SvipService {
         subscription.status = 'expired';
         this.subscriptions.set(subscription.subscriptionId, subscription);
         expiredCount++;
+
+        // BS-0266: SVIP到期 P1 级别推送
+        if (this.pushScheduler) {
+          this.pushScheduler.schedulePush(
+            subscription.userId,
+            `您的SVIP会员已于 ${subscription.expireAt.toLocaleDateString('zh-CN')} 到期，续费可恢复全部权益`,
+            new Date(),
+          );
+        }
       }
     });
 
@@ -196,6 +213,94 @@ export class SvipService {
       type: benefitTypeMap[name] || 'points_multiplier',
       expiresAt,
     }));
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // BS-0286: SVIP续费阶梯优惠（1年95折/2年9折/3年85折）
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * BS-0286: 获取续费阶梯优惠信息
+   * @param annualPrice 年度订阅价格
+   * @returns 各续费档位的折扣信息
+   */
+  getRenewalTiers(annualPrice: number): RenewalTierDiscount[] {
+    const tiers: Array<{ years: number; discount: number }> = [
+      { years: 1, discount: 0.95 },
+      { years: 2, discount: 0.90 },
+      { years: 3, discount: 0.85 },
+    ]
+
+    return tiers.map(t => {
+      const originalTotal = annualPrice * t.years
+      const totalPrice = Math.round(originalTotal * t.discount)
+      const monthlyPrice = Math.round(totalPrice / (t.years * 12))
+
+      return {
+        years: t.years,
+        discount: t.discount,
+        totalPrice,
+        monthlyPrice,
+      }
+    })
+  }
+
+  /**
+   * BS-0286: 计算指定续费年限的折后价格
+   * @param annualPrice 年度订阅价格
+   * @param years 续费年限（1/2/3）
+   * @returns 折扣计算结果
+   * @throws 不支持非1/2/3年以外的续费年限
+   */
+  calculateRenewalDiscount(annualPrice: number, years: number): RenewalDiscountResult {
+    const allTiers = this.getRenewalTiers(annualPrice)
+
+    const tier = allTiers.find(t => t.years === years)
+    if (!tier) {
+      throw new Error(`不支持的续费年限: ${years}。支持 1/2/3 年续费`)
+    }
+
+    return {
+      originalTotal: annualPrice * years,
+      discountedTotal: tier.totalPrice,
+      savedAmount: (annualPrice * years) - tier.totalPrice,
+      discount: tier.discount,
+      years,
+      allTiers,
+    }
+  }
+
+  /**
+   * BS-0286: 带阶梯优惠的续费操作
+   * 在 renewSubscription 基础上叠加折扣（用于展示折后价）
+   */
+  renewWithDiscount(
+    subscriptionId: string,
+    years: number,
+  ): Observable<{ subscription: SVIPSubscription | null; discount: RenewalDiscountResult | null }> {
+    const subscription = this.subscriptions.get(subscriptionId)
+    if (!subscription) {
+      return of({ subscription: null, discount: null })
+    }
+
+    const plan = this.plans.get(subscription.planId)
+    if (!plan) {
+      return of({ subscription: null, discount: null })
+    }
+
+    // 计算折扣
+    const annualPrice = plan.price
+    const discount = this.calculateRenewalDiscount(annualPrice, years)
+
+    // 延长订阅时间
+    const totalDays = plan.durationDays * years
+    subscription.expireAt = new Date(subscription.expireAt)
+    subscription.expireAt.setDate(subscription.expireAt.getDate() + totalDays)
+    subscription.status = 'active'
+    subscription.autoRenew = true
+    this.subscriptions.set(subscriptionId, subscription)
+
+    return of({ subscription, discount })
   }
 
   private generateId(): string {

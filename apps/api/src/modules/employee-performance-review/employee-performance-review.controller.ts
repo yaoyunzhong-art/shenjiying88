@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
@@ -13,6 +25,7 @@ import { EmployeePerformanceReviewService } from './employee-performance-review.
 
 @ApiTags('员工绩效评估')
 @ApiBearerAuth()
+@UseGuards(TenantGuard)
 @Controller('employee-performance')
 export class EmployeePerformanceReviewController {
   constructor(private readonly service: EmployeePerformanceReviewService) {}

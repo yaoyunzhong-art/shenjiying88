@@ -1,0 +1,104 @@
+/**
+ * empower-card.controller.ts — 赋能卡片 API 端点 (ADR-045)
+ *
+ * GET    /api/empower-cards          — 列表/搜索
+ * POST   /api/empower-cards          — 创建
+ * GET    /api/empower-cards/:id      — 详情
+ * POST   /api/empower-cards/match    — 派单自动匹配 top-3
+ * POST   /api/empower-cards/:id/quote— 记录引用
+ * POST   /api/empower-cards/decay    — 触发退化曲线
+ * GET    /api/empower-cards/stats/today — 今日赋能评分
+ */
+
+import { Controller, Get, Post, Body, Param, Query, Logger, UseGuards } from '@nestjs/common'
+import { EmpowerCardService } from './empower-card.service'
+import type { CreateEmpowerCardDto, EmpowerCardHealthResponse, EmpowerCardSearchQuery, EmpowerCardEntity } from './empower-card.entity'
+import { TenantGuard } from '../agent/tenant.guard'
+import { TenantOptional } from '../agent/tenant-guard.decorator'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+import { Public } from '../foundation/identity-access/public.decorator'
+
+const EMPOWER_CARD_READ_PERMISSION = 'card:read'
+const EMPOWER_CARD_CREATE_PERMISSION = 'card:create'
+const EMPOWER_CARD_SEARCH_PERMISSION = 'card:search'
+const EMPOWER_CARD_QUOTE_PERMISSION = 'card:quote'
+const EMPOWER_CARD_DECAY_PERMISSION = 'card:decay'
+const EMPOWER_CARD_STATS_PERMISSION = 'card:stats'
+
+@Controller('empower-cards')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(EMPOWER_CARD_READ_PERMISSION)
+export class EmpowerCardController {
+  private readonly logger = new Logger(EmpowerCardController.name)
+
+  constructor(private readonly service: EmpowerCardService) {}
+
+  @Post()
+  @RequirePermissions(EMPOWER_CARD_CREATE_PERMISSION)
+  async create(@Body() dto: CreateEmpowerCardDto): Promise<EmpowerCardEntity> {
+    return this.service.create(dto)
+  }
+
+  @Get()
+  async list(@Query('minFreshness') minFreshness?: string): Promise<EmpowerCardEntity[]> {
+    return this.service.list(minFreshness ? parseInt(minFreshness, 10) : 0)
+  }
+
+  /** 健康检查 (放在 :id 之前，避免路由冲突) */
+  @Public()
+  @TenantOptional()
+  @Get('health')
+  async healthCheck(): Promise<EmpowerCardHealthResponse> {
+    return this.service.healthCheck()
+  }
+
+  @Get(':id')
+  async getById(@Param('id') id: string): Promise<EmpowerCardEntity> {
+    return this.service.getById(id)
+  }
+
+  /** 搜索知识卡片 (关键词/标签/模块) */
+  @Post('search')
+  @RequirePermissions(EMPOWER_CARD_SEARCH_PERMISSION)
+  async search(@Body() query: EmpowerCardSearchQuery): Promise<any> {
+    return this.service.search(query)
+  }
+
+  /** 派单自动匹配 top-3 */
+  @Post('match')
+  @RequirePermissions(EMPOWER_CARD_SEARCH_PERMISSION)
+  async matchForDispatch(
+    @Body() body: { module: string; keywords?: string[] }
+  ): Promise<EmpowerCardEntity[]> {
+    return this.service.autoMatchForDispatch(body.module, body.keywords ?? [])
+  }
+
+  /** 记录引用 */
+  @Post(':id/quote')
+  @RequirePermissions(EMPOWER_CARD_QUOTE_PERMISSION)
+  async recordQuote(
+    @Param('id') id: string,
+    @Body() body: { taskName: string; moduleName: string; quotedBy: string }
+  ): Promise<{ success: boolean }> {
+    await this.service.recordQuote(id, body.taskName, body.moduleName, body.quotedBy)
+    return { success: true }
+  }
+
+  /** 触发退化曲线 */
+  @Post('decay')
+  @RequirePermissions(EMPOWER_CARD_DECAY_PERMISSION)
+  async applyDecay(): Promise<{ decayed: number; archived: number }> {
+    return this.service.applyDecay()
+  }
+
+  /** 今日赋能评分 */
+  @Get('stats/today')
+  @RequirePermissions(EMPOWER_CARD_STATS_PERMISSION)
+  async getTodayScore(): Promise<{ score: number; quotes: number; newCards: number }> {
+    return this.service.getTodayEmpowerScore()
+  }
+}

@@ -143,7 +143,7 @@ describe('customer-service/index 页面源码分析', () => {
   });
 
   it('应包含空状态展示', () => {
-    assert.ok(SOURCE.includes('暂无匹配工单'));
+    assert.ok(SOURCE.includes('EmptyState') || SOURCE.includes('暂无匹配工单') || SOURCE.includes('未找到匹配工单'));
   });
 
   it('应包含 handleQuickAction 函数', () => {

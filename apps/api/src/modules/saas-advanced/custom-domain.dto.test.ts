@@ -1,13 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-/**
- * 🐜 自动: [saas-advanced] [A] custom-domain dto 测试补全
- *
- * 自定义域名 DTO 类型定义测试
- */
-
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
+import { plainToInstance } from 'class-transformer'
+import { validateSync } from 'class-validator'
 import {
   AddDomainRequest,
+  ActiveWithoutPrimaryGovernanceQueryRequest,
+  BatchRecommendPrimaryDomainRequest,
+  CurrentPrimaryDomainQueryRequest,
+  CurrentPrimaryDomainResponse,
+  DomainGovernanceSummaryResponse,
+  DomainListQueryRequest,
+  RecommendPrimaryDomainRequest,
+  RecommendPrimaryByQueryRequest,
+  RecommendPrimaryDomainResponse,
   ValidateDomainRequest,
   ValidateDomainResponse,
   DomainVerifyHint,
@@ -18,25 +23,143 @@ import {
   ResolveHostResponse,
 } from './custom-domain.dto'
 
-describe('saas-advanced custom-domain dto - 类型定义', () => {
-  // ============ AddDomainRequest ============
-  it('AddDomainRequest 必填字段', () => {
-    const dto: AddDomainRequest = { domain: 'acme.example.com' }
-    assert.equal(dto.domain, 'acme.example.com')
+describe('saas-advanced custom-domain dto', () => {
+  it('AddDomainRequest 要求 domain 非空', () => {
+    const dto = plainToInstance(AddDomainRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
   })
 
-  it('AddDomainRequest 空字符串边界', () => {
-    const dto: AddDomainRequest = { domain: '' }
-    assert.equal(dto.domain, '')
+  it('ValidateDomainRequest 要求 domain 非空', () => {
+    const dto = plainToInstance(ValidateDomainRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
   })
 
-  // ============ ValidateDomainRequest ============
-  it('ValidateDomainRequest 字段', () => {
-    const dto: ValidateDomainRequest = { domain: 'test.example.com' }
-    assert.equal(dto.domain, 'test.example.com')
+  it('ResolveHostRequest 要求 host 非空', () => {
+    const dto = plainToInstance(ResolveHostRequest, {})
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
   })
 
-  // ============ ValidateDomainResponse ============
+  it('CurrentPrimaryDomainQueryRequest 支持 scope 与 brand/store 参数', () => {
+    const dto = plainToInstance(CurrentPrimaryDomainQueryRequest, {
+      scopeType: 'STORE',
+      brandId: 'brand-001',
+      storeId: 'store-001',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.scopeType, 'STORE')
+    assert.equal(dto.brandId, 'brand-001')
+    assert.equal(dto.storeId, 'store-001')
+  })
+
+  it('CurrentPrimaryDomainQueryRequest 拒绝非法 scope', () => {
+    const dto = plainToInstance(CurrentPrimaryDomainQueryRequest, {
+      scopeType: 'PORTAL',
+    })
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
+  })
+
+  it('DomainListQueryRequest 支持状态筛选和分页转换', () => {
+    const dto = plainToInstance(DomainListQueryRequest, {
+      status: 'active',
+      scopeType: 'BRAND',
+      page: '2',
+      pageSize: '5',
+      sortBy: 'domain',
+      sortOrder: 'asc',
+      keyword: 'brand-http',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.status, 'active')
+    assert.equal(dto.scopeType, 'BRAND')
+    assert.equal(dto.page, 2)
+    assert.equal(dto.pageSize, 5)
+    assert.equal(dto.sortBy, 'domain')
+    assert.equal(dto.sortOrder, 'asc')
+  })
+
+  it('DomainListQueryRequest 拒绝非法分页', () => {
+    const dto = plainToInstance(DomainListQueryRequest, {
+      page: 0,
+      pageSize: 101,
+    })
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
+  })
+
+  it('DomainListQueryRequest 拒绝非法排序字段', () => {
+    const dto = plainToInstance(DomainListQueryRequest, {
+      sortBy: 'tenantId',
+      sortOrder: 'upward',
+    })
+    const errors = validateSync(dto)
+    assert.ok(errors.length > 0)
+  })
+
+  it('ActiveWithoutPrimaryGovernanceQueryRequest 支持分页排序过滤', () => {
+    const dto = plainToInstance(ActiveWithoutPrimaryGovernanceQueryRequest, {
+      scopeType: 'BRAND',
+      brandId: 'brand-001',
+      page: '2',
+      pageSize: '5',
+      sortBy: 'latestUpdatedAt',
+      sortOrder: 'asc',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.page, 2)
+    assert.equal(dto.pageSize, 5)
+    assert.equal(dto.sortBy, 'latestUpdatedAt')
+    assert.equal(dto.sortOrder, 'asc')
+  })
+
+  it('RecommendPrimaryDomainRequest 支持 dryRun', () => {
+    const dto = plainToInstance(RecommendPrimaryDomainRequest, {
+      scopeType: 'STORE',
+      brandId: 'brand-001',
+      storeId: 'store-001',
+      dryRun: 'true',
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.dryRun, true)
+  })
+
+  it('BatchRecommendPrimaryDomainRequest 支持多项批量推荐', () => {
+    const dto = plainToInstance(BatchRecommendPrimaryDomainRequest, {
+      items: [
+        { scopeType: 'TENANT' },
+        { scopeType: 'BRAND', brandId: 'brand-001', dryRun: false },
+      ],
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.items.length, 2)
+    assert.equal(dto.items[1].scopeType, 'BRAND')
+  })
+
+  it('RecommendPrimaryByQueryRequest 支持按筛选结果执行与 applyAllMatched', () => {
+    const dto = plainToInstance(RecommendPrimaryByQueryRequest, {
+      scopeType: 'BRAND',
+      brandId: 'brand-001',
+      page: '2',
+      pageSize: '20',
+      sortBy: 'recommendedDomain',
+      sortOrder: 'asc',
+      dryRun: false,
+      applyAllMatched: true,
+    })
+    const errors = validateSync(dto)
+    assert.equal(errors.length, 0)
+    assert.equal(dto.applyAllMatched, true)
+    assert.equal(dto.sortBy, 'recommendedDomain')
+  })
+
   it('ValidateDomainResponse 校验通过', () => {
     const resp: ValidateDomainResponse = { valid: true }
     assert.equal(resp.valid, true)
@@ -49,7 +172,6 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.equal(resp.error, '域名格式不合法')
   })
 
-  // ============ DomainVerifyHint ============
   it('DomainVerifyHint 完整字段', () => {
     const hint: DomainVerifyHint = {
       host: '_shenjiying-verify.acme.example.com',
@@ -61,10 +183,10 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.ok(hint.host.startsWith('_shenjiying-verify'))
   })
 
-  // ============ DomainListItem ============
   it('DomainListItem 基本字段', () => {
     const item: DomainListItem = {
       id: 'dom-001',
+      scopeType: 'TENANT',
       tenantId: 'tenant-abc',
       domain: 'acme.example.com',
       status: 'active',
@@ -80,6 +202,7 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
   it('DomainListItem 校验失败次数', () => {
     const item: DomainListItem = {
       id: 'dom-002',
+      scopeType: 'BRAND',
       tenantId: 'tenant-abc',
       domain: 'failed.example.com',
       status: 'disabled',
@@ -92,9 +215,18 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.equal(item.status, 'disabled')
   })
 
-  // ============ DomainListResponse ============
   it('DomainListResponse 空列表', () => {
-    const resp: DomainListResponse = { items: [], total: 0 }
+    const resp: DomainListResponse = {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 10,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    }
     assert.equal(resp.total, 0)
     assert.equal(resp.items.length, 0)
   })
@@ -102,6 +234,7 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
   it('DomainListResponse 含多个域名', () => {
     const item: DomainListItem = {
       id: 'dom-001',
+      scopeType: 'TENANT',
       tenantId: 'tenant-abc',
       domain: 'a.example.com',
       status: 'active',
@@ -110,15 +243,26 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
       updatedAt: '2026-06-01T00:00:00Z',
       createdBy: 'user-001',
     }
-    const resp: DomainListResponse = { items: [item], total: 1 }
+    const resp: DomainListResponse = {
+      items: [item],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      sortBy: 'domain',
+      sortOrder: 'asc',
+    }
     assert.equal(resp.total, 1)
     assert.equal(resp.items[0].domain, 'a.example.com')
+    assert.equal(resp.sortBy, 'domain')
   })
 
-  // ============ DomainDetailResponse ============
   it('DomainDetailResponse 含 hint', () => {
     const resp: DomainDetailResponse = {
       id: 'dom-001',
+      scopeType: 'TENANT',
       tenantId: 'tenant-abc',
       domain: 'acme.example.com',
       status: 'pending_verification',
@@ -141,6 +285,7 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
   it('DomainDetailResponse 含 SSL 信息', () => {
     const resp: DomainDetailResponse = {
       id: 'dom-001',
+      scopeType: 'BRAND',
       tenantId: 'tenant-abc',
       domain: 'secure.example.com',
       status: 'active_ssl',
@@ -167,13 +312,6 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     assert.ok(resp.lastVerifiedAt != null)
   })
 
-  // ============ ResolveHostRequest ============
-  it('ResolveHostRequest 字段', () => {
-    const dto: ResolveHostRequest = { host: 'acme.example.com' }
-    assert.equal(dto.host, 'acme.example.com')
-  })
-
-  // ============ ResolveHostResponse ============
   it('ResolveHostResponse 已解析', () => {
     const resp: ResolveHostResponse = {
       host: 'acme.example.com',
@@ -192,5 +330,95 @@ describe('saas-advanced custom-domain dto - 类型定义', () => {
     }
     assert.equal(resp.resolved, false)
     assert.equal(resp.tenantId, null)
+  })
+
+  it('CurrentPrimaryDomainResponse 支持已解析主域名响应', () => {
+    const resp: CurrentPrimaryDomainResponse = {
+      scopeType: 'BRAND',
+      tenantId: 'tenant-abc',
+      brandId: 'brand-001',
+      resolved: true,
+      item: {
+        id: 'dom-100',
+        scopeType: 'BRAND',
+        tenantId: 'tenant-abc',
+        brandId: 'brand-001',
+        domain: 'brand.example.com',
+        status: 'active',
+        verificationFailCount: 0,
+        createdAt: '2026-06-01T00:00:00Z',
+        updatedAt: '2026-06-01T00:00:00Z',
+        createdBy: 'user-001',
+        isPrimary: true,
+      },
+    }
+    assert.equal(resp.resolved, true)
+    assert.equal(resp.item?.domain, 'brand.example.com')
+  })
+
+  it('CurrentPrimaryDomainResponse 支持未解析主域名响应', () => {
+    const resp: CurrentPrimaryDomainResponse = {
+      scopeType: 'TENANT',
+      tenantId: 'tenant-abc',
+      resolved: false,
+      item: null,
+    }
+    assert.equal(resp.resolved, false)
+    assert.equal(resp.item, null)
+  })
+
+  it('RecommendPrimaryDomainResponse 暴露推荐理由与候选数', () => {
+    const resp: RecommendPrimaryDomainResponse = {
+      scopeType: 'BRAND',
+      tenantId: 'tenant-001',
+      brandId: 'brand-001',
+      applied: false,
+      dryRun: true,
+      resolved: true,
+      candidateCount: 2,
+      recommendationReason: '优先推荐 active_ssl，且最近一次校验/更新时间更新',
+      item: {
+        id: 'dom-001',
+        scopeType: 'BRAND',
+        tenantId: 'tenant-001',
+        brandId: 'brand-001',
+        domain: 'brand.example.io',
+        status: 'active_ssl',
+        verificationFailCount: 0,
+        createdAt: '2026-07-18T00:00:00Z',
+        updatedAt: '2026-07-18T02:00:00Z',
+        createdBy: 'user-001',
+      },
+    }
+    assert.equal(resp.dryRun, true)
+    assert.equal(resp.candidateCount, 2)
+    assert.ok(resp.recommendationReason?.includes('active_ssl'))
+  })
+
+  it('DomainGovernanceSummaryResponse 暴露当前 scope 摘要', () => {
+    const resp: DomainGovernanceSummaryResponse = {
+      totalMissingPrimaryScopes: 1,
+      totalActiveWithoutPrimaryDomains: 2,
+      recommendedReadyScopes: 1,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 1,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: true,
+      lastEvaluatedAt: '2026-07-18T22:30:00Z',
+      currentScopes: [
+        {
+          scopeType: 'BRAND',
+          tenantId: 'tenant-001',
+          brandId: 'brand-001',
+          activeDomainCount: 2,
+          missingPrimary: true,
+          currentPrimaryDomain: null,
+          recommendedDomain: 'brand.example.io',
+          recommendationReason: '优先推荐 active_ssl',
+        },
+      ],
+    }
+    assert.equal(resp.requiresAttention, true)
+    assert.equal(resp.currentScopes[0].recommendedDomain, 'brand.example.io')
   })
 })

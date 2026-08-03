@@ -24,6 +24,8 @@ import {
   summarizeIntegrationEvent
 } from '../../integration-orchestration-view-model';
 import { useDetailActions } from '../../components/use-detail-actions';
+import SnapshotRefreshButton from '../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 interface IntegrationOrchestrationEventsClientProps {
   events: IntegrationEventEnvelopeContract[];
@@ -36,6 +38,7 @@ export default function IntegrationOrchestrationEventsClient({
   events,
   sources
 }: IntegrationOrchestrationEventsClientProps) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
@@ -166,6 +169,15 @@ export default function IntegrationOrchestrationEventsClient({
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <SearchFilterInput
           value={search}

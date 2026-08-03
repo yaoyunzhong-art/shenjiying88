@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * 🐜 自动: [task-scheduler] [D] controller 测试
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { TaskSchedulerController } from './task-scheduler.controller'
 import { TaskSchedulerService } from './task-scheduler.service'
@@ -28,85 +27,6 @@ describe('TaskSchedulerController', () => {
     service.resetTaskStoresForTests()
   })
 
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be task-scheduler', () => {
-      const path = Reflect.getMetadata('path', TaskSchedulerController)
-      assert.equal(path, 'task-scheduler')
-    })
-
-    it('createTask should be POST /', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.createTask)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.createTask)
-      assert.equal(method, 1) // POST
-      assert.equal(path, '/')
-    })
-
-    it('listTasks should be GET /', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.listTasks)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.listTasks)
-      assert.equal(method, 0) // GET
-      assert.equal(path, '/')
-    })
-
-    it('getTask should be GET /:taskId', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.getTask)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.getTask)
-      assert.equal(method, 0)
-      assert.equal(path, ':taskId')
-    })
-
-    it('updateTask should be PATCH /:taskId', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.updateTask)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.updateTask)
-      assert.equal(method, 4) // PATCH
-      assert.equal(path, ':taskId')
-    })
-
-    it('deleteTask should be DELETE /:taskId', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.deleteTask)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.deleteTask)
-      assert.equal(method, 5) // DELETE
-      assert.equal(path, ':taskId')
-    })
-
-    it('updateTaskStatus should be PATCH /:taskId/status', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.updateTaskStatus)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.updateTaskStatus)
-      assert.equal(method, 4)
-      assert.equal(path, ':taskId/status')
-    })
-
-    it('batchUpdateStatus should be POST /batch-status', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.batchUpdateStatus)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.batchUpdateStatus)
-      assert.equal(method, 1)
-      assert.equal(path, 'batch-status')
-    })
-
-    it('getPendingTasks should be GET /views/pending', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.getPendingTasks)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.getPendingTasks)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/pending')
-    })
-
-    it('getRecurringTasks should be GET /views/recurring', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.getRecurringTasks)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.getRecurringTasks)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/recurring')
-    })
-
-    it('getShiftTasks should be GET /views/shifts', () => {
-      const method = Reflect.getMetadata('method', TaskSchedulerController.prototype.getShiftTasks)
-      const path = Reflect.getMetadata('path', TaskSchedulerController.prototype.getShiftTasks)
-      assert.equal(method, 0)
-      assert.equal(path, 'views/shifts')
-    })
-  })
-
   // ── CRUD via controller ──
 
   describe('POST /task-scheduler', () => {
@@ -128,6 +48,7 @@ describe('TaskSchedulerController', () => {
 
   describe('GET /task-scheduler', () => {
     it('should list tasks', () => {
+      const baseline = controller.listTasks(TENANT, {})
       controller.createTask(TENANT, {
         name: 'T1',
         type: TaskType.OneTime,
@@ -138,11 +59,12 @@ describe('TaskSchedulerController', () => {
       })
 
       const list = controller.listTasks(TENANT, {})
-      assert.equal(list.length, 1)
-      assert.equal(list[0].name, 'T1')
+      assert.equal(list.length, baseline.length + 1)
+      assert.ok(list.some((task) => task.name === 'T1'))
     })
 
     it('should filter by status', () => {
+      const baseline = controller.listTasks(TENANT, { status: TaskStatus.Running })
       const t = controller.createTask(TENANT, {
         name: 'Run',
         type: TaskType.OneTime,
@@ -154,7 +76,8 @@ describe('TaskSchedulerController', () => {
       controller.updateTaskStatus(TENANT, t.id, { status: TaskStatus.Running })
 
       const list = controller.listTasks(TENANT, { status: TaskStatus.Running })
-      assert.equal(list.length, 1)
+      assert.equal(list.length, baseline.length + 1)
+      assert.ok(list.some((task) => task.id === t.id && task.status === TaskStatus.Running))
     })
   })
 

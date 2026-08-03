@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,8 +8,19 @@ import {
   UpdateReturnStatusDto,
 } from './return-request.dto'
 import { ReturnRequestService } from './return-request.service'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
+
+const RETURNS_READ_PERMISSION = 'returns:read'
+const RETURNS_DETAIL_PERMISSION = 'returns:id:read'
 
 @Controller('return-requests')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(RETURNS_READ_PERMISSION)
 export class ReturnRequestController {
   constructor(private readonly returnService: ReturnRequestService) {}
 
@@ -58,6 +60,7 @@ export class ReturnRequestController {
   }
 
   @Get(':returnId')
+  @RequirePermissions(RETURNS_DETAIL_PERMISSION)
   getReturn(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('returnId') returnId: string
@@ -70,6 +73,7 @@ export class ReturnRequestController {
   }
 
   @Patch(':returnId')
+  @RequirePermissions(RETURNS_DETAIL_PERMISSION)
   updateReturn(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('returnId') returnId: string,
@@ -79,6 +83,7 @@ export class ReturnRequestController {
   }
 
   @Delete(':returnId')
+  @RequirePermissions(RETURNS_DETAIL_PERMISSION)
   deleteReturn(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('returnId') returnId: string
@@ -90,6 +95,7 @@ export class ReturnRequestController {
   // ── Workflow ──
 
   @Patch(':returnId/status')
+  @RequirePermissions(RETURNS_DETAIL_PERMISSION)
   updateReturnStatus(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('returnId') returnId: string,

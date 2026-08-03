@@ -1,9 +1,9 @@
+'use client';
 /**
  * 营销活动新建页 — New Campaign Page (Next.js App Router Page)
  * 功能: 创建新的营销活动，支持渠道/目标人群/预算/时间等字段填写，提交后跳转详情页
  * 角色视角: 📢营销 / 👔店长
  */
-'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * contracts/new/page.tsx — 新建合同表单页 (ToB 合同管理)
  *
  * B型任务：表单页（含字段验证、表单提交、错误处理、成功回调）
  */
-'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';

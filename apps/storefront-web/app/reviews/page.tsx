@@ -1,3 +1,4 @@
+'use client';
 /**
  * 评价展示页 — Reviews Page (Next.js App Router Page)
  * B-页面: 面向C端用户的评价浏览
@@ -5,7 +6,6 @@
  *
  * 功能: 查看门店评价、评分分布、按评分/时间排序、标签筛选
  */
-'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
 import {
@@ -45,11 +45,41 @@ const STORE_TABS = [
 // ============================================================
 
 export default function ReviewsPage() {
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
   const [activeStore, setActiveStore] = useState('');
   const [ratingFilter, setRatingFilter] = useState<Rating | 0>(0);
   const [hasImageOnly, setHasImageOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'latest' | 'highest' | 'lowest'>('latest');
   const [page, setPage] = useState(1);
+
+  if (loading) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#94a3b8', fontSize: 14 }}>加载中...</div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#f87171', fontSize: 14 }}>数据获取失败: {error}</div>
+      </main>
+    );
+  }
+
+  if (!MOCK_REVIEWS || MOCK_REVIEWS.length === 0) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
+          <div>暂无数据</div>
+          <div style={{ fontSize: 13, color: '#475569', marginTop: 8 }}>当前暂无用户评价</div>
+        </div>
+      </main>
+    );
+  }
 
   // 过滤逻辑
   const filteredReviews = useMemo(() => {

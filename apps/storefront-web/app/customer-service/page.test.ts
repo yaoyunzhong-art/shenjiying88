@@ -73,7 +73,7 @@ describe('CustomerServicePage structure (客服工作台角色页)', () => {
     assert.ok(uiImports.length >= 1);
     // react, next 和 @m5/ui 都是合法依赖
     const deps = imports.map((i: string) => i.replace(/from\s+['"]/, '').replace(/['"]$/, ''));
-    const validDeps = ['@m5/ui', 'react', 'next/navigation'];
+    const validDeps = ['@m5/ui', 'react', 'next/navigation', '../_components/useTriState', '../_components/TriStateRenderer'];
     for (const dep of deps) {
       assert.ok(
         validDeps.some((v) => dep === v),

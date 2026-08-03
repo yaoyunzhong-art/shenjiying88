@@ -1,10 +1,10 @@
+'use client';
 /**
  * 充值详情页 — Recharge Detail Page (Next.js App Router Page)
  * 角色视角: 🏪店长 / 🧑‍💼前台操作
  * 功能: 查看单笔充值详细记录、状态流转、编辑备注、退款操作
  * 类型: B-页面创建 (详情页，含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';

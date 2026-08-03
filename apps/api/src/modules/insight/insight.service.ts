@@ -218,9 +218,9 @@ export class InsightService {
       })
 
       return toInsightResponse(report, false)
-    } catch (err: any) {
+    } catch (err: unknown) {
       report.status = 'failed'
-      report.error = err.message ?? String(err)
+      report.error = (err as Error).message ?? String(err)
       report.completedAt = new Date().toISOString()
       throw err
     }

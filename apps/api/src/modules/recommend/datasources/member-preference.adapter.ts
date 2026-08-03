@@ -19,14 +19,14 @@ export class MemberPreferenceAdapter {
   /**
    * 更新会员偏好 (订单完成后增量更新)
    */
-  update(pref: MemberPreference): void {
+  update(pref: Partial<MemberPreference> & Pick<MemberPreference, 'memberId' | 'tenantId'>): void {
     const idx = this.prefs.findIndex(p =>
       p.tenantId === pref.tenantId && p.memberId === pref.memberId
     )
     if (idx >= 0) {
-      this.prefs[idx] = pref
+      this.prefs[idx] = { ...this.prefs[idx], ...pref } as MemberPreference
     } else {
-      this.prefs.push(pref)
+      this.prefs.push(pref as MemberPreference)
     }
   }
 

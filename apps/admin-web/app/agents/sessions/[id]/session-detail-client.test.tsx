@@ -17,7 +17,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
-import AgentSessionDetailClient from './session-detail-client';
+import AgentSessionDetailClient, { type AgentSessionDetailClientProps } from './session-detail-client';
 
 // ── Helpers ──
 
@@ -86,6 +86,13 @@ function createMockConfig(overrides: Record<string, unknown> = {}) {
   };
 }
 
+// ── Helpers ──
+
+/** 类型安全的 React.createElement 包装 */
+function renderClient(props: AgentSessionDetailClientProps) {
+  return React.createElement(AgentSessionDetailClient, props);
+}
+
 // ── Tests ──
 
 test('COMPLETED 完成状态 — 包含执行记录和评估卡片', () => {
@@ -94,13 +101,23 @@ test('COMPLETED 完成状态 — 包含执行记录和评估卡片', () => {
   const evaluation = createMockEvaluation();
   const config = createMockConfig();
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution,
     evaluation,
     config,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'AgentSessionDetailSnapshot.execution',
+      evaluationSource: 'AgentSessionDetailSnapshot.evaluation',
+      configSource: 'AgentSessionDetailSnapshot.config',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:07.000Z',
+    },
+  });
 
   assert.ok(element, '组件应成功创建');
   assert.equal(element.props.session.status, 'COMPLETED');
@@ -117,13 +134,23 @@ test('RUNNING 运行中 — 无执行记录，无评估，无最终输出', () =
     finalOutput: undefined,
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.ok(element, '组件应成功创建');
   assert.equal(element.props.session.status, 'RUNNING');
@@ -138,13 +165,23 @@ test('FAILED 失败状态 — 含错误信息', () => {
     finalOutput: '工具 refund_create 调用超时 (3000ms)',
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.ok(element, '组件应成功创建');
   assert.ok(element.props.session.error.includes('超时'));
@@ -153,13 +190,23 @@ test('FAILED 失败状态 — 含错误信息', () => {
 test('CANCELLED 已取消 — 正常渲染无异常', () => {
   const session = createMockAgentSession({ status: 'CANCELLED' });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.ok(element, '组件应成功创建');
   assert.equal(element.props.session.status, 'CANCELLED');
@@ -168,29 +215,50 @@ test('CANCELLED 已取消 — 正常渲染无异常', () => {
 test('Fallback 降级模式 — 显示降级横幅', () => {
   const session = createMockAgentSession();
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'fallback',
     error: '后端不可达，展示 fallback 数据',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'fallback',
+      detailSource: 'loadAgentSessionDetail fallback snapshot',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'stream disabled in fallback',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.ok(element, '组件应成功创建');
   assert.equal(element.props.deliveryMode, 'fallback');
   assert.ok(element.props.error.includes('fallback'));
+  assert.equal(element.props.sourceEvidence.streamSource, 'stream disabled in fallback');
 });
 
 test('消息过滤按钮选项齐全', () => {
   const session = createMockAgentSession();
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.equal(element.props.deliveryMode, 'api');
   assert.ok(Array.isArray(element.props.session.messages));
@@ -207,13 +275,23 @@ test('Evaluation 评估卡片 — 六个维度分数传递', () => {
     concisenessScore: 0.9,
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'AgentSessionDetailSnapshot.evaluation',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:07.000Z',
+    },
+  });
 
   assert.ok(element.props.evaluation.overallScore > 0.5);
   assert.ok(element.props.evaluation.relevanceScore > 0.9);
@@ -226,13 +304,23 @@ test('Config 配置信息 — 含 model 和 allowedTools', () => {
     allowedTools: ['order_query', 'refund_create'],
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'AgentSessionDetailSnapshot.config',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.equal(element.props.config.model, 'deepseek-v4');
   assert.ok(element.props.config.allowedTools.includes('order_query'));
@@ -241,13 +329,23 @@ test('Config 配置信息 — 含 model 和 allowedTools', () => {
 test('空消息提示 — messages 为空数组时无异常', () => {
   const session = createMockAgentSession({ messages: [] });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.ok(element, '空消息应正常渲染');
 });
@@ -259,13 +357,23 @@ test('最终输出和错误信息均存在 — 两种都传递', () => {
     error: '工具 refund_create 调用超时',
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:05.000Z',
+    },
+  });
 
   assert.ok(element.props.session.finalOutput);
   assert.ok(element.props.session.error);
@@ -274,13 +382,23 @@ test('最终输出和错误信息均存在 — 两种都传递', () => {
 test('无执行记录 — execution 为 null', () => {
   const session = createMockAgentSession();
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.equal(element.props.execution, null);
 });
@@ -320,13 +438,13 @@ test('消息含 toolCallId — 工具调用追踪数据传递', () => {
     ],
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+  });
 
   assert.equal(element.props.session.messages.length, 3);
   const toolMsg = element.props.session.messages[2];
@@ -343,13 +461,23 @@ test('加载状态 — 执行记录含 steps/duration/llmCalls/toolCalls', () =>
     status: 'RUNNING',
   });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'AgentSessionDetailSnapshot.execution',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:05.000Z',
+    },
+  });
 
   assert.equal(element.props.execution.status, 'RUNNING');
   assert.equal(element.props.execution.steps, 5);
@@ -361,13 +489,23 @@ test('加载状态 — 执行记录含 steps/duration/llmCalls/toolCalls', () =>
 test('PENDING 等待中 — 不报错', () => {
   const session = createMockAgentSession({ status: 'PENDING' });
 
-  const element = React.createElement(AgentSessionDetailClient, {
+  const element = renderClient({
     session,
     execution: null,
     evaluation: null,
     config: null,
     deliveryMode: 'api',
-  } as any);
+    sourceEvidence: {
+      deliveryMode: 'api',
+      detailSource: 'loadAgentSessionDetail',
+      executionSource: 'no execution snapshot',
+      evaluationSource: 'no evaluation snapshot',
+      configSource: 'no config snapshot',
+      refreshPath: 'AgentSessionDetailPage -> loadAgentSessionDetail',
+      streamSource: 'runAgentSessionStream (RUNNING only)',
+      referenceTime: '2026-06-26T08:12:00.000Z',
+    },
+  });
 
   assert.ok(element, 'PENDING 状态应正常创建');
   assert.equal(element.props.session.status, 'PENDING');

@@ -1,4 +1,4 @@
-import { ApiClient, getDefaultApiBaseUrl } from '@m5/sdk';
+import { ApiClient, buildActorHeaders, getDefaultApiBaseUrl } from '@m5/sdk';
 import type {
   IdentityAccessResolvedContext,
   IdentityAccessValidationResult,
@@ -10,14 +10,14 @@ const FALLBACK_TENANT_ID = 'tenant-demo';
 const FALLBACK_BRAND_ID = 'brand-demo';
 const FALLBACK_STORE_ID = 'store-001';
 const FALLBACK_MARKET_CODE = 'cn-mainland';
-const IDENTITY_ACCESS_HEADERS = {
-  'x-actor-id': 'admin-workbench',
-  'x-actor-type': 'employee-user',
-  'x-actor-name': 'Admin Workbench',
-  'x-actor-tenant-id': FALLBACK_TENANT_ID,
-  'x-roles': 'tenant-admin',
-  'x-permissions': 'identity-access:read,tenant:read'
-};
+const IDENTITY_ACCESS_ACTOR = {
+  actorId: 'admin-workbench',
+  actorType: 'employee-user',
+  actorName: 'Admin Workbench',
+  roles: ['tenant-admin'],
+  permissions: ['identity-access:read', 'tenant:read'],
+  authenticated: true
+} as const;
 
 export interface IdentityAccessWorkspaceSnapshot {
   deliveryMode: 'api' | 'fallback';
@@ -33,7 +33,12 @@ function createIdentityAccessClient(query: IdentityAccessWorkspaceQuery = {}) {
     brandId: query.brandId ?? FALLBACK_BRAND_ID,
     storeId: query.storeId ?? FALLBACK_STORE_ID,
     marketCode: query.marketCode ?? FALLBACK_MARKET_CODE,
-    headers: IDENTITY_ACCESS_HEADERS
+    headers: buildActorHeaders({
+      ...IDENTITY_ACCESS_ACTOR,
+      tenantId: query.tenantId ?? FALLBACK_TENANT_ID,
+      brandId: query.brandId ?? FALLBACK_BRAND_ID,
+      storeId: query.storeId ?? FALLBACK_STORE_ID
+    })
   });
 }
 

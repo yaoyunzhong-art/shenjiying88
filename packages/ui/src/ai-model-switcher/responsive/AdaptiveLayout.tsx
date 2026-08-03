@@ -49,7 +49,7 @@ function detectDeviceType(width: number, userAgent: string): DeviceType {
   }
   
   // APP环境检测 (React Native)
-  if (typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative') {
+  if (typeof navigator !== 'undefined' && (navigator as { product?: string }).product === 'ReactNative') {
     return width >= 768 ? 'pad' : 'app';
   }
   

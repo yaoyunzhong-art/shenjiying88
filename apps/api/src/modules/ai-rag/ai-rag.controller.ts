@@ -14,6 +14,7 @@ import {
   Logger,
   HttpCode,
   HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { Observable, from, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
@@ -35,8 +36,10 @@ import type {
 import type {
   ApiResponseDto,
 } from './ai-rag.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-rag')
+@UseGuards(TenantGuard)
 export class AiRagController {
   private readonly logger = new Logger(AiRagController.name)
 

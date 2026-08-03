@@ -1,10 +1,10 @@
+'use client';
 /**
  * 物流配送详情页 — Delivery Detail Page (Next.js App Router / Dynamic Route)
  * 角色视角: 👔店长 / 🛒前台 / 💳采购
  * 类型: B-页面创建 / 详情页
  * 功能: 查看单票物流详情、时间线、轨迹地图展示、联系承运方
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useCallback, useState } from 'react';
@@ -147,6 +147,11 @@ export default function DeliveryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const toast = useToast();
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
+
+  if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#94a3b8' }}>加载中...</div>;
+  if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#f87171' }}>数据获取失败: {error}</div>;
   const { toasts, dismiss } = toast;
   const id = useMemo(() => String(params?.id ?? ''), [params]);
 

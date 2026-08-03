@@ -1,0 +1,7 @@
+【G8阻塞催办｜正式域名拍板】
+当前 G8 进入正式窗口前，业务侧仍需拍板 storefront / tob 正式 host。
+最新正式窗口号：formal-window-20260719-154427
+请在 12h 内确认 storefront 与 tob 的最终正式域名。
+确认后请立即回写 infra/k8s/templates/m5-public-endpoints.env.example
+完成标准：正式 host 不再使用占位口径，DNS 与证书 SAN 可按最终口径一次性落地。
+在 host 未拍板前，DNS 与证书都无法彻底闭环，因此 G8 不能进入真实 apply。

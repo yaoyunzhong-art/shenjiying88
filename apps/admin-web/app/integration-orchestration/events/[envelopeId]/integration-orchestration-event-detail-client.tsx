@@ -1,4 +1,7 @@
+ 'use client';
+ 
 import Link from 'next/link';
+  import { type CSSProperties } from 'react';
 import {
   DataTable,
   StatusBadge,
@@ -18,6 +21,8 @@ import {
 import type { IntegrationOrchestrationEventDetail } from '../../../integration-orchestration-detail-view-model';
 import { useDetailActions } from '../../../components/use-detail-actions';
 import { buildStandardBreadcrumb } from '../../../components/detail-workspace-registry';
+import SnapshotRefreshButton from '../../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 interface IntegrationOrchestrationEventDetailClientProps {
   snapshot: IntegrationOrchestrationEventDetail;
@@ -39,6 +44,7 @@ function EventBoard({
   envelope: NonNullable<IntegrationOrchestrationEventDetail['record']>;
   snapshot: IntegrationOrchestrationEventDetail;
 }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const { actions } = useDetailActions({
     workspace: 'integration-orchestration',
     detailId: envelope.envelopeId,
@@ -75,6 +81,15 @@ function EventBoard({
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'integration-orchestration', detailLabel: envelope.envelopeId })}
       />
@@ -158,8 +173,18 @@ function EventBoard({
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: IntegrationOrchestrationEventDetail }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'integration-orchestration', detailLabel: snapshot.envelopeId || '未找到' })}
       />
@@ -201,27 +226,28 @@ function SummaryCard({ title, value, detail }: { title: string; value: string; d
 
 // DeepLinkCard has been removed in favor of <DetailClosureBar> from @m5/ui.
 
-const summaryGridStyle: React.CSSProperties = {
+
+const summaryGridStyle: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
   gap: 12
 };
 
-const summaryCardStyle: React.CSSProperties = {
+const summaryCardStyle: CSSProperties = {
   border: '1px solid rgba(148,163,184,0.18)',
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
 };
 
-const panelStyle: React.CSSProperties = {
+const panelStyle: CSSProperties = {
   border: '1px solid rgba(148,163,184,0.18)',
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
 };
 
-const sectionTitleStyle: React.CSSProperties = {
+const sectionTitleStyle: CSSProperties = {
   fontSize: 14,
   color: '#94a3b8',
   marginBottom: 12,
@@ -230,7 +256,7 @@ const sectionTitleStyle: React.CSSProperties = {
   letterSpacing: 0.4
 };
 
-const preStyle: React.CSSProperties = {
+const preStyle: CSSProperties = {
   background: 'rgba(2,6,23,0.55)',
   borderRadius: 8,
   padding: 12,

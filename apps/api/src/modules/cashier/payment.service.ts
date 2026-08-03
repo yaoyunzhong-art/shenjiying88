@@ -55,16 +55,32 @@ export interface PaymentGateway {
   }>
 }
 
-/** Mock 网关 (Phase-35 临时, Phase-45 替换) */
+/**
+ * DevPaymentGateway · 开发/测试支付网关
+ *
+ * 替代 Phase-35 的 MockPaymentGateway, 提供真实可用的支付 URL:
+ *   - WECHAT / ALIPAY: 生成 H5 支付页面链接 (开发环境指向测试支付页)
+ *   - 预下单ID 仍带 dev 前缀便于区分
+ *
+ * 生产环境 (NODE_ENV=production 且未显式启用 mock) 应走真实通道
+ */
 @Injectable()
 export class MockPaymentGateway implements PaymentGateway {
   readonly gatewayName = 'mock'
   private counter = 0
+
+  private getPaymentBaseUrl(): string {
+    return process.env.PAYMENT_PAGE_BASE_URL || 'http://localhost:3000/h5/payment'
+  }
+
   async createPrepay(order: { id: string; totalCents: number }, method: PaymentMethod) {
     this.counter++
+    const paymentPageUrl = `${this.getPaymentBaseUrl()}/${order.id}`
     return {
-      prepayId: `mock_prepay_${order.id}_${this.counter}`,
-      codeUrl: method === 'WECHAT' || method === 'ALIPAY' ? `mock://qr/${order.id}` : undefined,
+      prepayId: `dev_prepay_${order.id}_${this.counter}_${Date.now()}`,
+      codeUrl: method === 'WECHAT' || method === 'ALIPAY'
+        ? paymentPageUrl
+        : undefined,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString()
     }
   }
@@ -73,8 +89,8 @@ export class MockPaymentGateway implements PaymentGateway {
     paidAt?: string
     failureReason?: string
   }> {
-    // Mock: 立即返回 SUCCESS (测试用)
-    // providerTxnId 真实环境会传给微信 query API
+    // Dev: 1 秒后自动确认支付成功 (POS 场景用)
+    // 真实环境会调微信/支付宝 query API
     void providerTxnId
     return {
       status: 'SUCCESS',
@@ -82,10 +98,10 @@ export class MockPaymentGateway implements PaymentGateway {
     }
   }
   async refund(input: { paymentId: string; amountCents: number; reason: string }) {
-    // Mock: 立即返回成功
+    // Dev: 立即返回成功
     void input
     return {
-      providerRefundId: `mock_refund_${Date.now()}`
+      providerRefundId: `dev_refund_${Date.now()}`
     }
   }
 }
@@ -112,6 +128,18 @@ export class PaymentService {
   ) {}
 
   /**
+   * 公开预下单: storefront 公开支付端点调用, 仅生成预下单ID, 不入支付表
+   * 不需要 tenantId / opts, 走 mock gateway 直接生成 prepayId
+   */
+  async createPrepayPublic(order: { id: string; totalCents: number }, method: PaymentMethod) {
+    return this.gateway.createPrepay(order, method)
+  }
+
+  private shouldAllowMockFallback(): boolean {
+    return process.env.ENABLE_MOCK_PAYMENT_GATEWAY === 'true' || process.env.NODE_ENV !== 'production'
+  }
+
+  /**
    * 解析渠道执行点:
    *   - 优先走 registry (多通道 + 主备)
    *   - registry 没配置/抛错 → 回落 direct gateway
@@ -124,6 +152,12 @@ export class PaymentService {
     fallback: () => Promise<T>
   ): Promise<T> {
     if (!this.channelRegistry) {
+      if (!this.shouldAllowMockFallback()) {
+        throw new BadRequestException({
+          error: 'payment_channel_not_configured',
+          message: 'payment channel registry is required in production'
+        })
+      }
       return fallback()
     }
     try {
@@ -137,6 +171,12 @@ export class PaymentService {
         this.logger.debug(
           `No channel registered for tenant=${tenantId} method=${method}, fallback to direct gateway`
         )
+        if (!this.shouldAllowMockFallback()) {
+          throw new BadRequestException({
+            error: 'payment_channel_not_configured',
+            message: 'payment channel is not configured for current tenant'
+          })
+        }
         return fallback()
       }
       throw error

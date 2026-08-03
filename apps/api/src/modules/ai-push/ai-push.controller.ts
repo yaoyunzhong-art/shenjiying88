@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Query, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { PushTaskService } from './ai-push-task.service'
 import { MemberSegmentationService, OptimalTimingService, ABTestService } from './ai-push.service'
-import type { PushTask, PushStats, SegmentProfile, ExperimentResult } from './ai-push.entity'
+import type { PushTask, PushChannel, PushStats, SegmentProfile, ExperimentResult } from './ai-push.entity'
 import type { OptimalTimeWindow, ExperimentConfig } from './ai-push.service'
 import {
   CreatePushTaskDto,
@@ -11,9 +11,11 @@ import {
   PushHistoryQueryDto,
   PushStatsDto,
 } from './ai-push.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-push')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AiPushController {
   constructor(
     private readonly pushTaskService: PushTaskService,
@@ -31,7 +33,7 @@ export class AiPushController {
     return this.pushTaskService.createTask({
       title: body.title,
       content: body.content,
-      channel: body.channel as any,
+      channel: body.channel as PushChannel,
       targetMemberIds: body.targetMemberIds ?? [],
       scheduledAt: body.scheduledAt ?? Date.now(),
     })
@@ -46,7 +48,7 @@ export class AiPushController {
     const task = this.pushTaskService.createTask({
       title: body.title,
       content: body.content,
-      channel: body.channel as any,
+      channel: body.channel as PushChannel,
       targetMemberIds: [],
       scheduledAt: body.scheduledAt ?? Date.now(),
     })

@@ -1,0 +1,103 @@
+name: m5-staging
+
+networks:
+  m5-network:
+    name: m5-staging-network
+
+volumes:
+  postgres_data:
+    name: m5_staging_postgres_data
+  redis_data:
+    name: m5_staging_redis_data
+  rabbitmq_data:
+    name: m5_staging_rabbitmq_data
+  minio_data:
+    name: m5_staging_minio_data
+  qdrant_storage:
+    name: m5_staging_qdrant_storage
+  qdrant_snapshots:
+    name: m5_staging_qdrant_snapshots
+  nginx_logs:
+    name: m5_staging_nginx_logs
+  certbot_www:
+    name: m5_staging_certbot_www
+  certbot_conf:
+    name: m5_staging_certbot_conf
+
+services:
+  postgres:
+    container_name: m5-staging-postgres
+    ports:
+      - "127.0.0.1:55432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-m5_staging}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-m5_staging_password}
+
+  redis:
+    container_name: m5-staging-redis
+    ports:
+      - "127.0.0.1:16379:6379"
+
+  rabbitmq:
+    container_name: m5-staging-rabbitmq
+    ports:
+      - "127.0.0.1:15672:5672"
+      - "127.0.0.1:15673:15672"
+    environment:
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-m5_staging_password}
+
+  minio:
+    container_name: m5-staging-minio
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    environment:
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-m5_staging_password}
+
+  api:
+    container_name: m5-staging-api
+    ports:
+      - "127.0.0.1:3101:3001"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://m5:m5_staging_password@postgres:5432/m5_staging}
+      POSTGRES_URL: ${POSTGRES_URL:-postgresql://m5:m5_staging_password@postgres:5432/m5_staging}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-staging}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3102,http://localhost:3103,http://localhost:3111}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-m5_staging_password}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-m5_staging_password}
+      NEXT_PUBLIC_ENV: staging
+
+  admin-web:
+    container_name: m5-staging-admin-web
+    ports:
+      - "127.0.0.1:3102:3002"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://staging-api.m5.local/api/v1}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://staging-api.m5.local}
+
+  storefront-web:
+    container_name: m5-staging-storefront-web
+    ports:
+      - "127.0.0.1:3103:3003"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://staging-api.m5.local/api/v1}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://staging-api.m5.local}
+
+  tob-web:
+    container_name: m5-staging-tob-web
+    ports:
+      - "127.0.0.1:3111:3011"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://staging-api.m5.local/api/v1}
+
+  nginx:
+    container_name: m5-staging-nginx
+    ports:
+      - "8080:80"
+      - "8443:443"
+
+  qdrant:
+    container_name: m5-staging-qdrant
+    ports:
+      - "127.0.0.1:17333:6333"
+      - "127.0.0.1:17334:6334"

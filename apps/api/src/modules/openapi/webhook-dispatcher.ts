@@ -60,7 +60,7 @@ export class WebhookDispatcher {
     tenantId: TenantId
     subscriptionId: string
     eventType: WebhookEventType
-    payload: Record<string, any>
+    payload: Record<string, unknown>
     now?: number
   }): Promise<WebhookDelivery> {
     const sub = this.adapter.querySubscription(input.tenantId, input.subscriptionId)
@@ -69,7 +69,7 @@ export class WebhookDispatcher {
     if (!sub.events.includes(input.eventType)) throw new Error('event_not_subscribed')
 
     // 幂等检查
-    const eventId = input.payload?.id || `${input.eventType}_${Date.now()}`
+    const eventId: string = input.payload?.id as string || `${input.eventType}_${Date.now()}`
     if (this.adapter.isAlreadyDelivered(input.tenantId, input.subscriptionId, eventId)) {
       throw new Error('duplicate_delivery')
     }
@@ -181,8 +181,8 @@ export class WebhookDispatcher {
           delivery.nextRetryAt = new Date(Date.now() + this.getNextRetryDelay(delivery.attempts)).toISOString()
         }
       }
-    } catch (err: any) {
-      delivery.errorMessage = err.message || 'unknown_error'
+    } catch (err: unknown) {
+      delivery.errorMessage = (err as Error).message || 'unknown_error'
       if (this.isMaxAttemptsReached(delivery.attempts)) {
         delivery.status = 'DEAD_LETTER'
       } else {

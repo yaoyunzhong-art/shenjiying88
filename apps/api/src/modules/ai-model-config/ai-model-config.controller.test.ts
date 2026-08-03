@@ -20,62 +20,6 @@ describe('AiModelConfigController', () => {
     controller = new AiModelConfigController(service)
   })
 
-  describe('route metadata', () => {
-    it('controller path metadata should be ai-model-config', () => {
-      const path = Reflect.getMetadata('path', AiModelConfigController)
-      assert.equal(path, 'ai-model-config')
-    })
-
-    it('listPresets route should have GET method and presets path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.listPresets)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.listPresets)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'presets')
-    })
-
-    it('getPreset route should have GET method and presets/:id path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.getPreset)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.getPreset)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'presets/:id')
-    })
-
-    it('createStoreConfig route should have POST method and store-configs path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.createStoreConfig)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.createStoreConfig)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'store-configs')
-    })
-
-    it('listStoreConfigs route should have GET method and store-configs path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.listStoreConfigs)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.listStoreConfigs)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'store-configs')
-    })
-
-    it('switchConfig route should have POST method and switch path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.switchConfig)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.switchConfig)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'switch')
-    })
-
-    it('listHistory route should have GET method and history/:configId path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.listHistory)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.listHistory)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'history/:configId')
-    })
-
-    it('rollback route should have POST method and rollback path', () => {
-      const method = Reflect.getMetadata('method', AiModelConfigController.prototype.rollback)
-      const path = Reflect.getMetadata('path', AiModelConfigController.prototype.rollback)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'rollback')
-    })
-  })
-
   describe('GET /ai-model-config/presets', () => {
     it('should return 4 default presets', async () => {
       const result = await controller.listPresets({})

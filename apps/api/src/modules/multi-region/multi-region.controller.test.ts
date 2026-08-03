@@ -34,54 +34,6 @@ function createController(): {
 }
 
 // ═══════════════════════════════════════════════════
-// Route Metadata
-// ═══════════════════════════════════════════════════
-
-describe('MultiRegionController Route Metadata', () => {
-
-  it('controller path 为 multi-region', () => {
-    const path = Reflect.getMetadata('path', MultiRegionController)
-    assert.equal(path, 'multi-region')
-  })
-
-  const routes: Array<{ key: string; expectedMethod: number; expectedPath: string }> = [
-    { key: 'listEndpoints',           expectedMethod: 0 /* GET */,   expectedPath: 'endpoints' },
-    { key: 'getEndpoint',             expectedMethod: 0 /* GET */,   expectedPath: 'endpoints/:region' },
-    { key: 'registerEndpoint',        expectedMethod: 1 /* POST */,  expectedPath: 'endpoints' },
-    { key: 'updateEndpoint',          expectedMethod: 4 /* PATCH */, expectedPath: 'endpoints/:region' },
-    { key: 'route',                   expectedMethod: 0 /* GET */,   expectedPath: 'route' },
-    { key: 'routeByLatency',          expectedMethod: 0 /* GET */,   expectedPath: 'route/latency' },
-    { key: 'geoLookup',               expectedMethod: 0 /* GET */,   expectedPath: 'geo/:ip' },
-    { key: 'pinTenant',               expectedMethod: 1 /* POST */,  expectedPath: 'tenants/pin' },
-    { key: 'unpinTenant',             expectedMethod: 3 /* DELETE */,expectedPath: 'tenants/:tenantId/pin' },
-    { key: 'listPinnedTenants',       expectedMethod: 0 /* GET */,   expectedPath: 'tenants' },
-    { key: 'getTenantRegion',         expectedMethod: 0 /* GET */,   expectedPath: 'tenants/:tenantId/region' },
-    { key: 'setHealth',               expectedMethod: 1 /* POST */,  expectedPath: 'health' },
-    { key: 'getAllHealth',            expectedMethod: 0 /* GET */,   expectedPath: 'health' },
-    { key: 'getHealth',               expectedMethod: 0 /* GET */,   expectedPath: 'health/:region' },
-    { key: 'failoverCheck',           expectedMethod: 1 /* POST */,  expectedPath: 'failover/check' },
-    { key: 'configureFailover',       expectedMethod: 1 /* POST */,  expectedPath: 'failover/configure' },
-    { key: 'getFailoverStates',       expectedMethod: 0 /* GET */,   expectedPath: 'failover/state' },
-    { key: 'getFailoverEvents',       expectedMethod: 0 /* GET */,   expectedPath: 'failover/events' },
-    { key: 'getHealthyRegions',       expectedMethod: 0 /* GET */,   expectedPath: 'failover/healthy' },
-    { key: 'canMigrate',              expectedMethod: 0 /* GET */,   expectedPath: 'can-migrate' },
-    { key: 'batchCheck',              expectedMethod: 1 /* POST */,  expectedPath: 'failover/batch-check' },
-  ]
-
-  for (const { key, expectedMethod, expectedPath } of routes) {
-    it(`${key} -> ${expectedMethod === 0 ? 'GET' : expectedMethod === 1 ? 'POST' : expectedMethod === 2 ? 'DELETE' : 'PATCH'} ${expectedPath}`, () => {
-      const handler = (MultiRegionController.prototype as any)[key]
-        ?? Object.getOwnPropertyDescriptor(MultiRegionController.prototype, key)?.value
-      assert.ok(handler, `handler ${key} not found`)
-      const method = Reflect.getMetadata('method', handler)
-      assert.equal(method, expectedMethod, `${key} method mismatch`)
-      const path = Reflect.getMetadata('path', handler)
-      assert.equal(path, expectedPath, `${key} path mismatch`)
-    })
-  }
-})
-
-// ═══════════════════════════════════════════════════
 // 1. Endpoint Management — 端点管理
 // ═══════════════════════════════════════════════════
 

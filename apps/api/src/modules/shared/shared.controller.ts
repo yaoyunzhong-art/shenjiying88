@@ -4,13 +4,15 @@
  * 关联: audit.service.ts, tenant-validator.ts, view-model.service.ts
  */
 
-import { Controller, Get, Post, Body, Query, Param, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Get, Post, Body, Query, Param, HttpCode, HttpStatus, UseGuards } from '@nestjs/common'
 import { AuditService } from './audit.service'
 import { assertTenantId } from './tenant-validator'
 import { AuditLogQueryDto, ValidateTenantDto } from './shared.dto'
 import type { AuditLogEntryDto, SharedHealthDto } from './shared.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('shared')
+@UseGuards(TenantGuard)
 export class SharedController {
   private readonly startedAt = Date.now()
   private readonly version = '1.0.0'

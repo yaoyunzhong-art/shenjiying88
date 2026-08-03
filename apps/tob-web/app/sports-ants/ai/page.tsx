@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁AI赋能中心页面
  * BigAnts AI Empowerment Center
  * 展示AI驱动的个性化推荐、智能客服、转化分析能力
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -15,7 +15,7 @@ import FloatingContact from '../components/FloatingContact';
 import ExitIntentPopup from '../components/ExitIntentPopup';
 import ConversionTracker from '../components/ConversionTracker';
 import ConversionAnalytics from '../components/ConversionAnalytics';
-import DataShowcase, { PRESET_DATA_SHOWCASES } from '../components/DataShowcase';
+import DataShowcase, { PRESET_DATA_SHOWCASES, type DataShowcaseItem } from '../components/DataShowcase';
 import { USER_PERSONAS } from '../lib/user-personas';
 import { SAAS_FEATURES } from '../lib/shenjiying-saas';
 import { conversionService } from '../lib/conversion-service';
@@ -562,7 +562,7 @@ export default function AIPage() {
                 <DataShowcase
                   title={PRESET_DATA_SHOWCASES.homeStats.title}
                   subtitle={PRESET_DATA_SHOWCASES.homeStats.subtitle}
-                  items={PRESET_DATA_SHOWCASES.homeStats.items as any}
+                  items={PRESET_DATA_SHOWCASES.homeStats.items as DataShowcaseItem[]}
                   columns={4}
                 />
 
@@ -570,7 +570,7 @@ export default function AIPage() {
                   <DataShowcase
                     title={PRESET_DATA_SHOWCASES.industryStats.title}
                     subtitle={PRESET_DATA_SHOWCASES.industryStats.subtitle}
-                    items={PRESET_DATA_SHOWCASES.industryStats.items as any}
+                    items={PRESET_DATA_SHOWCASES.industryStats.items as DataShowcaseItem[]}
                     columns={4}
                   />
                 </div>

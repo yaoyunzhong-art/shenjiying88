@@ -1,12 +1,12 @@
+'use client';
 /**
  * 前台交接班面板 — Shift Handover Page (Next.js App Router Page)
  * 角色视角: 🛒前台 / 👔收银
  * 类型: D-角色操作界面
  * 功能: 交接班清单管理、现金清点、待办转交、状态确认、分类筛选
  */
-'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   PageShell,
   StatusBadge,
@@ -336,8 +336,12 @@ function HandoverItemCard({
 // 前台交接班页面
 // ============================================================
 
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
+
 export default function ShiftHandoverPage() {
-  const [items, setItems] = useState<ShiftHandoverEntry[]>(MOCK_ITEMS);
+  const [items, setItems] = useState<ShiftHandoverEntry[]>([]);
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -407,8 +411,33 @@ export default function ShiftHandoverPage() {
     return counts;
   }, [items]);
 
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<ShiftHandoverEntry[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_ITEMS), 300);
+      }),
+    ).then((data) => {
+      if (data) setItems(data);
+    });
+  }, []);
+
   return (
     <PageShell title="前台交接班" description="交接班清单管理 & 状态确认">
+      <TriStateRenderer
+        loading={loading}
+        empty={items.length === 0 && !loading}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<ShiftHandoverEntry[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_ITEMS), 300);
+            }),
+          ).then((data) => {
+            if (data) setItems(data);
+          })
+        }
+      >
       <div style={{ padding: 24 }}>
         {/* 头部信息 */}
         <div
@@ -574,6 +603,7 @@ export default function ShiftHandoverPage() {
           <span>🛒 订单总额: ¥{(summary.orderTotal).toLocaleString()}</span>
         </div>
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

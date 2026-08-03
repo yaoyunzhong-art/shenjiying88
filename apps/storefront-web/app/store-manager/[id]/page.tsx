@@ -137,6 +137,7 @@ export default async function StoreManagerDetailPage({ params }: StoreManagerDet
   const { id } = await params;
   const detail = STORE_DETAILS[id];
 
+  // 三态守卫
   if (!detail) {
     return (
       <div
@@ -148,9 +149,14 @@ export default async function StoreManagerDetailPage({ params }: StoreManagerDet
         }}
       >
         <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
-        <div>未找到门店信息 (ID: {id})</div>
+        <div>暂无数据</div>
+        <div style={{ fontSize: 13, color: '#475569', marginTop: 8 }}>未找到门店信息 (ID: {id})</div>
       </div>
     );
+  }
+
+  if (!detail.name) {
+    return <div>数据获取失败: 门店数据不完整</div>;
   }
 
   return <StoreManagerDetail detail={detail} />;

@@ -1,0 +1,13 @@
+[2026-07-19 11:56:04] ==> public endpoint verify start
+[2026-07-19 11:56:04] env_file=infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-19 11:56:04] use_resolve=false
+=== DNS api.m5-platform.com ===
+
+=== DNS admin.m5-platform.com ===
+
+=== DNS store.m5-platform.com ===
+
+=== DNS tob.m5-platform.com ===
+
+=== Certificate api.m5-platform.com ===
+Could not find certificate from <stdin>

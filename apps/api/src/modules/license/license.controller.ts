@@ -26,15 +26,28 @@ import {
   HttpCode,
   HttpStatus,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import type { Request } from 'express'
 import { LicenseService } from './license.service'
 import { ActivationCodeService } from './services/activation-code.service'
 import { RequireLicense } from './license.guard'
-import { runWithTenant, type TenantContext } from '../../common/context/tenant-context'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+import { runWithTenant, type TenantContext, type TenantRole } from '../../common/context/tenant-context'
 import type { LicenseScope } from './license.entity'
 
+const LICENSE_FINANCE_READ_PERMISSION = 'finance:read'
+const LICENSE_FINANCE_WRITE_PERMISSION = 'finance:*'
+
+@UseGuards(TenantGuard)
 @Controller('license')
+@RequireTenantScope()
+@RequirePermissions(LICENSE_FINANCE_READ_PERMISSION)
 export class LicenseController {
   constructor(
     private readonly service: LicenseService,
@@ -90,6 +103,7 @@ export class LicenseController {
   /** POST /license/:id/suspend */
   @Post(':id/suspend')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(LICENSE_FINANCE_WRITE_PERMISSION)
   async suspend(
     @Req() req: Request,
     @Param('id') id: string,
@@ -107,6 +121,7 @@ export class LicenseController {
   /** POST /license/activate - 使用激活码激活授权 */
   @Post('activate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(LICENSE_FINANCE_WRITE_PERMISSION)
   async activate(
     @Req() req: Request,
     @Body('code') code: string,
@@ -140,6 +155,7 @@ export class LicenseController {
   /** POST /license/codes/generate - 生成激活码 (admin only) */
   @Post('codes/generate')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(LICENSE_FINANCE_WRITE_PERMISSION)
   async generateActivationCode(
     @Req() req: Request,
     @Body() body: {
@@ -150,7 +166,7 @@ export class LicenseController {
       count?: number
     },
   ) {
-    const user = (req as any).user ?? {}
+    const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
     
     // 仅 admin 可生成激活码
     if (user.role !== 'admin' && user.role !== 'superadmin') {
@@ -178,7 +194,7 @@ export class LicenseController {
       count: codes.length,
       scope: body.scope,
       durationDays: body.durationDays,
-      generatedBy: user.id ?? user.userId,
+      generatedBy: (user.id ?? user.userId) as string,
       generatedAt: new Date().toISOString(),
     }
   }
@@ -203,15 +219,16 @@ export class LicenseController {
   // ============ 私有 ============
 
   private extractTenant(req: Request, override?: { storeId?: string }): TenantContext {
-    const user = (req as any).user ?? {}
-    if (!user.tenantId) {
+    const user = (req as unknown as { user?: Record<string, unknown> }).user ?? {}
+    if (!(user as Record<string, unknown>).tenantId) {
       throw new Error('[controller] Missing tenantId in req.user')
     }
+    const u = user as Record<string, unknown>
     return {
-      tenantId: user.tenantId,
-      storeId: override?.storeId ?? user.storeId,
-      userId: user.id ?? user.userId,
-      role: user.role,
+      tenantId: u.tenantId as string,
+      storeId: (override?.storeId ?? u.storeId) as string | undefined,
+      userId: (u.id ?? u.userId) as string | undefined,
+      role: u.role as TenantRole,
     }
   }
 }

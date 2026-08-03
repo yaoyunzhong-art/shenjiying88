@@ -196,7 +196,7 @@ export function ColorPicker({
     setOpen(false);
   }, [disabled, onChange]);
 
-  const handleClear = useCallback((e: React.MouseEvent) => {
+  const handleClear = useCallback((e: React.SyntheticEvent) => {
     e.stopPropagation();
     if (disabled) return;
     onChange?.('');
@@ -275,7 +275,7 @@ export function ColorPicker({
             role="button"
             aria-label="清除颜色"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClear(e as any); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClear(e); }}
           >
             ✕
           </span>

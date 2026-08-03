@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageShell, StatCard } from '@m5/ui';
 
 const SETMEALS = [
@@ -16,22 +16,54 @@ const TAGS = ['全部', '入门', '超值', '浪漫', '亲子', '团建', 'VIP']
 
 function formatPrice(n: number) { return `¥${n.toLocaleString()}`; }
 
+import { useTriState } from '../../_components/useTriState';
+import { TriStateRenderer } from '../../_components/TriStateRenderer';
+
 export default function SetmealPage() {
   const [tagFilter, setTagFilter] = useState('全部');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [purchased, setPurchased] = useState(false);
+  const [allSetmeals, setAllSetmeals] = useState<typeof SETMEALS>([]);
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
 
-  const filtered = SETMEALS.filter(s => tagFilter === '全部' || s.tag === tagFilter);
+  // 模拟数据加载
+  useEffect(() => {
+    wrapLoad(
+      new Promise<typeof SETMEALS>((resolve) => {
+        setTimeout(() => resolve(SETMEALS), 300);
+      }),
+    ).then((data) => {
+      if (data) setAllSetmeals(data);
+    });
+  }, []);
 
-  const selected = SETMEALS.find(s => s.id === selectedId);
+  const filtered = allSetmeals.filter(s => tagFilter === '全部' || s.tag === tagFilter);
+
+  const selected = allSetmeals.find(s => s.id === selectedId);
 
   const handleBuy = () => {
     setPurchased(true);
     setTimeout(() => setPurchased(false), 3000);
   };
 
+  const handleRetry = () => {
+    wrapLoad(
+      new Promise<typeof SETMEALS>((resolve) => {
+        setTimeout(() => resolve(SETMEALS), 300);
+      }),
+    ).then((data) => {
+      if (data) setAllSetmeals(data);
+    });
+  };
+
   return (
     <PageShell title="套餐中心" subtitle="超值优惠·多种套餐">
+      <TriStateRenderer
+        loading={loading}
+        empty={filtered.length === 0 && !loading}
+        error={error}
+        onRetry={handleRetry}
+      >
       <div className="p-4 space-y-4">
         {/* 分类标签 */}
         <div className="flex flex-wrap gap-2">
@@ -146,6 +178,7 @@ export default function SetmealPage() {
           </div>
         )}
       </div>
+      </TriStateRenderer>
     </PageShell>
   );
 }

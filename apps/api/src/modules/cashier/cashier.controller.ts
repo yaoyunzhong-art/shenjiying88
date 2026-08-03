@@ -6,15 +6,24 @@ import {
   Param,
   Query,
   Headers,
+  Inject,
   UseGuards,
   BadRequestException,
   NotFoundException,
   Logger
 } from '@nestjs/common'
+import { ApiOperation } from '@nestjs/swagger'
 import { OrderService } from './order.service'
 import { PaymentService } from './payment.service'
 import { RefundService } from './refund.service'
+import { CashierService } from './cashier.service'
+import { InventoryItemService } from '../inventory/inventory-item.service'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+import { Public } from '../foundation/identity-access/public.decorator'
 import type {
   CreateOrderInput,
   CreatePaymentInput,
@@ -24,6 +33,14 @@ import type {
   Payment,
   Refund
 } from '@m5/types'
+
+const CASHIER_ORDER_READ_PERMISSION = 'order:read'
+const CASHIER_ORDER_WRITE_PERMISSION = 'order:write'
+const CASHIER_ORDER_CANCEL_PERMISSION = 'order:cancel'
+const CASHIER_ORDER_REFUND_PERMISSION = 'order:refund'
+const CASHIER_PAYMENT_READ_PERMISSION = 'payment:read'
+const CASHIER_PAYMENT_WRITE_PERMISSION = 'payment:write'
+const CASHIER_PAYMENT_REFUND_PERMISSION = 'payment:refund'
 
 /**
  * Phase-35 T163: CashierController - 收银台 REST API
@@ -46,18 +63,22 @@ import type {
  */
 @Controller('cashier')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
 export class CashierController {
   private readonly logger = new Logger(CashierController.name)
 
   constructor(
-    private readonly orderService: OrderService,
-    private readonly paymentService: PaymentService,
-    private readonly refundService: RefundService
+    @Inject(OrderService) private readonly orderService: OrderService,
+    @Inject(PaymentService) private readonly paymentService: PaymentService,
+    @Inject(RefundService) private readonly refundService: RefundService,
+    @Inject(CashierService) private readonly cashierService: CashierService,
+    @Inject(InventoryItemService) private readonly inventoryItemService: InventoryItemService
   ) {}
 
   // ── Orders ──
 
   @Post('orders')
+  @RequirePermissions(CASHIER_ORDER_WRITE_PERMISSION)
   createOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Headers('x-user-id') userId: string,
@@ -68,6 +89,7 @@ export class CashierController {
   }
 
   @Post('orders/:id/submit')
+  @RequirePermissions(CASHIER_ORDER_WRITE_PERMISSION)
   submitOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -76,6 +98,7 @@ export class CashierController {
   }
 
   @Post('orders/:id/cancel')
+  @RequirePermissions(CASHIER_ORDER_CANCEL_PERMISSION)
   cancelOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string,
@@ -85,6 +108,7 @@ export class CashierController {
   }
 
   @Post('orders/:id/fulfill')
+  @RequirePermissions(CASHIER_ORDER_WRITE_PERMISSION)
   fulfillOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -93,6 +117,7 @@ export class CashierController {
   }
 
   @Get('orders/:id')
+  @RequirePermissions(CASHIER_ORDER_READ_PERMISSION)
   getOrder(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -103,6 +128,7 @@ export class CashierController {
   }
 
   @Get('orders/:id/items')
+  @RequirePermissions(CASHIER_ORDER_READ_PERMISSION)
   getOrderItems(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -111,6 +137,7 @@ export class CashierController {
   }
 
   @Get('orders')
+  @RequirePermissions(CASHIER_ORDER_READ_PERMISSION)
   listOrders(
     @Headers('x-tenant-id') tenantId: string,
     @Query('status') status?: string,
@@ -136,6 +163,7 @@ export class CashierController {
   // ── Payments ──
 
   @Post('orders/:id/payments')
+  @RequirePermissions(CASHIER_PAYMENT_WRITE_PERMISSION)
   async createPayment(
     @Headers('x-tenant-id') tenantId: string,
     @Headers('x-user-id') userId: string,
@@ -150,6 +178,7 @@ export class CashierController {
   }
 
   @Post('payments/:id/callback')
+  @RequirePermissions(CASHIER_PAYMENT_WRITE_PERMISSION)
   paymentCallback(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') paymentId: string,
@@ -164,6 +193,7 @@ export class CashierController {
   // ── Refunds ──
 
   @Post('orders/:id/refunds')
+  @RequirePermissions(CASHIER_PAYMENT_REFUND_PERMISSION, CASHIER_ORDER_REFUND_PERMISSION)
   createRefund(
     @Headers('x-tenant-id') tenantId: string,
     @Headers('x-user-id') userId: string,
@@ -178,6 +208,7 @@ export class CashierController {
   }
 
   @Get('refunds/:id')
+  @RequirePermissions(CASHIER_PAYMENT_READ_PERMISSION)
   getRefund(
     @Headers('x-tenant-id') tenantId: string,
     @Param('id') id: string
@@ -185,5 +216,149 @@ export class CashierController {
     const refund = this.refundService.getById(id, tenantId)
     if (!refund) throw new NotFoundException(`refund ${id} not found or cross-tenant`)
     return refund
+  }
+
+  // ── POS Facade (Phase-35 T163.5 / P-35) ──
+
+  @Get('members/lookup')
+  @Public()
+  @ApiOperation({ summary: 'POS 会员查询' })
+  async lookupMember(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('q') q: string
+  ): Promise<{
+    id: string
+    name: string
+    phone: string
+    memberNo: string
+    tier: string
+    points: number
+    discountRate: number
+  } | null> {
+    if (!q) return null
+
+    // 先尝试通过会员 ID 查找
+    const inMemory = this.cashierService.memberService.getProfile(q)
+    if (inMemory) {
+      return {
+        id: inMemory.memberId,
+        name: inMemory.nickname,
+        phone: inMemory.mobile ?? '',
+        memberNo: inMemory.memberId,
+        tier: inMemory.level,
+        points: inMemory.points,
+        discountRate: inMemory.level === 'PLATINUM' || inMemory.level === 'DIAMOND' ? 0.92 : 0.95
+      }
+    }
+
+    // 再尝试持久化查找
+    try {
+      const persisted = await this.cashierService.memberService.getPersistentProfile(q, { tenantId } as never)
+      if (persisted) {
+        return {
+          id: persisted.memberId,
+          name: persisted.nickname,
+          phone: persisted.mobile ?? '',
+          memberNo: persisted.memberId,
+          tier: persisted.level,
+          points: persisted.points,
+          discountRate: persisted.level === 'PLATINUM' || persisted.level === 'DIAMOND' ? 0.92 : 0.95
+        }
+      }
+    } catch {
+      // 持久化查找失败, 不阻塞
+    }
+
+    // 全量扫描 — 按 mobile / memberId 模糊匹配
+    const allProfiles = this.cashierService.memberService.listProfiles()
+    const matched = allProfiles.find(
+      (p) => p.mobile === q || p.memberId === q || p.nickname.includes(q)
+    )
+    if (matched) {
+      return {
+        id: matched.memberId,
+        name: matched.nickname,
+        phone: matched.mobile ?? '',
+        memberNo: matched.memberId,
+        tier: matched.level,
+        points: matched.points,
+        discountRate: matched.level === 'PLATINUM' || matched.level === 'DIAMOND' ? 0.92 : 0.95
+      }
+    }
+
+    return null
+  }
+
+  @Get('products/:sku')
+  @Public()
+  @ApiOperation({ summary: 'POS 商品扫码查询' })
+  async lookupProduct(
+    @Headers('x-tenant-id') tenantId: string,
+    @Param('sku') sku: string
+  ): Promise<{
+    sku: string
+    name: string
+    price: number
+    category: string
+  } | null> {
+    try {
+      const item = this.inventoryItemService.getBySku(sku, tenantId)
+      if (item) {
+        return {
+          sku: item.sku,
+          name: item.name,
+          price: item.unitPriceCents / 100,
+          category: 'default'
+        }
+      }
+    } catch {
+      return null
+    }
+    return null
+  }
+
+  @Get('products')
+  @Public()
+  @ApiOperation({ summary: 'POS 商品目录列表' })
+  async listProducts(
+    @Headers('x-tenant-id') tenantId: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string
+  ): Promise<{
+    items: Array<{
+      sku: string
+      name: string
+      price: number
+      category: string
+      stock: number
+    }>
+    total: number
+  }> {
+    const payload = this.inventoryItemService.list({
+      tenantId,
+      status: 'ACTIVE',
+      limit: limit ? parseInt(limit, 10) : 100,
+      offset: offset ? parseInt(offset, 10) : 0,
+    })
+
+    return {
+      total: payload.total,
+      items: payload.items.map((item) => ({
+        sku: item.sku,
+        name: item.name,
+        price: item.unitPriceCents / 100,
+        category: 'default',
+        stock: item.availableQty,
+      })),
+    }
+  }
+
+  @Get('stats/channels')
+  @RequirePermissions(CASHIER_PAYMENT_READ_PERMISSION)
+  @ApiOperation({ summary: 'POS 支付渠道统计' })
+  async getChannelStats(
+    @Headers('x-tenant-id') tenantId: string
+  ): Promise<{ channel: string; today: number; month: number }[]> {
+    return this.cashierService.getChannelStats(tenantId)
   }
 }

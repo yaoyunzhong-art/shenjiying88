@@ -10,6 +10,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { FederatedLearningService } from './federated.service'
 import type {
@@ -17,14 +18,20 @@ import type {
   StartRoundDto,
   SubmitGradientDto,
 } from './federated.dto'
+import { TenantGuard } from '../agent/tenant.guard'
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
 
 @Controller('federated')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions('federated:read')
 export class FederatedLearningController {
   constructor(private readonly service: FederatedLearningService) {}
 
   // ============ 任务管理 ============
   @Post('tasks')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions('federated:update')
   async createTask(@Body() body: CreateFederatedTaskDto) {
     return this.service.createTask(body)
   }
@@ -42,6 +49,7 @@ export class FederatedLearningController {
 
   @Post('tasks/:id/activate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions('federated:update')
   async activateTask(@Param('id') id: string) {
     return this.service.activateTask(id)
   }
@@ -49,6 +57,7 @@ export class FederatedLearningController {
   // ============ 轮次管理 ============
   @Post('tasks/:taskId/rounds')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions('federated:update')
   async startRound(@Param('taskId') taskId: string, @Body() body: StartRoundDto) {
     return this.service.startRound(taskId, body)
   }
@@ -61,6 +70,7 @@ export class FederatedLearningController {
   // ============ 客户端梯度提交 ============
   @Post('tasks/:taskId/submit')
   @HttpCode(HttpStatus.ACCEPTED)
+  @RequirePermissions('federated:update')
   async submitGradient(@Param('taskId') taskId: string, @Body() body: SubmitGradientDto) {
     return this.service.submitGradient(taskId, body)
   }
@@ -68,6 +78,7 @@ export class FederatedLearningController {
   // ============ 聚合 ============
   @Post('rounds/:roundId/aggregate')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions('federated:update')
   async aggregateRound(@Param('roundId') roundId: string) {
     return this.service.aggregateRound(roundId)
   }

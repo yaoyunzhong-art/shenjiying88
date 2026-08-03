@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type {
-  ReportDefinition, ReportQueryResponse, DashboardLayout, ReportPeriod,
+  ReportDefinition, ReportQueryResponse, DashboardLayout, ReportPeriod, ReportMetric,
 } from './types'
 
 const MOCK_DELAY = 80
@@ -44,7 +44,7 @@ function genMockData(reportId: string, period: ReportPeriod): ReportQueryRespons
       const metric = reportId === 'rpt-sales' ? 'sales.amount' :
                      reportId === 'rpt-ai' ? 'ai.tokens' : 'member.new'
       data.push({
-        bucket: dateStr, dimension: store, metric: metric as any,
+        bucket: dateStr, dimension: store, metric: metric as ReportMetric,
         value: metric === 'sales.amount' ? 50000 + Math.floor(Math.random() * 30000) :
                metric === 'ai.tokens' ? 10000 + Math.floor(Math.random() * 5000) :
                50 + Math.floor(Math.random() * 30),

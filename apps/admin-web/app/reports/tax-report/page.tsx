@@ -1,12 +1,11 @@
-'use client'
+import TaxReportClient from './tax-report-client'
+import { loadTaxReportSnapshot } from './tax-report-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function TaxReportPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>🧾 税务报表</h1>
-      <p>税务申报数据与应纳税额分析</p>
-    </div>
-  )
+export default async function TaxReportPage() {
+  const snapshot = await loadTaxReportSnapshot()
+
+  return <TaxReportClient snapshot={snapshot} />
 }

@@ -19,16 +19,16 @@ export class RBACRole {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ length: 32, unique: true })
+  @Column({ type: 'varchar', length: 32, unique: true })
   name!: string // owner | admin | manager | staff | guest
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   description?: string
 
-  @Column({ default: 0, name: 'sort_order' })
+  @Column({ type: 'int', default: 0, name: 'sort_order' })
   sortOrder: number = 0 // 排序，高权限优先 (TS 默认值,与 TypeORM default 保持同步)
 
-  @Column({ default: true, name: 'is_system' })
+  @Column({ type: 'boolean', default: true, name: 'is_system' })
   isSystem: boolean = true // 系统内置角色不可删除 (TS 默认值)
 
   @CreateDateColumn({ name: 'created_at' })
@@ -47,16 +47,16 @@ export class RBACPermission {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ length: 64, unique: true })
+  @Column({ type: 'varchar', length: 64, unique: true })
   action!: string // e.g., 'user:read', 'order:refund'
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   description?: string
 
-  @Column({ length: 64 })
+  @Column({ type: 'varchar', length: 64 })
   resource!: string // e.g., 'user', 'order', 'report'
 
-  @Column({ length: 32 })
+  @Column({ type: 'varchar', length: 32 })
   operation!: string // e.g., 'read', 'write', 'delete'
 
   @CreateDateColumn({ name: 'created_at' })
@@ -75,13 +75,13 @@ export class RBACRolePermission {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'role_id' })
+  @Column({ name: 'role_id', type: 'varchar', length: 64 })
   roleId!: string
 
-  @Column({ name: 'permission_id' })
+  @Column({ name: 'permission_id', type: 'varchar', length: 64 })
   permissionId!: string
 
-  @Column({ default: false, name: 'is_denied' })
+  @Column({ type: 'boolean', default: false, name: 'is_denied' })
   isDenied: boolean = false // true = 显式拒绝 (TS 默认值,与 TypeORM default 保持同步)
 
   @CreateDateColumn({ name: 'created_at' })
@@ -97,16 +97,16 @@ export class RBACAssignment {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  @Column({ name: 'user_id', length: 64 })
+  @Column({ name: 'user_id', type: 'varchar', length: 64 })
   userId!: string
 
-  @Column({ name: 'role_id' })
+  @Column({ name: 'role_id', type: 'varchar', length: 64 })
   roleId!: string
 
-  @Column({ name: 'tenant_id', length: 64, nullable: true })
+  @Column({ name: 'tenant_id', type: 'varchar', length: 64, nullable: true })
   tenantId?: string
 
-  @Column({ name: 'assigned_by', length: 64, default: 'system' })
+  @Column({ name: 'assigned_by', type: 'varchar', length: 64, default: 'system' })
   assignedBy!: string
 
   @CreateDateColumn({ name: 'assigned_at' })

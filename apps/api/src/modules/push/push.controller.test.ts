@@ -15,6 +15,11 @@ import { PushController } from './push.controller'
 import { APNsService, WebSocketService, PushNotificationScheduler } from './push.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PushPlatform, PushPriority } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 // ── Mock Tenant Context ────────────────────────────────────────
 
@@ -34,10 +39,20 @@ describe('PushController', () => {
   let scheduler: PushNotificationScheduler
 
   beforeEach(() => {
+    const dndConfig = new DndConfigService()
+    const frequencyCap = new FrequencyCapService()
+    const priorityGuard = new PushPriorityGuard(dndConfig, frequencyCap)
+    const emailChannel = new EmailPushChannel()
+    const smsChannel = new SmsPushChannel()
+    const dualChannelRouter = new DualChannelRouter()
+    dualChannelRouter.register(emailChannel)
+    dualChannelRouter.register(smsChannel)
     apnsService = new APNsService()
     wsService = new WebSocketService()
     scheduler = new PushNotificationScheduler(apnsService)
-    controller = new PushController(apnsService, wsService, scheduler)
+    const preferenceService = new PushPreferenceService()
+    const statsService = new PushStatsService()
+    controller = new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter, preferenceService, statsService)
   })
 
   // ─── 推送模板管理 ──────────────────────────────────────────
@@ -302,8 +317,8 @@ describe('PushController', () => {
   // ─── 统计与查询 ──────────────────────────────────────────
 
   describe('getStats', () => {
-    it('PUSH-CTRL-21 正例: 获取推送统计应包含所有字段', () => {
-      const stats = controller.getStats()
+    it('PUSH-CTRL-21 正例: 获取推送统计应包含所有字段', async () => {
+      const stats = await controller.getStats()
 
       expect(stats).toHaveProperty('totalSent')
       expect(stats).toHaveProperty('totalFailed')
@@ -330,7 +345,7 @@ describe('PushController', () => {
         alert: '历史消息2',
       })
 
-      const history = controller.getPushHistory(token)
+      const history = await controller.getPushHistory(token)
       expect(history.length).toBeGreaterThanOrEqual(2)
       expect(history[0].deviceToken).toBe(token)
       expect(history[0].status).toBe('SENT')

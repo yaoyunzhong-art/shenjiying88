@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁新闻详情页
  * BigAnts News Detail Page
  */
 
-'use client';
 
 import React from 'react';
 import { useParams } from 'next/navigation';

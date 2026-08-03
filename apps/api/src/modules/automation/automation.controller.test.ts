@@ -224,5 +224,106 @@ describe('AutomationController', () => {
     expect(res.success).toBe(true)
     expect(res.data.type).toBe('triggered')
   })
+
+  it('should create a scheduled job', () => {
+    const wfRes = controller.createWorkflow({ name: '定时任务', ruleId: 'rule_001' })
+    const res = controller.createJob({
+      workflowId: wfRes.data.id,
+      ruleId: 'rule_001',
+      type: 'scheduled',
+      context: { data: { cron: '0 */6 * * *' }, timestamp: new Date().toISOString() },
+    })
+    expect(res.success).toBe(true)
+    expect(res.data.type).toBe('scheduled')
+  })
+
+  it('should return all rules after creating multiple', () => {
+    controller.createRule({
+      name: '规则1',
+      description: '第一个',
+      conditions: [{ field: 'a', op: 'eq', value: 1 }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 1,
+    })
+    controller.createRule({
+      name: '规则2',
+      description: '第二个',
+      conditions: [{ field: 'b', op: 'eq', value: 2 }],
+      actions: [{ type: 'log_event', params: {} }],
+      enabled: true,
+      priority: 2,
+    })
+    const res = controller.listRules()
+    expect(res.data.total).toBeGreaterThanOrEqual(5)
+  })
+
+  it('should evaluate rule_003 with matching conditions', () => {
+    const res = controller.evaluateRule('rule_003', {
+      context: {
+        data: { ticket: { age_hours: 48, status: 'open' } },
+        timestamp: new Date().toISOString(),
+      },
+    })
+    expect(res.success).toBe(true)
+    expect(res.data.matched).toBe(true)
+    expect(res.data.triggeredActions).toContain('update_field')
+  })
+
+  it('should create workflow and list multiple jobs', () => {
+    const wfRes = controller.createWorkflow({ name: '批量任务', ruleId: 'rule_001' })
+    const wfId = wfRes.data.id
+    for (let i = 0; i < 3; i++) {
+      controller.createJob({
+        workflowId: wfId,
+        ruleId: 'rule_001',
+        type: 'manual',
+        context: { data: { idx: i }, timestamp: new Date().toISOString() },
+      })
+    }
+    const listRes = controller.listJobs({})
+    expect(listRes.data.total).toBe(3)
+  })
+
+  it('should return full rule detail with all fields', () => {
+    const createRes = controller.createRule({
+      name: '完整字段规则',
+      description: '测试完整字段',
+      conditions: [
+        { field: 'score', op: 'gte', value: 90 },
+        { field: 'active', op: 'eq', value: true },
+      ],
+      actions: [
+        { type: 'create_ticket', params: { priority: 'P1' } },
+        { type: 'send_email', params: { to: 'admin@test.com' } },
+      ],
+      enabled: true,
+      priority: 7,
+    })
+    const res = controller.getRule(createRes.data.id)
+    expect(res.success).toBe(true)
+    expect(res.data!.conditions).toHaveLength(2)
+    expect(res.data!.actions).toHaveLength(2)
+    expect(res.data!.name).toBe('完整字段规则')
+  })
+
+  it('should list jobs filtered by status', () => {
+    const wfRes = controller.createWorkflow({ name: '状态过滤', ruleId: 'rule_001' })
+    controller.createJob({
+      workflowId: wfRes.data.id,
+      ruleId: 'rule_001',
+      type: 'scheduled',
+      context: { data: {}, timestamp: new Date().toISOString() },
+    })
+    controller.createJob({
+      workflowId: wfRes.data.id,
+      ruleId: 'rule_001',
+      type: 'manual',
+      context: { data: {}, timestamp: new Date().toISOString() },
+    })
+    // All created jobs are 'pending', so filtering by 'pending' should return them
+    const pendingRes = controller.listJobs({ status: 'pending' })
+    expect(pendingRes.data.jobs.every((j: { status: string }) => j.status === 'pending')).toBe(true)
+  })
 })
-// Total: 20 tests
+// Total: 26 tests

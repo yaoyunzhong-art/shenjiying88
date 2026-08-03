@@ -154,9 +154,53 @@ export default function AgentEvaluationsClient({
   const columns = useMemo(() => buildColumns(), []);
   const passed = evaluations.filter((e) => e.overallScore >= 0.6).length;
   const failed = evaluations.length - passed;
+  const latestEvaluatedAt = useMemo(() => {
+    if (evaluations.length === 0) return '—';
+    return evaluations.reduce((latest, item) =>
+      item.evaluatedAt > latest ? item.evaluatedAt : latest
+    , evaluations[0]!.evaluatedAt);
+  }, [evaluations]);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api' ? 'loadAgentEvaluations' : 'FALLBACK_AGENT_EVALUATIONS',
+      businessDataSource:
+        deliveryMode === 'api' ? 'QualityEvaluation[] snapshot' : 'fallback quality evaluations',
+      refreshPath: 'AgentEvaluationsPage -> loadAgentEvaluations',
+      latestEvaluatedAt,
+      note:
+        deliveryMode === 'api'
+          ? '评估中心当前直接消费实时 quality evaluation 快照，列表筛选与统计都以服务端首屏快照为准。'
+          : '评估中心当前回退到 fallback quality evaluations，分数和反馈仅作为离线证据，不应误判为实时回归结果。'
+    }),
+    [deliveryMode, latestEvaluatedAt]
+  );
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div
+        style={{
+          padding: '10px 14px',
+          borderRadius: 8,
+          background: 'rgba(15, 23, 42, 0.35)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.7
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>
+          latestEvaluatedAt: {sourceEvidence.latestEvaluatedAt}
+        </div>
+        <div style={{ color: '#94a3b8' }}>{sourceEvidence.note}</div>
+      </div>
       {deliveryMode === 'fallback' ? (
         <div
           style={{

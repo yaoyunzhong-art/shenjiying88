@@ -1,30 +1,25 @@
-/**
- * capability-access/page.test.ts — 权限管理页面测试
- */
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
-const SRC = readFileSync(SOURCE, 'utf-8');
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-describe('capability — 正例', () => {
-  it('应导出 CapabilityAccessPage', () => assert.ok(SRC.includes('export default function CapabilityAccessPage')));
-  it('应包含权限管理标题', () => assert.ok(SRC.includes('权限管理')));
-  it('应包含角色数据', () => assert.ok(SRC.includes('ROLE_DATA') || SRC.includes('role')));
-  it('应包含作用域筛选', () => assert.ok(SRC.includes('scopeFilter') || SRC.includes('Select')));
-  it('应包含统计指标', () => assert.ok(SRC.includes('Statistic')));
-  it('应包含表格', () => assert.ok(SRC.includes('Table')));
-  it('应包含新建角色按钮', () => assert.ok(SRC.includes('新建角色')));
-});
-describe('capability — 反例', () => {
-  it('不应包含 dangerouslySetInnerHTML', () => assert.ok(!SRC.includes('dangerouslySetInnerHTML')));
-  it('不应包含 localStorage', () => assert.ok(!SRC.includes('localStorage')));
-});
-describe('capability — 边界', () => {
-  it('应包含状态映射', () => assert.ok(SRC.includes('STATUS_MAP') || SRC.includes('status')));
-  it('应包含 use client', () => assert.ok(SRC.includes("'use client'")));
-  it('源码长度应大于500', () => assert.ok(SRC.length > 500));
-});
+const DIR = dirname(fileURLToPath(import.meta.url))
+const PAGE_SRC = readFileSync(resolve(DIR, 'page.tsx'), 'utf-8')
+
+describe('stores/[id]/capability-access/page.tsx 结构固证', () => {
+  it('page 应保持最小 server wrapper 并桥接快照到 client', () => {
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+    assert.ok(PAGE_SRC.includes('export default async function CapabilityAccessPage'))
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadCapabilityAccessSnapshot'))
+    assert.ok(PAGE_SRC.includes('<CapabilityAccessClient snapshot={snapshot} />'))
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'))
+    assert.ok(!PAGE_SRC.includes('sourceEvidence'))
+  })
+
+  it('page 应保留服务端参数解包', () => {
+    assert.ok(PAGE_SRC.includes('params: Promise<{ id: string }>'))
+    assert.ok(PAGE_SRC.includes('const { id } = await params'))
+    assert.ok(!PAGE_SRC.includes('searchParams'))
+  })
+})

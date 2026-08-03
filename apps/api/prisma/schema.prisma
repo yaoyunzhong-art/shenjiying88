@@ -27,6 +27,32 @@ enum PortalChannel {
   PAD
 }
 
+enum CustomDomainStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SSL_ISSUING
+  ACTIVE_SSL
+  SSL_FAILED
+  DISABLED
+}
+
+enum CustomDomainVerificationMethod {
+  DNS_TXT
+}
+
+enum CustomDomainSslMode {
+  PLATFORM_MANAGED
+  USER_PROVIDED
+}
+
+enum CustomDomainCertificateStatus {
+  NOT_REQUESTED
+  PENDING
+  ACTIVE
+  FAILED
+  EXPIRED
+}
+
 enum ConfigInheritanceMode {
   PLATFORM_DEFAULT
   TENANT_DEFAULT
@@ -245,6 +271,7 @@ model Tenant {
   stores                 Store[]
   users                  User[]
   portalSites            PortalSite[]             @relation("TenantPortalSites")
+  customDomains          CustomDomain[]
   regionalOverrides      RegionalConfigOverride[] @relation("TenantOverrides")
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -260,6 +287,7 @@ model Brand {
   defaultMarketProfile   MarketProfile?           @relation("BrandDefaultMarket", fields: [defaultMarketProfileId], references: [id])
   stores                 Store[]
   portalSites            PortalSite[]             @relation("BrandPortalSites")
+  customDomains          CustomDomain[]
   regionalOverrides      RegionalConfigOverride[] @relation("BrandOverrides")
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -278,6 +306,7 @@ model Store {
   brand                  Brand                    @relation(fields: [brandId], references: [id])
   defaultMarketProfile   MarketProfile?           @relation("StoreDefaultMarket", fields: [defaultMarketProfileId], references: [id])
   portalSites            PortalSite[]             @relation("StorePortalSites")
+  customDomains          CustomDomain[]
   regionalOverrides      RegionalConfigOverride[] @relation("StoreOverrides")
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -305,6 +334,12 @@ model MemberProfile {
   createdAt   DateTime                @default(now())
   updatedAt   DateTime                @updatedAt
   extension   MemberProfileExtension?
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([svipStatus])
+  @@index([createdAt])
+  @@index([tenantId, createdAt])
 }
 
 model MemberProfileExtension {
@@ -357,9 +392,9 @@ model LytOrderSnapshot {
   couponCode          String?
   blindboxPlanId      String?
   blindboxQuantity    Int?
-  amount              Float     @default(0)
-  discountAmount      Float     @default(0)
-  payableAmount       Float     @default(0)
+  amount              Decimal   @default(0) @db.Decimal(10, 2)
+  discountAmount      Decimal   @default(0) @db.Decimal(10, 2)
+  payableAmount       Decimal   @default(0) @db.Decimal(10, 2)
   currency            String    @default("CNY")
   status              String    @default("UPDATED")
   paidAt              DateTime?
@@ -382,7 +417,7 @@ model LytPaymentSnapshot {
   externalOrderId     String
   paymentChannel      String?
   paymentStatus       String    @default("PENDING")
-  amount              Float     @default(0)
+  amount              Decimal   @default(0) @db.Decimal(10, 2)
   currency            String    @default("CNY")
   transactionNo       String?
   paidAt              DateTime?
@@ -587,8 +622,46 @@ model PortalSite {
   tenant          Tenant?         @relation("TenantPortalSites", fields: [tenantId], references: [id])
   brand           Brand?          @relation("BrandPortalSites", fields: [brandId], references: [id])
   store           Store?          @relation("StorePortalSites", fields: [storeId], references: [id])
+  customDomains   CustomDomain[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+}
+
+model CustomDomain {
+  id                      String                         @id @default(cuid())
+  domain                  String                         @unique
+  scopeType               PortalScopeType
+  tenantId                String
+  brandId                 String?
+  storeId                 String?
+  portalSiteId            String?
+  isPrimary               Boolean                        @default(false)
+  status                  CustomDomainStatus             @default(PENDING_VERIFICATION)
+  verificationMethod      CustomDomainVerificationMethod @default(DNS_TXT)
+  verificationHost        String
+  verificationToken       String
+  verifiedAt              DateTime?
+  lastVerifiedAt          DateTime?
+  verificationFailCount   Int                            @default(0)
+  sslMode                 CustomDomainSslMode            @default(PLATFORM_MANAGED)
+  certificateProvider     String?
+  certificateStatus       CustomDomainCertificateStatus  @default(NOT_REQUESTED)
+  certificateNotBefore    DateTime?
+  certificateNotAfter     DateTime?
+  certificateFingerprint  String?
+  lastCheckedAt           DateTime?
+  createdBy               String
+  tenant                  Tenant                         @relation(fields: [tenantId], references: [id])
+  brand                   Brand?                         @relation(fields: [brandId], references: [id])
+  store                   Store?                         @relation(fields: [storeId], references: [id])
+  portalSite              PortalSite?                    @relation(fields: [portalSiteId], references: [id])
+  createdAt               DateTime                       @default(now())
+  updatedAt               DateTime                       @updatedAt
+
+  @@index([tenantId, status])
+  @@index([brandId, isPrimary])
+  @@index([storeId, isPrimary])
+  @@index([portalSiteId])
 }
 
 model EmailChannelConfig {
@@ -1304,4 +1377,1541 @@ model InspectionTask {
   @@index([tenantId, status])
   @@index([tenantId, scheduledAt])
   @@map("inspection_task")
+}
+
+// ── ADR-045 科学知识体系V2: 赋能卡片 ──
+
+model EmpowerCard {
+  id              String   @id @default(uuid())
+  tag             String   // 标签: 竞品|技术|市场|用户|合规|设备|会员|运营|选址
+  summary         String   // 摘要 (≤140字)
+  source          String   // 来源: ZVZO2026|内部成熟模式|国家标准|...
+  freshnessScore  Int      @default(100) // 新鲜度 0-100
+  moduleMapping   String?  // 模块映射: P-38/会员系统/RBAC/...
+  quoteCount      Int      @default(0)   // 引用次数
+  lastQuotedAt    DateTime? // 最后引用时间
+  confidence      Int      @default(50)  // 可信度 0-100 (sourceTrust×0.3+vetted×0.4+fresh×0.3)
+  expertVetted    Boolean  @default(false) // 是否经专家校审
+  detailUrl       String?  // 详细内容链接 (docs/knowledge/xxx)
+  quoteLogs       EmpowerCardQuoteLog[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tag])
+  @@index([freshnessScore])
+  @@index([quoteCount])
+  @@map("empower_card")
+}
+
+// ============ B2-5 Invoice Prisma 持久化 ============
+model InvoiceV2 {
+  id             String    @id @default(cuid())
+  tenantId       String
+  invoiceNo      String    @unique
+  orderId        String?
+  type           String    // ELECTRONIC / PAPER / SPECIAL
+  amountCents    Int
+  taxAmountCents Int       @default(0)
+  taxRate        Float     @default(0.13)
+  status         String    @default("DRAFT") // DRAFT / ISSUED / CANCELLED / RED_FLUSH / ARCHIVED
+  buyerName      String?
+  buyerTaxId     String?
+  buyerEmail     String?
+  remark         String?
+  issuedAt       DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([status])
+  @@map("invoice_v2")
+}
+
+model EmpowerCardQuoteLog {
+  id          String   @id @default(uuid())
+  card        EmpowerCard @relation(fields: [cardId], references: [id])
+  cardId      String
+  quotedBy    String   // sessionKey/taskName
+  quotedAt    DateTime @default(now())
+  taskName    String   // 派单任务名
+  moduleName  String   // 引用模块
+
+  @@index([cardId])
+  @@index([quotedAt])
+  @@map("empower_card_quote_log")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// P-38 财务对账 - Reconciliation models
+// ═══════════════════════════════════════════════════════════════
+
+model ReconciliationReportModel {
+  id              String          @id @default(uuid())
+  tenantId        String?
+  date            String          // YYYY-MM-DD
+  internalTotal   Int             @default(0)
+  externalTotal   Int             @default(0)
+  matchedCount    Int             @default(0)
+  exactMatchCount Int             @default(0)
+  internalTotalCents Int          @default(0)
+  externalTotalCents Int          @default(0)
+  totalDiffCents  Int             @default(0)
+  matchKeyType    String          @default("orderNo")
+  durationMs      Int             @default(0)
+  toleranceCents  Int             @default(0)
+  generatedAt     DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  diffs           ReconcileDiffModel[]
+  matches         ReconcileMatchModel[]
+
+  @@index([tenantId])
+  @@index([date])
+  @@index([tenantId, date])
+  @@map("reconciliation_report")
+}
+
+model ReconcileDiffModel {
+  id                  String          @id @default(uuid())
+  reportId            String
+  kind                String          // amount-mismatch | missing-internal | missing-external | duplicate
+  orderNo             String?
+  internalId          String?
+  externalId          String?
+  internalAmountCents Int?
+  externalAmountCents Int?
+  diffCents           Int             @default(0)
+  duplicateIds        String?
+  note                String?
+
+  report              ReconciliationReportModel @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([kind])
+  @@map("reconcile_diff")
+}
+
+model ReconcileMatchModel {
+  id                  String          @id @default(uuid())
+  reportId            String
+  internalId          String
+  externalId          String
+  orderNo             String?
+  internalAmountCents Int             @default(0)
+  externalAmountCents Int             @default(0)
+  matched             Boolean         @default(false)
+
+  report              ReconciliationReportModel @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@map("reconcile_match")
+}
+
+model ResolvedDiffModel {
+  id          String    @id @default(uuid())
+  diffKey     String    @unique
+  resolvedAt  DateTime  @default(now())
+  resolvedBy  String?
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([diffKey])
+  @@map("resolved_diff")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// P-38 财务对账 - Ledger/Account/Settlement persistence models
+// ═══════════════════════════════════════════════════════════════
+
+model FinanceLedger {
+  id            String   @id @default(uuid())
+  tenantId      String
+  brandId       String?
+  storeId       String?
+  type          String   // REVENUE | EXPENSE | REFUND | ADJUSTMENT
+  amount        Float    @default(0)
+  balance       Float    @default(0)
+  orderId       String?
+  transactionId String?
+  description   String   @default("")
+  category      String?
+  recordedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([tenantId, recordedAt])
+  @@index([storeId])
+  @@map("finance_ledger")
+}
+
+model FinanceAccount {
+  id        String   @id @default(uuid())
+  tenantId  String
+  storeId   String?
+  name      String
+  type      String   // CASH | WECHAT | ALIPAY | BANK | OTHER
+  balance   Float    @default(0)
+  status    String   @default("ACTIVE") // ACTIVE | FROZEN | CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([type])
+  @@map("finance_account")
+}
+
+model FinanceSettlement {
+  id                String   @id @default(uuid())
+  tenantId          String
+  storeId           String?
+  startDate         DateTime
+  endDate           DateTime
+  totalRevenue      Float    @default(0)
+  totalExpense      Float    @default(0)
+  netProfit         Float    @default(0)
+  settlementStatus  String   @default("PENDING") // PENDING | CONFIRMED | DISPUTED
+  settledAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([settlementStatus])
+  @@map("finance_settlement")
+}
+
+model FinanceReport {
+  id            String   @id
+  tenantId      String
+  storeId       String?
+  title         String
+  reportType    String
+  periodStart   DateTime
+  periodEnd     DateTime
+  status        String
+  data          Json?
+  summary       Json?
+  generatedAt   DateTime?
+  generatedBy   String?
+  exportFormats Json
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  exports FinanceReportExport[]
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([storeId])
+  @@index([reportType])
+  @@index([status])
+  @@map("finance_report")
+}
+
+model FinanceReportExport {
+  id          String   @id
+  tenantId    String
+  reportId    String
+  format      String
+  url         String?
+  content     String?
+  columns     Json?
+  filters     Json?
+  generatedAt DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  report FinanceReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([reportId])
+  @@index([format])
+  @@map("finance_report_export")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-15 生日趴引擎
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model BirthdayPlan {
+  id            String   @id @default(cuid())
+  tenantId      String
+  memberId      String
+  birthday      String
+  planDate      String
+  advanceDays   Int
+  tier          String   @default("STANDARD")
+  rewardType    String
+  rewardValue   Float
+  status        String   @default("pending")
+  isUpcoming    Boolean  @default(false)
+  allowFriends  Boolean  @default(false)
+  friendDiscount Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rewards       BirthdayReward[]
+  trackings     BirthdayTracking[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([status])
+  @@index([planDate])
+  @@map("birthday_plan")
+}
+
+model BirthdayReward {
+  id        String    @id @default(cuid())
+  tenantId  String
+  planId    String
+  type      String
+  value     Float
+  sentAt    DateTime?
+  claimedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  plan BirthdayPlan @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([planId])
+  @@map("birthday_reward")
+}
+
+model BirthdayTracking {
+  id             String   @id @default(cuid())
+  tenantId       String
+  planId         String
+  friendInvited  Int      @default(0)
+  totalSpend     Float    @default(0)
+  returnVisitDays Int     @default(0)
+  createdAt      DateTime @default(now())
+
+  plan BirthdayPlan @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([planId])
+  @@map("birthday_tracking")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-16 团建营销引擎
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model TeamBuildingPlan {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  name                String
+  type                String
+  location            String
+  budget              Int
+  expectedParticipants Int
+  description         String   @default("")
+  recommendedSeason   String?
+  remark              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  events TeamBuildingEvent[]
+
+  @@index([tenantId])
+  @@index([type])
+  @@map("team_building_plan")
+}
+
+model TeamBuildingEvent {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  planId              String
+  name                String
+  eventDate           String
+  participants        Int
+  actualParticipants  Int?
+  totalSpend          Int?
+  avgSatisfaction     Float?
+  status              String   @default("scheduled")
+  lockedEquipment     Json     @default("[]")
+  participantMemberIds Json    @default("[]")
+  remark              String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  plan    TeamBuildingPlan @relation(fields: [planId], references: [id])
+  reports TeamBuildingReport[]
+
+  @@index([tenantId])
+  @@index([planId])
+  @@index([status])
+  @@index([eventDate])
+  @@map("team_building_event")
+}
+
+model TeamBuildingReport {
+  id                   String   @id @default(cuid())
+  eventId              String
+  tenantId             String
+  title                String
+  participantCount     Int
+  totalSpend           Int
+  avgSpend             Int
+  avgSatisfaction      Float
+  satisfactionBreakdown Json    @default("{}")
+  equipmentUsage       Json     @default("[]")
+  crmSyncStatus        String   @default("pending")
+  remark               String?
+  improvement          Json?
+  createdAt            DateTime @default(now())
+
+  event TeamBuildingEvent @relation(fields: [eventId], references: [id])
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("team_building_report")
+}
+
+model CrmSyncRecord {
+  id          String    @id @default(cuid())
+  tenantId    String
+  eventId     String
+  memberIds   Json      @default("[]")
+  totalSpend  Int       @default(0)
+  eventName   String    @default("")
+  syncStatus  String    @default("pending")
+  syncedAt    DateTime?
+  remark      String?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([syncStatus])
+  @@map("crm_sync_record")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-07 开放平台与ISV
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model IsvDeveloper {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  name        String
+  email       String   @unique
+  balance     Int      @default(0)
+  totalEarned Int      @default(0)
+  status      String   @default("active")
+  bio         String?
+  website     String?
+  phone       String?
+  apps        IsvApp[]
+  apiCallRecords ApiCallRecord[]
+  billingRecords BillingRecord[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("isv_developer")
+}
+
+model IsvApp {
+  id            String   @id @default(cuid())
+  tenantId      String?
+  name          String
+  description   String   @default("")
+  developerId   String
+  status        String   @default("pending")
+  apiKey        String   @unique
+  apiSecret     String
+  quota         Int      @default(1000)
+  apiVersion    String   @default("v1")
+  iconUrl       String?
+  category      String?
+  price         Int?
+  downloadCount Int      @default(0)
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNote    String?
+  apiKeys       ApiKeyRecord[]
+  apiCalls      ApiCallRecord[]
+  slaContracts  SlaContract[]
+  billingRecords BillingRecord[]
+  sdkVersions   SdkVersion[]
+  marketplace   MarketplaceItem?
+  developer      IsvDeveloper @relation(fields: [developerId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([developerId])
+  @@index([status])
+  @@map("isv_app")
+}
+
+model ApiKeyRecord {
+  id            String    @id @default(cuid())
+  appId         String
+  environment   String
+  apiKey        String    @unique
+  apiSecretHash String
+  status        String    @default("active")
+  createdBy     String
+  rotatedToId   String?
+  revokeReason  String?
+  createdAt     DateTime  @default(now())
+  rotatedAt     DateTime?
+  revokedAt     DateTime?
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([appId])
+  @@index([status])
+  @@map("api_key_record")
+}
+
+model ApiCallRecord {
+  id           String   @id @default(cuid())
+  appId        String
+  developerId  String
+  endpoint     String
+  timestamp    DateTime
+  cost         Int      @default(0)
+  statusCode   Int
+  signature    String
+  ipAddress    String?
+  durationMs   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  app       IsvApp       @relation(fields: [appId], references: [id])
+  developer IsvDeveloper @relation(fields: [developerId], references: [id])
+
+  @@index([appId])
+  @@index([developerId])
+  @@index([timestamp])
+  @@map("api_call_record")
+}
+
+model SlaContract {
+  id                    String    @id @default(cuid())
+  appId                 String
+  tierName              String
+  uptimeGuarantee       Float
+  penaltyRate           Float
+  monthlyCallCommitment Int
+  overageUnitPrice      Int
+  status                String    @default("active")
+  startDate             DateTime
+  endDate               DateTime?
+  currentUptime         Float     @default(1.0)
+  currentCalls          Int       @default(0)
+  breachCount           Int       @default(0)
+  totalPenalty          Int       @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([appId])
+  @@index([status])
+  @@map("sla_contract")
+}
+
+model BillingRecord {
+  id            String    @id @default(cuid())
+  developerId   String
+  appId         String
+  billingMonth  String
+  totalCalls    Int       @default(0)
+  totalAmount   Int       @default(0)
+  slaPenalty    Int       @default(0)
+  settleAmount  Int       @default(0)
+  status        String    @default("pending")
+  settledAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  developer IsvDeveloper @relation(fields: [developerId], references: [id])
+  app       IsvApp       @relation(fields: [appId], references: [id])
+
+  @@index([developerId])
+  @@index([appId])
+  @@index([billingMonth])
+  @@index([status])
+  @@map("billing_record")
+}
+
+model ApiVersion {
+  id             String    @id @default(cuid())
+  version        String    @unique
+  basePath       String
+  status         String    @default("active")
+  changelog      String?
+  deprecatedAt   DateTime?
+  sunsetAt       DateTime?
+  migrationGuide String?
+  createdAt      DateTime  @default(now())
+
+  @@map("api_version")
+}
+
+model SdkVersion {
+  id          String   @id @default(cuid())
+  appId       String
+  language    String
+  version     String
+  downloadUrl String
+  docContent  String?
+  isLatest    Boolean  @default(false)
+  changelog   String?
+  createdAt   DateTime @default(now())
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([appId])
+  @@index([isLatest])
+  @@map("sdk_version")
+}
+
+model MarketplaceItem {
+  id           String   @id @default(cuid())
+  appId        String   @unique
+  displayName  String
+  summary      String   @default("")
+  description  String   @default("")
+  tags         Json     @default("[]")
+  price        Int      @default(0)
+  screenshots  Json     @default("[]")
+  isFeatured   Boolean  @default(false)
+  rating       Float    @default(0)
+  reviewCount  Int      @default(0)
+  listedAt     DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  app IsvApp @relation(fields: [appId], references: [id])
+
+  @@index([isFeatured])
+  @@map("marketplace_item")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WP-17 异业联盟（Alliance）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AlliancePartner {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  name         String
+  businessType String
+  contact      String
+  address      String   @default("")
+  status       String   @default("ACTIVE")
+  currentGrade String?
+  healthScore  Float?
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tierChangeRecords TierChangeRecord[]
+
+  @@index([tenantId])
+  @@index([businessType])
+  @@index([status])
+  @@index([currentGrade])
+  @@map("alliance_partner")
+}
+
+model TierChangeRecord {
+  id        String   @id @default(cuid())
+  partnerId String
+  fromGrade String?
+  toGrade   String
+  reason    String   @default("")
+  changedAt DateTime @default(now())
+
+  partner AlliancePartner @relation(fields: [partnerId], references: [id])
+
+  @@index([partnerId])
+  @@map("tier_change_record")
+}
+
+model CrossBrandCoupon {
+  id                 String   @id @default(cuid())
+  issuerPartnerId    String
+  issuerPartnerName  String
+  denomination       Int
+  minSpend           Int      @default(0)
+  validFrom          DateTime
+  validTo            DateTime
+  acceptedPartnerIds Json     @default("[]")
+  status             String   @default("active")
+  description        String   @default("")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  redemptions CouponRedemption[]
+  settlements CouponSettlement[]
+
+  @@index([issuerPartnerId])
+  @@index([status])
+  @@index([validTo])
+  @@map("cross_brand_coupon")
+}
+
+model CouponRedemption {
+  id             String   @id @default(cuid())
+  couponId       String
+  partnerId      String
+  partnerName    String
+  orderId        String
+  memberId       String
+  orderAmount    Int
+  discountApplied Int
+  redeemedAt     DateTime @default(now())
+
+  coupon CrossBrandCoupon @relation(fields: [couponId], references: [id])
+
+  @@index([couponId])
+  @@index([partnerId])
+  @@index([orderId])
+  @@map("coupon_redemption")
+}
+
+model CouponSettlement {
+  id                  String    @id @default(cuid())
+  couponId            String
+  denomination        Int
+  totalDiscountApplied Int      @default(0)
+  issuerPartnerId     String
+  redeemPartnerId     String
+  issuerPayAmount     Int
+  redeemReceiveAmount Int
+  platformCommission  Int       @default(0)
+  status              String    @default("pending")
+  createdAt           DateTime  @default(now())
+  settledAt           DateTime?
+
+  coupon CrossBrandCoupon @relation(fields: [couponId], references: [id])
+
+  @@index([couponId])
+  @@index([status])
+  @@map("coupon_settlement")
+}
+
+model AllianceSettlement {
+  id                  String    @id @default(cuid())
+  orderId             String
+  type                String
+  totalAmount         Int
+  participants        Json      @default("[]")
+  executedParticipants Json?
+  status              String    @default("pending")
+  approvedAt          DateTime?
+  executedAt          DateTime?
+  refundAmount        Int?
+  returnCount         Int?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+  @@map("alliance_settlement")
+}
+
+model UnlinkedOrder {
+  id              String   @id @default(cuid())
+  orderId         String
+  storeId         String
+  amount          Int      @default(0)
+  location        Json?
+  linkedPartnerId String?
+  linkStatus      String   @default("unlinked")
+  createdAt       DateTime @default(now())
+
+  @@index([storeId])
+  @@index([linkStatus])
+  @@map("unlinked_order")
+}
+
+model AnomalyTransaction {
+  id             String   @id @default(cuid())
+  partnerId      String
+  partnerName    String
+  type           String
+  severity       String
+  involvedAmount Int      @default(0)
+  description    String   @default("")
+  detectedAt     DateTime @default(now())
+  relatedId      String?
+
+  reviewRecords ReviewRecord[]
+
+  @@index([partnerId])
+  @@index([type])
+  @@index([severity])
+  @@map("anomaly_transaction")
+}
+
+model ReviewRecord {
+  id         String   @id @default(cuid())
+  anomalyId  String
+  partnerId  String
+  decision   String
+  reviewer   String
+  note       String   @default("")
+  reviewedAt DateTime @default(now())
+
+  anomaly AnomalyTransaction @relation(fields: [anomalyId], references: [id])
+
+  @@index([anomalyId])
+  @@index([partnerId])
+  @@index([decision])
+  @@map("review_record")
+}
+
+model DataCallbackRecord {
+  id            String   @id @default(cuid())
+  partnerId     String
+  dataType      String
+  payload       String
+  receivedAt    DateTime @default(now())
+  processStatus String   @default("pending")
+  processResult String?
+
+  @@index([partnerId])
+  @@index([dataType])
+  @@index([processStatus])
+  @@map("data_callback_record")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// P-47 品牌运营 (Brand Operations)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model BrandAsset {
+  id        String   @id @default(cuid())
+  tenantId  String
+  type      String
+  url       String
+  name      String
+  metadata  Json?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId, type])
+  @@index([tenantId, isDeleted])
+  @@map("brand_asset")
+}
+
+model BrandCampaign {
+  id            String    @id @default(cuid())
+  tenantId      String
+  title         String
+  description   String
+  status        String    @default("draft")
+  storeIds      Json
+  startDate     DateTime
+  endDate       DateTime
+  createdBy     String
+  approvedBy    String?
+  submittedBy   String?
+  submittedAt   DateTime?
+  approvedAt    DateTime?
+  rejectedBy    String?
+  rejectReason  String?
+  publishedBy   String?
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, startDate, endDate])
+  @@map("brand_campaign")
+}
+
+model BrandCampaignTemplate {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  name                String
+  description         String   @default("")
+  defaultStoreIds     Json
+  defaultDurationDays Int      @default(30)
+  createdBy           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("brand_campaign_template")
+}
+
+model Collaboration {
+  id        String    @id @default(cuid())
+  tenantId  String
+  title     String
+  type      String
+  status    String    @default("draft")
+  partnerName  String
+  partnerContactName  String
+  partnerContactPhone String
+  partnerGrade String
+  revenueShareType  String?
+  revenueSharePartnerRate Float?
+  revenueShareOurRate     Float?
+  startDate DateTime
+  endDate   DateTime
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@map("collaboration")
+}
+
+model BrandChannel {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  type      String
+  config    Json?
+  contactName  String?
+  contactPhone String?
+  status    String   @default("active")
+  creaedBy  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, type])
+  @@index([tenantId, status])
+  @@map("brand_channel")
+}
+
+model BrandKPI {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  category    String
+  period      String
+  periodStart String
+  periodEnd   String
+  targetValue Float
+  currentValue Float  @default(0)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, category])
+  @@index([tenantId, period])
+  @@map("brand_kpi")
+}
+
+model RecycleBinItem {
+  id         String   @id @default(cuid())
+  tenantId   String
+  entityType String
+  entityId   String
+  entityData Json?
+  deletedBy  String
+  restoredAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, entityType])
+  @@index([tenantId])
+  @@map("recycle_bin_item")
+}
+
+model CollaborationContract {
+  id             String   @id @default(cuid())
+  collaborationId String
+  tenantId       String
+  contractNumber String
+  contractType   String
+  status         String   @default("draft")
+  content        String   @default("")
+  signedByA      DateTime?
+  signedByB      DateTime?
+  effectiveDate  DateTime?
+  expiryDate     DateTime?
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([collaborationId])
+  @@index([tenantId, status])
+  @@map("collaboration_contract")
+}
+
+model CampaignABTest {
+  id          String   @id @default(cuid())
+  campaignId  String
+  tenantId    String
+  name        String
+  description String   @default("")
+  variants    Json
+  winnerVariant String?
+  decidedAt   DateTime?
+  status      String   @default("running")
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([tenantId, status])
+  @@map("campaign_ab_test")
+}
+
+model ExportRecord {
+  id          String    @id @default(cuid())
+  tenantId    String
+  format      String
+  scope       String
+  status      String    @default("pending")
+  fileUrl     String?
+  requestedBy String
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("export_record")
+}
+
+model CampaignSchedule {
+  id          String   @id @default(cuid())
+  campaignId  String
+  tenantId    String
+  action      String
+  scheduledAt DateTime
+  status      String   @default("pending")
+  executedAt  DateTime?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([tenantId, status])
+  @@map("campaign_schedule")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// P-30 后勤管理 (Logistics Management)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Supplier {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  contactName String
+  contactPhone String
+  email       String?
+  address     String?
+  grade       String   @default("regular")
+  status      String   @default("active")
+  score       Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+  stockMovements  StockMovement[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, grade])
+  @@map("supplier")
+}
+
+model PurchaseOrder {
+  id            String    @id @default(cuid())
+  tenantId      String
+  supplierId    String
+  orderNumber   String    @unique
+  items         Json
+  totalAmount   Float
+  status        String    @default("pending")
+  orderedBy     String
+  approvedBy    String?
+  deliveredAt   DateTime?
+  cancelledBy   String?
+  cancelReason  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([supplierId])
+  @@map("purchase_order")
+}
+
+model StockMovement {
+  id          String   @id @default(cuid())
+  tenantId    String
+  type        String   // inbound / outbound / adjustment
+  itemId      String?
+  itemName    String
+  quantity    Int
+  supplierId  String?
+  referenceId String?  // 关联采购订单ID
+  operator    String
+  note        String?
+  createdAt   DateTime @default(now())
+
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId, type])
+  @@index([tenantId, createdAt])
+  @@map("stock_movement")
+}
+
+model StockItem {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  sku         String?  @unique
+  category    String?
+  quantity    Int      @default(0)
+  minQuantity Int      @default(10)
+  unit        String   @default("个")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, category])
+  @@index([tenantId, quantity])
+  @@map("stock_item")
+}
+
+model MaintenanceTask {
+  id            String    @id @default(cuid())
+  tenantId      String
+  title         String
+  description   String    @default("")
+  type          String    @default("regular")  // regular / emergency
+  priority      String    @default("medium")
+  status        String    @default("pending")  // pending / assigned / in_progress / completed / cancelled
+  assignedTo    String?
+  assignedAt    DateTime?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  cancelledBy   String?
+  cancelReason  String?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, type])
+  @@map("maintenance_task")
+}
+
+model LogisticsKPI {
+  id        String   @id @default(cuid())
+  tenantId  String
+  period    String   // e.g. "2026-07"
+  totalOrders  Int   @default(0)
+  totalInbound  Int  @default(0)
+  totalOutbound Int  @default(0)
+  completedTasks Int @default(0)
+  emergencyTasks Int @default(0)
+  avgCompletionHours Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, period])
+  @@map("logistics_kpi")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 未成年保护 (Minor Protection)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model MinorIdentityVerification {
+  id              String   @id
+  tenantId        String
+  memberId        String
+  method          String
+  identityNumber  String
+  name            String
+  isMinor         Boolean
+  birthday        String
+  guardianConsent Boolean  @default(false)
+  verifiedAt      DateTime
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, memberId])
+  @@map("minor_identity_verification")
+}
+
+model MinorAccessLog {
+  id             String   @id
+  tenantId       String
+  memberId       String
+  action         String
+  checkResult    String
+  timeRestricted Boolean  @default(false)
+  blockedReason  String   @default("")
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, createdAt])
+  @@map("minor_access_log")
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// Cashier 订单持久化 (RQ-20260720-011)
+// ═══════════════════════════════════════════════════════════════
+
+model CashierOrder {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  tenantId        String
+  brandId         String?
+  storeId         String?
+  memberId        String
+  items           Json?
+  currency        String   @default("CNY")
+  totalAmount     Decimal  @default(0) @db.Decimal(12, 2)
+  couponCode      String?
+  blindboxPlanId  String?
+  blindboxQuantity Int?
+  status          String   @default("CREATED")
+  latestPaymentId String?
+  source          String   @default("memory")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  paidAt          DateTime?
+  closedAt        DateTime?
+  closeReason     String?
+  closedBy        String?
+  closeNote       String?
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([tenantId, status])
+  @@map("cashier_orders")
+}
+
+model CashierPayment {
+  id                String   @id @default(cuid())
+  paymentId         String   @unique
+  tenantId          String
+  orderId           String
+  externalPaymentId String?
+  channel           String
+  amount            Decimal  @db.Decimal(12, 2)
+  status            String   @default("PENDING")
+  qrCodeUrl         String?
+  paymentUrl        String?
+  expiresAt         DateTime?
+  transactionNo     String?
+  sourceEventName   String?
+  failureReason     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime?
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([paymentId, status])
+  @@map("cashier_payments")
+}
+
+model CashierMember {
+  id        String   @id @default(cuid())
+  memberId  String   @unique
+  tenantId  String
+  phone     String
+  name      String
+  memberNo  String?
+  tier      String   @default("Bronze")
+  points    Int      @default(0)
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([phone])
+  @@map("cashier_members")
+}
+
+model CashierTransaction {
+  id        String   @id @default(cuid())
+  txnId     String   @unique
+  tenantId  String
+  orderId   String?
+  orderNo   String?
+  memberId  String
+  amount    Decimal  @db.Decimal(12, 2)
+  type      String
+  status    String
+  txnDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([orderId])
+  @@map("cashier_transactions")
+}
+
+// ── TOC 单店预约 ────────────────────────────────────────────
+
+model StorefrontBooking {
+  id            String   @id @default(cuid())
+  bookingId     String   @unique
+  tenantId      String
+  storeSlug     String
+  serviceId     String
+  serviceName   String
+  date          String
+  timeSlot      String
+  customerName  String
+  customerPhone String
+  amount        Int
+  couponCode    String?
+  status        String   @default("confirmed") // confirmed | cancelled | rescheduled | completed | no_show
+  qrCode        String
+  qrSignature   String
+  paymentUrl    String?
+  cancelledAt   DateTime?
+  rescheduledTo Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([date, timeSlot, serviceId, storeSlug], name: "uq_booking_slot")
+  @@index([tenantId])
+  @@index([storeSlug])
+  @@index([customerPhone])
+  @@index([bookingId])
+  @@map("storefront_bookings")
+}
+
+// ── TOC 推广码 ──────────────────────────────────────────────
+
+model StorefrontReferralCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  tenantId      String
+  type          String   // employee | kol | customer | store
+  referrerId    String
+  referrerName  String
+  storeSlug     String
+  channel       String   @default("wechat")
+  commissionTier Int     @default(3) // 佣金阶梯: 3/5/8/12
+  totalScans    Int      @default(0)
+  totalConversions Int   @default(0)
+  totalCommission  Int   @default(0) // 单位: 分
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ReferralRelations StorefrontReferralRelation[]
+
+  @@index([tenantId])
+  @@index([storeSlug])
+  @@index([referrerId])
+  @@map("storefront_referral_codes")
+}
+
+// ── TOC 推广关系 ────────────────────────────────────────────
+
+model StorefrontReferralRelation {
+  id              String   @id @default(cuid())
+  tenantId        String
+  referralCodeId  String
+  customerPhone   String
+  hasConverted    Boolean  @default(false)
+  orderAmount     Int?
+  commissionAmount Int?
+  scannedAt       DateTime @default(now())
+  convertedAt     DateTime?
+
+  referralCode StorefrontReferralCode @relation(fields: [referralCodeId], references: [id])
+
+  @@unique([referralCodeId, customerPhone])
+  @@index([tenantId])
+  @@index([customerPhone])
+  @@map("storefront_referral_relations")
+}
+
+// ── RLS 补全: brand_custom_font ───────────────────────────────
+
+model BrandCustomFont {
+  id         String   @id @default(cuid())
+  tenantId   String
+  brandId    String
+  fontName   String
+  fontUrl    String
+  format     String   @default("woff2")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId, brandId])
+  @@map("brand_custom_fonts")
+}
+
+// ── RLS 补全: brand_custom_script ─────────────────────────────
+
+model BrandCustomScript {
+  id         String   @id @default(cuid())
+  tenantId   String
+  brandId    String
+  scriptName String
+  scriptUrl  String
+  placement  String   @default("head")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([tenantId, brandId])
+  @@map("brand_custom_scripts")
+}
+
+// ── RLS 补全: logistics_fuel_record ───────────────────────────
+
+model LogisticsFuelRecord {
+  id              String   @id @default(cuid())
+  tenantId        String
+  vehicleId       String
+  driverId        String
+  fuelType        String
+  liters          Decimal  @db.Decimal(10,2)
+  costAmount      Decimal  @db.Decimal(12,2)
+  odometerBefore  Int?
+  odometerAfter   Int?
+  stationName     String?
+  recordedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([vehicleId])
+  @@map("logistics_fuel_records")
+}
+
+// ── RLS 补全: logistics_cost_record ───────────────────────────
+
+model LogisticsCostRecord {
+  id          String   @id @default(cuid())
+  tenantId    String
+  category    String
+  amount      Decimal  @db.Decimal(12,2)
+  description String?
+  referenceId String?
+  recordedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@map("logistics_cost_records")
+}
+
+// ── RLS 补全: stock_transfer_item ─────────────────────────────
+
+model StockTransferItem {
+  id              String   @id @default(cuid())
+  tenantId        String
+  transferId      String
+  productId       String
+  productName     String
+  quantity        Int
+  unit            String   @default("pc")
+  unitPrice       Decimal? @db.Decimal(10,2)
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([transferId])
+  @@map("stock_transfer_items")
+}
+
+// ── RLS 补全: logistics_supplement_cargo ──────────────────────
+
+model LogisticsSupplementCargo {
+  id            String   @id @default(cuid())
+  tenantId      String
+  orderId       String
+  cargoType     String
+  description   String
+  weight        Decimal? @db.Decimal(8,2)
+  volume        Decimal? @db.Decimal(8,2)
+  packageCount  Int      @default(1)
+  isHazardous   Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@map("logistics_supplement_cargos")
+}
+
+// ── RLS 补全: logistics_driver_schedule ───────────────────────
+
+model LogisticsDriverSchedule {
+  id          String   @id @default(cuid())
+  tenantId    String
+  driverId    String
+  driverName  String
+  vehicleId   String?
+  status      String   @default("scheduled")
+  startAt     DateTime
+  endAt       DateTime
+  routeId     String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([driverId])
+  @@map("logistics_driver_schedules")
+}
+
+// ── RLS 补全: minor_protection_profile ────────────────────────
+
+model MinorProtectionProfile {
+  userId              String   @id
+  tenantId            String
+  birthDate           DateTime
+  age                 Int
+  ageGroup            String
+  ageVerified         Boolean  @default(false)
+  verificationMethod  String?
+  verifiedAt          DateTime?
+  parentalConsentId   String?
+  dailyTimeLimitMin   Int      @default(0)
+  dailySpendLimit     Decimal  @default(0) @db.Decimal(10,2)
+  monthlySpendLimit   Decimal  @default(0) @db.Decimal(10,2)
+  restrictions        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([parentalConsentId])
+  @@map("minor_protection_profiles")
+}
+
+// ── RLS 补全: minor_parental_consent ──────────────────────────
+
+model MinorParentalConsent {
+  id              String   @id @default(cuid())
+  minorUserId     String
+  parentUserId    String
+  parentName      String
+  parentIdCard    String
+  relationship    String
+  consentType     String
+  status          String   @default("pending")
+  effectiveFrom   DateTime @default(now())
+  effectiveTo     DateTime?
+  tenantId        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([minorUserId])
+  @@map("minor_parental_consents")
 }

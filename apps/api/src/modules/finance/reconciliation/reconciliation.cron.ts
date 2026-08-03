@@ -76,7 +76,7 @@ export class ReconciliationCron implements OnApplicationBootstrap {
         }
       }
     }, 60 * 60 * 1000)
-    this.logger.log('ReconciliationCron started (hourly check, runs at 2am)')
+    this.logger.debug('ReconciliationCron started (hourly check, runs at 2am)')
   }
 
   onApplicationShutdown(): void {

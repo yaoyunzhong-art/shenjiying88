@@ -78,6 +78,7 @@ export interface UserInfoContract {
   email?: string
   nickname?: string
   roles: string[]
+  permissions: string[]
   avatar?: string
 }
 

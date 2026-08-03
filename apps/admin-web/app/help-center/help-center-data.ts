@@ -32,6 +32,12 @@ export interface HelpFaqItem {
   isPopular: boolean;
 }
 
+export interface HelpCenterSnapshotDelivery {
+  deliveryMode: 'mock';
+  articles: HelpArticle[];
+  generatedAt: string;
+}
+
 export type HelpCategoryId =
   | 'getting-started'
   | 'account-management'
@@ -296,6 +302,20 @@ export function getHelpArticles(): HelpArticle[] {
       helpfulCount: 45,
     },
   ];
+}
+
+function getLatestArticleTimestamp(articles: HelpArticle[]): string {
+  if (articles.length === 0) return '—';
+  return articles.reduce((latest, article) => (article.updatedAt > latest ? article.updatedAt : latest), articles[0]!.updatedAt);
+}
+
+export async function loadHelpCenterSnapshot(): Promise<HelpCenterSnapshotDelivery> {
+  const articles = getHelpArticles();
+  return {
+    deliveryMode: 'mock',
+    articles,
+    generatedAt: getLatestArticleTimestamp(articles),
+  };
 }
 
 // ---- FAQ 数据 ----

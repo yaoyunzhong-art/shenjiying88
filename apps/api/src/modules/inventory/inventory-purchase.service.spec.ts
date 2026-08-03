@@ -43,7 +43,12 @@ enum ReceiveStatus {
 
 enum ReturnStatus {
   Pending = 'PENDING',
+  Shipped = 'SHIPPED',
+  Rejected = 'REJECTED',
   Approved = 'APPROVED',
+  Refunded = 'REFUNDED',
+  Exchanged = 'EXCHANGED',
+  Closed = 'CLOSED',
   Completed = 'COMPLETED'
 }
 
@@ -459,23 +464,89 @@ function approveReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
   const o = poStore.get(ret.purchaseOrderId)
   if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO ${ret.purchaseOrderId} not found`)
 
-  if (ret.status !== ReturnStatus.Pending) throw new Error(`Not pending (${ret.status})`)
+  if (ret.status !== ReturnStatus.Pending && ret.status !== ReturnStatus.Shipped) {
+    throw new Error(`Not actionable for approval (${ret.status})`)
+  }
   ret.status = ReturnStatus.Approved
   returnStore.set(returnId, ret)
   return ret
 }
 
-function completeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+function inspectReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO ${ret.purchaseOrderId} not found`)
+
+  if (ret.status !== ReturnStatus.Pending) throw new Error(`Not pending (${ret.status})`)
+  ret.status = ReturnStatus.Shipped
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function rejectReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO ${ret.purchaseOrderId} not found`)
+
+  if (ret.status !== ReturnStatus.Pending && ret.status !== ReturnStatus.Shipped) {
+    throw new Error(`Not rejectable (${ret.status})`)
+  }
+  ret.status = ReturnStatus.Rejected
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function refundReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
   const ret = returnStore.get(returnId)
   if (!ret) throw new Error(`Return ${returnId} not found`)
   const o = poStore.get(ret.purchaseOrderId)
   if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
 
-  if (ret.status !== ReturnStatus.Approved) throw new Error(`Not approved (${ret.status})`)
-  ret.status = ReturnStatus.Completed
+  if (ret.status !== ReturnStatus.Approved) throw new Error(`Not refundable (${ret.status})`)
+  ret.status = ReturnStatus.Refunded
   ret.completedAt = now()
   returnStore.set(returnId, ret)
   return ret
+}
+
+function exchangeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
+
+  if (ret.status !== ReturnStatus.Approved) throw new Error(`Not exchangeable (${ret.status})`)
+  ret.status = ReturnStatus.Exchanged
+  ret.completedAt = now()
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function closeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  const ret = returnStore.get(returnId)
+  if (!ret) throw new Error(`Return ${returnId} not found`)
+  const o = poStore.get(ret.purchaseOrderId)
+  if (!o || o.tenantId !== ctx.tenantId) throw new Error(`PO not found`)
+
+  if (
+    ret.status !== ReturnStatus.Pending &&
+    ret.status !== ReturnStatus.Approved &&
+    ret.status !== ReturnStatus.Rejected &&
+    ret.status !== ReturnStatus.Refunded &&
+    ret.status !== ReturnStatus.Exchanged
+  ) {
+    throw new Error(`Not closable (${ret.status})`)
+  }
+  ret.status = ReturnStatus.Closed
+  ret.completedAt = now()
+  returnStore.set(returnId, ret)
+  return ret
+}
+
+function completeReturn(returnId: string, ctx: TenantCtx): ReturnOrder {
+  return closeReturn(returnId, ctx)
 }
 
 function getStats(ctx: TenantCtx) {
@@ -646,6 +717,10 @@ describe('InventoryPurchaseService', () => {
   // ─── 付款 ─────────────────────────────────────────────
 
   describe('payment', () => {
+    it('should reject payment for non-existent order', () => {
+      expect(() => recordPayment(tenant, { purchaseOrderId: 'nonexistent', amount: 100, paymentMethod: 'CASH' })).toThrow()
+    })
+
     it('should record full payment', () => {
       const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }] })
       submitPO(o.id, tenant)
@@ -697,7 +772,7 @@ describe('InventoryPurchaseService', () => {
       expect(ret.totalAmount).toBe(200)
     })
 
-    it('should approve and complete return', () => {
+    it('should approve and refund return', () => {
       const o = createPO(tenant, {
         supplierName: 'S1',
         items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
@@ -709,8 +784,75 @@ describe('InventoryPurchaseService', () => {
 
       const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
       approveReturn(ret.id, tenant)
-      const completed = completeReturn(ret.id, tenant)
-      expect(completed.status).toBe(ReturnStatus.Completed)
+      const refunded = refundReturn(ret.id, tenant)
+      expect(refunded.status).toBe(ReturnStatus.Refunded)
+    })
+
+    it('should inspect then approve return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const inspected = inspectReturn(ret.id, tenant)
+      // inspectReturn updates store directly; snapshot status before approveReturn overwrites
+      expect(inspected.status).toBe(ReturnStatus.Shipped)
+      const approved = approveReturn(ret.id, tenant)
+      expect(approved.status).toBe(ReturnStatus.Approved)
+    })
+
+    it('should approved then exchange return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      approveReturn(ret.id, tenant)
+      const exchanged = exchangeReturn(ret.id, tenant)
+      expect(exchanged.status).toBe(ReturnStatus.Exchanged)
+    })
+
+    it('should reject then close return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const rejected = rejectReturn(ret.id, tenant)
+      // rejectReturn updates store directly; snapshot status before closeReturn overwrites
+      expect(rejected.status).toBe(ReturnStatus.Rejected)
+      const completed = closeReturn(ret.id, tenant)
+      expect(completed.status).toBe(ReturnStatus.Closed)
+    })
+
+    it('should pending close return directly', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const closed = closeReturn(ret.id, tenant)
+      expect(closed.status).toBe(ReturnStatus.Closed)
     })
 
     it('should not exceed available quantity', () => {
@@ -779,7 +921,7 @@ describe('InventoryPurchaseService', () => {
     })
   })
 
-  // ─── 统计 & 租户隔离 ──────────────────────────────────
+  // ─── 经销商地域隔离 ──────────────────────────────────
 
   describe('stats & isolation', () => {
     it('should return correct stats', () => {
@@ -796,6 +938,156 @@ describe('InventoryPurchaseService', () => {
       createPO(t2, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 200 }] })
       expect(getStats(tenant).totalOrders).toBe(1)
       expect(getStats(t2).totalOrders).toBe(1)
+    })
+  })
+
+  // ─── 审批流边界 ────────────────────────────────────────
+
+  describe('approval edge cases', () => {
+    it('should not submit already-submitted order', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      submitPO(o.id, tenant)
+      expect(() => submitPO(o.id, tenant)).toThrow()
+    })
+
+    it('should reject already-rejected order', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      submitPO(o.id, tenant)
+      rejectPO(o.id, tenant, { approverId: 'u1', approverName: 'U1', comment: 'No' })
+      expect(() => rejectPO(o.id, tenant, { approverId: 'u1', approverName: 'U1', comment: 'Again' })).toThrow()
+    })
+
+    it('should not approve already-approved order', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1', comment: 'OK' })
+      expect(() => approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1', comment: 'Again' })).toThrow()
+    })
+
+    it('should not place unapproved order', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      submitPO(o.id, tenant)
+      expect(() => placeOrder(o.id, tenant)).toThrow()
+    })
+
+    it('should cancel draft order with reason', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      const cancelled = cancelPO(o.id, tenant, 'Out of season')
+      expect(cancelled.status).toBe(POStatus.Cancelled)
+      expect(cancelled.cancelReason).toBe('Out of season')
+    })
+  })
+
+  // ─── 退货生命周期 ────────────────────────────────────────
+
+  describe('return lifecycle', () => {
+    it('should reject return in closed status', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      closeReturn(ret.id, tenant)
+      expect(() => rejectReturn(ret.id, tenant)).toThrow()
+    })
+
+    it('should reject refund for unapproved return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      expect(() => refundReturn(ret.id, tenant)).toThrow()
+    })
+
+    it('should reject exchange for pending return', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      expect(() => exchangeReturn(ret.id, tenant)).toThrow()
+    })
+
+    it('should complete return (compat) via close', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 10, damagedQuantity: 0 }] })
+
+      const ret = createReturn(tenant, { purchaseOrderId: o.id, items: [{ productId: 'p1', quantity: 1, unitPrice: 100, reason: 'DAMAGED' }] })
+      const completed = completeReturn(ret.id, tenant)
+      expect(completed.status).toBe(ReturnStatus.Closed)
+    })
+  })
+
+  // ─── 收货边界 ────────────────────────────────────────────
+
+  describe('receive edge cases', () => {
+    it('should not receive draft order', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      expect(() => receivePO(o.id, tenant, { items: [{ productId: 'p1', receivedQuantity: 1, damagedQuantity: 0 }] })).toThrow()
+    })
+
+    it('should reject receiving unknown product', () => {
+      const o = createPO(tenant, {
+        supplierName: 'S1',
+        items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 10, unitPrice: 100 }],
+      })
+      submitPO(o.id, tenant)
+      approvePO(o.id, tenant, { approverId: 'u1', approverName: 'U1' })
+      placeOrder(o.id, tenant)
+      expect(() => receivePO(o.id, tenant, { items: [{ productId: 'unknown', receivedQuantity: 1, damagedQuantity: 0 }] })).toThrow()
+    })
+  })
+
+  // ─── 更新商品列表 ────────────────────────────────────────
+
+  describe('update items', () => {
+    it('should reject update with empty items', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      expect(() => updatePO(o.id, tenant, { items: [] })).toThrow()
+    })
+
+    it('should update items and recalculate total', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'A', sku: 'A', quantity: 1, unitPrice: 100 }] })
+      const updated = updatePO(o.id, tenant, {
+        items: [
+          { productId: 'p1', productName: 'A', sku: 'A', quantity: 5, unitPrice: 200 },
+          { productId: 'p2', productName: 'B', sku: 'B', quantity: 3, unitPrice: 150 },
+        ],
+      })
+      expect(updated.items).toHaveLength(2)
+      expect(updated.totalAmount).toBe(5 * 200 + 3 * 150)
+    })
+  })
+
+  // ─── 零值测试 ────────────────────────────────────────────
+
+  describe('zero value edge cases', () => {
+    it('should create order with zero total (free items)', () => {
+      const o = createPO(tenant, { items: [{ productId: 'p1', productName: 'Free Item', sku: 'FREE', quantity: 10, unitPrice: 0 }] })
+      expect(o.totalAmount).toBe(0)
+      expect(o.items[0].unitPrice).toBe(0)
     })
   })
 })

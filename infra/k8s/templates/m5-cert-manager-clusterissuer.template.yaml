@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: __CERT_MANAGER_CLUSTER_ISSUER__
+  labels:
+    app.kubernetes.io/part-of: shenjiying
+    app.kubernetes.io/component: cert-manager
+spec:
+  acme:
+    email: __ACME_EMAIL__
+    server: __ACME_SERVER_URL__
+    privateKeySecretRef:
+      name: __ACME_PRIVATE_KEY_SECRET_NAME__
+    solvers:
+__CERT_MANAGER_SOLVER_BLOCK__

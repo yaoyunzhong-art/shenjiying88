@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getTenantPortal, getBrandPortal } from './bootstrap';
-
 /**
  * tob-web Portal Resolution — L1 冒烟测试 (JMeter 风格: 正例 + 反例 + 边界)
  *
@@ -10,7 +9,7 @@ import { getTenantPortal, getBrandPortal } from './bootstrap';
 
 // ---- 正例 ----
 
-test('tob resolution: getTenantPortal returns portal+market on api success', async () => {
+test('tob resolution: getTenantPortal returns tenant-level portal+market', async () => {
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = String(input);
 

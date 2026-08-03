@@ -1,9 +1,9 @@
+'use client';
 /**
  * 促销活动编辑页 — Promotion Edit Page (Next.js App Router Page)
  * 功能: 编辑促销活动信息，支持状态/类型/预算/时间等字段修改，提交保存后返回详情页
  * 角色视角: 👔店长 / 📊运营
  */
-'use client';
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';

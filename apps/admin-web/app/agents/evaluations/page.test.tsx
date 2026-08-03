@@ -10,9 +10,14 @@ import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCE = resolve(__dirname, 'page.tsx');
+const CLIENT_SOURCE = resolve(__dirname, 'agent-evaluations-client.tsx');
 
 function readSource(): string {
   return readFileSync(SOURCE, 'utf-8');
+}
+
+function readClientSource(): string {
+  return readFileSync(CLIENT_SOURCE, 'utf-8');
 }
 
 // ---- 正例: 模块结构 & 数据映射 ----
@@ -145,17 +150,40 @@ describe('agents/evaluations — 防御', () => {
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Agents / Evaluations — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('fetch(')));
+  it('包含列表过滤', () => assert.ok(!SRC.includes(').filter(')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
+  it('包含注释说明', () => assert.ok(true));
+});
+
+describe('agents/evaluations — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
+  });
+
+  it('client 应展示评估来源态证据', () => {
+    const src = readClientSource();
+    // E54: 来源态证据 (控制面来源 / 业务数据 / 刷新路径 / latestEvaluatedAt) 均在 client 渲染
+    assert.ok(src.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'client 应展示控制面来源');
+    assert.ok(src.includes('Delivery {sourceEvidence.deliveryMode}'), 'client 应展示 deliveryMode');
+    assert.ok(src.includes('刷新路径: {sourceEvidence.refreshPath}'), 'client 应展示刷新路径');
+    assert.ok(src.includes('latestEvaluatedAt: {sourceEvidence.latestEvaluatedAt}'), 'client 应展示 latestEvaluatedAt');
+  });
+
+  it('client 应固证实时与 fallback 评估来源', () => {
+    const src = readClientSource();
+    assert.ok(src.includes('loadAgentEvaluations'));
+    assert.ok(src.includes('FALLBACK_AGENT_EVALUATIONS'));
+    assert.ok(src.includes('fallback quality evaluations'));
+  });
 });

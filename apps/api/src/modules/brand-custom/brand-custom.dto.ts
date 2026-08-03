@@ -242,6 +242,150 @@ export class ConfigureDomainDto {
   sslCertId?: string
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：品牌版本管理 DTO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class CreateVersionDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  note!: string
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：自定义脚本注入 DTO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export enum InjectScriptLocationEnum {
+  HEAD = 'head',
+  BODY_START = 'body_start',
+  BODY_END = 'body_end',
+}
+
+export class SetInjectScriptDto {
+  @IsEnum(InjectScriptLocationEnum)
+  @IsNotEmpty()
+  location!: InjectScriptLocationEnum
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  name!: string
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50000)
+  content!: string
+
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean
+}
+
+export class UpdateInjectScriptDto {
+  @IsOptional()
+  @IsEnum(InjectScriptLocationEnum)
+  location?: InjectScriptLocationEnum
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50000)
+  content?: string
+
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：自定义字体管理 DTO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export enum FontFormatEnum {
+  WOFF = 'woff',
+  WOFF2 = 'woff2',
+  TTF = 'ttf',
+  EOT = 'eot',
+}
+
+export class RegisterFontDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  name!: string
+
+  @IsString()
+  @IsNotEmpty()
+  url!: string
+
+  @IsEnum(FontFormatEnum)
+  @IsNotEmpty()
+  format!: FontFormatEnum
+
+  @IsOptional()
+  @IsString()
+  weight?: string
+
+  @IsOptional()
+  @IsString()
+  style?: string
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：多语言品牌设置 DTO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class SetLocaleDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(10)
+  locale!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  brandName?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  tagline?: string
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：版本差异 DTO（响应类型）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class VersionDiffResponse {
+  version1!: { id: string; createdAt: Date }
+  version2!: { id: string; createdAt: Date }
+  themeChanges!: {
+    field: string
+    label: string
+    before: string | undefined
+    after: string | undefined
+  }[]
+  domainChanges!: {
+    field: string
+    label: string
+    before: string | undefined
+    after: string | undefined
+  }[]
+  hasChanges!: boolean
+}
+
 // ── 预览主题 DTO ─────────────────────────────────────────────────────────────
 
 export class PreviewThemeDto {

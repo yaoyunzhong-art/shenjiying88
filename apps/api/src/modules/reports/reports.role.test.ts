@@ -102,7 +102,8 @@ function createController(options: { seedData?: boolean } = {}) {
   return new ReportController(
     agg, cache, exp, q,
     revenue, invTurn, memberGrowth, refundRate, orderConv,
-    prodRank, payMix, heatmap, channelFunnel, invAlert
+    prodRank, payMix, heatmap, channelFunnel, invAlert,
+    {} as any
   )
 }
 

@@ -1,9 +1,9 @@
+'use client';
 /**
  * salesperson-workbench/page.tsx — 导购员工作台
  * 角色: 张三 (旗舰店·上海)
  * 功能: 今日数据概览 / 待办任务 / 近期客户 / 快速操作
  */
-'use client';
 
 import { useMemo, useState } from 'react';
 
@@ -26,8 +26,7 @@ import {
   type RecentCustomer,
 } from './salesperson-data';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const RecentDataTable = DataTable as any;
+const RecentDataTable = DataTable;
 
 // ---- 样式 ----
 
@@ -369,7 +368,7 @@ export default function SalespersonWorkbenchPage() {
             </div>
           </div>
           <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(148,163,184,0.1)' }}>
-            <RecentDataTable
+            <DataTable
               columns={recentColumns}
               items={MOCK_RECENT_CUSTOMERS}
               rowKey={(item: RecentCustomer) => item.id}

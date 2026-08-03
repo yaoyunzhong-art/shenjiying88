@@ -90,6 +90,7 @@ function createRuntimeGovernanceHarness() {
 
   return {
     service: new RuntimeGovernanceService(prisma as never, integrationOrchestrationService as never, trustGovernanceService as never),
+    prisma,
     audits,
     rateLimitScopes
   }
@@ -259,6 +260,20 @@ it('contract: runtime governance operations overview applies callback stall time
       riskLevel: 'high'
     }
   )
+})
+
+it('contract: runtime governance operations overview falls back to empty persisted events when prisma table is unavailable', async () => {
+  const { service, prisma } = createRuntimeGovernanceHarness()
+  prisma.domainEvent.findMany = (async () => {
+    throw Object.assign(new Error('missing table'), { code: 'P2021' })
+  }) as never
+
+  const overview = await service.getOperationsOverview('tenant-runtime')
+
+  assert.equal(overview.summary.backlog, 0)
+  assert.equal(overview.summary.stalledCallbacks, 0)
+  assert.equal(overview.summary.highRiskBacklog, 0)
+  assert.equal(overview.receipts.length, 0)
 })
 
 it('contract: runtime governance submit returns stable receipt on duplicate idempotency key', async () => {

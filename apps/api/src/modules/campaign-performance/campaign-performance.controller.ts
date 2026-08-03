@@ -7,13 +7,26 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { CampaignQueryDto, CreateCampaignDto } from './campaign-performance.dto'
 import { CampaignPerformanceService } from './campaign-performance.service'
 
+const CAMPAIGN_PERFORMANCE_READ_PERMISSION = 'report:read'
+const CAMPAIGN_PERFORMANCE_WRITE_PERMISSION = 'report:export'
+
 @ApiTags('活动效果评估')
+@UseGuards(TenantGuard)
 @Controller('campaign-performance')
+@RequireTenantScope()
+@RequirePermissions(CAMPAIGN_PERFORMANCE_READ_PERMISSION)
 export class CampaignPerformanceController {
   constructor(
     private readonly campaignPerformanceService: CampaignPerformanceService,
@@ -104,6 +117,7 @@ export class CampaignPerformanceController {
   // ── 创建活动记录 ──
 
   @Post()
+  @RequirePermissions(CAMPAIGN_PERFORMANCE_WRITE_PERMISSION)
   @ApiOperation({ summary: '创建活动记录', description: '创建一条新的活动效果记录' })
   createCampaign(@Body() body: CreateCampaignDto) {
     const record = this.campaignPerformanceService.createCampaign({

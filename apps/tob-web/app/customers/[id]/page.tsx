@@ -1,9 +1,9 @@
+'use client';
 /**
  * customers/[id]/page.tsx — 企业客户详情页 (ToB 客户管理)
  *
  * B型任务：详情页（含编辑/删除/状态流转）
  */
-'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';

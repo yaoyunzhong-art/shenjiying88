@@ -23,13 +23,25 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
+
+import { Public } from '../foundation/identity-access/public.decorator'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   BillingService,
   BillRequest,
   type Currency,
   type PricingTier,
 } from './billing.service'
+
+const BILLING_SETTLEMENT_READ_PERMISSION = 'settlement:read'
+const BILLING_SETTLEMENT_APPROVE_PERMISSION = 'settlement:approve'
+const BILLING_SETTLEMENT_PAY_PERMISSION = 'settlement:pay'
 
 class CalculateBillDto {
   tenantId!: string
@@ -57,7 +69,10 @@ class ListInvoicesQueryDto {
   tenantId!: string
 }
 
+@UseGuards(TenantGuard)
 @Controller('api/billing')
+@RequireTenantScope()
+@RequirePermissions(BILLING_SETTLEMENT_READ_PERMISSION)
 export class BillingController {
   constructor(private readonly svc: BillingService) {}
 
@@ -86,6 +101,7 @@ export class BillingController {
    */
   @Post('invoices')
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermissions(BILLING_SETTLEMENT_APPROVE_PERMISSION)
   generateInvoice(@Body() body: GenerateInvoiceDto) {
     const request: BillRequest = {
       tenantId: body.tenantId,
@@ -126,6 +142,7 @@ export class BillingController {
    */
   @Post('invoices/:id/pay')
   @HttpCode(HttpStatus.OK)
+  @RequirePermissions(BILLING_SETTLEMENT_PAY_PERMISSION)
   payInvoice(@Param('id') id: string, @Body() body: PayInvoiceDto) {
     const payment = this.svc.payInvoice(id, body.method)
     return { success: true, data: payment }

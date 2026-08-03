@@ -4,14 +4,17 @@
 
 import {
   Controller, Get, Post, Delete, Param, Body, Query, HttpCode, HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { MultimodalFusionService } from './multimodal-fusion.service'
 import type {
   CreateFusionTaskDto, CrossModalSearchDto, ListFusionTasksQuery,
 } from './multimodal-fusion.dto'
 import type { FusionSource } from './multimodal-fusion.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('fusion')
+@UseGuards(TenantGuard)
 export class MultimodalFusionController {
   constructor(private readonly service: MultimodalFusionService) {}
 

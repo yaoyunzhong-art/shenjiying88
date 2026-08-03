@@ -74,6 +74,12 @@ describe('return-orders/detail 页面源码分析', () => {
     assert.match(SOURCE, /STATUS_STEPS/);
   });
 
+  it('应包含终态步骤索引修正函数', () => {
+    assert.match(SOURCE, /function getStatusStepIndex/);
+    assert.match(SOURCE, /status === 'exchanged'/);
+    assert.match(SOURCE, /status === 'rejected' \|\| status === 'closed'/);
+  });
+
   it('STATUS_STEPS 应包含 4 个步骤', () => {
     const steps = ['pending', 'inspecting', 'approved', 'refunded'];
     for (const step of steps) {
@@ -213,8 +219,22 @@ describe('退货单详情页代码完整性', () => {
     assert.match(SOURCE, /删除确认/);
   });
 
-  it('应包含 navigateBack 返回', () => {
-    assert.match(SOURCE, /navigateBack/);
+  it('应从路由参数读取退货 id 并通过 runtime 加载真实详情', () => {
+    assert.match(SOURCE, /resolveCurrentReturnId/);
+    assert.match(SOURCE, /getCurrentInstance\(\)\?\.router\?\.params\?\.id/);
+    assert.match(SOURCE, /loadMiniappPurchaseReturnDetail/);
+    assert.match(SOURCE, /deliveryNote/);
+  });
+
+  it('应通过 runtime 提交退货动作，并对失败场景给出阻断提示', () => {
+    assert.match(SOURCE, /executeMiniappPurchaseReturnAction/);
+    assert.match(SOURCE, /remark/);
+    assert.match(SOURCE, /if \(result\.success\)/);
+    assert.match(SOURCE, /setDeliveryNote\(result\.note\)/);
+  });
+
+  it('删除入口应提示暂未开放删除，而不是伪造成功返回', () => {
+    assert.match(SOURCE, /暂未开放删除/);
   });
 
   it('应使用 ScrollView 作为根容器', () => {

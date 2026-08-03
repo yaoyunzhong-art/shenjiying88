@@ -50,6 +50,8 @@ export const WEB_VITALS_THRESHOLDS: PerformanceThresholds = {
   tt: { good: 200, needsImprovement: 400, poor: 400 },
 };
 
+const isDev = typeof window !== 'undefined' && process.env.NODE_ENV === 'development';
+
 /**
  * 性能监控器类
  */
@@ -304,7 +306,7 @@ export class PerformanceMonitor {
   private flush(): void {
     // 上报数据到服务器
     const data = this.getSummary();
-    console.log('[PerformanceMonitor] Flushing data:', data);
+    if (isDev) console.debug('[PerformanceMonitor] Flushing data:', data);
     // 通过 sendBeacon 异步上报，不阻塞页面卸载
     if (navigator.sendBeacon) {
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });

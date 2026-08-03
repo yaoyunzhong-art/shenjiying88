@@ -10,7 +10,14 @@ import {
   ValidationPipe,
   HttpException,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { DeviceAdapterService, DeviceStatus } from './device-adapter.service'
 import {
   RegisterDeviceDto,
@@ -31,13 +38,21 @@ import type {
   DeviceCommand,
 } from './device-adapter.entity'
 
+const DEVICE_ADAPTER_STORE_READ_PERMISSION = 'store:read'
+const DEVICE_ADAPTER_STORE_WRITE_PERMISSION = 'store:update'
+const DEVICE_ADAPTER_PAYMENT_EXECUTE_PERMISSION = 'payment:execute'
+const DEVICE_ADAPTER_PAYMENT_REFUND_PERMISSION = 'payment:refund'
+
 /**
  * 设备适配器控制器
  *
  * 提供设备注册、管理、执行命令的 RESTful 接口
  */
+@UseGuards(TenantGuard)
 @Controller('device-adapter')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@RequireTenantScope()
+@RequirePermissions(DEVICE_ADAPTER_STORE_READ_PERMISSION)
 export class DeviceAdapterController {
   constructor(private readonly deviceAdapterService: DeviceAdapterService) {}
 
@@ -45,6 +60,7 @@ export class DeviceAdapterController {
 
   /** 注册新设备 */
   @Post('devices')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   registerDevice(@Body() dto: RegisterDeviceDto): DeviceConfig {
     const config: DeviceConfig = {
       deviceId: dto.deviceId,
@@ -88,6 +104,7 @@ export class DeviceAdapterController {
 
   /** 删除设备 */
   @Delete('devices/:deviceId')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   unregisterDevice(@Param('deviceId') deviceId: string): { success: boolean } {
     const device = this.deviceAdapterService.getDevice(deviceId)
     if (!device) {
@@ -101,6 +118,7 @@ export class DeviceAdapterController {
 
   /** 连接单个设备 */
   @Post('devices/:deviceId/connect')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async connectDevice(@Param('deviceId') deviceId: string): Promise<{ success: boolean; status: string }> {
     const device = this.deviceAdapterService.getDevice(deviceId)
     if (!device) {
@@ -115,6 +133,7 @@ export class DeviceAdapterController {
 
   /** 断开设备 */
   @Post('devices/:deviceId/disconnect')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async disconnectDevice(@Param('deviceId') deviceId: string): Promise<{ success: boolean }> {
     const device = this.deviceAdapterService.getDevice(deviceId)
     if (!device) {
@@ -126,6 +145,7 @@ export class DeviceAdapterController {
 
   /** 批量连接同类型设备 */
   @Post('devices/connect-all')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async connectAll(@Body() dto: ConnectAllDto): Promise<Record<string, boolean>> {
     const results = await this.deviceAdapterService.connectAll(dto.deviceType as DeviceConfig['deviceType'])
     const map: Record<string, boolean> = {}
@@ -153,6 +173,7 @@ export class DeviceAdapterController {
 
   /** 心跳检测 */
   @Post('devices/:deviceId/heartbeat')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async heartbeat(@Param('deviceId') deviceId: string): Promise<{ success: boolean }> {
     const device = this.deviceAdapterService.getDevice(deviceId)
     if (!device) {
@@ -175,6 +196,7 @@ export class DeviceAdapterController {
 
   /** POS 交易 */
   @Post('devices/:deviceId/pos/transaction')
+  @RequirePermissions(DEVICE_ADAPTER_PAYMENT_EXECUTE_PERMISSION)
   async posTransaction(
     @Param('deviceId') deviceId: string,
     @Body() dto: PosTransactionDto,
@@ -188,6 +210,7 @@ export class DeviceAdapterController {
 
   /** POS 退款 */
   @Post('devices/:deviceId/pos/refund')
+  @RequirePermissions(DEVICE_ADAPTER_PAYMENT_REFUND_PERMISSION)
   async posRefund(
     @Param('deviceId') deviceId: string,
     @Body() dto: PosRefundDto,
@@ -201,6 +224,7 @@ export class DeviceAdapterController {
 
   /** POS 读卡 */
   @Post('devices/:deviceId/pos/read-card')
+  @RequirePermissions(DEVICE_ADAPTER_PAYMENT_EXECUTE_PERMISSION)
   async posReadCard(@Param('deviceId') deviceId: string): Promise<DeviceResponse> {
     const device = this.deviceAdapterService.getDevice(deviceId)
     if (!device) {
@@ -213,6 +237,7 @@ export class DeviceAdapterController {
 
   /** 闸机开门 */
   @Post('devices/:deviceId/gate/open')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async gateOpen(
     @Param('deviceId') deviceId: string,
     @Body() dto: GateOpenDto,
@@ -241,6 +266,7 @@ export class DeviceAdapterController {
 
   /** 扫描 */
   @Post('devices/:deviceId/scanner/scan')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async scannerScan(@Param('deviceId') deviceId: string): Promise<DeviceResponse> {
     const device = this.deviceAdapterService.getDevice(deviceId)
     if (!device) {
@@ -259,6 +285,7 @@ export class DeviceAdapterController {
 
   /** 打印 */
   @Post('devices/:deviceId/printer/print')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async printerPrint(
     @Param('deviceId') deviceId: string,
     @Body() dto: PrinterPrintDto,
@@ -272,6 +299,7 @@ export class DeviceAdapterController {
 
   /** 打印二维码 */
   @Post('devices/:deviceId/printer/print-qr')
+  @RequirePermissions(DEVICE_ADAPTER_STORE_WRITE_PERMISSION)
   async printerPrintQr(
     @Param('deviceId') deviceId: string,
     @Body() dto: PrinterPrintQrDto,

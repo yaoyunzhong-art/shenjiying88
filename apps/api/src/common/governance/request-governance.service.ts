@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable } from '@nestjs/common'
+import { Global, Injectable, Module } from '@nestjs/common'
 import type { Response } from 'express'
 import { TrustGovernanceService } from '../../modules/foundation/trust-governance/trust-governance.service'
 import type {
@@ -170,3 +170,11 @@ export class RequestGovernanceService {
     }
   }
 }
+
+/** 全局治理模块: 导出 RequestGovernanceService, 供各业务模块的 TrafficGovernanceGuard 使用 */
+@Global()
+@Module({
+  providers: [RequestGovernanceService],
+  exports: [RequestGovernanceService],
+})
+export class RequestGovernanceModule {}

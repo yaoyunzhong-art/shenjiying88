@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -20,14 +11,29 @@ import {
   BulkCreateClausesDto,
 } from './contract-manager.dto'
 import { ContractManagerService } from './contract-manager.service'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope
+} from '../foundation/identity-access/identity-access.decorator'
+
+const CONTRACTS_READ_PERMISSION = 'contracts:read'
+const CONTRACT_CREATE_PERMISSION = 'contract:create'
+const CONTRACT_UPDATE_PERMISSION = 'contract:update'
+const CONTRACT_CLAUSE_MANAGE_PERMISSION = 'contract:clause:manage'
+const CONTRACT_TERMINATE_PERMISSION = 'contract:terminate'
 
 @Controller('contracts')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(CONTRACTS_READ_PERMISSION)
 export class ContractManagerController {
   constructor(private readonly contractService: ContractManagerService) {}
 
   // ── Contract CRUD ──
 
   @Post()
+  @RequirePermissions(CONTRACT_CREATE_PERMISSION)
   createContract(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateContractDto,
@@ -72,6 +78,7 @@ export class ContractManagerController {
   }
 
   @Patch(':contractId')
+  @RequirePermissions(CONTRACT_UPDATE_PERMISSION)
   updateContract(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('contractId') contractId: string,
@@ -81,6 +88,7 @@ export class ContractManagerController {
   }
 
   @Patch(':contractId/status')
+  @RequirePermissions(CONTRACT_TERMINATE_PERMISSION)
   updateContractStatus(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('contractId') contractId: string,
@@ -112,6 +120,7 @@ export class ContractManagerController {
   // ── Clause CRUD ──
 
   @Post(':contractId/clauses')
+  @RequirePermissions(CONTRACT_CLAUSE_MANAGE_PERMISSION)
   addClause(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('contractId') contractId: string,
@@ -130,6 +139,7 @@ export class ContractManagerController {
   }
 
   @Post(':contractId/clauses/bulk')
+  @RequirePermissions(CONTRACT_CLAUSE_MANAGE_PERMISSION)
   bulkAddClauses(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('contractId') contractId: string,
@@ -162,6 +172,7 @@ export class ContractManagerController {
   }
 
   @Patch('clauses/:clauseId')
+  @RequirePermissions(CONTRACT_CLAUSE_MANAGE_PERMISSION)
   updateClause(
     @Param('clauseId') clauseId: string,
     @Body() body: UpdateClauseDto,
@@ -170,6 +181,7 @@ export class ContractManagerController {
   }
 
   @Delete('clauses/:clauseId')
+  @RequirePermissions(CONTRACT_CLAUSE_MANAGE_PERMISSION)
   deleteClause(@Param('clauseId') clauseId: string) {
     return this.contractService.deleteClause(clauseId)
   }
@@ -177,6 +189,7 @@ export class ContractManagerController {
   // ── Mock Seed ──
 
   @Post('seed')
+  @RequirePermissions(CONTRACT_CREATE_PERMISSION)
   seedMockData(@TenantContext() tenantContext: RequestTenantContext) {
     this.contractService.seedMockData(tenantContext.tenantId)
     return { message: 'Mock contract data seeded' }

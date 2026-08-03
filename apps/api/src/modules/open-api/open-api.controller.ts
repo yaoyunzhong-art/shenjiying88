@@ -19,11 +19,15 @@ import {
   Post,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import type { Request } from 'express'
 import { OpenApiService } from './open-api.service'
 import type { SyncPayload, CommandPayload } from './open-api.entity'
 
+@UseGuards(TenantGuard)
 @Controller('open')
 export class OpenApiController {
   constructor(private readonly service: OpenApiService) {}

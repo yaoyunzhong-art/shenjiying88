@@ -167,9 +167,53 @@ export default function AgentConfigsClient({ configs, deliveryMode, error }: Age
     enabled: configs.filter((c) => c.enabled).length,
     disabled: configs.filter((c) => !c.enabled).length
   };
+  const latestUpdatedAt = useMemo(() => {
+    if (configs.length === 0) return '—';
+    return configs.reduce((latest, item) =>
+      item.updatedAt > latest ? item.updatedAt : latest
+    , configs[0]!.updatedAt);
+  }, [configs]);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api' ? 'loadAgentConfigs' : 'FALLBACK_AGENT_CONFIGS',
+      businessDataSource:
+        deliveryMode === 'api' ? 'AgentConfig[] snapshot' : 'fallback agent configs',
+      refreshPath: 'AgentConfigsPage -> loadAgentConfigs',
+      latestUpdatedAt,
+      note:
+        deliveryMode === 'api'
+          ? '配置中心当前直接消费实时 AgentConfig 快照，筛选、统计与删除入口都基于首屏快照渲染。'
+          : '配置中心当前回退到 fallback agent configs，页面仅展示离线配置证据，删除动作仍取决于真实写链路。'
+    }),
+    [deliveryMode, latestUpdatedAt]
+  );
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div
+        style={{
+          padding: '10px 14px',
+          borderRadius: 8,
+          background: 'rgba(15, 23, 42, 0.35)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.7
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>
+          latestUpdatedAt: {sourceEvidence.latestUpdatedAt}
+        </div>
+        <div style={{ color: '#94a3b8' }}>{sourceEvidence.note}</div>
+      </div>
       {deliveryMode === 'fallback' ? (
         <div
           style={{

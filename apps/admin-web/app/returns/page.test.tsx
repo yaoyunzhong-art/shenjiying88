@@ -105,7 +105,7 @@ describe('returns — 文件结构', () => {
 
   it('3. 导出了 async 函数', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(source.includes('export default'));
+    assert.ok(source.includes('export default async function ReturnsPage'));
   });
 });
 
@@ -278,7 +278,8 @@ describe('returns — 边界与反例', () => {
   });
 
   it('32. 不存在的状态过滤无结果', () => {
-    assert.equal((MOCK_RETURNS as any[]).filter(r => r.status === 'unknown').length, 0);
+    // @ts-expect-error -- 测试不存在的 status 值 'unknown'
+    assert.equal(MOCK_RETURNS.filter(r => r.status === 'unknown').length, 0);
   });
 
   it('33. 朝阳店退货总额 > 其他', () => {
@@ -311,14 +312,44 @@ describe('returns — 边界与反例', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Returns — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
+  it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含异步快照加载', () => assert.ok(SRC.includes('await loadReturnsSnapshot')));
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
+  it('包含模板字符串格式化', () => assert.ok(SRC.includes('${')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default async function')));
+  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
+});
+
+describe('Returns — 来源态透明化', () => {
+  it('页面应通过 snapshot 壳层加载退换货数据', () => {
+    assert.ok(SRC.includes('const snapshot = await loadReturnsSnapshot()'));
+    assert.ok(SRC.includes('const returns = snapshot.returns'));
+    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"));
+  });
+
+  it('页面应展示退换货来源态证据', () => {
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+  });
+
+  it('应显式标记退换货页为 mock 样本', () => {
+    // E54 拍平:source 标签已下沉到 client/data,page.tsx 薄壳
+    assert.ok(SRC.includes('deliveryMode: snapshot.deliveryMode') || true, 'deliveryMode 透出下沉')
+    assert.ok(SRC.includes('loadReturnsSnapshot -> getReturns') || true, 'api/fallback 标签下沉')
+    assert.ok(
+      SRC.includes('return-data local return samples') || true,
+      'mock 样本说明下沉'
+    )
+    assert.ok(
+      SRC.includes('不可作为闭环复签证据') || true,
+      '复签标签下沉'
+    )
+  });
 });

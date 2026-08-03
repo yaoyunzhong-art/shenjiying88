@@ -6,13 +6,23 @@ import {
   Body,
   Logger,
   Optional,
-  BadRequestException
+  BadRequestException,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   MemberCrossTenantService,
   type CrossTenantMemberSummary,
   type CrossTenantMemberLink
 } from './member.cross-tenant'
+
+const MEMBER_CROSS_TENANT_READ_PERMISSION = 'member:read'
+const MEMBER_CROSS_TENANT_WRITE_PERMISSION = 'member:update'
 
 /**
  * Phase-36 T166-3: Member 跨租户识别 · HTTP 接口
@@ -24,11 +34,14 @@ import {
  *  - GET  /api/member/cross-tenant/history/:memberId - 查询审计追踪
  *
  * 反模式 v4 防御:
- *  - TenantGuard (TODO: Phase-37 RBAC)
+ *  - TenantGuard (TODO(PHASE37): RBAC guard)
  *  - 操作日志 (link/unlink 记录 performedBy)
  *  - PII 脱敏 (返回前 maskMobile)
  */
+@UseGuards(TenantGuard)
 @Controller('api/member/cross-tenant')
+@RequireTenantScope()
+@RequirePermissions(MEMBER_CROSS_TENANT_READ_PERMISSION)
 export class MemberCrossTenantController {
   private readonly logger = new Logger(MemberCrossTenantController.name)
 
@@ -58,6 +71,7 @@ export class MemberCrossTenantController {
    * 关联两个不同租户的会员
    */
   @Post('link')
+  @RequirePermissions(MEMBER_CROSS_TENANT_WRITE_PERMISSION)
   async link(
     @Body()
     body: {
@@ -77,6 +91,7 @@ export class MemberCrossTenantController {
    * 解关联
    */
   @Post('unlink')
+  @RequirePermissions(MEMBER_CROSS_TENANT_WRITE_PERMISSION)
   async unlink(
     @Body()
     body: {

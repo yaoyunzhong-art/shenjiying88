@@ -1,19 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UsePipes,
-  ValidationPipe,
-  HttpException,
-  HttpStatus,
-  DefaultValuePipe,
-  ParseIntPipe,
-} from '@nestjs/common'
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UsePipes, ValidationPipe, HttpException, HttpStatus, DefaultValuePipe, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { SecurityScannerService } from './security-scanner.service'
 import { WAFService, type WAFRule } from './waf.service'
 import type {
@@ -32,9 +17,20 @@ import {
   UpdateWAFRuleDto,
   EvaluateRequestDto,
 } from './security.dto'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const SECURITY_GOVERNANCE_READ_PERMISSION = 'foundation.governance.read'
+const SECURITY_GOVERNANCE_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('security')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(SECURITY_GOVERNANCE_READ_PERMISSION)
 export class SecurityController {
   constructor(
     private readonly scannerService: SecurityScannerService,
@@ -45,6 +41,7 @@ export class SecurityController {
 
   /** 对单个目标执行安全扫描 */
   @Post('scan')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   async scan(@Body() request: ScanRequestDto): Promise<SecurityVulnerability[]> {
     const target: SecurityScanTarget = {
       endpoint: request.target.endpoint,
@@ -56,6 +53,7 @@ export class SecurityController {
 
   /** 批量扫描多个目标 */
   @Post('scan/batch')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   async batchScan(@Body() request: BatchScanRequestDto): Promise<
     Array<{ target: string; vulnerabilities: SecurityVulnerability[] }>
   > {
@@ -73,6 +71,7 @@ export class SecurityController {
 
   /** 检测敏感数据暴露 */
   @Post('detect/sensitive-data')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   async detectSensitiveData(
     @Body() request: SensitiveDataCheckDto,
   ): Promise<{ endpoint: string; exposedFields: string[] }> {
@@ -85,6 +84,7 @@ export class SecurityController {
 
   /** 检测 JWT 弱密钥 */
   @Post('detect/jwt-weak-secret')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   async detectJWTWeakSecret(
     @Body() request: JWTWeakSecretCheckDto,
   ): Promise<{ weak: boolean }> {
@@ -97,6 +97,7 @@ export class SecurityController {
 
   /** 检测 IDOR 漏洞 */
   @Post('detect/idor')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   async detectIDOR(
     @Body() request: IDORCheckDto,
   ): Promise<SecurityVulnerability | null> {
@@ -109,6 +110,7 @@ export class SecurityController {
 
   /** 检测缺少速率限制 */
   @Post('detect/missing-rate-limit')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   async detectMissingRateLimit(
     @Body() body: { endpoint: string; count?: number },
   ): Promise<{ endpoint: string; missingRateLimit: boolean }> {
@@ -121,6 +123,7 @@ export class SecurityController {
 
   /** 生成漏洞报告 */
   @Post('report')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   generateReport(
     @Body() body: { vulnerabilities: SecurityVulnerability[] },
   ): string {
@@ -129,6 +132,7 @@ export class SecurityController {
 
   /** 导出 JSON 格式报告 */
   @Post('report/json')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   exportJSONReport(
     @Body() body: { vulnerabilities: SecurityVulnerability[] },
   ): SecurityReport {
@@ -146,12 +150,14 @@ export class SecurityController {
 
   /** 创建 WAF 规则 */
   @Post('waf/rules')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   createWAFRule(@Body() request: CreateWAFRuleDto): WAFRule {
     return this.wafService.addRule(request)
   }
 
   /** 更新 WAF 规则 */
   @Put('waf/rules/:id')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   updateWAFRule(
     @Param('id') id: string,
     @Body() request: UpdateWAFRuleDto,
@@ -168,6 +174,7 @@ export class SecurityController {
 
   /** 删除 WAF 规则 */
   @Delete('waf/rules/:id')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   deleteWAFRule(@Param('id') id: string): { deleted: boolean } {
     try {
       this.wafService.deleteRule(id)
@@ -184,6 +191,7 @@ export class SecurityController {
 
   /** 评估一个请求是否被 WAF 阻止 */
   @Post('waf/evaluate')
+  @RequirePermissions(SECURITY_GOVERNANCE_WRITE_PERMISSION)
   evaluateWAF(@Body() request: EvaluateRequestDto): WAFDecision {
     return this.wafService.evaluate(request)
   }

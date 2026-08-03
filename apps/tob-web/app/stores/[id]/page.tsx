@@ -1,10 +1,10 @@
+'use client';
 /**
  * stores/[id]/page.tsx — 门店详情页 (ToB 门店管理)
  * 角色视角: 👔企业运营经理 / 📊区域督导
  * 功能: 门店详情查看、编辑导航、状态流转
  * 类型: B-详情页 (含编辑/删除/状态流转)
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';

@@ -59,6 +59,14 @@ describe('HomePage — 正例', () => {
     assert.ok(src.includes('WorkbenchList'), '缺少 WorkbenchList 组件');
   });
 
+  it('应显式展示首页工作台来源态', () => {
+    const src = readSource();
+    assert.ok(src.includes('workbenchSource'), '缺少 workbenchSource');
+    assert.ok(src.includes('工作台入口来源态'), '缺少工作台入口来源态模块');
+    assert.ok(src.includes('snapshot.workbenches'), '缺少 snapshot.workbenches 来源');
+    assert.ok(src.includes('fallbackRoleWorkbenches'), '缺少 fallbackRoleWorkbenches 来源');
+  });
+
   it('应包含 GovernanceLinkedOverview 治理概览', () => {
     const src = readSource();
     assert.ok(src.includes('GovernanceLinkedOverview'), '缺少 GovernanceLinkedOverview');
@@ -157,5 +165,11 @@ describe('HomePage — 防御', () => {
     const src = readSource();
     const hrefMatches = (src.match(/href=/g) || []).length;
     assert.ok(hrefMatches >= 5, `href 数量 < 5，实际: ${hrefMatches}`);
+  });
+
+  it('应向 WorkbenchList 透传来源态 props', () => {
+    const src = readSource();
+    assert.ok(src.includes('deliveryMode={snapshot.deliveryMode}'), '缺少 deliveryMode 透传');
+    assert.ok(src.includes('sourceLabel={workbenchSource}'), '缺少 sourceLabel 透传');
   });
 });

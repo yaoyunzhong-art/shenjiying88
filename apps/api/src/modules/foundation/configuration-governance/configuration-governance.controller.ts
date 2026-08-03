@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import type { RequestTenantContext } from '../../tenant/tenant.types'
 import { RequirePermissions, RequireRoles, RequireTenantScope } from '../identity-access/identity-access.decorator'
 import { ApprovalQueryDto, ApprovalTimelineQueryDto, AuditQueryDto } from '../trust-governance/trust-governance.dto'
@@ -13,8 +13,10 @@ import {
   RotateSecretDto,
   UpsertConfigEntryDto
 } from './configuration-governance.dto'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/configuration-governance')
+@UseGuards(TenantGuard)
 @RequireTenantScope()
 export class ConfigurationGovernanceController {
   constructor(private readonly configurationGovernanceService: ConfigurationGovernanceService) {}

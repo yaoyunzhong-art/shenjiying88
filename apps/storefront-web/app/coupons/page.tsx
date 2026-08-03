@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   DataTable,
@@ -15,6 +15,8 @@ import {
   type DataTableColumn,
   type DataTableSortConfig,
 } from '@m5/ui';
+import { useTriState } from '../_components/useTriState';
+import { TriStateRenderer } from '../_components/TriStateRenderer';
 
 // ---- 类型 ----
 
@@ -184,12 +186,28 @@ const COLUMNS: DataTableColumn<Coupon>[] = [
 // ---- 页面 ----
 
 export default function CouponsListPage() {
+  const { loading, error, wrapLoad } = useTriState({ loading: true });
+  const [pageData, setPageData] = useState<Coupon[]>([]);
+  const [pageReady, setPageReady] = useState(false);
+
+  // 模拟加载数据
+  useEffect(() => {
+    wrapLoad(
+      new Promise<Coupon[]>((resolve) => {
+        setTimeout(() => resolve(MOCK_COUPONS), 300);
+      }),
+    ).then((data) => {
+      if (data) setPageData(data);
+      setPageReady(true);
+    });
+  }, []);
+
   const searchFields = useMemo<(keyof Coupon)[]>(
     () => ['name', 'type', 'storeName', 'value'],
     [],
   );
   const { searchTerm, setSearchTerm, filteredItems } = useSearchFilter(
-    MOCK_COUPONS,
+    pageData.length > 0 ? pageData : MOCK_COUPONS,
     searchFields,
   );
 
@@ -212,29 +230,44 @@ export default function CouponsListPage() {
   );
 
   const stats = useMemo(() => {
-    const active = MOCK_COUPONS.filter((c) => c.status === 'active').length;
-    const activeCoupons = MOCK_COUPONS.filter((c) => c.status === 'active');
+    const active = pageData.filter((c) => c.status === 'active').length;
+    const activeCoupons = pageData.filter((c) => c.status === 'active');
     const totalUsed = activeCoupons.reduce((s, c) => s + c.usedCount, 0);
-    const totalIssued = MOCK_COUPONS.reduce((s, c) => s + c.totalIssued, 0);
+    const totalIssued = pageData.reduce((s, c) => s + c.totalIssued, 0);
     const activeCashCoupons = activeCoupons.filter((c) => c.type === 'cash');
     const largestValue = activeCashCoupons.reduce(
       (max, c) => Math.max(max, parseInt(c.value.replace(/[^0-9]/g, ''), 10) || 0),
       0,
     );
     return {
-      total: MOCK_COUPONS.length,
+      total: pageData.length,
       active,
       totalIssued,
       totalUsed,
       largestValue,
     };
-  }, []);
+  }, [pageData]);
 
   return (
     <PageShell
       title="优惠券管理"
       description="查看和管理门店优惠券活动，跟踪核销情况。"
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={pageData.length === 0 && pageReady}
+        error={error}
+        onRetry={() =>
+          wrapLoad(
+            new Promise<Coupon[]>((resolve) => {
+              setTimeout(() => resolve(MOCK_COUPONS), 300);
+            }),
+          ).then((data) => {
+            if (data) setPageData(data);
+            setPageReady(true);
+          })
+        }
+      >
       {/* 统计卡片 */}
       <div
         style={{
@@ -315,6 +348,7 @@ export default function CouponsListPage() {
           />
         </div>
       )}
+      </TriStateRenderer>
     </PageShell>
   );
 }

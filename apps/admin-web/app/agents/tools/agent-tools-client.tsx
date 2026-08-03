@@ -132,9 +132,52 @@ export default function AgentToolsClient({ tools, deliveryMode, error }: AgentTo
     medium: tools.filter((t) => t.riskLevel === 'medium').length,
     low: tools.filter((t) => t.riskLevel === 'low').length
   };
+  const schemaCoverage = useMemo(() => {
+    if (tools.length === 0) return '0/0';
+    return `${tools.filter((tool) => tool.inputSchema).length}/${tools.length}`;
+  }, [tools]);
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api' ? 'loadAgentTools' : 'FALLBACK_AGENT_TOOLS',
+      businessDataSource:
+        deliveryMode === 'api' ? 'FallbackTool[] snapshot' : 'fallback agent tools',
+      refreshPath: 'AgentToolsPage -> loadAgentTools',
+      schemaCoverage,
+      generatedAt: 'n/a (snapshot lacks timestamp)',
+      note:
+        deliveryMode === 'api'
+          ? '工具注册中心当前直接消费实时 tool registry 快照，风险等级与入参 schema 由首屏快照确定。'
+          : '工具注册中心当前回退到 fallback agent tools，参数 schema 与风险等级仅作为离线治理证据。'
+    }),
+    [deliveryMode, schemaCoverage]
+  );
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div
+        style={{
+          padding: '10px 14px',
+          borderRadius: 8,
+          background: 'rgba(15, 23, 42, 0.35)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.7
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div>
+          schemaCoverage: {sourceEvidence.schemaCoverage} · generatedAt: {sourceEvidence.generatedAt}
+        </div>
+        <div style={{ color: '#94a3b8' }}>{sourceEvidence.note}</div>
+      </div>
       {deliveryMode === 'fallback' ? (
         <div
           style={{

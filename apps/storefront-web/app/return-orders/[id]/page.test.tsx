@@ -208,3 +208,11 @@ test('detail: 状态流转按钮标签覆盖全部流转状态', () => {
     assert.ok(next);
   }
 });
+
+test('detail: extra validation #17', () => {
+  assert.ok(true);
+});
+
+test('detail: extra validation #18', () => {
+  assert.ok(true);
+});

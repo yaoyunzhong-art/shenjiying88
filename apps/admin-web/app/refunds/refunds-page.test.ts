@@ -264,7 +264,10 @@ test('退款管理 → 反例: 金额不能为负数', () => {
 
 test('退款管理 → 反例: 非法 status 应被拒绝', () => {
   const valid = REFUND_STATUS;
-  assert.ok(!valid.includes('unknown' as any));
-  assert.ok(!valid.includes('pending' as any));
-  assert.ok(!valid.includes('done' as any));
+  // @ts-expect-error -- 测试非法 status 值不会被 valid 数组包含
+  assert.ok(!valid.includes('unknown' as RefundStatus));
+  // @ts-expect-error -- 测试非法 status 值不会被 valid 数组包含
+  assert.ok(!valid.includes('pending' as RefundStatus));
+  // @ts-expect-error -- 测试非法 status 值不会被 valid 数组包含
+  assert.ok(!valid.includes('done' as RefundStatus));
 });

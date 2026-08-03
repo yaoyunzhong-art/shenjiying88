@@ -42,6 +42,8 @@ const mockScanResults: Record<string, ScanResult> = {
 export function InventoryScanScreen() {
   const navigation = useNavigation();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [scanned, setScanned] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [scanHistory, setScanHistory] = useState<ScanResult[]>([]);
@@ -77,6 +79,26 @@ export function InventoryScanScreen() {
     setScanned(false);
     setScanResult(null);
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>数据获取失败: {error}</Text>
+        <Button
+          title="重试"
+          onPress={() => setError(null)}
+          style={styles.permissionButton}
+        />
+      </View>
+    );
+  }
 
   if (hasPermission === null) {
     return (
@@ -201,6 +223,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  permissionContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   permissionText: {
     color: '#FFFFFF',

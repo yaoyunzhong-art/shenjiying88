@@ -8,7 +8,6 @@ import { Module, Global } from '@nestjs/common'
 import { TenantLLMController } from './llm-config.controller'
 import { TenantLLMService } from './llm-config.service'
 import { TenantLLMGateway } from './llm-gateway'
-// @ts-ignore
 import { TenantScopeGuard } from '../../agent/tenant.guard'
 
 export const LLM_CONFIG_SERVICE = 'LLM_CONFIG_SERVICE'

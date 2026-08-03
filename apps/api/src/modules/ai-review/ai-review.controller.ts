@@ -16,6 +16,7 @@
 import {
   Controller, Get, Post, Put, Delete,
   Body, Param, Query, Headers, HttpCode, HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { AIReviewService } from './ai-review.service'
 import {
@@ -30,8 +31,10 @@ import type {
   ReviewSummary,
   ReviewConfig,
 } from './ai-review.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-review')
+@UseGuards(TenantGuard)
 export class AIReviewController {
   /** 内存存储: 评审结果缓存 (reviewId → ReviewResponse) */
   private readonly reviewStore = new Map<string, ReviewResponse>()

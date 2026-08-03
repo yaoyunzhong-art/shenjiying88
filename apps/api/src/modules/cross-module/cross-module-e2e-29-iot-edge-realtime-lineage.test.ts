@@ -309,7 +309,7 @@ describe('[L3-E2E][29] IoT → Edge → Realtime → Lineage 数据管道', () =
     })
 
     it('[反例] IoT数据缺失 → Edge推理失败', () => {
-      assert.throws(() => edgeInfer({ modelId: 'anomaly-detector-v1', input: {} as any, context: { deviceId: 'missing' } }), /input data/)
+      assert.throws(() => edgeInfer({ modelId: 'anomaly-detector-v1', input: ({} as Record<string, number>), context: { deviceId: 'missing' } }), /input data/)
     })
 
     it('[边界] Edge检测异常 → Lineage记录异常追踪', () => {

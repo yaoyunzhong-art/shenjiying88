@@ -2203,6 +2203,7 @@ export interface TobPortalContract {
   channel: string;
   name: string;
   primaryDomain: string;
+  domainSource: 'custom' | 'default';
   supportedLanguages: string[];
   heroTitle: string;
   heroSubtitle: string;
@@ -2222,6 +2223,7 @@ export interface StorePortalContract {
   channel: string;
   name: string;
   primaryDomain: string;
+  domainSource: 'custom' | 'default';
   supportedLanguages: string[];
   supportedSurfaces: string[];
 }
@@ -2232,6 +2234,501 @@ export interface PortalBootstrapResponse extends BootstrapFoundationMetadataCont
   storePortal: StorePortalContract;
   marketProfile: MarketProfileContract;
   regionalOverrides: RegionalConfigOverrideContract[];
+}
+
+export interface PortalDomainGovernanceScopeSummaryContract {
+  scopeType: string;
+  tenantId: string;
+  brandId?: string;
+  storeId?: string;
+  activeDomainCount: number;
+  missingPrimary: boolean;
+  currentPrimaryDomain?: string | null;
+  recommendedDomain?: string | null;
+  recommendationReason?: string;
+}
+
+export interface PortalDomainGovernanceSummaryContract {
+  totalMissingPrimaryScopes: number;
+  totalActiveWithoutPrimaryDomains: number;
+  recommendedReadyScopes: number;
+  tenantMissingPrimaryScopes: number;
+  brandMissingPrimaryScopes: number;
+  storeMissingPrimaryScopes: number;
+  requiresAttention: boolean;
+  lastEvaluatedAt: string;
+  currentScopes: PortalDomainGovernanceScopeSummaryContract[];
+}
+
+export interface DomainGovernanceWorkspaceQuery {
+  tenantId?: string;
+  brandId?: string;
+  storeId?: string;
+  marketCode?: string;
+  scopeType?: string;
+}
+
+export function selectDomainGovernanceFocusScope(
+  summary: PortalDomainGovernanceSummaryContract,
+): PortalDomainGovernanceScopeSummaryContract | undefined {
+  return (
+    summary.currentScopes.find((item) => item.missingPrimary) ??
+    summary.currentScopes.find((item) => item.scopeType === 'STORE') ??
+    summary.currentScopes.find((item) => item.scopeType === 'BRAND') ??
+    summary.currentScopes[0]
+  );
+}
+
+export function buildDomainGovernanceHref(query: DomainGovernanceWorkspaceQuery = {}): string {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'string' && value.length > 0) {
+      params.set(key, value);
+    }
+  }
+
+  const queryString = params.toString();
+  return queryString ? `/saas/domains?${queryString}` : '/saas/domains';
+}
+
+export function buildDomainGovernanceWorkspaceHref(
+  summary: PortalDomainGovernanceSummaryContract,
+  marketCode: string,
+): string {
+  const scope = selectDomainGovernanceFocusScope(summary);
+
+  return buildDomainGovernanceHref({
+    tenantId: scope?.tenantId,
+    brandId: scope?.brandId,
+    storeId: scope?.storeId,
+    marketCode,
+    scopeType: scope?.scopeType,
+  });
+}
+
+export function getDomainGovernanceAttentionLabel(
+  summary: PortalDomainGovernanceSummaryContract,
+): '待治理' | '已对齐' {
+  return summary.requiresAttention ? '待治理' : '已对齐';
+}
+
+export function formatDomainGovernanceCountsSummary(
+  summary: PortalDomainGovernanceSummaryContract,
+): string {
+  return `缺主 scope ${summary.totalMissingPrimaryScopes} / 活跃未设主域名 ${summary.totalActiveWithoutPrimaryDomains}`;
+}
+
+export function formatDomainGovernanceSourceSummary(
+  domainSource: string,
+  summary: PortalDomainGovernanceSummaryContract,
+): string {
+  return `域名来源 ${domainSource} / 可直接补选 ${summary.recommendedReadyScopes}`;
+}
+
+export interface DomainGovernanceDisplayModel {
+  eyebrow: string;
+  subtitle: string;
+  title: string;
+  statusLabel: string;
+  summaryText: string;
+  renderSections: DomainGovernanceRenderSection[];
+  workspaceLabel: string;
+  workspaceHref: string;
+  ctaLabel: string;
+  requiresAttention: boolean;
+}
+
+export const domainGovernanceDisplayCopy = {
+  eyebrow: '域名治理工作台',
+  subtitle: '统一域名缺口、推荐补选和治理入口展示',
+  detailSectionTitle: '治理明细',
+  workspaceLabel: '治理入口',
+  ctaLabel: '打开域名治理工作台',
+  sectionTitles: {
+    summary: '治理概览',
+    focusScope: '焦点 scope',
+    recommendation: '推荐补选',
+    timeline: '评估时间',
+    workspace: '治理入口',
+  },
+  itemLabels: {
+    source: '域名来源',
+    status: '治理状态',
+    summary: '治理概览',
+    statusSummary: '状态摘要',
+    recommendation: '推荐主域名',
+    lastEvaluated: '最近评估',
+  },
+} as const;
+
+export type DomainGovernanceRenderItemTone = 'primary' | 'summary' | 'accent';
+
+export interface DomainGovernanceRenderItem {
+  label: string;
+  value: string;
+  tone: DomainGovernanceRenderItemTone;
+}
+
+export interface DomainGovernanceRenderSection {
+  title: string;
+  items: DomainGovernanceRenderItem[];
+}
+
+export type DomainGovernanceDisplayPresetKey =
+  | 'STOREFRONT_H5'
+  | 'STOREFRONT_PC'
+  | 'TOB_TENANT'
+  | 'TOB_BRAND'
+  | 'APP_NATIVE'
+  | 'MINIAPP_HOME'
+  | 'MINIAPP_MEMBER';
+
+export interface DomainGovernanceDisplayPresetContract {
+  key: DomainGovernanceDisplayPresetKey;
+  accentColor: string;
+  titleColor: string;
+  subtitleColor: string;
+  summaryColor: string;
+  detailColor: string;
+  borderColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  backgroundAligned: string;
+  backgroundAttention: string;
+  statusAlignedColor: string;
+  statusAlignedBackground: string;
+  statusAttentionColor: string;
+  statusAttentionBackground: string;
+}
+
+export interface DomainGovernanceDisplayPreset {
+  key: DomainGovernanceDisplayPresetKey;
+  accentColor: string;
+  titleColor: string;
+  subtitleColor: string;
+  summaryColor: string;
+  detailColor: string;
+  borderColor: string;
+  buttonBackground: string;
+  buttonTextColor: string;
+  background: string;
+  statusColor: string;
+  statusBackground: string;
+}
+
+export function resolveDomainGovernanceRenderItemColor(
+  preset: DomainGovernanceDisplayPreset,
+  tone: DomainGovernanceRenderItemTone,
+): string {
+  if (tone === 'primary') {
+    return preset.titleColor;
+  }
+  if (tone === 'accent') {
+    return preset.accentColor;
+  }
+  return preset.summaryColor;
+}
+
+export const domainGovernanceDisplayPresetContractMap: Record<
+  DomainGovernanceDisplayPresetKey,
+  DomainGovernanceDisplayPresetContract
+> = {
+  STOREFRONT_H5: {
+    key: 'STOREFRONT_H5',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#cbd5e1',
+    detailColor: '#93c5fd',
+    borderColor: 'rgba(148, 163, 184, 0.12)',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.42)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.35)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  STOREFRONT_PC: {
+    key: 'STOREFRONT_PC',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#cbd5e1',
+    detailColor: '#93c5fd',
+    borderColor: 'rgba(148, 163, 184, 0.1)',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.45)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.28)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  TOB_TENANT: {
+    key: 'TOB_TENANT',
+    accentColor: '#bae6fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#cbd5e1',
+    detailColor: '#bae6fd',
+    borderColor: 'rgba(125, 211, 252, 0.16)',
+    buttonBackground: '#38bdf8',
+    buttonTextColor: '#082f49',
+    backgroundAligned: 'rgba(15, 23, 42, 0.35)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.28)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  TOB_BRAND: {
+    key: 'TOB_BRAND',
+    accentColor: '#f0abfc',
+    titleColor: '#f5f3ff',
+    subtitleColor: '#ddd6fe',
+    summaryColor: '#ddd6fe',
+    detailColor: '#f0abfc',
+    borderColor: 'rgba(240, 171, 252, 0.16)',
+    buttonBackground: '#f0abfc',
+    buttonTextColor: '#3b0764',
+    backgroundAligned: 'rgba(15, 23, 42, 0.36)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.24)',
+    statusAlignedColor: '#dcfce7',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.3)',
+    statusAttentionColor: '#fecdd3',
+    statusAttentionBackground: 'rgba(136, 19, 55, 0.32)',
+  },
+  APP_NATIVE: {
+    key: 'APP_NATIVE',
+    accentColor: '#93C5FD',
+    titleColor: '#F8FAFC',
+    subtitleColor: '#94A3B8',
+    summaryColor: '#CBD5E1',
+    detailColor: '#93C5FD',
+    borderColor: 'transparent',
+    buttonBackground: '#1D4ED8',
+    buttonTextColor: '#EFF6FF',
+    backgroundAligned: '#0F172A',
+    backgroundAttention: '#1E293B',
+    statusAlignedColor: '#BBF7D0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#FECACA',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  MINIAPP_HOME: {
+    key: 'MINIAPP_HOME',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#e2e8f0',
+    detailColor: '#93c5fd',
+    borderColor: 'transparent',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.45)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.35)',
+    statusAlignedColor: '#bbf7d0',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecaca',
+    statusAttentionBackground: 'rgba(127, 29, 29, 0.32)',
+  },
+  MINIAPP_MEMBER: {
+    key: 'MINIAPP_MEMBER',
+    accentColor: '#c4b5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#ddd6fe',
+    summaryColor: '#e2e8f0',
+    detailColor: '#c4b5fd',
+    borderColor: 'transparent',
+    buttonBackground: '#8b5cf6',
+    buttonTextColor: '#f5f3ff',
+    backgroundAligned: 'rgba(15, 23, 42, 0.65)',
+    backgroundAttention: 'rgba(127, 29, 29, 0.35)',
+    statusAlignedColor: '#dcfce7',
+    statusAlignedBackground: 'rgba(20, 83, 45, 0.32)',
+    statusAttentionColor: '#fecdd3',
+    statusAttentionBackground: 'rgba(136, 19, 55, 0.32)',
+  },
+};
+
+export function resolveDomainGovernanceDisplayPreset(
+  key: DomainGovernanceDisplayPresetKey,
+  requiresAttention: boolean,
+): DomainGovernanceDisplayPreset {
+  const preset = domainGovernanceDisplayPresetContractMap[key];
+
+  return {
+    key: preset.key,
+    accentColor: preset.accentColor,
+    titleColor: preset.titleColor,
+    subtitleColor: preset.subtitleColor,
+    summaryColor: preset.summaryColor,
+    detailColor: preset.detailColor,
+    borderColor: preset.borderColor,
+    buttonBackground: preset.buttonBackground,
+    buttonTextColor: preset.buttonTextColor,
+    background: requiresAttention ? preset.backgroundAttention : preset.backgroundAligned,
+    statusColor: requiresAttention ? preset.statusAttentionColor : preset.statusAlignedColor,
+    statusBackground: requiresAttention
+      ? preset.statusAttentionBackground
+      : preset.statusAlignedBackground,
+  };
+}
+
+export function formatDomainGovernanceFocusScopeLabel(
+  scope?: PortalDomainGovernanceScopeSummaryContract,
+): string {
+  if (!scope) {
+    return '焦点 scope 未命中';
+  }
+
+  const scopeSegments = [scope.scopeType];
+  if (scope.tenantId) {
+    scopeSegments.push(scope.tenantId);
+  }
+  if (scope.brandId) {
+    scopeSegments.push(scope.brandId);
+  }
+  if (scope.storeId) {
+    scopeSegments.push(scope.storeId);
+  }
+
+  return `焦点 scope ${scopeSegments.join(' / ')}`;
+}
+
+export function formatDomainGovernanceFocusScopeSummary(
+  scope?: PortalDomainGovernanceScopeSummaryContract,
+): string {
+  if (!scope) {
+    return '当前批次暂无命中的治理 scope，先沿用统一治理入口。';
+  }
+
+  return `${formatDomainGovernanceFocusScopeLabel(scope)} / 激活域名 ${scope.activeDomainCount} / ${
+    scope.missingPrimary ? '缺主域名' : '已对齐'
+  }`;
+}
+
+export function formatDomainGovernanceRecommendationSummary(
+  scope?: PortalDomainGovernanceScopeSummaryContract,
+): string {
+  if (!scope?.recommendedDomain) {
+    return '推荐主域名：暂无直接补选候选，先进入治理工作台查看明细。';
+  }
+
+  const reason = scope.recommendationReason ? ` / 原因 ${scope.recommendationReason}` : '';
+  return `推荐主域名：${scope.recommendedDomain}${reason}`;
+}
+
+export function formatDomainGovernanceStatusSummary(
+  summary: PortalDomainGovernanceSummaryContract,
+  statusLabel = getDomainGovernanceAttentionLabel(summary),
+): string {
+  return `治理状态：${statusLabel} / 可直接补选 ${summary.recommendedReadyScopes}`;
+}
+
+export function formatDomainGovernanceLastEvaluatedSummary(
+  summary: PortalDomainGovernanceSummaryContract,
+): string {
+  return `最近评估 ${summary.lastEvaluatedAt}`;
+}
+
+export function buildDomainGovernanceDisplayModel(
+  domainSource: string,
+  summary: PortalDomainGovernanceSummaryContract,
+  workspaceHref: string,
+): DomainGovernanceDisplayModel {
+  const statusLabel = getDomainGovernanceAttentionLabel(summary);
+  const focusScope = selectDomainGovernanceFocusScope(summary);
+  const eyebrow = domainGovernanceDisplayCopy.eyebrow;
+  const subtitle = domainGovernanceDisplayCopy.subtitle;
+  const title = formatDomainGovernanceSourceSummary(domainSource, summary);
+  const summaryText = formatDomainGovernanceCountsSummary(summary);
+  const workspaceLabel = domainGovernanceDisplayCopy.workspaceLabel;
+  const ctaLabel = domainGovernanceDisplayCopy.ctaLabel;
+  const renderSections: DomainGovernanceRenderSection[] = [
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.source,
+          value: title,
+          tone: 'primary' as const,
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.status,
+          value: statusLabel,
+          tone: 'accent' as const,
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
+          value: summaryText,
+          tone: 'summary' as const,
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary(summary, statusLabel),
+          tone: 'summary' as const,
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
+      items: [
+        {
+          label: formatDomainGovernanceFocusScopeLabel(focusScope),
+          value: formatDomainGovernanceFocusScopeSummary(focusScope),
+          tone: 'accent' as const,
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
+          value: formatDomainGovernanceRecommendationSummary(focusScope),
+          tone: 'summary' as const,
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.timeline,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
+          value: formatDomainGovernanceLastEvaluatedSummary(summary),
+          tone: 'summary' as const,
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.workspace,
+      items: [
+        {
+          label: workspaceLabel,
+          value: workspaceHref,
+          tone: 'accent' as const,
+        },
+      ],
+    },
+  ];
+
+  return {
+    eyebrow,
+    subtitle,
+    title,
+    statusLabel,
+    summaryText,
+    renderSections,
+    workspaceLabel,
+    workspaceHref,
+    ctaLabel,
+    requiresAttention: summary.requiresAttention,
+  };
 }
 
 export interface WorkbenchNavItemContract {

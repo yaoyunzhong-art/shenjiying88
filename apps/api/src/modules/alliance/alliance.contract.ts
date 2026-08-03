@@ -18,6 +18,17 @@ import type {
   SettlementParticipant,
   AnomalyRecord,
 } from './alliance-settlement.service'
+import type {
+  CrossBrandCoupon,
+  CouponSettlement,
+} from './alliance-coupon.service'
+import type {
+  DashboardOverview,
+  GradeDistribution,
+  MonthlyTrend,
+  PartnerRanking,
+  PartnerDashboard,
+} from './alliance-dashboard.service'
 
 /**
  * 伙伴基本信息合约
@@ -139,6 +150,65 @@ export interface AllianceAnomalyAlertEvent {
   timestamp: string
 }
 
+// ── WP-17B 新增合约 ───────────────────────────────────────────────────────────
+
+/**
+ * 跨品牌优惠券合约
+ */
+export interface AllianceCouponContract {
+  couponId: string
+  issuerPartnerId: string
+  denomination: number
+  minSpend: number
+  status: 'active' | 'redeemed' | 'expired' | 'cancelled'
+  validFrom: string
+  validTo: string
+}
+
+/**
+ * 联盟券结算合约
+ */
+export interface AllianceCouponSettlementContract {
+  couponId: string
+  issuerPayAmount: number
+  redeemReceiveAmount: number
+  platformCommission: number
+  status: 'pending' | 'settled' | 'disputed'
+}
+
+/**
+ * 联盟看板合约
+ */
+export interface AllianceDashboardContract {
+  overview: DashboardOverview
+  gradeDistribution: GradeDistribution[]
+  monthlyTrend: MonthlyTrend[]
+  partnerRanking: PartnerRanking[]
+}
+
+/**
+ * 联盟券发放事件合约
+ */
+export interface AllianceCouponIssueEvent {
+  kind: 'alliance.coupon.issue'
+  coupon: AllianceCouponContract
+  issuerPartnerId: string
+  acceptedPartnerIds: string[]
+  timestamp: string
+}
+
+/**
+ * 联盟券核销事件合约
+ */
+export interface AllianceCouponRedeemEvent {
+  kind: 'alliance.coupon.redeem'
+  couponId: string
+  partnerId: string
+  orderId: string
+  discountApplied: number
+  timestamp: string
+}
+
 /**
  * Alliance 模块支持的跨模块事件联合类型
  */
@@ -147,3 +217,5 @@ export type AllianceEvent =
   | AllianceGradeChangeEvent
   | AllianceSettlementEvent
   | AllianceAnomalyAlertEvent
+  | AllianceCouponIssueEvent
+  | AllianceCouponRedeemEvent

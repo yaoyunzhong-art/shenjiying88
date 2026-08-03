@@ -1,7 +1,8 @@
 /**
- * api/coupons/[id]/route.test.ts — 优惠券详情代理层 L1 测试
+ * api/coupons/[id]/route.test.ts — 优惠券详情/更新/删除 API L1 测试
  *
- * 覆盖: 正例·边界·防御
+ * 覆盖: GET / PATCH / DELETE — 正例·边界·防御
+ * 策略: 静态源码分析 (因为 'use server' 环境无法直接导入 route handler)
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -10,54 +11,82 @@ import { resolve } from 'node:path';
 
 const SRC = readFileSync(resolve(import.meta.dirname, 'route.ts'), 'utf-8');
 
-describe('coupons/[id]/route — 正例', () => {
-  it('应导出 GET 方法获取优惠券详情', () => {
+describe('coupons/[id] — GET 详情', () => {
+  it('G1. 应导出 GET 方法', () => {
     assert.ok(SRC.includes('export const GET'), '缺少 GET 导出');
   });
 
-  it('应导出 PATCH 方法更新优惠券', () => {
-    assert.ok(SRC.includes('export const PATCH'), '缺少 PATCH 导出');
+  it('G2. 应使用 createProxyHandler 代理', () => {
+    assert.ok(SRC.includes('createProxyHandler'), '缺少代理处理器');
   });
 
-  it('应导出 DELETE 方法删除优惠券', () => {
-    assert.ok(SRC.includes('export const DELETE'), '缺少 DELETE 导出');
+  it('G3. 应构造 /coupons/:id URL', () => {
+    assert.ok(SRC.includes("`${API_BASE_URL}/coupons/"), '缺少 API URL 构造');
   });
 
-  it('应引用 _proxy/utils 的 createProxyHandler', () => {
-    assert.ok(SRC.includes('createProxyHandler'), '缺少 createProxyHandler');
-    assert.ok(SRC.includes('../../_proxy/utils'), '应从 _proxy/utils 导入');
+  it('G4. 应请求 GET 方法', () => {
+    assert.ok(SRC.includes("'GET'"), '缺少 GET 请求方法');
   });
 
-  it('应包含 getCouponApi 函数构建 URL', () => {
-    assert.ok(SRC.includes('getCouponApi'), '缺少 getCouponApi');
-    assert.ok(SRC.includes('params.id'), '应使用 params.id 动态拼接 URL');
+  it('G5. 应接收 params.id 获取优惠券 ID', () => {
+    assert.ok(SRC.includes('getCouponApi(params.id)'), '缺少 params.id 使用');
   });
 
-  it('GET 应传递优惠券 ID', () => {
-    assert.ok(SRC.includes("'GET'"), 'GET 方法');
-  });
-
-  it('PATCH 应传递优惠券 ID', () => {
-    assert.ok(SRC.includes("'PATCH'"), 'PATCH 方法');
-  });
-
-  it('DELETE 应传递优惠券 ID', () => {
-    assert.ok(SRC.includes("'DELETE'"), 'DELETE 方法');
+  it('G6. 应透传 req 给代理处理器', () => {
+    assert.ok(SRC.includes('handler(req)'), '缺少 handler(req)');
   });
 });
 
-describe('coupons/[id]/route — 防御', () => {
-  it('所有 handler 应使用 createProxyHandler 代理', () => {
-    const handlerCalls = (SRC.match(/createProxyHandler\(/g) || []).length;
-    assert.strictEqual(handlerCalls, 3, '应调用 3 次 createProxyHandler (GET/PATCH/DELETE)');
+describe('coupons/[id] — PATCH 更新', () => {
+  it('P1. 应导出 PATCH 方法', () => {
+    assert.ok(SRC.includes('export const PATCH'), '缺少 PATCH 导出');
   });
 
-  it('不应手动实现 fetch 调用', () => {
-    assert.ok(!SRC.includes('async function GET'), '不应手动实现');
-    assert.ok(!SRC.includes('async function PATCH'), '不应手动实现');
-    assert.ok(!SRC.includes('async function DELETE'), '不应手动实现');
+  it('P2. 应使用 createProxyHandler 代理', () => {
+    assert.ok(SRC.includes("'PATCH'"), '缺少 PATCH 方法');
   });
 
-  it('无危险 HTML', () => { assert.ok(!SRC.includes('dangerouslySetInnerHTML')); });
-  it('无 any 类型', () => { assert.ok(!/:\s*any\b/.test(SRC)); });
+  it('P3. 应构造 /coupons/:id URL', () => {
+    assert.ok(SRC.includes("`${API_BASE_URL}/coupons/"), '缺少 API URL');
+  });
+
+  it('P4. 应接收 params.id', () => {
+    assert.ok(SRC.includes('getCouponApi(params.id)'), '缺少 params.id');
+  });
+});
+
+describe('coupons/[id] — DELETE 删除', () => {
+  it('D1. 应导出 DELETE 方法', () => {
+    assert.ok(SRC.includes('export const DELETE'), '缺少 DELETE 导出');
+  });
+
+  it('D2. 应使用 createProxyHandler 代理', () => {
+    assert.ok(SRC.includes("'DELETE'"), '缺少 DELETE 方法');
+  });
+
+  it('D3. 应构造 /coupons/:id URL', () => {
+    assert.ok(SRC.includes("`${API_BASE_URL}/coupons/"), '缺少 API URL');
+  });
+});
+
+describe('coupons/[id] — 防御 & 边界', () => {
+  it('E1. 应从 _proxy/utils 导入 createProxyHandler', () => {
+    assert.ok(SRC.includes("createProxyHandler"), '缺少 createProxyHandler 导入');
+  });
+
+  it('E2. 应从 _proxy/utils 导入 API_BASE_URL', () => {
+    assert.ok(SRC.includes("API_BASE_URL"), '缺少 API_BASE_URL 导入');
+  });
+
+  it('E3. 函数签名包含 params.id 类型', () => {
+    assert.ok(SRC.includes('params: { id: string }'), '缺少 params 类型');
+  });
+
+  it('E4. 无危险 HTML', () => {
+    assert.ok(!SRC.includes('dangerouslySetInnerHTML'));
+  });
+
+  it('E5. 无 any 类型', () => {
+    assert.ok(!/:\s*any\b/.test(SRC));
+  });
 });

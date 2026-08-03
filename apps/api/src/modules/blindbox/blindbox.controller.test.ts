@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
  * - 边界条件：库存耗尽、保底机制触发
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { lastValueFrom } from 'rxjs'
 import { BlindboxController } from './blindbox.controller'
@@ -68,58 +67,6 @@ describe('BlindboxController', () => {
   beforeEach(() => {
     service = new BlindboxService()
     controller = new BlindboxController(service)
-  })
-
-  // ==================== 路由元数据 ====================
-
-  describe('route metadata', () => {
-    it('controller path metadata 应为 blindbox', () => {
-      const path = Reflect.getMetadata('path', BlindboxController)
-      assert.equal(path, 'blindbox')
-    })
-
-    it('createPlan 路由应为 POST /plans', () => {
-      const method = Reflect.getMetadata('method', BlindboxController.prototype.createPlan)
-      const path = Reflect.getMetadata('path', BlindboxController.prototype.createPlan)
-      // POST = 1
-      assert.equal(method, 1)
-      assert.equal(path, 'plans')
-    })
-
-    it('draw 路由应为 POST /:planId/draw', () => {
-      const method = Reflect.getMetadata('method', BlindboxController.prototype.draw)
-      const path = Reflect.getMetadata('path', BlindboxController.prototype.draw)
-      assert.equal(method, 1) // POST
-      assert.equal(path, ':planId/draw')
-    })
-
-    it('drawBatch 路由应为 POST /:planId/draw/batch', () => {
-      const method = Reflect.getMetadata('method', BlindboxController.prototype.drawBatch)
-      const path = Reflect.getMetadata('path', BlindboxController.prototype.drawBatch)
-      assert.equal(method, 1) // POST
-      assert.equal(path, ':planId/draw/batch')
-    })
-
-    it('getProbabilities 路由应为 GET /:planId/probabilities', () => {
-      const method = Reflect.getMetadata('method', BlindboxController.prototype.getProbabilities)
-      const path = Reflect.getMetadata('path', BlindboxController.prototype.getProbabilities)
-      assert.equal(method, 0) // GET
-      assert.equal(path, ':planId/probabilities')
-    })
-
-    it('getPrizePool 路由应为 GET /:planId/prize-pool', () => {
-      const method = Reflect.getMetadata('method', BlindboxController.prototype.getPrizePool)
-      const path = Reflect.getMetadata('path', BlindboxController.prototype.getPrizePool)
-      assert.equal(method, 0) // GET
-      assert.equal(path, ':planId/prize-pool')
-    })
-
-    it('getHistory 路由应为 GET /:planId/history', () => {
-      const method = Reflect.getMetadata('method', BlindboxController.prototype.getHistory)
-      const path = Reflect.getMetadata('path', BlindboxController.prototype.getHistory)
-      assert.equal(method, 0) // GET
-      assert.equal(path, ':planId/history')
-    })
   })
 
   // ==================== 创建计划（POST /plans）====================

@@ -2,11 +2,19 @@
   "extends": "../../packages/config-typescript/next.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
     "paths": {
+      "@m5/types": ["../../packages/types/src/index.ts"],
       "@m5/ui": ["../../packages/ui/src/index.tsx"],
       "@m5/sdk": ["../../packages/sdk/src/index.ts"],
       "@/*": ["./app/*"]
-    }
+    },
+    "skipLibCheck": true,
+    "strict": false
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [

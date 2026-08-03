@@ -292,23 +292,23 @@ export const LicenseManager: React.FC<LicenseManagerProps> = ({
       switch (action) {
         case 'activate':
           // 激活 License
-          console.log('激活 License:', license.id);
+          if (process.env.NODE_ENV === 'development') console.debug('激活 License:', license.id);
           break;
         case 'suspend':
           // 暂停 License
-          console.log('暂停 License:', license.id);
+          if (process.env.NODE_ENV === 'development') console.debug('暂停 License:', license.id);
           break;
         case 'renew':
           // 续费 License
-          console.log('续费 License:', license.id);
+          if (process.env.NODE_ENV === 'development') console.debug('续费 License:', license.id);
           break;
         case 'delete':
           // 删除 License
-          console.log('删除 License:', license.id);
+          if (process.env.NODE_ENV === 'development') console.debug('删除 License:', license.id);
           break;
         case 'view':
           // 查看详情
-          console.log('查看 License:', license.id);
+          if (process.env.NODE_ENV === 'development') console.debug('查看 License:', license.id);
           break;
       }
       // 刷新数据
@@ -1155,7 +1155,7 @@ export const LicenseManager: React.FC<LicenseManagerProps> = ({
             <button
               onClick={() => {
                 // 批量暂停
-                console.log('批量暂停:', Array.from(selectedLicenses));
+                if (process.env.NODE_ENV === 'development') console.debug('批量暂停:', Array.from(selectedLicenses));
               }}
               style={{
                 padding: '6px 12px',
@@ -1172,7 +1172,7 @@ export const LicenseManager: React.FC<LicenseManagerProps> = ({
             <button
               onClick={() => {
                 // 批量续费
-                console.log('批量续费:', Array.from(selectedLicenses));
+                if (process.env.NODE_ENV === 'development') console.debug('批量续费:', Array.from(selectedLicenses));
               }}
               style={{
                 padding: '6px 12px',

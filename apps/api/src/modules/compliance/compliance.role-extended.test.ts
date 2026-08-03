@@ -16,6 +16,7 @@ import { PIIMaskerService } from './pii-masker.service';
 import { GDPRErasureService } from './gdpr-erasure.service';
 import { AuditLogService } from './audit-log.service';
 import { AuditQueryService } from './audit-query.service';
+import { ComplianceGateService } from './compliance-gate.service';
 
 // ── 8 角色定义 ──
 const ROLES = {
@@ -36,10 +37,11 @@ function makeController() {
   const gdprErasure = new GDPRErasureService();
   const auditLog = new AuditLogService();
   const auditQuery = new AuditQueryService(auditLog);
+  const gateService = new ComplianceGateService(auditLog);
   const controller = new ComplianceController(
-    piiDetector, piiMasker, gdprErasure, auditLog, auditQuery,
+    piiDetector, piiMasker, gdprErasure, auditLog, auditQuery, gateService,
   );
-  return { controller, piiDetector, piiMasker, gdprErasure, auditLog, auditQuery };
+  return { controller, piiDetector, piiMasker, gdprErasure, auditLog, auditQuery, gateService };
 }
 
 // ── 👔店长（扩展） ──

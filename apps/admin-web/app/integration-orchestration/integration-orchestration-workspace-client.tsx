@@ -20,6 +20,8 @@ import {
   summarizeWebhookSource
 } from '../integration-orchestration-view-model';
 import { useDetailActions } from '../components/use-detail-actions';
+import SnapshotRefreshButton from '../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 interface IntegrationOrchestrationWorkspaceClientProps {
   workspace: IntegrationOrchestrationWorkspace;
@@ -32,6 +34,7 @@ export default function IntegrationOrchestrationWorkspaceClient({
   workspace,
   foundationDependencies
 }: IntegrationOrchestrationWorkspaceClientProps) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
   const { actions } = useDetailActions({
@@ -208,6 +211,15 @@ export default function IntegrationOrchestrationWorkspaceClient({
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <div style={{ marginBottom: 4 }}>
         <Tabs
           items={[

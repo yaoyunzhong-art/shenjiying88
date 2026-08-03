@@ -1,3 +1,4 @@
+'use client';
 /**
  * H5活动列表页面 - Campaigns Page (H5端)
  * Phase-FP T-FP-029 · 2026-07-03
@@ -5,7 +6,6 @@
  * 功能: 查看营销活动列表
  */
 
-'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';

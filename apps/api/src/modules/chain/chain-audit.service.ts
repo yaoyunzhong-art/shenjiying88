@@ -475,11 +475,11 @@ export class AuditLogService {
 // ── Test wrapper ──
 
 export class ChainAuditService {
-  private trails = new Map<string, any>()
+  private trails = new Map<string, AuditLogEntry>()
 
-  createAuditTrail(transactionId: string, action: string, userId: string, metadata: Record<string, any>): any {
+  createAuditTrail(transactionId: string, action: string, userId: string, metadata?: Record<string, unknown>): AuditLogEntry {
     const id = `trail-${nanoid()}`
-    const trail = { id, transactionId, action, userId, metadata, createdAt: new Date().toISOString() }
+    const trail: AuditLogEntry = { id, entity: transactionId, entityId: action, operation: userId, operator: userId, metadata, timestamp: new Date().toISOString() }
     this.trails.set(id, trail)
     return trail
   }
@@ -488,17 +488,17 @@ export class ChainAuditService {
     return { verified: this.trails.has(id) }
   }
 
-  getAuditTrail(id: string): any | undefined {
+  getAuditTrail(id: string): AuditLogEntry | undefined {
     return this.trails.get(id)
   }
 
-  listAuditTrails(): any[] {
+  listAuditTrails(): AuditLogEntry[] {
     return Array.from(this.trails.values())
   }
 
-  queryAuditTrails(filter: { userId?: string; startTime?: number; endTime?: number }): any[] {
+  queryAuditTrails(filter: { userId?: string; startTime?: number; endTime?: number }): AuditLogEntry[] {
     let results = Array.from(this.trails.values())
-    if (filter.userId) results = results.filter(t => t.userId === filter.userId)
+    if (filter.userId) results = results.filter(t => t.operator === filter.userId)
     return results
   }
 
@@ -506,9 +506,9 @@ export class ChainAuditService {
     return `审计报告\n用户: ${userId}\n时间: ${new Date(startTime).toISOString()} - ${new Date(endTime).toISOString()}`
   }
 
-  alertOnAnomaly(userId: string): any | null {
-    const trails = Array.from(this.trails.values()).filter(t => t.userId === userId)
+  alertOnAnomaly(userId: string): AuditLogEntry | null {
+    const trails = Array.from(this.trails.values()).filter(t => t.operator === userId)
     if (trails.length < 2) return null
-    return { userId, reason: 'Rapid consecutive actions detected' }
+    return { id: '', entity: '', entityId: '', operation: '', operator: userId, metadata: { reason: 'Rapid consecutive actions detected' }, timestamp: new Date().toISOString() }
   }
 }

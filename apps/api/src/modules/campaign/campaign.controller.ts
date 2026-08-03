@@ -1,4 +1,18 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import { RequirePermissions, RequireTenantScope } from '../foundation/identity-access/identity-access.decorator'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,11 +31,15 @@ import {
 } from './campaign.entity'
 import { CampaignService } from './campaign.service'
 
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions('campaign:read')
 @Controller('campaigns')
 export class CampaignController {
   constructor(private readonly campaignService: CampaignService) {}
 
   @Post()
+  @RequirePermissions('campaign:update')
   registerCampaign(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: RegisterCampaignDto
@@ -62,6 +80,7 @@ export class CampaignController {
   }
 
   @Patch(':planId/status')
+  @RequirePermissions('campaign:update')
   updateCampaignStatus(
     @TenantContext() tenantContext: RequestTenantContext,
     @Param('planId') planId: string,
@@ -97,6 +116,7 @@ export class CampaignController {
   }
 
   @Post('evaluate')
+  @RequirePermissions('campaign:update')
   evaluateTriggers(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: EvaluateCampaignDto
@@ -107,3 +127,4 @@ export class CampaignController {
     return this.campaignService.evaluateTriggers({ ...body, tenantContext })
   }
 }
+

@@ -80,6 +80,7 @@ export interface ListExportTaskOptions {
 export class ReportExportService {
   private readonly MAX_BATCH_SIZE = 10000
   private readonly DEFAULT_BATCH_SIZE = 1000
+  private readonly APPROVAL_THRESHOLD = 500
   private readonly EXPORT_TTL_HOURS = 24
   private readonly taskStore = new Map<string, BatchExportResult>()
   private readonly downloadStore = new Map<string, BatchExportDownloadPayload>()
@@ -138,6 +139,14 @@ export class ReportExportService {
   filename(result: ReportResult, format: 'csv' | 'json' | 'html'): string {
     const period = `${result.period.from.slice(0, 10)}_to_${result.period.to.slice(0, 10)}`
     return `${result.type}-${result.tenantId}-${period}.${format}`
+  }
+
+  getApprovalThreshold(): number {
+    return this.APPROVAL_THRESHOLD
+  }
+
+  requiresApproval(rowCount: number): boolean {
+    return rowCount > this.APPROVAL_THRESHOLD
   }
 
   // ============================================================

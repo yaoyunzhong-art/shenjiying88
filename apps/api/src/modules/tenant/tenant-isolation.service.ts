@@ -1,7 +1,9 @@
 // tenant-isolation.service.ts - Phase-18 T22
 // 用途: 跨租户隔离集成测试 helper + 运行时守卫
 // 关联: phase-18-experience-ai/spec.md §4.2
-import { Injectable } from '@nestjs/common';
+//
+// P-31: 新增 verifyTenant() 方法 — 检查 token tenantId 与请求路径 tenantId 是否匹配
+import { ForbiddenException, Injectable } from '@nestjs/common';
 
 /**
  * 内存级 TenantStore - V1 stub,模拟多租户数据隔离
@@ -15,6 +17,18 @@ export interface TenantEntity {
   id: string;
   tenantId: string;
   [key: string]: unknown;
+}
+
+/**
+ * verifyTenant 校验结果
+ */
+export interface VerifyTenantResult {
+  /** 是否通过校验 */
+  matched: boolean;
+  /** token 中携带的 tenantId */
+  tokenTenantId: string;
+  /** 请求路径中携带的 tenantId */
+  pathTenantId: string;
 }
 
 export interface TenantIsolationResult {
@@ -35,6 +49,28 @@ export interface TenantIsolationResult {
 @Injectable()
 export class TenantIsolationService {
   private readonly store = new Map<string, Map<string, TenantEntity>>();
+
+  /**
+   * P-31: 校验 token 中的 tenantId 与请求路径中的 tenantId 一致
+   *
+   * @param tokenTenantId 来自 JWT / session 的 tenantId
+   * @param pathTenantId 来自 URL 路径参数 / header 的 tenantId
+   * @throws ForbiddenException 当两者不匹配或任一为空时
+   */
+  verifyTenant(tokenTenantId: string, pathTenantId: string): VerifyTenantResult {
+    if (!tokenTenantId) {
+      throw new ForbiddenException('Missing tenant context in token');
+    }
+    if (!pathTenantId) {
+      throw new ForbiddenException('Missing tenant context in request path');
+    }
+    if (tokenTenantId !== pathTenantId) {
+      throw new ForbiddenException(
+        `Tenant mismatch: token tenant "${tokenTenantId}" !== path tenant "${pathTenantId}"`,
+      );
+    }
+    return { matched: true, tokenTenantId, pathTenantId };
+  }
 
   /** V1: 注册 tenant 数据 */
   registerTenantData(tenantId: string, entities: TenantEntity[]): void {

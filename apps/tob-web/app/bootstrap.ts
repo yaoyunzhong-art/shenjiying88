@@ -1,5 +1,6 @@
 import {
   ApiClient,
+  buildActorHeaders,
   createFoundationPortalConsumerSnapshotBase,
   createFoundationGovernanceReadModelLoader,
   getDefaultApiBaseUrl,
@@ -7,10 +8,12 @@ import {
   type FoundationGovernanceReadModel
 } from '@m5/sdk';
 import {
+  buildDomainGovernanceWorkspaceHref,
   getFoundationAppBootstrapWiring,
   type AppBootstrapWiring,
   type FoundationConsumerDescriptor,
   type MarketProfileContract,
+  type PortalDomainGovernanceSummaryContract,
   type PortalBootstrapResponse,
   type PortalLoginEntryContract,
   type TobPortalContract
@@ -18,12 +21,23 @@ import {
 
 export const tobWebBootstrap = getFoundationAppBootstrapWiring('tob-web');
 
+const portalBootstrapActor = {
+  actorId: 'portal-bootstrap-operator',
+  actorType: 'employee-user',
+  actorName: 'Portal Bootstrap Operator',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['foundation.governance.read'],
+  authenticated: true,
+} as const;
+
 export interface TobPortalConsumerSnapshot {
   deliveryMode: 'api' | 'fallback';
   wiring: AppBootstrapWiring;
   consumerDescriptor: FoundationConsumerDescriptor;
   portal: TobPortalContract;
   market: MarketProfileContract;
+  domainGovernance: PortalDomainGovernanceSummaryContract;
+  domainGovernanceWorkspaceHref: string;
   foundationDependencies: string[];
   foundationContracts: string[];
   regionalOverridesCount: number;
@@ -45,6 +59,20 @@ export interface TobPortalConsumerSnapshot {
 }
 
 export type TobGovernanceReadModel = FoundationGovernanceReadModel;
+
+function createFallbackDomainGovernanceSummary(): PortalDomainGovernanceSummaryContract {
+  return {
+    totalMissingPrimaryScopes: 0,
+    totalActiveWithoutPrimaryDomains: 0,
+    recommendedReadyScopes: 0,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 0,
+    storeMissingPrimaryScopes: 0,
+    requiresAttention: false,
+    lastEvaluatedAt: '1970-01-01T00:00:00.000Z',
+    currentScopes: []
+  };
+}
 
 function getFallbackMarketProfile(marketCode: string): MarketProfileContract {
   const profiles: Record<string, MarketProfileContract> = {
@@ -263,7 +291,8 @@ function getFallbackTenantPortal(marketCode: string, tenantCode: string): { port
       heroTitle: `${tenantCode} 企业级经营官网`,
       heroSubtitle: '统一承接租户解决方案、渠道合作、门店网络能力展示与后台登录入口。',
       solutionTags: ['多租户 SaaS', '全球化配置', '门店网络', '数据经营'],
-      loginEntry: buildLoginEntry('进入租户后台', `/${marketCode}/${tenantCode}/login`)
+      loginEntry: buildLoginEntry('进入租户后台', `/${marketCode}/${tenantCode}/login`),
+      domainSource: 'default'
     }
   };
 }
@@ -290,7 +319,8 @@ function getFallbackBrandPortal(
       heroTitle: `${brandCode} 品牌增长官网`,
       heroSubtitle: '面向招商加盟、品牌合作、联合营销、赛事活动和品牌后台登录的统一入口。',
       solutionTags: ['品牌招商', '品牌联营', '全球社媒', '品牌后台'],
-      loginEntry: buildLoginEntry('进入品牌后台', `/${marketCode}/${tenantCode}/${brandCode}/login`)
+      loginEntry: buildLoginEntry('进入品牌后台', `/${marketCode}/${tenantCode}/${brandCode}/login`),
+      domainSource: 'default'
     }
   };
 }
@@ -300,7 +330,12 @@ function createPortalClient(marketCode: string, tenantCode: string, brandCode?: 
     baseUrl: getDefaultApiBaseUrl(),
     tenantId: tenantCode,
     brandId: brandCode,
-    marketCode
+    marketCode,
+    headers: buildActorHeaders({
+      ...portalBootstrapActor,
+      tenantId: tenantCode,
+      brandId: brandCode,
+    })
   });
 }
 
@@ -324,6 +359,20 @@ async function loadPortalConsumerDescriptor(
   return loadFoundationConsumerDescriptor(createPortalClient(marketCode, tenantCode, brandCode), 'portal');
 }
 
+async function loadPortalDomainGovernance(
+  marketCode: string,
+  tenantCode: string,
+  brandCode?: string
+): Promise<PortalDomainGovernanceSummaryContract> {
+  try {
+    return await createPortalClient(marketCode, tenantCode, brandCode).getPortalDomainGovernanceSummary({
+      cache: 'no-store'
+    });
+  } catch {
+    return createFallbackDomainGovernanceSummary();
+  }
+}
+
 export const loadTobGovernanceReadModel: (
   marketCode: string,
   tenantCode: string,
@@ -335,10 +384,11 @@ async function buildPortalConsumerSnapshot(
   tenantCode: string,
   brandCode?: string
 ): Promise<TobPortalConsumerSnapshot> {
-  const [bootstrap, governance, consumerDescriptor] = await Promise.all([
+  const [bootstrap, governance, consumerDescriptor, domainGovernance] = await Promise.all([
     loadPortalBootstrap(marketCode, tenantCode, brandCode),
     loadTobGovernanceReadModel(marketCode, tenantCode, brandCode),
-    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode)
+    loadPortalConsumerDescriptor(marketCode, tenantCode, brandCode),
+    loadPortalDomainGovernance(marketCode, tenantCode, brandCode)
   ]);
 
   const fallback = brandCode
@@ -358,6 +408,8 @@ async function buildPortalConsumerSnapshot(
     ...snapshotBase,
     portal,
     market: bootstrap?.marketProfile ?? fallback.market,
+    domainGovernance,
+    domainGovernanceWorkspaceHref: buildDomainGovernanceWorkspaceHref(domainGovernance, portal.marketCode),
     governance
   };
 }

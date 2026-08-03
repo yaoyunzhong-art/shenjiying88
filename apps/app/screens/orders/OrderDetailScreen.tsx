@@ -1,228 +1,240 @@
-import React from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { TriState } from '../../components/common/TriState';
+import { OrderDetailItemList } from '../../components/OrderDetailItemList';
+import { OrderDetailSectionBlock } from '../../components/OrderDetailSectionBlock';
+import { getNativeAppOrderTransaction, type NativeAppTransactionAggregate } from '../../market-bootstrap';
+import {
+  buildOrderDetailBackToOrdersRouteParams,
+  buildPaymentRouteParams,
+  buildRefundRouteParams,
+} from '../../utils/order-finance';
+import type { OrderDetailRouteParams } from '../../utils/order-route';
+import {
+  resolveOrderDetailViewState,
+} from '../../utils/order-view';
+import {
+  buildOrderMemberSection,
+  buildOrderPaymentSection,
+  buildOrderRefundSection,
+  buildOrderStatusSection,
+} from '../../utils/order-detail-sections';
+import {
+  buildOrderDetailItemRows,
+} from '../../utils/order-detail-items';
+import {
+  buildOrderDetailFooterModel,
+  getOrderDetailFooterActionStyle,
+} from '../../utils/order-detail-actions';
+import {
+  defaultMockOrderDetail,
+  resolveOrderDetailBaseOrder,
+} from '../../utils/order-detail-state';
 
 type OrderDetailParams = {
-  OrderDetail: { orderId: string };
-};
-
-const mockOrderDetail = {
-  orderId: 'order-001',
-  orderNo: 'ORD20260612001',
-  status: 'PAID',
-  createdAt: '2026-06-12T10:30:00.000Z',
-  paidAt: '2026-06-12T10:35:00.000Z',
-  totalAmount: 156.00,
-  currency: 'CNY',
-  paymentChannel: 'WECHAT_PAY',
-  memberId: 'member-001',
-  memberNickname: '张三',
-  items: [
-    { skuId: 'SKU001', title: '拿铁咖啡', quantity: 2, price: 32.00 },
-    { skuId: 'SKU002', title: '提拉米苏', quantity: 1, price: 48.00 },
-    { skuId: 'SKU003', title: '鲜榨橙汁', quantity: 1, price: 44.00 },
-  ],
-  pointsEarned: 156,
-};
-
-const statusLabels: Record<string, string> = {
-  PENDING: '待支付',
-  PAID: '已完成',
-  REFUNDED: '已退款',
-  CANCELLED: '已取消',
-};
-
-const channelLabels: Record<string, string> = {
-  WECHAT_PAY: '微信支付',
-  ALIPAY: '支付宝',
-  CASH: '现金',
-  MEMBER_CARD: '会员卡',
+  OrderDetail: OrderDetailRouteParams;
 };
 
 export function OrderDetailScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<RouteProp<OrderDetailParams, 'OrderDetail'>>();
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: {
+      goBack: () => void;
+      navigate?: (route: string, params?: Record<string, unknown>) => void;
+    };
+  }).__mockNavigation ?? { goBack: () => {}, navigate: () => {} };
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: OrderDetailParams['OrderDetail'];
+  }).__mockRoute ?? { orderId: defaultMockOrderDetail.orderId };
 
-  const order = mockOrderDetail;
+  let navigation = fallbackNavigation;
+  try {
+    navigation = useNavigation();
+  } catch {
+    navigation = fallbackNavigation;
+  }
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  let route = { params: fallbackRouteParams } as RouteProp<OrderDetailParams, 'OrderDetail'>;
+  try {
+    route = useRoute<RouteProp<OrderDetailParams, 'OrderDetail'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<OrderDetailParams, 'OrderDetail'>;
+  }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
+  const shouldFetchAggregate = (() => {
+    const globals = globalThis as {
+      __mockRoute?: OrderDetailParams['OrderDetail'];
+      __mockOrderFetchEnabled?: boolean;
+    };
+    return !globals.__mockRoute || globals.__mockOrderFetchEnabled === true;
+  })();
+  const [aggregate, setAggregate] = useState<NativeAppTransactionAggregate | null>(null);
+  const [aggregateLoading, setAggregateLoading] = useState(false);
+  const [aggregateError, setAggregateError] = useState<string | null>(null);
+
+  const fetchAggregate = useCallback(() => {
+    const orderId = routeParams?.orderId;
+
+    if (!orderId || !shouldFetchAggregate) {
+      return;
+    }
+
+    setAggregateLoading(true);
+    setAggregateError(null);
+
+    getNativeAppOrderTransaction(orderId)
+      .then((result) => {
+        setAggregate(result);
+        setAggregateLoading(false);
+      })
+      .catch((err: unknown) => {
+        setAggregate(null);
+        setAggregateError(err instanceof Error ? err.message : '订单加载失败，请重试');
+        setAggregateLoading(false);
+      });
+  }, [routeParams?.orderId, shouldFetchAggregate]);
+
+  useEffect(() => {
+    fetchAggregate();
+  }, [fetchAggregate]);
+  const baseOrder = resolveOrderDetailBaseOrder(routeParams);
+  const {
+    order,
+    effectiveRefundStatus,
+    effectiveRefundAmount,
+    effectiveRefundReason,
+    effectiveRefundRequestedAt,
+    effectiveRefundCompletedAt,
+  } = resolveOrderDetailViewState(baseOrder, aggregate, routeParams);
+  const hasCompletedRefund =
+    effectiveRefundStatus === 'REFUNDED' &&
+    typeof effectiveRefundAmount === 'number';
+  const hasPendingRefund =
+    effectiveRefundStatus === 'PENDING' &&
+    typeof effectiveRefundAmount === 'number';
+  const statusSection = buildOrderStatusSection(order);
+  const refundSection = buildOrderRefundSection({
+    effectiveRefundStatus,
+    effectiveRefundAmount,
+    effectiveRefundReason,
+    effectiveRefundRequestedAt,
+    effectiveRefundCompletedAt,
+  });
+  const paymentSection = buildOrderPaymentSection(order);
+  const memberSection = buildOrderMemberSection(order);
+  const footerModel = buildOrderDetailFooterModel(order);
+  const itemRows = buildOrderDetailItemRows(order);
 
   const handleRefund = () => {
-    Alert.alert(
-      '申请退款',
-      `确定要退款订单 ${order.orderNo} 吗？`,
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确定',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('提示', '退款申请已提交', [
-              { text: '确定', onPress: () => navigation.goBack() },
-            ]);
-          },
-        },
-      ]
-    );
+    navigation.navigate!('Refund' as never, buildRefundRouteParams({
+      order,
+      reason: routeParams?.refundReason,
+    }) as never);
   };
 
   const handleConfirmPayment = () => {
-    Alert.alert('提示', '支付成功');
+    navigation.navigate!('Payment' as never, buildPaymentRouteParams({
+      order,
+    }) as never);
   };
+
+  const handleBackToOrders = () => {
+    const backRouteParams = buildOrderDetailBackToOrdersRouteParams({
+      order,
+      routeParams,
+      effectiveRefundStatus,
+      effectiveRefundAmount,
+      effectiveRefundReason,
+      effectiveRefundRequestedAt,
+      effectiveRefundCompletedAt,
+    });
+
+    if (backRouteParams) {
+      navigation.navigate!('Orders' as never, backRouteParams as never);
+      return;
+    }
+    navigation.goBack();
+  };
+
+  const footerActionHandlers = {
+    back: handleBackToOrders,
+    pay: handleConfirmPayment,
+    refund: handleRefund,
+  } as const;
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Card style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Text style={styles.statusLabel}>订单状态</Text>
-            <View
-              style={[
-                styles.statusBadge,
-                order.status === 'PAID' && styles.statusBadgeSuccess,
-                order.status === 'PENDING' && styles.statusBadgeWarning,
-                order.status === 'REFUNDED' && styles.statusBadgeInfo,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  order.status === 'PAID' && styles.statusTextSuccess,
-                  order.status === 'PENDING' && styles.statusTextWarning,
-                  order.status === 'REFUNDED' && styles.statusTextInfo,
-                ]}
-              >
-                {statusLabels[order.status]}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusKey}>订单号</Text>
-            <Text style={styles.statusValue}>{order.orderNo}</Text>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusKey}>下单时间</Text>
-            <Text style={styles.statusValue}>{formatDate(order.createdAt)}</Text>
-          </View>
-          {order.paidAt && (
-            <View style={styles.statusRow}>
-              <Text style={styles.statusKey}>支付时间</Text>
-              <Text style={styles.statusValue}>{formatDate(order.paidAt)}</Text>
-            </View>
+      <TriState
+        loading={shouldFetchAggregate && aggregateLoading}
+        error={shouldFetchAggregate ? aggregateError : null}
+        onRetry={shouldFetchAggregate ? fetchAggregate : undefined}
+      >
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <OrderDetailSectionBlock
+            section={statusSection}
+            containerStyle={styles.statusSection}
+            cardStyle={styles.statusCard}
+            titlePlacement="inside"
+          />
+
+          {refundSection && (hasPendingRefund || hasCompletedRefund) && (
+            <OrderDetailSectionBlock
+              section={refundSection}
+              containerStyle={styles.section}
+              cardStyle={styles.refundCard}
+            />
           )}
-        </Card>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>商品明细</Text>
-          <Card style={styles.itemsCard}>
-            {order.items.map((item, index) => (
-              <View key={item.skuId}>
-                <View style={styles.itemRow}>
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={styles.itemSku}>SKU: {item.skuId}</Text>
-                  </View>
-                  <View style={styles.itemPrice}>
-                    <Text style={styles.itemPriceText}>
-                      ¥{item.price.toFixed(2)}
-                    </Text>
-                    <Text style={styles.itemQuantity}>x{item.quantity}</Text>
-                  </View>
-                </View>
-                {index < order.items.length - 1 && (
-                  <View style={styles.itemDivider} />
-                )}
-              </View>
-            ))}
-          </Card>
-        </View>
+          <OrderDetailItemList
+            title="商品明细"
+            items={itemRows}
+            containerStyle={styles.section}
+            cardStyle={styles.itemsCard}
+          />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>支付信息</Text>
-          <Card style={styles.paymentCard}>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentKey}>支付方式</Text>
-              <Text style={styles.paymentValue}>
-                {channelLabels[order.paymentChannel]}
-              </Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentKey}>支付金额</Text>
-              <Text style={styles.paymentValue}>
-                ¥{order.totalAmount.toFixed(2)}
-              </Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentKey}>获得积分</Text>
-              <Text style={styles.pointsValue}>+{order.pointsEarned}</Text>
-            </View>
-          </Card>
-        </View>
+          <OrderDetailSectionBlock
+            section={paymentSection}
+            containerStyle={styles.section}
+            cardStyle={styles.paymentCard}
+          />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>会员信息</Text>
-          <Card style={styles.memberCard}>
-            <View style={styles.memberRow}>
-              <Text style={styles.memberKey}>会员ID</Text>
-              <Text style={styles.memberValue}>{order.memberId}</Text>
-            </View>
-            <View style={styles.memberRow}>
-              <Text style={styles.memberKey}>会员昵称</Text>
-              <Text style={styles.memberValue}>{order.memberNickname}</Text>
-            </View>
-          </Card>
-        </View>
-      </ScrollView>
+          <OrderDetailSectionBlock
+            section={memberSection}
+            containerStyle={styles.section}
+            cardStyle={styles.memberCard}
+          />
+        </ScrollView>
+      </TriState>
 
       <View style={styles.footer}>
-        {order.status === 'PENDING' && (
-          <>
-            <Button
-              title="确认收款"
-              onPress={handleConfirmPayment}
-              style={styles.footerButton}
-            />
-            <Button
-              title="申请退款"
-              onPress={handleRefund}
-              variant="outline"
-              style={styles.footerButton}
-            />
-          </>
-        )}
-        {order.status === 'PAID' && (
+        {footerModel.layout === 'split' ? (
+          <View style={styles.footerActions}>
+            {footerModel.actions.map((action) => (
+              <Button
+                key={action.key}
+                title={action.title}
+                onPress={footerActionHandlers[action.key]}
+                variant={action.variant}
+                style={getOrderDetailFooterActionStyle(footerModel.layout, styles)}
+              />
+            ))}
+          </View>
+        ) : footerModel.actions.map((action) => (
           <Button
-            title="申请退款"
-            onPress={handleRefund}
-            variant="outline"
-            style={styles.fullWidthButton}
+            key={action.key}
+            title={action.title}
+            onPress={footerActionHandlers[action.key]}
+            variant={action.variant}
+            style={getOrderDetailFooterActionStyle(footerModel.layout, styles)}
           />
-        )}
-        {(order.status === 'REFUNDED' || order.status === 'CANCELLED') && (
-          <Button
-            title="返回"
-            onPress={() => navigation.goBack()}
-            variant="outline"
-            style={styles.fullWidthButton}
-          />
-        )}
+        ))}
       </View>
     </View>
   );
@@ -236,144 +248,27 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  statusCard: {
+  statusSection: {
     margin: 16,
+  },
+  statusCard: {
     paddingVertical: 8,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  statusLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeSuccess: {
-    backgroundColor: '#34C75920',
-  },
-  statusBadgeWarning: {
-    backgroundColor: '#FF950020',
-  },
-  statusBadgeInfo: {
-    backgroundColor: '#5856D620',
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  statusTextSuccess: {
-    color: '#34C759',
-  },
-  statusTextWarning: {
-    color: '#FF9500',
-  },
-  statusTextInfo: {
-    color: '#5856D6',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  statusKey: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  statusValue: {
-    fontSize: 14,
-    color: '#333333',
   },
   section: {
     paddingHorizontal: 16,
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 12,
-  },
   itemsCard: {
     paddingVertical: 4,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 15,
-    color: '#333333',
-    marginBottom: 4,
-  },
-  itemSku: {
-    fontSize: 12,
-    color: '#999999',
-  },
-  itemPrice: {
-    alignItems: 'flex-end',
-  },
-  itemPriceText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  itemQuantity: {
-    fontSize: 13,
-    color: '#999999',
-    marginTop: 2,
-  },
-  itemDivider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
   },
   paymentCard: {
     paddingVertical: 8,
   },
-  paymentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  refundCard: {
     paddingVertical: 8,
-  },
-  paymentKey: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  paymentValue: {
-    fontSize: 14,
-    color: '#333333',
-  },
-  pointsValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF9500',
   },
   memberCard: {
     paddingVertical: 8,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  memberKey: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  memberValue: {
-    fontSize: 14,
-    color: '#333333',
   },
   footer: {
     flexDirection: 'row',
@@ -386,6 +281,11 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     flex: 1,
+  },
+  footerActions: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
   },
   fullWidthButton: {
     flex: 1,

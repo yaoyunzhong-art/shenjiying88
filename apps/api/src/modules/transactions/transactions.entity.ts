@@ -51,6 +51,8 @@ export enum TransactionRefundAssignmentAction {
 
 export interface TransactionRefundRecord {
   refundId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId?: string
   tenantContext: CashierOrder['tenantContext']
   orderId: string
   paymentId: string
@@ -73,6 +75,7 @@ export interface TransactionRefundRecord {
 
 export interface TransactionAggregate {
   order: CashierOrder
+  memberNickname?: string
   payment?: CashierPayment
   settlement?: LoyaltyOrderSettlement
   pointsLedger: PointsLedgerEntry[]
@@ -83,6 +86,8 @@ export interface TransactionAggregate {
 
 export interface LytOrderSnapshot {
   snapshotId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId?: string
   tenantContext: CashierOrder['tenantContext']
   externalOrderId: string
   orderNo?: string
@@ -104,6 +109,8 @@ export interface LytOrderSnapshot {
 
 export interface LytPaymentSnapshot {
   snapshotId: string
+  /** 租户 ID（RLS 多租户隔离字段） */
+  tenantId?: string
   tenantContext: CashierOrder['tenantContext']
   externalPaymentId: string
   externalOrderId: string
@@ -306,4 +313,31 @@ export interface MemberTransactionTimelineEntry {
   updatedAt: string
   paidAt?: string
   closedAt?: string
+}
+
+export interface TransactionOrderListItem {
+  orderId: string
+  orderNo: string
+  memberId: string
+  status: CashierOrder['status'] | TransactionRefundStatus | string
+  itemCount: number
+  totalAmount: number
+  paidAmount: number
+  refundedAmount: number
+  refundRequestedAt?: string
+  refundCompletedAt?: string
+  paymentChannel?: string
+  paymentStatus?: string
+  refundStatus?: string
+  currency: string
+  createdAt: string
+  updatedAt: string
+  paidAt?: string
+}
+
+export interface TransactionOrderListPage {
+  items: TransactionOrderListItem[]
+  total: number
+  page: number
+  pageSize: number
 }

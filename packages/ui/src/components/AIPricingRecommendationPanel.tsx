@@ -94,8 +94,8 @@ function strategyLabel(strategy: PricingRecommendation['strategy']): string {
   return map[strategy];
 }
 
-function strategyColor(strategy: PricingRecommendation['strategy']): string {
-  const map: Record<PricingRecommendation['strategy'], string> = {
+function strategyColor(strategy: PricingRecommendation['strategy']): React.ComponentProps<typeof StatusBadge>['variant'] {
+  const map: Record<PricingRecommendation['strategy'], React.ComponentProps<typeof StatusBadge>['variant']> = {
     markup: 'warning',
     markdown: 'success',
     promotion: 'info',
@@ -211,7 +211,7 @@ export function AIPricingRecommendationPanel({
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h4 className="font-semibold text-base">{rec.productName}</h4>
-                  <StatusBadge variant={strategyColor(rec.strategy) as any} label={strategyLabel(rec.strategy)} />
+                  <StatusBadge variant={strategyColor(rec.strategy)} label={strategyLabel(rec.strategy)} />
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold">

@@ -220,13 +220,13 @@ describe('TransactionsController', () => {
   describe('getOrderTransaction()', () => {
     it('正例: should return existing aggregate', async () => {
       const created = await prepareCheckoutAndPay(controller, 'got-m1', 80, 'got-e1')
-      const result = controller.getOrderTransaction(created.order.orderId, CTX)
+      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
       assert.equal(result.order.orderId, created.order.orderId)
       assert.ok(result.payment)
     })
 
-    it('反例: should throw for missing order', () => {
-      assert.throws(
+    it('反例: should throw for missing order', async () => {
+      await assert.rejects(
         () => controller.getOrderTransaction('not-found', CTX),
         /not found/
       )
@@ -234,7 +234,7 @@ describe('TransactionsController', () => {
 
     it('边界: should throw for wrong tenant', async () => {
       const created = await prepareCheckoutAndPay(controller, 'got-m2', 20, 'got-e2')
-      assert.throws(
+      await assert.rejects(
         () => controller.getOrderTransaction(created.order.orderId, { ...CTX, tenantId: 'other-tenant' }),
         /not found/
       )
@@ -246,27 +246,28 @@ describe('TransactionsController', () => {
     it('正例: should list all orders for tenant', async () => {
       await prepareCheckoutAndPay(controller, 'lot-m1', 10, 'lot-e1')
       const result = controller.listOrderTransactions(CTX)
-      assert.ok(Array.isArray(result))
-      assert.ok(result.length >= 1)
+      assert.ok(Array.isArray(result.items))
+      assert.ok(result.items.length >= 1)
+      assert.ok(result.total >= 1)
     })
 
     it('正例: should filter by memberId', async () => {
       await prepareCheckoutAndPay(controller, 'lot-m2', 20, 'lot-e2')
       const result = controller.listOrderTransactions(CTX, { memberId: 'lot-m2' })
-      assert.ok(result.length >= 1)
-      result.forEach(r => assert.equal(r.order.memberId, 'lot-m2'))
+      assert.ok(result.items.length >= 1)
+      result.items.forEach((item) => assert.equal(item.memberId, 'lot-m2'))
     })
 
     it('边界: should return empty for unknown member', () => {
       const result = controller.listOrderTransactions(CTX, { memberId: 'nobody' })
-      assert.equal(result.length, 0)
+      assert.equal(result.items.length, 0)
     })
 
     it('边界: should filter by hasRefund', async () => {
       const created = await prepareCheckoutAndPay(controller, 'lot-m3', 100, 'lot-e3')
       await controller.requestRefund(created.order.orderId, CTX, { reason: 'test', refundAmount: 30 })
       const result = controller.listOrderTransactions(CTX, { hasRefund: true })
-      assert.ok(result.some(r => r.order.orderId === created.order.orderId))
+      assert.ok(result.items.some((item) => item.orderId === created.order.orderId))
     })
   })
 

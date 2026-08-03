@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import ClientLayout from '../components/shell/ClientLayout';
+
+// antd v6 CJS components are lazy objects — Next.js RSC static
+export const dynamic = 'force-dynamic';
 
 // P-49 SEO/GEO 优化: 基础 Metadata 配置
 export const metadata: Metadata = {
@@ -151,7 +155,7 @@ export default function RootLayout({
         <meta name="geo.position" content="39.9042;116.4074" />
         <meta name="ICBM" content="39.9042, 116.4074" />
       </head>
-      <body>{children}</body>
+      <body><ClientLayout>{children}</ClientLayout></body>
     </html>
   );
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { AutoRollbackController } from './auto-rollback.controller'
 import { AutoRollbackService } from './auto-rollback.service'
+import type { RollbackStatus } from './auto-rollback.entity'
 
 describe('AutoRollbackController', () => {
   let controller: AutoRollbackController
@@ -50,6 +51,43 @@ describe('AutoRollbackController', () => {
       })
       expect(result.data.id).toBeDefined()
     })
+
+    it('should accept optional trigger field', () => {
+      const result = controller.trigger({
+        reason: 'test trigger',
+        severity: 'WARNING',
+        metricKey: 'test.trigger',
+        anomalyValue: 110,
+        baselineValue: 100,
+        trigger: 'anomaly-detector-v2',
+      })
+      expect(result.data.id).toBeDefined()
+    })
+
+    it('should return response with data wrapper', () => {
+      const result = controller.trigger({
+        reason: 'test',
+        severity: 'WARNING',
+        metricKey: 'm',
+        anomalyValue: 110,
+        baselineValue: 100,
+      })
+      expect(result).toHaveProperty('data')
+      expect(result.data).toHaveProperty('id')
+      expect(result.data).toHaveProperty('status')
+      expect(result.data).toHaveProperty('history')
+    })
+
+    it('should support negative anomaly values', () => {
+      const result = controller.trigger({
+        reason: 'negative metric drop',
+        severity: 'WARNING',
+        metricKey: 'test.negative',
+        anomalyValue: -50,
+        baselineValue: 100,
+      })
+      expect(result.data.anomalyValue).toBe(-50)
+    })
   })
 
   describe('POST /auto-rollback/confirm', () => {
@@ -69,6 +107,19 @@ describe('AutoRollbackController', () => {
     it('should return null for non-existent id', () => {
       const result = controller.confirm({ id: 'non-existent' })
       expect(result.data).toBeNull()
+    })
+
+    it('should be idempotent on already confirmed record', () => {
+      const triggerResult = controller.trigger({
+        reason: 'test',
+        severity: 'CRITICAL',
+        metricKey: 'm',
+        anomalyValue: 999,
+        baselineValue: 100,
+      })
+      controller.confirm({ id: triggerResult.data.id })
+      const secondConfirm = controller.confirm({ id: triggerResult.data.id })
+      expect(secondConfirm.data).not.toBeNull()
     })
   })
 
@@ -92,6 +143,47 @@ describe('AutoRollbackController', () => {
     it('should return null for non-existent id', () => {
       const result = controller.cancel({ id: 'non-existent' })
       expect(result.data).toBeNull()
+    })
+
+    it('should cancel without providing reason', () => {
+      const triggerResult = controller.trigger({
+        reason: 'test',
+        severity: 'CRITICAL',
+        metricKey: 'm',
+        anomalyValue: 999,
+        baselineValue: 100,
+      })
+      const cancelResult = controller.cancel({ id: triggerResult.data.id })
+      expect(cancelResult.data).not.toBeNull()
+      expect(cancelResult.data!.status).toBe('CANCELLED')
+    })
+
+    it('should be idempotent on already cancelled record', () => {
+      const triggerResult = controller.trigger({
+        reason: 'test',
+        severity: 'CRITICAL',
+        metricKey: 'm',
+        anomalyValue: 999,
+        baselineValue: 100,
+      })
+      controller.cancel({ id: triggerResult.data.id, reason: 'First' })
+      const secondCancel = controller.cancel({ id: triggerResult.data.id, reason: 'Second' })
+      expect(secondCancel.data).not.toBeNull()
+      expect(secondCancel.data!.status).toBe('CANCELLED')
+    })
+
+    it('should not change COMPLETED record status via cancel', () => {
+      const triggerResult = controller.trigger({
+        reason: 'WARNING that completes',
+        severity: 'WARNING',
+        metricKey: 'm',
+        anomalyValue: 105,
+        baselineValue: 100,
+      })
+      // WARNING auto-executes; cancel might arrive after completion
+      const cancelResult = controller.cancel({ id: triggerResult.data.id, reason: 'too late' })
+      // If already completed, cancel returns the record without changing status
+      expect(cancelResult.data).not.toBeNull()
     })
   })
 
@@ -146,6 +238,30 @@ describe('AutoRollbackController', () => {
       const result = controller.listRecords({ metricKey: 'm1' })
       expect(result.data.length).toBe(1)
     })
+
+    it('should combine status and metricKey filters', () => {
+      controller.trigger({
+        reason: 'critical coupon issue',
+        severity: 'CRITICAL',
+        metricKey: '/api/coupons',
+        anomalyValue: 999,
+        baselineValue: 100,
+      })
+      controller.trigger({
+        reason: 'warning orders',
+        severity: 'WARNING',
+        metricKey: '/api/orders',
+        anomalyValue: 110,
+        baselineValue: 100,
+      })
+      const result = controller.listRecords({ status: 'AWAITING_CONFIRM', metricKey: '/api/coupons' })
+      expect(result.data).toHaveLength(1)
+    })
+
+    it('should return empty list when no records match filter', () => {
+      const result = controller.listRecords({ status: 'CANCELLED' })
+      expect(result.data).toHaveLength(0)
+    })
   })
 
   describe('GET /auto-rollback/records/:id', () => {
@@ -165,6 +281,24 @@ describe('AutoRollbackController', () => {
     it('should return null for non-existent id', () => {
       const result = controller.getRecord('non-existent')
       expect(result.data).toBeNull()
+    })
+
+    it('should return record with all required fields', () => {
+      const triggerResult = controller.trigger({
+        reason: 'full fields test',
+        severity: 'WARNING',
+        metricKey: 'test.fields',
+        anomalyValue: 110,
+        baselineValue: 100,
+      })
+      const result = controller.getRecord(triggerResult.data.id)
+      expect(result.data).toHaveProperty('id')
+      expect(result.data).toHaveProperty('reason')
+      expect(result.data).toHaveProperty('severity')
+      expect(result.data).toHaveProperty('metricKey')
+      expect(result.data).toHaveProperty('status')
+      expect(result.data).toHaveProperty('history')
+      expect(result.data).toHaveProperty('createdAt')
     })
   })
 
@@ -191,6 +325,24 @@ describe('AutoRollbackController', () => {
       expect(result.status).toBe('ok')
       expect(result.applied).toEqual([])
     })
+
+    it('should apply single field config', () => {
+      const result = controller.configure({ maxConcurrent: 5 })
+      expect(result.status).toBe('ok')
+      expect(result.applied).toEqual(['maxConcurrent'])
+    })
+
+    it('should apply all config fields', () => {
+      const result = controller.configure({
+        criticalRequiresConfirm: true,
+        confirmationDelayMs: 30000,
+        autoTimeoutMs: 300000,
+        maxConcurrent: 3,
+        snapshotRetentionMs: 604800000,
+      })
+      expect(result.status).toBe('ok')
+      expect(result.applied).toHaveLength(5)
+    })
   })
 
   describe('GET /auto-rollback/status', () => {
@@ -211,6 +363,19 @@ describe('AutoRollbackController', () => {
       })
       const result = controller.getStatus()
       expect(result.data.activeRecords).toBeGreaterThan(0)
+    })
+
+    it('should include config in status response', () => {
+      const result = controller.getStatus()
+      expect(result.data.config).toBeDefined()
+      expect(result.data.config).toHaveProperty('criticalRequiresConfirm')
+      expect(result.data.config).toHaveProperty('maxConcurrent')
+    })
+
+    it('should include lastEvaluationAt timestamp', () => {
+      const result = controller.getStatus()
+      expect(result.data.lastEvaluationAt).toBeDefined()
+      expect(() => new Date(result.data.lastEvaluationAt)).not.toThrow()
     })
   })
 })

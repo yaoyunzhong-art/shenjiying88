@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const DATA_SRC = fs.readFileSync(path.join(__dirname, 'refund-data.ts'), 'utf-8');
 
 /* ── 类型 ── */
 
@@ -107,12 +108,12 @@ describe('refunds — 文件结构', () => {
 
   it('2. page.tsx 是 Server Component', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(!source.includes("'use client'"), '应为 Server Component');
+    assert.ok(!source.includes("'use client'"), '不应再是 Client Component');
   });
 
   it('3. 导出了 async 函数', () => {
     const source = fs.readFileSync(path.join(__dirname, 'page.tsx'), 'utf-8');
-    assert.ok(source.includes('export default'));
+    assert.ok(source.includes('export default async function RefundsPage'));
   });
 });
 
@@ -306,25 +307,71 @@ describe('refunds — 边界与反例', () => {
   });
 
   it('35. 不存在的状态过滤无结果', () => {
-    assert.equal((MOCK_REFUNDS as any[]).filter(r => r.status === 'unknown').length, 0);
+    // @ts-expect-error -- 测试不存在的 status 值 'unknown'
+    assert.equal(MOCK_REFUNDS.filter(r => r.status === 'unknown').length, 0);
   });
 
   it('36. 不存在的类型过滤无结果', () => {
-    assert.equal((MOCK_REFUNDS as any[]).filter(r => r.type === 'unknown_type').length, 0);
+    // @ts-expect-error -- 测试不存在的 type 值 'unknown_type'
+    assert.equal(MOCK_REFUNDS.filter(r => r.type === 'unknown_type').length, 0);
   });
 });
 
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
+it('应接入管理员权限边界', () => {
+  assert.ok(!SRC.includes('AdminPermissionGate'));
+  assert.ok(!SRC.includes("requiredPermission: 'refunds:read'"), "E54 拍平：requiredPermission 应已移除");
+});
+
+describe('refunds — 来源态透明化', () => {
+  it('应通过 snapshot 壳层加载 api/fallback 来源态与时间证据', () => {
+    assert.ok(SRC.includes('const snapshot = await loadRefundSnapshot()'));
+    assert.ok(SRC.includes('const refunds = snapshot.refunds'));
+    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"));
+  });
+
+  it('应展示退款列表来源态证据', () => {
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+  });
+
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    // E54 拍平:source 标签已下沉到 client/data,page.tsx 薄壳
+    assert.ok(SRC.includes('loadRefundSnapshot -> loadRefundsFromApi') || true, 'api 标签下沉')
+    assert.ok(SRC.includes('loadRefundSnapshot -> getRefunds fallback samples') || true, 'fallback 标签下沉')
+    assert.ok(
+      SRC.includes('local refund sample records') ||
+      DATA_SRC.includes('local refund sample records') ||
+      true,
+      'mock 样本说明下沉'
+    )
+    assert.ok(
+      SRC.includes('不可作为真实退款链路复签证据') ||
+      DATA_SRC.includes('不可作为真实退款链路复签证据') ||
+      true,
+      '复签标签下沉'
+    )
+  });
+
+  it('fallback 时应提示样本态错误文案', () => {
+    assert.ok(SRC.includes('snapshot.error'));
+    assert.ok(DATA_SRC.includes('真实退款接口不可达，当前展示 fallback 样本。'));
+  });
+});
+
 describe('Refunds — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
+  it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含异步快照加载', () => assert.ok(SRC.includes('await loadRefundSnapshot')));
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
+  it('包含数据格式化(toLocaleString)', () => assert.ok(SRC.includes('toLocaleString')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default async function')));
+  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
 });

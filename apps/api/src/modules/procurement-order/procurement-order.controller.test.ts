@@ -8,6 +8,10 @@ import assert from 'node:assert/strict'
 import { ProcurementOrderController } from './procurement-order.controller'
 import { ProcurementOrderService } from './procurement-order.service'
 import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
+import {
   ProcurementStatus,
 } from './procurement-order.entity'
 
@@ -34,9 +38,59 @@ describe('ProcurementOrderController', () => {
   // ── Route metadata ──
 
   describe('route metadata', () => {
+    const readHandlers = [
+      ProcurementOrderController.prototype.listOrders,
+      ProcurementOrderController.prototype.getOverdueOrders,
+      ProcurementOrderController.prototype.getOrdersBySupplier,
+    ]
+    const detailHandlers = [ProcurementOrderController.prototype.getOrder]
+    const formHandlers = [
+      ProcurementOrderController.prototype.createOrder,
+      ProcurementOrderController.prototype.updateOrder,
+      ProcurementOrderController.prototype.deleteOrder,
+      ProcurementOrderController.prototype.updateOrderStatus,
+      ProcurementOrderController.prototype.receiveItems,
+    ]
+
+    const resolvePermissions = (handler: Function) =>
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler) ??
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, ProcurementOrderController)
+
+    const resolveTenantScope = (handler: Function) =>
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler) ??
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, ProcurementOrderController)
+
     it('controller path should be procurement-orders', () => {
       const path = Reflect.getMetadata('path', ProcurementOrderController)
       assert.equal(path, 'procurement-orders')
+    })
+
+    it('all routes should require tenant scope', () => {
+      ;[
+        ...readHandlers,
+        ...detailHandlers,
+        ...formHandlers,
+      ].forEach((handler) => {
+        assert.deepEqual(resolveTenantScope(handler), {})
+      })
+    })
+
+    it('read routes should reuse purchase-orders:read', () => {
+      readHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['purchase-orders:read'])
+      })
+    })
+
+    it('detail route should reuse purchase-orders:id:read', () => {
+      detailHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['purchase-orders:id:read'])
+      })
+    })
+
+    it('mutation routes should reuse purchase-orders:form:read', () => {
+      formHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['purchase-orders:form:read'])
+      })
     })
 
     it('createOrder should be POST /', () => {

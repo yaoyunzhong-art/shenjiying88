@@ -4,13 +4,16 @@
 
 import {
   Controller, Get, Post, Delete, Param, Body, Query, HttpCode, HttpStatus,
+UseGuards,
 } from '@nestjs/common'
 import { ImageRecognitionService } from './image-recognition.service'
 import type {
   CreateRecognitionDto, VisualSearchDto, DuplicateDetectionDto, ListRecognitionQuery,
 } from './image-recognition.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('image-recognition')
+@UseGuards(TenantGuard)
 export class ImageRecognitionController {
   constructor(private readonly service: ImageRecognitionService) {}
 

@@ -1,45 +1,48 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell } from '@m5/ui';
-import { readIdentityAccessPermissionDetailParam } from '@m5/types';
-import { loadIdentityAccessPermissionDetail } from '../../../identity-access-detail-view-model';
-import IdentityAccessPermissionDetailClient from './identity-access-permission-detail-client';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell } from '@m5/ui'
+import { readIdentityAccessPermissionDetailParam } from '@m5/types'
+import { loadIdentityAccessPermissionDetail } from '../../../identity-access-detail-view-model'
+import IdentityAccessPermissionDetailClient from './identity-access-permission-detail-client'
 
 interface IdentityAccessPermissionDetailPageProps {
-  params: Promise<{ permission?: string | string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<{ permission?: string | string[] }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 function readPermission(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) {
-    return readIdentityAccessPermissionDetailParam(value);
+    return readIdentityAccessPermissionDetailParam(value)
   }
-  return readIdentityAccessPermissionDetailParam(value);
+  return readIdentityAccessPermissionDetailParam(value)
 }
 
 function readQueryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
-    return value[0];
+    return value[0]
   }
-  return value;
+  return value
 }
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function IdentityAccessPermissionDetailPage({
   params,
-  searchParams
+  searchParams,
 }: IdentityAccessPermissionDetailPageProps) {
-  const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams]);
-  const permission = readPermission(resolvedParams.permission);
+  const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams])
+  const permission = readPermission(resolvedParams.permission)
 
   const query = {
     tenantId: readQueryParam(resolvedSearch.tenantId),
     brandId: readQueryParam(resolvedSearch.brandId),
     storeId: readQueryParam(resolvedSearch.storeId),
-    marketCode: readQueryParam(resolvedSearch.marketCode)
-  };
+    marketCode: readQueryParam(resolvedSearch.marketCode),
+  }
 
   const snapshot = permission
     ? await loadIdentityAccessPermissionDetail(permission, query, { cache: 'no-store' })
-    : await loadIdentityAccessPermissionDetail('', query, { cache: 'no-store' });
+    : await loadIdentityAccessPermissionDetail('', query, { cache: 'no-store' })
 
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
@@ -56,5 +59,5 @@ export default async function IdentityAccessPermissionDetailPage({
         </Suspense>
       </PageShell>
     </main>
-  );
+  )
 }

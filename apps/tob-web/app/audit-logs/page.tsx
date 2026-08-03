@@ -1,9 +1,9 @@
+'use client';
 /**
  * audit-logs/page.tsx — 审计日志列表页 (ToB 安全审计)
  * 角色视角: 👔 安全审计员 / 超级管理员
  * 功能: 审计日志查询、筛选、导出
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';

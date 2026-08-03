@@ -14,6 +14,7 @@ export interface PaymentRequest {
   amount: number
   currency: PaymentCurrency
   provider: PaymentProvider
+  tenantId?: string
   metadata?: Record<string, string>
   locale?: string
   returnUrl?: string
@@ -33,6 +34,7 @@ export interface PaymentResult {
 
 export interface RefundRequest {
   transactionId: string
+  tenantId?: string
   amount?: number  // 不填则全退
   reason?: string
 }
@@ -48,6 +50,7 @@ interface TransactionRecord {
   status: PaymentStatus
   amount: number
   currency: PaymentCurrency
+  tenantId?: string
   providerResponse?: Record<string, unknown>
   paidAt?: Date
   createdAt: Date
@@ -84,6 +87,8 @@ export class PaymentGatewayService {
   private transactions = new Map<string, TransactionRecord>()
   private walletBalances = new Map<string, Map<PaymentCurrency, number>>() // userId -> currency -> amount
   private refundRecords = new Map<string, TransactionRecord>() // refundId -> original transaction
+  private readonly simulateMode =
+    process.env.ENABLE_MOCK_PAYMENT_GATEWAY === 'true' || process.env.NODE_ENV !== 'production'
 
   // 序号生成器
   private seq = 0
@@ -92,13 +97,25 @@ export class PaymentGatewayService {
     return `${prefix}-${Date.now()}-${this.seq.toString().padStart(5, '0')}`
   }
 
+  private ensureSimulationEnabled(provider: PaymentProvider): void {
+    if (this.simulateMode) {
+      return
+    }
+
+    throw new PaymentError(
+      'PAYMENT_GATEWAY_NOT_CONFIGURED',
+      `Payment gateway simulation is disabled in production (provider=${provider})`,
+      false
+    )
+  }
+
   // ── 基础方法 ─────────────────────────────────────────────
 
   /**
    * 发起支付
    */
   async pay(request: PaymentRequest): Promise<PaymentResult> {
-    const { orderId, amount, currency, provider, metadata, locale, returnUrl, webhookUrl } = request
+    const { orderId, amount, currency, provider, tenantId, metadata, locale, returnUrl, webhookUrl } = request
 
     if (amount <= 0) {
       throw new PaymentError('INVALID_AMOUNT', 'amount must be > 0')
@@ -116,16 +133,16 @@ export class PaymentGatewayService {
 
     switch (provider) {
       case 'paypal':
-        return this.payWithPayPal(transactionId, orderId, amount, currency, returnUrl, webhookUrl, metadata)
+        return this.payWithPayPal(transactionId, orderId, amount, currency, tenantId, returnUrl, webhookUrl, metadata)
       case 'stripe':
-        return this.payWithStripe(transactionId, orderId, amount, currency, locale, returnUrl, webhookUrl, metadata)
+        return this.payWithStripe(transactionId, orderId, amount, currency, tenantId, locale, returnUrl, webhookUrl, metadata)
       case 'paypay':
-        return this.payWithPayPay(transactionId, orderId, amount, currency, webhookUrl, metadata)
+        return this.payWithPayPay(transactionId, orderId, amount, currency, tenantId, webhookUrl, metadata)
       case 'alipay':
       case 'wechat_pay':
-        return this.payWithThirdParty(transactionId, orderId, amount, currency, provider, metadata)
+        return this.payWithThirdParty(transactionId, orderId, amount, currency, provider, tenantId, metadata)
       case 'local_wallet':
-        return this.payWithLocalWallet(transactionId, orderId, amount, currency, metadata)
+        return this.payWithLocalWallet(transactionId, orderId, amount, currency, tenantId, metadata)
       default:
         throw new PaymentError('UNKNOWN_PROVIDER', `Unknown payment provider: ${provider}`)
     }
@@ -134,7 +151,7 @@ export class PaymentGatewayService {
   /**
    * 支付结果查询
    */
-  async query(transactionId: string): Promise<PaymentResult> {
+  async query(transactionId: string, tenantId?: string): Promise<PaymentResult> {
     const record = this.transactions.get(transactionId)
     if (!record) {
       throw new PaymentError('TRANSACTION_NOT_FOUND', `Transaction ${transactionId} not found`)
@@ -164,19 +181,21 @@ export class PaymentGatewayService {
 
     const refundId = this.nextId('REF')
 
+    const tId = request.tenantId || original.tenantId
+
     // 本地钱包退款直接返还余额
     if (original.provider === 'local_wallet') {
-      return this.refundLocalWallet(refundId, original, refundAmount, reason)
+      return this.refundLocalWallet(refundId, original, refundAmount, reason, tId)
     }
 
     // 第三方支付退款（模拟）
-    return this.refundThirdParty(refundId, original, refundAmount, reason)
+    return this.refundThirdParty(refundId, original, refundAmount, reason, tId)
   }
 
   /**
    * 退款状态查询
    */
-  async queryRefund(refundId: string): Promise<PaymentResult> {
+  async queryRefund(refundId: string, tenantId?: string): Promise<PaymentResult> {
     const record = this.refundRecords.get(refundId)
     if (!record) {
       throw new PaymentError('REFUND_NOT_FOUND', `Refund ${refundId} not found`)
@@ -279,10 +298,12 @@ export class PaymentGatewayService {
     orderId: string,
     amount: number,
     currency: PaymentCurrency,
+    tenantId?: string,
     returnUrl?: string,
     webhookUrl?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled('paypal')
     // 模拟 PayPal Create Order
     const providerResponse = {
       orderId: `PP-${orderId}-${Date.now()}`,
@@ -301,6 +322,7 @@ export class PaymentGatewayService {
       status: 'pending',
       amount,
       currency,
+      tenantId,
       providerResponse,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -394,11 +416,13 @@ export class PaymentGatewayService {
     orderId: string,
     amount: number,
     currency: PaymentCurrency,
+    tenantId?: string,
     locale?: string,
     returnUrl?: string,
     webhookUrl?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled('stripe')
     // 模拟 Stripe PaymentIntent 创建
     const clientSecret = `pi_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`
     const paymentIntentId = `pi_${Date.now()}`
@@ -420,6 +444,7 @@ export class PaymentGatewayService {
       status: 'pending',
       amount,
       currency,
+      tenantId,
       providerResponse,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -481,9 +506,11 @@ export class PaymentGatewayService {
     orderId: string,
     amount: number,
     currency: PaymentCurrency,
+    tenantId?: string,
     webhookUrl?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled('paypay')
     // PayPay 只支持 JPY
     if (currency !== 'JPY') {
       throw new PaymentError('CURRENCY_NOT_SUPPORTED', 'PayPay only supports JPY')
@@ -508,6 +535,7 @@ export class PaymentGatewayService {
       status: 'pending',
       amount,
       currency,
+      tenantId,
       providerResponse,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -559,8 +587,10 @@ export class PaymentGatewayService {
     amount: number,
     currency: PaymentCurrency,
     provider: 'alipay' | 'wechat_pay',
+    tenantId?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
+    this.ensureSimulationEnabled(provider)
     // 微信支付的 provider 是 wechat_pay，但域名是 wechat.com
     const domain = provider === 'wechat_pay' ? 'wechat.com' : 'alipay.com'
     const providerResponse = {
@@ -578,6 +608,7 @@ export class PaymentGatewayService {
       status: 'pending',
       amount,
       currency,
+      tenantId,
       providerResponse,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -607,6 +638,7 @@ export class PaymentGatewayService {
     orderId: string,
     amount: number,
     currency: PaymentCurrency,
+    tenantId?: string,
     metadata?: Record<string, string>
   ): Promise<PaymentResult> {
     const userId = metadata?.['userId'] || 'default-user'
@@ -623,6 +655,7 @@ export class PaymentGatewayService {
         status: 'failed',
         amount,
         currency,
+        tenantId,
         error: 'Insufficient balance',
         createdAt: new Date(),
         updatedAt: new Date()
@@ -642,6 +675,7 @@ export class PaymentGatewayService {
       status: 'completed',
       amount,
       currency,
+      tenantId,
       paidAt: new Date(),
       providerResponse: {
         userId,
@@ -661,7 +695,8 @@ export class PaymentGatewayService {
     refundId: string,
     original: TransactionRecord,
     refundAmount: number,
-    reason?: string
+    reason?: string,
+    tenantId?: string
   ): Promise<PaymentResult> {
     const userId = (original.providerResponse as { userId?: string })?.userId || 'default-user'
 
@@ -680,6 +715,7 @@ export class PaymentGatewayService {
       status: 'refunded',
       amount: refundAmount,
       currency: original.currency,
+      tenantId,
       paidAt: new Date(),
       providerResponse: {
         originalTransactionId: original.id,
@@ -700,7 +736,8 @@ export class PaymentGatewayService {
     refundId: string,
     original: TransactionRecord,
     refundAmount: number,
-    reason?: string
+    reason?: string,
+    tenantId?: string
   ): Promise<PaymentResult> {
     // 模拟第三方退款 API 调用
     const providerRefundId = `${original.provider}-REF-${Date.now()}`
@@ -712,6 +749,7 @@ export class PaymentGatewayService {
       status: 'refunded',
       amount: refundAmount,
       currency: original.currency,
+      tenantId,
       paidAt: new Date(),
       providerResponse: {
         originalTransactionId: original.id,

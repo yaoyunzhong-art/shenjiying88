@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁关于我们页面
  * BigAnts About Page - Apple Style Redesign
  */
 
-'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';

@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运营管理 — Operations (storefront-web)
  * 角色视角: 👔店长 / 运营主管
  * 功能: 运营日报、目标管理、检查清单、数据洞察（模拟数据 + 搜索过滤 + 卡片网格 + 空/错状态）
  */
-'use client';
 
 import React, { useState, useMemo } from 'react';
 

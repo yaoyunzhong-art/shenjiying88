@@ -48,6 +48,20 @@ import {
   buildFoundationWorkspaceHref,
   buildAuditTrailHref,
   buildAuditTrailRecordDetailHref,
+  buildDomainGovernanceDisplayModel,
+  buildDomainGovernanceHref,
+  buildDomainGovernanceWorkspaceHref,
+  domainGovernanceDisplayCopy,
+  domainGovernanceDisplayPresetContractMap,
+  formatDomainGovernanceFocusScopeLabel,
+  formatDomainGovernanceLastEvaluatedSummary,
+  formatDomainGovernanceRecommendationSummary,
+  formatDomainGovernanceStatusSummary,
+  formatDomainGovernanceCountsSummary,
+  formatDomainGovernanceFocusScopeSummary,
+  formatDomainGovernanceSourceSummary,
+  getDomainGovernanceAttentionLabel,
+  resolveDomainGovernanceRenderItemColor,
   readAuditTrailRecordDetailParam,
   normalizeFoundationAlertTimelineFilterState,
   buildRuntimeGovernanceCallbackStallDetail,
@@ -62,6 +76,7 @@ import {
   adminRuntimeActionPresetContractMap,
   adminRuntimeActionPresetContracts,
   filterFoundationAlertTimelineBySource,
+  resolveDomainGovernanceDisplayPreset,
   filterFoundationAlertTimelineByOwner,
   filterFoundationAlertTimeline,
   findLatestFoundationAlertTimelineEntry,
@@ -81,6 +96,7 @@ import {
   summarizeFoundationAlertTimelineDigest,
   summarizeFoundationAlertTimelineSources,
   summarizeFoundationAlertOwners,
+  selectDomainGovernanceFocusScope,
   resolveFoundationAlertFocusCode,
   resolveFoundationAlertSelectedCode,
   runtimeGovernanceActionKeys,
@@ -1648,6 +1664,314 @@ test('types: buildAuditTrailHref encodes special characters in the purpose query
     buildAuditTrailHref({ source: 's', purpose: 's:sub/with space' }),
     '/audit-trail?source=s&purpose=s%3Asub%2Fwith+space'
   );
+});
+
+test('types: domain governance workspace href keeps shared query encoding stable', () => {
+  assert.equal(buildDomainGovernanceHref(), '/saas/domains');
+  assert.equal(
+    buildDomainGovernanceHref({
+      tenantId: 'tenant-1',
+      brandId: '',
+      storeId: 'store-1',
+      scopeType: 'STORE',
+    }),
+    '/saas/domains?tenantId=tenant-1&storeId=store-1&scopeType=STORE'
+  );
+  assert.equal(
+    buildDomainGovernanceHref({
+      tenantId: 'tenant with space',
+      brandId: 'brand/1',
+      marketCode: 'cn-mainland',
+    }),
+    '/saas/domains?tenantId=tenant+with+space&brandId=brand%2F1&marketCode=cn-mainland'
+  );
+});
+
+test('types: domain governance focus scope prefers missing primary over generic order', () => {
+  assert.deepEqual(
+    selectDomainGovernanceFocusScope({
+      totalMissingPrimaryScopes: 1,
+      totalActiveWithoutPrimaryDomains: 2,
+      recommendedReadyScopes: 1,
+      tenantMissingPrimaryScopes: 0,
+      brandMissingPrimaryScopes: 1,
+      storeMissingPrimaryScopes: 0,
+      requiresAttention: true,
+      lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+      currentScopes: [
+        {
+          scopeType: 'BRAND',
+          tenantId: 'tenant-1',
+          brandId: 'brand-1',
+          activeDomainCount: 2,
+          missingPrimary: false,
+        },
+        {
+          scopeType: 'STORE',
+          tenantId: 'tenant-1',
+          brandId: 'brand-1',
+          storeId: 'store-1',
+          activeDomainCount: 2,
+          missingPrimary: true,
+        },
+      ],
+    }),
+    {
+      scopeType: 'STORE',
+      tenantId: 'tenant-1',
+      brandId: 'brand-1',
+      storeId: 'store-1',
+      activeDomainCount: 2,
+      missingPrimary: true,
+    }
+  );
+});
+
+test('types: domain governance workspace href can be built directly from summary', () => {
+  assert.equal(
+    buildDomainGovernanceWorkspaceHref(
+      {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 1,
+        recommendedReadyScopes: 1,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 1,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: true,
+        lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+        currentScopes: [
+          {
+            scopeType: 'BRAND',
+            tenantId: 'tenant-1',
+            brandId: 'brand-1',
+            activeDomainCount: 2,
+            missingPrimary: false,
+          },
+        ],
+      },
+      'cn-mainland'
+    ),
+    '/saas/domains?tenantId=tenant-1&brandId=brand-1&marketCode=cn-mainland&scopeType=BRAND'
+  );
+  assert.equal(
+    buildDomainGovernanceWorkspaceHref(
+      {
+        totalMissingPrimaryScopes: 0,
+        totalActiveWithoutPrimaryDomains: 0,
+        recommendedReadyScopes: 0,
+        tenantMissingPrimaryScopes: 0,
+        brandMissingPrimaryScopes: 0,
+        storeMissingPrimaryScopes: 0,
+        requiresAttention: false,
+        lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+        currentScopes: [],
+      },
+      'us-default'
+    ),
+    '/saas/domains?marketCode=us-default'
+  );
+});
+
+test('types: domain governance formatter helpers stay stable across consumers', () => {
+  const summary = {
+    totalMissingPrimaryScopes: 2,
+    totalActiveWithoutPrimaryDomains: 3,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 1,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [],
+  };
+
+  assert.equal(getDomainGovernanceAttentionLabel(summary), '待治理');
+  assert.equal(formatDomainGovernanceCountsSummary(summary), '缺主 scope 2 / 活跃未设主域名 3');
+  assert.equal(formatDomainGovernanceSourceSummary('custom', summary), '域名来源 custom / 可直接补选 1');
+  assert.equal(
+    getDomainGovernanceAttentionLabel({
+      ...summary,
+      requiresAttention: false,
+      recommendedReadyScopes: 0,
+    }),
+    '已对齐',
+  );
+});
+
+test('types: domain governance display model exposes richer section contract', () => {
+  const summary = {
+    totalMissingPrimaryScopes: 2,
+    totalActiveWithoutPrimaryDomains: 3,
+    recommendedReadyScopes: 1,
+    tenantMissingPrimaryScopes: 0,
+    brandMissingPrimaryScopes: 1,
+    storeMissingPrimaryScopes: 1,
+    requiresAttention: true,
+    lastEvaluatedAt: '2026-07-18T00:00:00.000Z',
+    currentScopes: [
+      {
+        scopeType: 'STORE',
+        tenantId: 'tenant-demo',
+        brandId: 'brand-demo',
+        storeId: 'store-001',
+        activeDomainCount: 2,
+        missingPrimary: true,
+        currentPrimaryDomain: null,
+        recommendedDomain: 'store-001.brand-demo.tenant-demo.cn-mainland.local',
+        recommendationReason: '优先选择 active_ssl',
+      },
+    ],
+  };
+
+  assert.equal(
+    formatDomainGovernanceFocusScopeLabel(summary.currentScopes[0]),
+    '焦点 scope STORE / tenant-demo / brand-demo / store-001',
+  );
+  assert.equal(
+    formatDomainGovernanceFocusScopeSummary(summary.currentScopes[0]),
+    '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
+  );
+  assert.equal(
+    formatDomainGovernanceRecommendationSummary(summary.currentScopes[0]),
+    '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
+  );
+  assert.equal(formatDomainGovernanceStatusSummary(summary), '治理状态：待治理 / 可直接补选 1');
+  assert.equal(
+    formatDomainGovernanceLastEvaluatedSummary(summary),
+    '最近评估 2026-07-18T00:00:00.000Z',
+  );
+
+  const workspaceHref =
+    '/saas/domains?tenantId=tenant-demo&brandId=brand-demo&storeId=store-001&marketCode=cn-mainland&scopeType=STORE';
+  const renderSections = [
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.summary,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.source,
+          value: '域名来源 custom / 可直接补选 1',
+          tone: 'primary',
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.status,
+          value: '待治理',
+          tone: 'accent',
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.summary,
+          value: '缺主 scope 2 / 活跃未设主域名 3',
+          tone: 'summary',
+        },
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.statusSummary,
+          value: formatDomainGovernanceStatusSummary(summary),
+          tone: 'summary',
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.focusScope,
+      items: [
+        {
+          label: '焦点 scope STORE / tenant-demo / brand-demo / store-001',
+          value: '焦点 scope STORE / tenant-demo / brand-demo / store-001 / 激活域名 2 / 缺主域名',
+          tone: 'accent',
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.recommendation,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.recommendation,
+          value: '推荐主域名：store-001.brand-demo.tenant-demo.cn-mainland.local / 原因 优先选择 active_ssl',
+          tone: 'summary',
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.timeline,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.itemLabels.lastEvaluated,
+          value: '最近评估 2026-07-18T00:00:00.000Z',
+          tone: 'summary',
+        },
+      ],
+    },
+    {
+      title: domainGovernanceDisplayCopy.sectionTitles.workspace,
+      items: [
+        {
+          label: domainGovernanceDisplayCopy.workspaceLabel,
+          value: workspaceHref,
+          tone: 'accent',
+        },
+      ],
+    },
+  ];
+  const model = buildDomainGovernanceDisplayModel('custom', summary, workspaceHref);
+
+  assert.deepEqual(model, {
+    eyebrow: domainGovernanceDisplayCopy.eyebrow,
+    subtitle: domainGovernanceDisplayCopy.subtitle,
+    title: '域名来源 custom / 可直接补选 1',
+    statusLabel: '待治理',
+    summaryText: '缺主 scope 2 / 活跃未设主域名 3',
+    renderSections,
+    workspaceLabel: domainGovernanceDisplayCopy.workspaceLabel,
+    workspaceHref,
+    ctaLabel: domainGovernanceDisplayCopy.ctaLabel,
+    requiresAttention: true,
+  });
+  assert.deepEqual(model.renderSections, renderSections);
+});
+
+test('types: domain governance display presets stay stable across web and native consumers', () => {
+  assert.deepEqual(Object.keys(domainGovernanceDisplayPresetContractMap).sort(), [
+    'APP_NATIVE',
+    'MINIAPP_HOME',
+    'MINIAPP_MEMBER',
+    'STOREFRONT_H5',
+    'STOREFRONT_PC',
+    'TOB_BRAND',
+    'TOB_TENANT',
+  ]);
+
+  assert.deepEqual(resolveDomainGovernanceDisplayPreset('TOB_BRAND', true), {
+    key: 'TOB_BRAND',
+    accentColor: '#f0abfc',
+    titleColor: '#f5f3ff',
+    subtitleColor: '#ddd6fe',
+    summaryColor: '#ddd6fe',
+    detailColor: '#f0abfc',
+    borderColor: 'rgba(240, 171, 252, 0.16)',
+    buttonBackground: '#f0abfc',
+    buttonTextColor: '#3b0764',
+    background: 'rgba(127, 29, 29, 0.24)',
+    statusColor: '#fecdd3',
+    statusBackground: 'rgba(136, 19, 55, 0.32)',
+  });
+
+  assert.deepEqual(resolveDomainGovernanceDisplayPreset('MINIAPP_HOME', false), {
+    key: 'MINIAPP_HOME',
+    accentColor: '#93c5fd',
+    titleColor: '#f8fafc',
+    subtitleColor: '#cbd5e1',
+    summaryColor: '#e2e8f0',
+    detailColor: '#93c5fd',
+    borderColor: 'transparent',
+    buttonBackground: '#1d4ed8',
+    buttonTextColor: '#eff6ff',
+    background: 'rgba(15, 23, 42, 0.45)',
+    statusColor: '#bbf7d0',
+    statusBackground: 'rgba(20, 83, 45, 0.32)',
+  });
+
+  const preset = resolveDomainGovernanceDisplayPreset('TOB_BRAND', true);
+  assert.equal(resolveDomainGovernanceRenderItemColor(preset, 'primary'), preset.titleColor);
+  assert.equal(resolveDomainGovernanceRenderItemColor(preset, 'accent'), preset.accentColor);
+  assert.equal(resolveDomainGovernanceRenderItemColor(preset, 'summary'), preset.summaryColor);
 });
 
 test('types: buildAuditTrailRecordDetailHref encodes auditId safely', () => {

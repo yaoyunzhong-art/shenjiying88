@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { buildLogisticsForwardHeaders } from '../../../proxy';
 
 const API_BASE = process.env.LOGISTICS_API_BASE || 'http://localhost:3001';
 
@@ -10,7 +11,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const url = `${API_BASE}/logistics/clean-schedules/${encodeURIComponent(id)}/assign-area`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'x-tenant-id': tenantId, 'Content-Type': 'application/json' },
+    headers: buildLogisticsForwardHeaders(request, {
+      tenantId,
+      contentType: 'application/json',
+    }),
     body: JSON.stringify(body),
   });
   if (!res.ok) return NextResponse.json({ error: 'assign area failed' }, { status: res.status });

@@ -13,7 +13,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import assert from 'node:assert/strict'
 import { UnauthorizedException } from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
 import { TenantGuard } from './tenant.guard'
+import { TENANT_OPTIONAL_KEY } from './tenant-guard.decorator'
 
 describe('TenantGuard', () => {
   let guard: TenantGuard
@@ -127,5 +129,44 @@ describe('TenantGuard', () => {
     guard.canActivate(context)
     const req = context.switchToHttp().getRequest()
     assert.equal(req.tenantId, 't-from-header')
+  })
+
+  it('should allow tenant-optional endpoint without tenant header', () => {
+    const reflector = {
+      getAllAndOverride: (key: string) => (key === TENANT_OPTIONAL_KEY ? true : undefined),
+    } as unknown as Reflector
+    const tenantOptionalGuard = new TenantGuard(reflector)
+    const context = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({
+        getRequest: () => ({ headers: {}, query: {} }),
+      }),
+    } as any
+
+    assert.equal(tenantOptionalGuard.canActivate(context), true)
+  })
+
+  it('should still require tenant header for public-but-tenant-scoped endpoint', () => {
+    const reflector = {
+      getAllAndOverride: () => false,
+    } as unknown as Reflector
+    const strictGuard = new TenantGuard(reflector)
+    const context = {
+      getHandler: () => ({}),
+      getClass: () => ({}),
+      switchToHttp: () => ({
+        getRequest: () => ({ headers: {}, query: {} }),
+      }),
+    } as any
+
+    assert.throws(
+      () => strictGuard.canActivate(context),
+      (err: unknown) => {
+        assert.ok(err instanceof UnauthorizedException)
+        assert.equal((err as UnauthorizedException).message, 'Missing x-tenant-id header')
+        return true
+      }
+    )
   })
 })

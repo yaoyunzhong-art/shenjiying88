@@ -164,3 +164,59 @@ finance-reconciliation测试helper `createTxn`缺`externalTransactionId`字段�
 
 **32条知识 · 生成完毕 ✅**
 **签署**: 🦞 龙虾哥 · 2026-07-14 03:35
+
+---
+
+## 🔄 V23 Phase 1 追加（2026-07-26）
+
+### KB-033: 单门店TOC网页全链路产品规划
+**来源**: 《M5母机V5.1宪法》第4/15/16/17卷 + 54专家团联合评审
+**路径**: `docs/knowledge/单门店TOC网页_全链路产品规划.md`
+**摘要**: 为单门店打造的消费者入口，包含5大模块53子需求（门店展示/预约下单/社媒裂变/AI赋能/转化漏斗）
+**关联PRD**: PRD-018 → `docs/knowledge/prd/prd-storefront-toc-p55.md`
+**Phase 1产出**: `apps/storefront-web/app/store/` 4个核心页面 + `apps/api/src/modules/storefront/` 5个后端API
+
+### KB-034: V23上线前终检 — 54专家团联签
+**来源**: 54专家团 G1-G9 三重交叉验证
+**路径**: `docs/knowledge/master-status-board.md`
+**摘要**: 9门全绿, 87/100总分, 🟡有条件通过→🟢建议上线, 系统债Phase-Next排期
+
+### KB-035: antd v6 CJS序列化问题
+**来源**: admin-web Next.js 15 构建失败根因分析
+**路径**: `apps/admin-web/next.config.mjs` + `apps/admin-web/app/layout.tsx`
+**摘要**: antd v6.5.0 47个组件在CJS中为lazy object，Next.js RSC静态生成时无法序列化。修复方案: root layout 加 `export const dynamic = 'force-dynamic'` 全站SSR。
+
+### KB-036: Cashier核心表跨租户隔离修复
+**来源**: 54专家团G2安全+G7租户 联合审计
+**路径**: `apps/api/prisma/migrations/20260725185300_add_tenant_id_to_cashier_tables/`
+**摘要**: CashierPayment/CashierMember/CashierTransaction 三表补 tenantId + @@index，迁移策略: 先加NULL→填默认值→改NOT NULL。
+
+### KB-037: TOC开发中"能力审计缺失"反模式
+**来源**: 54专家团30轮评审
+**教训**: 在已有215+文件的能力体系上重写了374行重复代码
+**预防**: V23 V2.0流程强制Gate 0 — 任何新模块启动前必须先审计已有系统能力矩阵
+**路径**: `docs/knowledge/v23-development-flow-v2.md`
+
+### KB-038: @Public()端点安全四维度
+**维度**: 认证(@Public声明) + Rate Limit + CSRF + 数据隔离(tenantId)
+**规范**: 新端点必须同时声明四维度状态，不能只标@Public()
+
+### KB-039: 预约系统时段并发保护模式
+**方案**: DB唯一约束 `@@unique([date, timeSlot, serviceId])` + 乐观锁 version字段
+**参考**: queue/ 模块已有类似双模排队实现
+
+### KB-040: 前端组件库复用清单
+**已有组件**: PerformanceRanking, StatCard, MemberMarketerDashboard, SalespersonToolPanel 等
+**规范**: 任何UI需求先 `grep "export" packages/ui/src/index.tsx`，PRD含"组件复用决策"章节
+
+### KB-041: Mock→生产迁移时机规范
+**反模式**: "先用mock,以后改" — TOC预约数据在内存Map, 重启丢失
+**规范**: Phase 1 编码阶段即引入真实DB访问
+
+### KB-042: 54专家团评审轮次演进规律
+**发现**: 1轮发现50%问题, 3轮80%, 10轮+交叉验证95%+
+**规律**: 逐组深度(1-10)→交叉验证(11-20)→方案生成(21-30)
+
+### KB-043: TOC单店数据闭环路径
+**完整链路**: 浏览→预约→支付→推送→会员→核销→归因 (7节点)
+**现状**: 仅预约节点有实现, 其余6节点待对接已有系统

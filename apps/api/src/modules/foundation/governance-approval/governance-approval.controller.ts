@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import {
   GovernanceApprovalCancelInput,
@@ -19,8 +19,19 @@ import {
   resubmitGovernanceApproval,
   summarizeGovernanceApprovals
 } from './governance-approval'
+import { TenantGuard } from '../../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../identity-access/identity-access.decorator'
+
+const GOVERNANCE_APPROVAL_READ_PERMISSION = 'foundation.governance.read'
+const GOVERNANCE_APPROVAL_WRITE_PERMISSION = 'foundation.governance.write'
 
 @Controller('foundation/governance-approval')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(GOVERNANCE_APPROVAL_READ_PERMISSION)
 export class GovernanceApprovalController {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -40,31 +51,37 @@ export class GovernanceApprovalController {
   }
 
   @Post()
+  @RequirePermissions(GOVERNANCE_APPROVAL_WRITE_PERMISSION)
   async materializeApproval(@Body() input: MaterializeGovernanceApprovalInput): Promise<GovernanceApprovalSnapshot> {
     return materializeGovernanceApproval(this.prisma, input)
   }
 
   @Post('decide')
+  @RequirePermissions(GOVERNANCE_APPROVAL_WRITE_PERMISSION)
   async decideApproval(@Body() input: GovernanceApprovalDecisionInput): Promise<GovernanceApprovalSnapshot> {
     return decideGovernanceApproval(this.prisma, input)
   }
 
   @Post('cancel')
+  @RequirePermissions(GOVERNANCE_APPROVAL_WRITE_PERMISSION)
   async cancelApproval(@Body() input: GovernanceApprovalCancelInput): Promise<GovernanceApprovalSnapshot> {
     return cancelGovernanceApproval(this.prisma, input)
   }
 
   @Post('resubmit')
+  @RequirePermissions(GOVERNANCE_APPROVAL_WRITE_PERMISSION)
   async resubmitApproval(@Body() input: GovernanceApprovalResubmitInput): Promise<ReturnType<typeof resubmitGovernanceApproval>> {
     return resubmitGovernanceApproval(this.prisma, input)
   }
 
   @Post('execute')
+  @RequirePermissions(GOVERNANCE_APPROVAL_WRITE_PERMISSION)
   async markExecuted(@Body() input: GovernanceApprovalExecutionInput): Promise<GovernanceApprovalSnapshot> {
     return markGovernanceApprovalExecuted(this.prisma, input)
   }
 
   @Post('execute-failure')
+  @RequirePermissions(GOVERNANCE_APPROVAL_WRITE_PERMISSION)
   async markExecutionFailed(@Body() input: GovernanceApprovalExecutionFailureInput): Promise<GovernanceApprovalSnapshot> {
     return markGovernanceApprovalExecutionFailed(this.prisma, input)
   }

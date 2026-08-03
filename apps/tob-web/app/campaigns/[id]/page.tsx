@@ -1,8 +1,8 @@
+'use client';
 /**
  * campaigns/[id]/page.tsx — 营销活动详情页 (ToB 活动管理)
  * 含编辑/删除/状态流转/消费数据展示
  */
-'use client';
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';

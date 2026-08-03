@@ -127,7 +127,7 @@ function QuickActionGrid({ actions }: { actions: { key: string; label: string; i
       {actions.map((action) => (
         <button
           key={action.key}
-          onClick={() => console.log(`[FrontDesk] 快捷操作: ${action.label}`)}
+          onClick={() => { if (process.env.NODE_ENV === 'development') console.debug(`[FrontDesk] 快捷操作: ${action.label}`); }}
           style={{
             padding: '14px 8px',
             borderRadius: 10,
@@ -325,7 +325,7 @@ export default function FrontDeskPage() {
       MOCK_QUICK_FN.map((action) => ({
         ...action,
         onClick: () => {
-          console.log(`[FrontDesk] 快捷操作: ${action.label}`);
+          if (process.env.NODE_ENV === 'development') console.debug(`[FrontDesk] 快捷操作: ${action.label}`);
         },
       })),
     [],

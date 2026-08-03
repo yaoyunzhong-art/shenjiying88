@@ -1,10 +1,10 @@
+'use client';
 /**
  * 库存详情页 — Stock Detail Page (Next.js App Router / Dynamic Route)
  * 角色视角: 👔店长 / 🛒前台 / 💳采购
  * 类型: B-页面创建 / 详情页
  * 功能: 展示库存单品详情、编辑入口、状态流转（补货/调整阈值/归档/删除）
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

@@ -27,9 +27,26 @@ export interface LoggerConfig {
   serviceName: string;
 }
 
+export function resolvePrettyMode(): boolean {
+  const raw = process.env.LOG_PRETTY?.trim().toLowerCase();
+  if (raw === undefined || raw === '') {
+    return process.env.NODE_ENV !== 'production';
+  }
+
+  if (raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on') {
+    return true;
+  }
+
+  if (raw === '0' || raw === 'false' || raw === 'no' || raw === 'off') {
+    return false;
+  }
+
+  return process.env.NODE_ENV !== 'production';
+}
+
 const DEFAULT_CONFIG: LoggerConfig = {
   level: (process.env.LOG_LEVEL as LoggerConfig['level']) ?? 'info',
-  pretty: process.env.NODE_ENV !== 'production',
+  pretty: resolvePrettyMode(),
   redactPaths: [
     'req.headers.authorization',
     'req.headers.cookie',

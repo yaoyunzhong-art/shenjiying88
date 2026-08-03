@@ -14,8 +14,9 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { FinanceController } from './finance.controller'
 import { FinanceService, resetFinanceServiceTestState } from './finance.service'
+import { FinanceArchivalService } from './finance-archival.service'
+import { FinanceController } from './finance.controller'
 import { LedgerType, AccountType, InvoiceType } from './finance.entity'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 
@@ -29,7 +30,7 @@ const tenantCtx: RequestTenantContext = {
 function createController() {
   resetFinanceServiceTestState()
   const service = new FinanceService()
-  return new FinanceController(service)
+  return new FinanceController(service, new FinanceArchivalService(service))
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -141,7 +142,7 @@ describe('👥HR — 工资查询视角', () => {
       category: 'payroll',
     })
 
-    const ledgers = ctrl.listLedgers(tenantCtx, { category: 'payroll' })
+    const ledgers = await ctrl.listLedgers(tenantCtx, { category: 'payroll' })
     assert.equal(ledgers.length, 2)
     const totalPayroll = ledgers.reduce((sum: number, l: any) => sum + l.amount, 0)
     assert.equal(totalPayroll, 53000)
@@ -150,8 +151,8 @@ describe('👥HR — 工资查询视角', () => {
   it('查询不存在的流水记录报错 (access control on non-existent data)', async () => {
     const ctrl = createController()
 
-    assert.throws(
-      () => ctrl.getLedger('non-existent-ledger', tenantCtx),
+    await assert.rejects(
+      async () => ctrl.getLedger('non-existent-ledger', tenantCtx),
       /Ledger non-existent-ledger not found/
     )
   })
@@ -182,7 +183,7 @@ describe('👥HR — 工资查询视角', () => {
 
     // 只查本月
     const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
-    const results = ctrl.listLedgers(tenantCtx, {
+    const results = await ctrl.listLedgers(tenantCtx, {
       category: 'payroll',
       recordedAfter: thisMonth,
       recordedBefore: thisMonthEnd,
@@ -224,7 +225,7 @@ describe('🎯运行专员 — 运营成本视角', () => {
       category: 'sales',
     })
 
-    const utilityExpenses = ctrl.listLedgers(tenantCtx, { category: 'utility' })
+    const utilityExpenses = await ctrl.listLedgers(tenantCtx, { category: 'utility' })
     assert.equal(utilityExpenses.length, 2)
     const totalUtility = utilityExpenses.reduce((sum: number, l: any) => sum + l.amount, 0)
     assert.equal(totalUtility, 3500)
@@ -245,7 +246,7 @@ describe('🎯运行专员 — 运营成本视角', () => {
     assert(expense.id.startsWith('ledger-'))
 
     // 验证该笔在列表中出现
-    const maintenance = ctrl.listLedgers(tenantCtx, { category: 'maintenance' })
+    const maintenance = await ctrl.listLedgers(tenantCtx, { category: 'maintenance' })
     assert.equal(maintenance.length, 1)
     assert.equal(maintenance[0].amount, 100000)
   })
@@ -261,11 +262,11 @@ describe('🎯运行专员 — 运营成本视角', () => {
     })
 
     // 仅查 expense 类型
-    const expenses = ctrl.listLedgers(tenantCtx, { type: LedgerType.Expense })
+    const expenses = await ctrl.listLedgers(tenantCtx, { type: LedgerType.Expense })
     assert.equal(expenses.length, 2)
 
     // 查 revenue 类型
-    const revenues = ctrl.listLedgers(tenantCtx, { type: LedgerType.Revenue })
+    const revenues = await ctrl.listLedgers(tenantCtx, { type: LedgerType.Revenue })
     assert.equal(revenues.length, 0)
   })
 })
@@ -297,7 +298,7 @@ describe('📢营销 — 活动预算视角', () => {
       category: 'marketing',
     })
 
-    const marketingExpenses = ctrl.listLedgers(tenantCtx, { category: 'marketing' })
+    const marketingExpenses = await ctrl.listLedgers(tenantCtx, { category: 'marketing' })
     assert.equal(marketingExpenses.length, 3)
     const totalSpent = marketingExpenses.reduce((sum: number, l: any) => sum + l.amount, 0)
     assert.equal(totalSpent, 28000)
@@ -316,7 +317,7 @@ describe('📢营销 — 活动预算视角', () => {
       }),
     ])
 
-    const marketing = ctrl.listLedgers(tenantCtx, { category: 'marketing' })
+    const marketing = await ctrl.listLedgers(tenantCtx, { category: 'marketing' })
     const used = marketing.reduce((sum: number, l: any) => sum + l.amount, 0)
     // 审核逻辑: 尽管可以录入，但超支需要在报表中可见
     assert.equal(used, 45000)
@@ -327,7 +328,7 @@ describe('📢营销 — 活动预算视角', () => {
       type: LedgerType.Expense, amount: 10000, description: '临时加投', category: 'marketing',
     })
 
-    const updated = ctrl.listLedgers(tenantCtx, { category: 'marketing' })
+    const updated = await ctrl.listLedgers(tenantCtx, { category: 'marketing' })
     const total = updated.reduce((sum: number, l: any) => sum + l.amount, 0)
     assert.equal(total, 55000, '超支应被记录以用于复盘')
   })
@@ -348,12 +349,12 @@ describe('📢营销 — 活动预算视角', () => {
     assert.equal(invoice.status, 'DRAFT')
 
     // 签发发票
-    const issued = ctrl.issueInvoice(invoice.id, tenantCtx)
+    const issued = await ctrl.issueInvoice(invoice.id, tenantCtx)
     assert.equal(issued.status, 'ISSUED')
     assert(issued.issuedAt, '签发发票应有签发时间')
 
     // 查询已签发的发票
-    const invoices = ctrl.listInvoices(tenantCtx, {
+    const invoices = await ctrl.listInvoices(tenantCtx, {
       status: 'ISSUED' as any,
       issuedAfter: `${today}T00:00:00.000Z`,
     })

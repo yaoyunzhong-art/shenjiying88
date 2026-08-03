@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FaultSeverity, FaultStatus, type EquipmentFaultReport } from './equipment-fault-report.entity'
-import type { FaultQueryDto, CreateFaultReportDto } from './equipment-fault-report.dto'
+import type { FaultQueryDto, CreateFaultReportDto, UpdateFaultReportDto } from './equipment-fault-report.dto'
 
 const faultStore = new Map<string, EquipmentFaultReport>()
 
@@ -170,6 +170,31 @@ export class EquipmentFaultReportService {
       createdAt: now,
       updatedAt: now,
     }
+    faultStore.set(fault.id, fault)
+    return fault
+  }
+
+  update(
+    id: string,
+    tenantContext: RequestTenantContext,
+    updates: UpdateFaultReportDto,
+  ): EquipmentFaultReport {
+    const fault = this.getById(id, tenantContext)
+
+    if (updates.status !== undefined) {
+      fault.status = updates.status
+      if (updates.status === FaultStatus.Resolved) {
+        fault.resolvedAt = new Date().toISOString()
+      }
+    }
+    if (updates.assignee !== undefined) {
+      fault.assignee = updates.assignee
+    }
+    if (updates.resolution !== undefined) {
+      fault.resolution = updates.resolution
+    }
+
+    fault.updatedAt = new Date().toISOString()
     faultStore.set(fault.id, fault)
     return fault
   }

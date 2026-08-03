@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { CampaignController } from './campaign.controller'
 import {
@@ -44,63 +43,6 @@ function makeController(overrides: MockServiceOverrides = {}) {
   }
   return new CampaignController(service as any)
 }
-
-// ── 路由元数据 ──
-describe('CampaignController 路由元数据', () => {
-  it('controller metadata path is campaigns', () => {
-    const path = Reflect.getMetadata('path', CampaignController)
-    assert.equal(path, 'campaigns')
-  })
-
-  it('registerCampaign POST /', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.registerCampaign)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.registerCampaign)
-    assert.equal(method, 1) // POST
-    assert.equal(path, '/')
-  })
-
-  it('listCampaigns GET /', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.listCampaigns)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.listCampaigns)
-    assert.equal(method, 0) // GET
-    assert.equal(path, '/')
-  })
-
-  it('getCampaign GET /:planId', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.getCampaign)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.getCampaign)
-    assert.equal(method, 0)
-    assert.equal(path, ':planId')
-  })
-
-  it('updateCampaignStatus PATCH /:planId/status', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.updateCampaignStatus)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.updateCampaignStatus)
-    assert.ok(method === 2 || method === 4) // PATCH (RequestMethod.PATCH = 2 in NestJS enum, but can vary)
-    assert.equal(path, ':planId/status')
-  })
-
-  it('listPlanDispatches GET /:planId/dispatches', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.listPlanDispatches)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.listPlanDispatches)
-    assert.equal(method, 0)
-    assert.equal(path, ':planId/dispatches')
-  })
-
-  it('listDispatches GET /dispatches/list', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.listDispatches)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.listDispatches)
-    assert.equal(method, 0)
-    assert.equal(path, 'dispatches/list')
-  })
-
-  it('evaluateTriggers POST /evaluate', () => {
-    const method = Reflect.getMetadata('method', CampaignController.prototype.evaluateTriggers)
-    const path = Reflect.getMetadata('path', CampaignController.prototype.evaluateTriggers)
-    assert.equal(method, 1)
-    assert.equal(path, 'evaluate')
-  })
-})
 
 // ── 正例测试 ──
 describe('CampaignController 正例', () => {

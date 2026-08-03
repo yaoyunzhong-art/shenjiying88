@@ -1,8 +1,8 @@
+'use client';
 /**
  * AI决策规则历史列表页 — Rule Execution History (Next.js App Router Page)
  * 展示历史规则执行记录、搜索/过滤/分页、快速动作
  */
-'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
 import {

@@ -75,6 +75,22 @@ export class LogoutDto {
   allSessions?: boolean
 }
 
+export class UnlockPasswordLockDto {
+  @IsString()
+  @IsOptional()
+  @Matches(/^1[3-9]\d{9}$/, { message: 'Invalid mobile number format' })
+  mobile?: string
+
+  @IsEmail()
+  @IsOptional()
+  email?: string
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(256)
+  reason?: string
+}
+
 export class WechatLoginDto {
   @IsString()
   @IsNotEmpty()

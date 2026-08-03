@@ -15,6 +15,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PushController } from './push.controller'
 import { APNsService, WebSocketService, PushNotificationScheduler } from './push.service'
 import { PushPlatform, PushPriority } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 // ── 8 角色定义 ──
 const ROLES = {
@@ -47,10 +52,20 @@ const MOCK_TENANT = {
 
 // ── 测试工厂 ──
 function createController(): PushController {
+  const dndConfig = new DndConfigService()
+  const frequencyCap = new FrequencyCapService()
+  const priorityGuard = new PushPriorityGuard(dndConfig, frequencyCap)
+  const emailChannel = new EmailPushChannel()
+  const smsChannel = new SmsPushChannel()
+  const dualChannelRouter = new DualChannelRouter()
+  dualChannelRouter.register(emailChannel)
+  dualChannelRouter.register(smsChannel)
   const apns = new APNsService()
   const ws = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apns)
-  return new PushController(apns, ws, scheduler)
+  const preferenceService = new PushPreferenceService()
+  const statsService = new PushStatsService()
+  return new PushController(apns, ws, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter, preferenceService, statsService)
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -89,7 +104,7 @@ describe(`${ROLES.StoreManager} 店长视角: 门店推送与效果监控`, () =
   it('店长查看推送统计 — 了解门店推送覆盖率', async () => {
     const ctrl = createController()
     // 直接检查空状态
-    const emptyStats = ctrl.getStats()
+    const emptyStats = await ctrl.getStats()
     expect(emptyStats.totalSent).toBe(0)
     expect(emptyStats.totalFailed).toBe(0)
     expect(emptyStats.activeConnections).toBe(0)
@@ -104,21 +119,21 @@ describe(`${ROLES.StoreManager} 店长视角: 门店推送与效果监控`, () =
     expect(r1.success).toBe(true)
     expect(r1.recordId).toBeDefined()
 
-    const history = ctrl.getPushHistory(DEVICE_MANAGER)
+    const history = await ctrl.getPushHistory(DEVICE_MANAGER)
     expect(history.length).toBe(1)
     expect(history[0].status).toBe('SENT' as any)
 
     // 统计仪表盘至少显示了对象结构
-    const stats = ctrl.getStats()
+    const stats = await ctrl.getStats()
     expect(stats).toHaveProperty('totalSent')
     expect(stats).toHaveProperty('totalFailed')
     expect(stats).toHaveProperty('activeConnections')
     expect(stats).toHaveProperty('byPlatform')
   })
 
-  it('店长: 空统计数据不报错', () => {
+  it('店长: 空统计数据不报错', async () => {
     const ctrl = createController()
-    const stats = ctrl.getStats()
+    const stats = await ctrl.getStats()
     expect(stats.totalSent).toBe(0)
     expect(stats.totalFailed).toBe(0)
     expect(typeof stats.activeConnections).toBe('number')
@@ -175,13 +190,13 @@ describe(`${ROLES.FrontDesk} 前台视角: 收银通知与会员服务推送`, (
       priority: PushPriority.Normal,
     })
 
-    const history = ctrl.getPushHistory(DEVICE_FRONT_DESK)
+    const history = await ctrl.getPushHistory(DEVICE_FRONT_DESK)
     expect(history.length).toBe(2)
     expect(history[0].status).toBe('SENT' as any)
   })
 
-  it('前台: 未发送过推送的设备查询历史返回空数组', () => {
-    const history = ctrl.getPushHistory('unknown-device-token-here')
+  it('前台: 未发送过推送的设备查询历史返回空数组', async () => {
+    const history = await ctrl.getPushHistory('unknown-device-token-here')
     expect(history).toEqual([])
   })
 })
@@ -276,7 +291,7 @@ describe(`${ROLES.Security} 安监视角: 安全告警与设备管理`, () => {
     const result = await ctrl.revokeToken({ deviceToken: DEVICE_FRONT_DESK })
     expect(result.success).toBe(true)
 
-    const history = ctrl.getPushHistory(DEVICE_FRONT_DESK)
+    const history = await ctrl.getPushHistory(DEVICE_FRONT_DESK)
     const lastRecord = history[history.length - 1]
     expect(lastRecord.status).toBe('REVOKED' as any)
   })
@@ -291,7 +306,7 @@ describe(`${ROLES.Security} 安监视角: 安全告警与设备管理`, () => {
       alert: '测试推送',
       priority: PushPriority.Normal,
     })
-    const history = ctrl.getPushHistory(DEVICE_GUIDE)
+    const history = await ctrl.getPushHistory(DEVICE_GUIDE)
     const hasRevoked = history.some(r => (r.status as string) === 'REVOKED')
     expect(hasRevoked).toBe(true)
   })
@@ -360,8 +375,8 @@ describe(`${ROLES.Operations} 运行专员视角: 推送服务运维与健康监
     ctrl = createController()
   })
 
-  it('运行专员查看推送系统统计仪表盘', () => {
-    const stats = ctrl.getStats()
+  it('运行专员查看推送系统统计仪表盘', async () => {
+    const stats = await ctrl.getStats()
     expect(stats).toHaveProperty('totalSent')
     expect(stats).toHaveProperty('totalFailed')
     expect(stats).toHaveProperty('activeConnections')
@@ -471,7 +486,7 @@ describe(`${ROLES.Marketing} 营销视角: 营销推送活动与精准推送`, (
       priority: PushPriority.High,
     })
 
-    const history = ctrl.getPushHistory(DEVICE_MANAGER)
+    const history = await ctrl.getPushHistory(DEVICE_MANAGER)
     expect(history.length).toBe(1)
     expect(history[0].status).toBe('SENT' as any)
   })
@@ -521,8 +536,8 @@ describe('🔐 Push 权限与边界测试', () => {
     expect(result.success).toBe(true)
   })
 
-  it('所有角色: 批量查询不存在的设备历史返回空', () => {
-    const history = ctrl.getPushHistory('non-existent-device')
+  it('所有角色: 批量查询不存在的设备历史返回空', async () => {
+    const history = await ctrl.getPushHistory('non-existent-device')
     expect(history).toEqual([])
   })
 

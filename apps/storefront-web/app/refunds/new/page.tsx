@@ -1,9 +1,9 @@
+'use client';
 /**
  * 退换货申请新建页 — New Refund Request Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🛒前台 / 💳采购
  * 功能: 创建退换货申请，支持搜索订单、选择类型、填写原因、提交审批
  */
-'use client';
 
 import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';

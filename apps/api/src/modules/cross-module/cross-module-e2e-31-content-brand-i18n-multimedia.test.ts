@@ -42,7 +42,7 @@ function createContent(title: string, body: string, contentType: string, locale:
   const id = `content-${++contentIdCounter}`
   const warnings: string[] = []
   if (opts?.mediaIds?.some(m => !multimediaExists(m))) warnings.push('referenced media not found')
-  const content: Content = { id, title, body, contentType, status: (opts?.status as any) || 'draft', locale, version: 1, templateId: opts?.templateId, mediaIds: opts?.mediaIds, warnings: warnings.length > 0 ? warnings : undefined, createdAt: new Date().toISOString() }
+  const content: Content = { id, title, body, contentType, status: (opts?.status as Content['status']) ?? 'draft', locale, version: 1, templateId: opts?.templateId, mediaIds: opts?.mediaIds, warnings: warnings.length > 0 ? warnings : undefined, createdAt: new Date().toISOString() }
   contentStore.set(id, content)
   return content
 }
@@ -70,7 +70,7 @@ function resetBrandStore(): void { brandStore.clear(); brandIdCounter = 0 }
 function createBrandTemplate(name: string, brand: string, theme: string, colors: Record<string, string>, status: string = 'draft'): BrandTemplate {
   if (!brand) throw Object.assign(new Error('brand is required'), { status: 400 })
   const id = `template-${++brandIdCounter}`
-  const tpl: BrandTemplate = { id, name, brand, theme, colors, status: status as any }
+  const tpl: BrandTemplate = { id, name, brand, theme, colors, status: status as BrandTemplate['status'] }
   brandStore.set(id, tpl)
   return tpl
 }

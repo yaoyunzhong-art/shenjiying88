@@ -1,12 +1,17 @@
 import { randomUUID } from 'node:crypto'
-import { Injectable, Optional } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
 import { CashierPaymentCallbackDto } from '../cashier/cashier.dto'
 import { CashierService } from '../cashier/cashier.service'
 import {
   CashierOrderCloseReason,
   CashierOrderStatus,
-  CashierPaymentStatus
+  CashierPaymentStatus,
+  type CashierOrder,
+  type CashierPayment
 } from '../cashier/cashier.entity'
+import { FinanceService } from '../finance/finance.service'
+import { LedgerType } from '../finance/finance.entity'
+import { MemberService } from '../member/member.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { PrismaService } from '../../prisma/prisma.service'
@@ -49,6 +54,8 @@ import {
   type TransactionRefundDashboardStatusGroup,
   type MemberTransactionTimelineEntry,
   type TransactionAggregate,
+  type TransactionOrderListItem,
+  type TransactionOrderListPage,
   type TransactionRefundRecord,
   type LytOrderSnapshot,
   type LytPaymentSnapshot
@@ -67,10 +74,116 @@ export function resetTransactionsServiceTestState() {
 @Injectable()
 export class TransactionsService {
   constructor(
-    private readonly cashierService: CashierService,
-    private readonly loyaltyService: LoyaltyService,
-    @Optional() private readonly prisma?: PrismaService
+    @Inject(CashierService) private readonly cashierService: CashierService,
+    @Inject(LoyaltyService) private readonly loyaltyService: LoyaltyService,
+    @Optional() @Inject(PrismaService) private readonly prisma?: PrismaService,
+    @Optional() @Inject(MemberService) private readonly memberService?: MemberService,
+    @Optional() @Inject(FinanceService) private readonly financeService?: FinanceService
   ) {}
+
+  private async recordRevenueLedgerIfNeeded(
+    tenantContext: RequestTenantContext,
+    aggregate: TransactionAggregate
+  ): Promise<void> {
+    if (!this.financeService || !aggregate.payment) {
+      return
+    }
+
+    const financeService = this.financeService as FinanceService & {
+      listLedgersResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: {
+          type?: LedgerType
+          orderId?: string
+          transactionId?: string
+          category?: string
+          limit?: number
+        }
+      ) => Promise<ReturnType<FinanceService['listLedgers']>>
+    }
+
+    const existingLedger = (
+      financeService.listLedgersResolved
+        ? await financeService.listLedgersResolved(tenantContext, {
+            type: LedgerType.Revenue,
+            orderId: aggregate.order.orderId,
+            transactionId: aggregate.payment.paymentId,
+            category: 'transaction',
+            limit: 1
+          })
+        : this.financeService.listLedgers(tenantContext, {
+            type: LedgerType.Revenue,
+            orderId: aggregate.order.orderId,
+            transactionId: aggregate.payment.paymentId,
+            category: 'transaction',
+            limit: 1
+          })
+    )[0]
+
+    if (existingLedger) {
+      return
+    }
+
+    await this.financeService.recordTransactionRevenue(tenantContext, {
+      orderId: aggregate.order.orderId,
+      transactionId: aggregate.payment.paymentId,
+      amount: aggregate.payment.amount,
+      description: `Transaction payment succeeded for order ${aggregate.order.orderNo ?? aggregate.order.orderId}`,
+      category: 'transaction'
+    })
+  }
+
+  private async recordRefundLedgerIfNeeded(
+    tenantContext: RequestTenantContext,
+    aggregate: TransactionAggregate,
+    refund: TransactionRefundRecord
+  ): Promise<void> {
+    if (!this.financeService || refund.status !== TransactionRefundStatus.Completed) {
+      return
+    }
+
+    const financeService = this.financeService as FinanceService & {
+      listLedgersResolved?: (
+        tenantContext: RequestTenantContext,
+        query?: {
+          type?: LedgerType
+          orderId?: string
+          transactionId?: string
+          category?: string
+          limit?: number
+        }
+      ) => Promise<ReturnType<FinanceService['listLedgers']>>
+    }
+
+    const existingLedger = (
+      financeService.listLedgersResolved
+        ? await financeService.listLedgersResolved(tenantContext, {
+            type: LedgerType.Refund,
+            orderId: refund.orderId,
+            transactionId: refund.refundId,
+            category: 'refund',
+            limit: 1
+          })
+        : this.financeService.listLedgers(tenantContext, {
+            type: LedgerType.Refund,
+            orderId: refund.orderId,
+            transactionId: refund.refundId,
+            category: 'refund',
+            limit: 1
+          })
+    )[0]
+
+    if (existingLedger) {
+      return
+    }
+
+    await this.financeService.recordTransactionRefund(tenantContext, {
+      orderId: refund.orderId,
+      transactionId: refund.refundId,
+      amount: refund.refundAmount,
+      description: `Transaction refund approved for order ${aggregate.order.orderNo ?? aggregate.order.orderId}`
+    })
+  }
 
   private getOrderSnapshotModel():
     | {
@@ -121,6 +234,14 @@ export class TransactionsService {
   private normalizeSnapshotNumber(value: unknown, fallback = 0): number {
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value
+    }
+    // Handle Prisma Decimal objects (DecimalJsLike)
+    if (value !== null && typeof value === 'object' && 'toNumber' in (value as Record<string, unknown>)) {
+      const decimal = value as { toNumber: () => number }
+      const parsed = decimal.toNumber()
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
     }
     if (typeof value === 'string' && value.trim().length) {
       const parsed = Number(value)
@@ -222,24 +343,18 @@ export class TransactionsService {
     }
   }
 
-  private buildAggregate(
-    orderId: string,
-    tenantContext: RequestTenantContext
+  private composeAggregate(
+    order: CashierOrder,
+    tenantContext: RequestTenantContext,
+    latestPayment?: CashierPayment
   ): TransactionAggregate {
-    const order = this.cashierService.getOrder(orderId, tenantContext)
-    if (!order) {
-      throw new Error(`Transaction order ${orderId} not found`)
-    }
-
-    const payments = this.cashierService.listPayments(tenantContext)
-      .filter((p) => p.orderId === orderId)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    const latestPayment = payments[0]
-
+    const orderId = order.orderId
     const tenantId = tenantContext.tenantId
+    const memberNickname = this.memberService?.getProfile(order.memberId)?.nickname
 
     return {
       order,
+      memberNickname,
       payment: latestPayment,
       settlement: this.loyaltyService.listSettlements(tenantId)
         .find((s) => s.orderId === orderId),
@@ -254,6 +369,35 @@ export class TransactionsService {
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       refunds: this.listRefundRecordsForOrder(orderId, tenantId)
     }
+  }
+
+  private buildAggregate(
+    orderId: string,
+    tenantContext: RequestTenantContext
+  ): TransactionAggregate {
+    const order = this.cashierService.getOrder(orderId, tenantContext)
+    if (!order) {
+      throw new Error(`Transaction order ${orderId} not found`)
+    }
+
+    const payments = this.cashierService.listPayments(tenantContext)
+      .filter((p) => p.orderId === orderId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+    return this.composeAggregate(order, tenantContext, payments[0])
+  }
+
+  private async buildAggregateResolved(
+    orderId: string,
+    tenantContext: RequestTenantContext
+  ): Promise<TransactionAggregate> {
+    const order = await this.cashierService.getOrderAsync(orderId, tenantContext)
+    if (!order) {
+      throw new Error(`Transaction order ${orderId} not found`)
+    }
+
+    const latestPayment = await this.cashierService.getLatestPaymentAsync(orderId, tenantContext)
+    return this.composeAggregate(order, tenantContext, latestPayment)
   }
 
   private listRefundRecordsForOrder(orderId: string, tenantId: string) {
@@ -272,6 +416,14 @@ export class TransactionsService {
     return refunds
       .filter((refund) => refund.status === TransactionRefundStatus.Completed)
       .reduce((sum, refund) => sum + refund.refundAmount, 0)
+  }
+
+  private getLatestRefund(refunds: TransactionRefundRecord[]) {
+    return [...refunds].sort((left, right) => {
+      const leftTime = new Date(left.completedAt ?? left.requestedAt).getTime()
+      const rightTime = new Date(right.completedAt ?? right.requestedAt).getTime()
+      return rightTime - leftTime
+    })[0]
   }
 
   private requireRefund(
@@ -1021,19 +1173,25 @@ export class TransactionsService {
       externalPaymentId: input.externalPaymentId
     })
 
-    return this.buildAggregate(order.orderId, tenantContext)
+    return this.buildAggregateResolved(order.orderId, tenantContext)
   }
 
   async applyPaymentCallback(input: CashierPaymentCallbackDto): Promise<TransactionAggregate> {
     const { order } = await this.cashierService.applyPaymentCallback(input)
-    return this.buildAggregate(order.orderId, order.tenantContext)
+    const aggregate = await this.buildAggregateResolved(order.orderId, order.tenantContext)
+
+    if (aggregate.payment?.status === CashierPaymentStatus.Succeeded) {
+      await this.recordRevenueLedgerIfNeeded(order.tenantContext, aggregate)
+    }
+
+    return aggregate
   }
 
-  getOrderTransaction(
+  async getOrderTransaction(
     orderId: string,
     tenantContext: RequestTenantContext
-  ): TransactionAggregate {
-    return this.buildAggregate(orderId, tenantContext)
+  ): Promise<TransactionAggregate> {
+    return this.buildAggregateResolved(orderId, tenantContext)
   }
 
   listOrderTransactions(
@@ -1049,6 +1207,40 @@ export class TransactionsService {
       .sort((left, right) => right.order.updatedAt.localeCompare(left.order.updatedAt))
 
     return typeof limit === 'number' ? aggregates.slice(0, limit) : aggregates
+  }
+
+  listOrderListPage(
+    tenantContext: RequestTenantContext,
+    query?: ListTransactionOrdersQueryDto
+  ): TransactionOrderListPage {
+    const pageSize = query?.pageSize && query.pageSize > 0 ? query.pageSize : 20
+    const page = query?.page && query.page > 0 ? query.page : 1
+
+    const filteredAggregates = this.listOrderTransactions(tenantContext, {
+      ...query,
+      limit: undefined
+    }).filter((aggregate) => {
+      if (query?.fromDate && aggregate.order.createdAt.localeCompare(query.fromDate) < 0) {
+        return false
+      }
+      if (query?.toDate && aggregate.order.createdAt.localeCompare(query.toDate) > 0) {
+        return false
+      }
+      return true
+    })
+
+    const total = filteredAggregates.length
+    const start = (page - 1) * pageSize
+    const items = filteredAggregates
+      .slice(start, start + pageSize)
+      .map((aggregate) => this.toTransactionOrderListItem(aggregate))
+
+    return {
+      items,
+      total,
+      page,
+      pageSize
+    }
   }
 
   async timeoutCloseOrder(
@@ -1521,7 +1713,9 @@ export class TransactionsService {
       order.updatedAt = now
     }
 
-    return this.buildAggregate(refund.orderId, tenantContext)
+    const aggregateAfterApproval = this.buildAggregate(refund.orderId, tenantContext)
+    await this.recordRefundLedgerIfNeeded(tenantContext, aggregateAfterApproval, refund)
+    return aggregateAfterApproval
   }
 
   rejectRefund(
@@ -1715,6 +1909,7 @@ export class TransactionsService {
       .map((order) => {
         const aggregate = this.buildAggregate(order.orderId, tenantContext)
         const latestBlindboxRecord = aggregate.blindboxFulfillments[aggregate.blindboxFulfillments.length - 1]
+        const latestRefund = this.getLatestRefund(aggregate.refunds)
         return {
           orderId: order.orderId,
           memberId: order.memberId,
@@ -1724,7 +1919,7 @@ export class TransactionsService {
           currency: order.currency,
           awardedPoints: aggregate.pointsLedger.reduce((sum, entry) => sum + entry.points, 0),
           refundedAmount: this.getCompletedRefundAmount(aggregate.refunds),
-          refundStatus: aggregate.refunds[0]?.status,
+          refundStatus: latestRefund?.status,
           couponCode: order.couponCode,
           blindboxPlanId: order.blindboxPlanId,
           blindboxStatus: latestBlindboxRecord?.status,
@@ -1738,5 +1933,38 @@ export class TransactionsService {
         }
       })
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+  }
+
+  private toTransactionOrderListItem(aggregate: TransactionAggregate): TransactionOrderListItem {
+    const order = aggregate.order
+    const paidAmount = aggregate.payment?.status === CashierPaymentStatus.Succeeded
+      ? aggregate.payment.amount
+      : 0
+    const refundedAmount = this.getCompletedRefundAmount(aggregate.refunds)
+    const latestRefund = this.getLatestRefund(aggregate.refunds)
+
+    return {
+      orderId: order.orderId,
+      orderNo: order.orderNo ?? '',
+      memberId: order.memberId,
+      status: latestRefund?.status === TransactionRefundStatus.Pending
+        ? 'REFUNDING'
+        : latestRefund?.status === TransactionRefundStatus.Completed
+          ? TransactionRefundStatus.Completed
+          : order.status,
+      itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      totalAmount: order.totalAmount,
+      paidAmount,
+      refundedAmount,
+      refundRequestedAt: latestRefund?.requestedAt,
+      refundCompletedAt: latestRefund?.completedAt,
+      paymentChannel: aggregate.payment?.channel,
+      paymentStatus: aggregate.payment?.status,
+      refundStatus: latestRefund?.status,
+      currency: order.currency,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      paidAt: order.paidAt ?? aggregate.payment?.completedAt
+    }
   }
 }

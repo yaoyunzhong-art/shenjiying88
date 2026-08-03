@@ -1,4 +1,4 @@
-import { ApiResult, MarketBootstrapResponse, FoundationBootstrapResponse, PortalBootstrapResponse, WorkbenchBootstrapResponse, AuditTrailQuery, AuditRecordContract, AuditTrailSummary, ConfigurationOverviewQuery, ConfigurationOverview, ConfigurationFeatureFlag, ConfigurationConfigEntry, ConfigurationSecretMetadata, ConfigurationCertificateMetadata, ConfigurationGovernanceMetadataEntry, ResilienceOverview, ObservabilitySignalContract, RetryPolicyContract, RecoveryPlanContract, EdgeReplayStageRequest, EdgeReplayStageContract, RateLimitWorkspaceQuery, RateLimitPolicyRecord, QuotaLedgerRecord, RateLimitWorkspace, IdentityAccessWorkspaceQuery, IdentityAccessResolvedContext, IdentityAccessValidationResult, IntegrationWebhookSourceContract, IntegrationOrchestrationWorkspaceQuery, IntegrationEventEnvelopeContract, IntegrationIdempotencyRecordContract, IntegrationPublishEventRequest, IntegrationPublishEventResponse, IntegrationWebhookIngestRequest, IntegrationWebhookIngestResponse, IntegrationOrchestrationWorkspace, FoundationConsumerDescriptor, FoundationAlertCatalogResponse, RuntimeGovernanceOverviewFilter, FoundationOperationsOverviewResponse, FoundationAlertDrilldownResponse, FoundationAlertMutationResponse, RuntimeGovernanceSubmitRequest, RuntimeGovernanceReceipt, RuntimeGovernanceSyncRequest, RuntimeGovernanceCallbackRequest, RuntimeGovernanceReplayRequest, RuntimeGovernanceBatchReplayRequest, RuntimeGovernanceBatchReplayResponse, AgentConfig, CreateSessionRequest, SessionExecutionResult, AgentSessionEvent, BatchAgentRequest, BatchAgentResponse, AgentSession, AgentExecution, QualityEvaluation, AgentStats, FoundationClientApp, RuntimeGovernanceReplaySource, RuntimeGovernanceActionKey, RuntimeGovernanceNextStep, RuntimeGovernanceRiskLevel, RuntimeGovernanceRecommendedAction, RuntimeGovernanceClientApp, FoundationAlertCatalogItem, FoundationOperationsOverviewSummary, FoundationOperationsAlert, AppBootstrapWiring, FoundationAlertMutationKind, FoundationConsumerKey } from '@m5/types';
+import { ApiResult, MarketBootstrapResponse, FoundationBootstrapResponse, PortalBootstrapResponse, PortalDomainGovernanceSummaryContract, WorkbenchBootstrapResponse, AuditTrailQuery, AuditRecordContract, AuditTrailSummary, ConfigurationOverviewQuery, ConfigurationOverview, ConfigurationFeatureFlag, ConfigurationConfigEntry, ConfigurationSecretMetadata, ConfigurationCertificateMetadata, ConfigurationGovernanceMetadataEntry, ResilienceOverview, ObservabilitySignalContract, RetryPolicyContract, RecoveryPlanContract, EdgeReplayStageRequest, EdgeReplayStageContract, RateLimitWorkspaceQuery, RateLimitPolicyRecord, QuotaLedgerRecord, RateLimitWorkspace, IdentityAccessWorkspaceQuery, IdentityAccessResolvedContext, IdentityAccessValidationResult, IntegrationWebhookSourceContract, IntegrationOrchestrationWorkspaceQuery, IntegrationEventEnvelopeContract, IntegrationIdempotencyRecordContract, IntegrationPublishEventRequest, IntegrationPublishEventResponse, IntegrationWebhookIngestRequest, IntegrationWebhookIngestResponse, IntegrationOrchestrationWorkspace, FoundationConsumerDescriptor, FoundationAlertCatalogResponse, RuntimeGovernanceOverviewFilter, FoundationOperationsOverviewResponse, FoundationAlertDrilldownResponse, FoundationAlertMutationResponse, RuntimeGovernanceSubmitRequest, RuntimeGovernanceReceipt, RuntimeGovernanceSyncRequest, RuntimeGovernanceCallbackRequest, RuntimeGovernanceReplayRequest, RuntimeGovernanceBatchReplayRequest, RuntimeGovernanceBatchReplayResponse, AgentConfig, CreateSessionRequest, SessionExecutionResult, AgentSessionEvent, BatchAgentRequest, BatchAgentResponse, AgentSession, AgentExecution, QualityEvaluation, AgentStats, FoundationClientApp, RuntimeGovernanceReplaySource, RuntimeGovernanceActionKey, RuntimeGovernanceNextStep, RuntimeGovernanceRiskLevel, RuntimeGovernanceRecommendedAction, RuntimeGovernanceClientApp, FoundationAlertCatalogItem, FoundationOperationsOverviewSummary, FoundationOperationsAlert, AppBootstrapWiring, FoundationAlertMutationKind, FoundationConsumerKey } from '@m5/types';
 
 /** 三级工作台代码 (与后端 LEVEL_TO_WORKBENCH 保持一致) */
 type TenantConfigWorkbenchCode = 'W-S' | 'W-T' | 'W-B';
@@ -86,6 +86,17 @@ interface ApiClientOptions {
     marketCode?: string;
     token?: string;
     headers?: Record<string, string>;
+}
+interface ActorHeaderOptions {
+    actorId: string;
+    actorType?: string;
+    actorName?: string;
+    tenantId?: string;
+    brandId?: string;
+    storeId?: string;
+    roles?: readonly string[];
+    permissions?: readonly string[];
+    authenticated?: boolean;
 }
 interface FoundationGovernanceReadModel {
     deliveryMode: 'api' | 'fallback';
@@ -200,6 +211,7 @@ declare function createFoundationPortalConsumerSnapshotBase({ wiring, bootstrap,
 declare function buildRuntimeGovernanceSubmitRequest<TPreset extends RuntimeGovernancePresetLike>({ app, actorId, nonce, preset, tenantId, brandId, storeId, marketCode }: BuildRuntimeGovernanceSubmitRequestOptions<TPreset>): RuntimeGovernanceSubmitRequest;
 declare function buildRuntimeGovernanceReplayRequest({ app, actorId, nonce, requestedFrom, receipt, tenantId }: BuildRuntimeGovernanceReplayRequestOptions): RuntimeGovernanceReplayRequest;
 declare const fallbackPortalConsumerDescriptor: FoundationConsumerDescriptor;
+declare function buildActorHeaders(options: ActorHeaderOptions): Record<string, string>;
 declare function getDefaultApiBaseUrl(): string;
 declare function createFoundationAlertClient(options: Omit<ApiClientOptions, 'baseUrl'> & {
     baseUrl?: string;
@@ -264,6 +276,7 @@ declare class ApiClient {
     getMarketBootstrap(init?: RequestInit): Promise<MarketBootstrapResponse>;
     getFoundationBootstrap(init?: RequestInit): Promise<FoundationBootstrapResponse>;
     getPortalBootstrap(init?: RequestInit): Promise<PortalBootstrapResponse>;
+    getPortalDomainGovernanceSummary(init?: RequestInit): Promise<PortalDomainGovernanceSummaryContract>;
     getWorkbenchBootstrap(init?: RequestInit): Promise<WorkbenchBootstrapResponse>;
     listAuditRecords(query?: AuditTrailQuery, init?: RequestInit): Promise<AuditRecordContract[]>;
     summarizeAuditRecords(query?: AuditTrailQuery, init?: RequestInit): Promise<AuditTrailSummary>;
@@ -530,6 +543,571 @@ interface SseSubscription {
  * ```
  */
 declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): SseSubscription;
+interface BusinessOrderListItem {
+    orderId: string;
+    orderNo: string;
+    memberId: string;
+    status: string;
+    itemCount?: number;
+    totalAmount: number;
+    paidAmount: number;
+    refundedAmount: number;
+    refundRequestedAt?: string;
+    refundCompletedAt?: string;
+    paymentChannel?: string;
+    paymentStatus?: string;
+    refundStatus?: string;
+    currency: string;
+    createdAt: string;
+    updatedAt: string;
+    paidAt?: string;
+}
+interface BusinessOrderListPage {
+    items: BusinessOrderListItem[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+type TransactionOrderStatus = 'CREATED' | 'PENDING_PAYMENT' | 'PAID' | 'PAYMENT_FAILED' | 'CLOSED';
+type TransactionPaymentStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED';
+interface BusinessTransactionOrderItem {
+    skuId: string;
+    title?: string;
+    quantity: number;
+    price: number;
+}
+interface BusinessTransactionOrder {
+    orderId: string;
+    orderNo?: string;
+    memberId: string;
+    currency: string;
+    totalAmount: number;
+    status: TransactionOrderStatus;
+    createdAt: string;
+    updatedAt: string;
+    paidAt?: string;
+    closedAt?: string;
+    closeReason?: string;
+    items?: BusinessTransactionOrderItem[];
+}
+interface BusinessTransactionPayment {
+    paymentId: string;
+    orderId: string;
+    externalPaymentId?: string;
+    channel?: string;
+    amount: number;
+    status: TransactionPaymentStatus;
+    qrCodeUrl?: string;
+    paymentUrl?: string;
+    expiresAt?: string;
+    transactionNo?: string;
+    createdAt: string;
+    updatedAt: string;
+    completedAt?: string;
+}
+interface BusinessTransactionRefund {
+    refundId: string;
+    orderId: string;
+    paymentId: string;
+    memberId: string;
+    refundAmount: number;
+    reason: string;
+    status: string;
+    requestedAt: string;
+    completedAt?: string;
+}
+interface BusinessTransactionAggregate {
+    order: BusinessTransactionOrder;
+    payment?: BusinessTransactionPayment;
+    memberNickname?: string;
+    refunds: BusinessTransactionRefund[];
+}
+interface BusinessCashierMemberLookupResult {
+    id: string;
+    name: string;
+    phone: string;
+    memberNo: string;
+    tier: string;
+    points: number;
+    discountRate: number;
+}
+interface BusinessCashierProductItem {
+    sku: string;
+    name: string;
+    price: number;
+    category: string;
+    stock: number;
+}
+interface BusinessCashierProductListPage {
+    items: BusinessCashierProductItem[];
+    total: number;
+}
+interface BusinessFinanceLedgerRecord {
+    id: string;
+    tenantId: string;
+    brandId?: string;
+    storeId?: string;
+    type: 'REVENUE' | 'EXPENSE' | 'REFUND' | 'ADJUSTMENT';
+    amount: number;
+    balance: number;
+    orderId?: string;
+    transactionId?: string;
+    description: string;
+    category?: string;
+    recordedAt: string;
+    createdAt: string;
+}
+interface BusinessRevenueSummary {
+    storeId?: string;
+    totalRevenue: number;
+    totalExpense: number;
+    totalRefund: number;
+    netRevenue: number;
+    transactionCount: number;
+    periodStart: string;
+    periodEnd: string;
+}
+interface BusinessFinanceAccountRecord {
+    id: string;
+    tenantId: string;
+    storeId?: string;
+    name: string;
+    type: 'CASH' | 'WECHAT' | 'ALIPAY' | 'BANK' | 'OTHER';
+    balance: number;
+    status: 'ACTIVE' | 'FROZEN' | 'CLOSED';
+    createdAt: string;
+    updatedAt: string;
+}
+interface BusinessFinanceSettlementRecord {
+    id: string;
+    tenantId: string;
+    storeId?: string;
+    startDate: string;
+    endDate: string;
+    totalRevenue: number;
+    totalExpense: number;
+    netProfit: number;
+    settlementStatus: 'PENDING' | 'CONFIRMED' | 'DISPUTED';
+    settledAt?: string;
+    createdAt: string;
+}
+interface BusinessFinanceInvoiceRecord {
+    id: string;
+    tenantId: string;
+    storeId?: string;
+    orderId?: string;
+    invoiceNo: string;
+    amount: number;
+    taxAmount: number;
+    totalAmount: number;
+    type: 'REGULAR' | 'VAT';
+    status: 'DRAFT' | 'ISSUED' | 'CANCELLED';
+    issuedAt?: string;
+    buyerInfo?: Record<string, unknown>;
+    createdAt: string;
+}
+interface BusinessDailyRevenueSummary {
+    date: string;
+    storeId?: string;
+    revenue: number;
+    expense: number;
+    refund: number;
+    netRevenue: number;
+    transactionCount: number;
+}
+/**
+ * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
+ *
+ * 用法:
+ * ```ts
+ * const biz = createBusinessClient()
+ * const orders = await biz.orders.list()
+ * const member = await biz.member.lookup('13800138001')
+ * ```
+ */
+declare function createBusinessClient(options?: string | (Omit<ApiClientOptions, 'baseUrl'> & {
+    baseUrl?: string;
+})): {
+    checkout: {
+        /** 发起结账 */
+        start: (body: {
+            memberId: string;
+            items: Array<{
+                productId: string;
+                quantity: number;
+                unitPriceCents: number;
+            }>;
+            paymentChannel: string;
+            couponCode?: string;
+        }, init?: RequestInit) => Promise<{
+            orderId: string;
+            transactionId: string;
+            totalCents: number;
+        }>;
+    };
+    orders: {
+        /** 订单列表 */
+        list: (query?: {
+            memberId?: string;
+            status?: string;
+            paymentStatus?: string;
+            limit?: number;
+            fromDate?: string;
+            toDate?: string;
+            page?: number;
+            pageSize?: number;
+        }, init?: RequestInit) => Promise<BusinessOrderListItem[]>;
+        /** 订单分页列表 */
+        listPage: (query?: {
+            memberId?: string;
+            status?: string;
+            paymentStatus?: string;
+            limit?: number;
+            fromDate?: string;
+            toDate?: string;
+            page?: number;
+            pageSize?: number;
+        }, init?: RequestInit) => Promise<BusinessOrderListPage>;
+        /** 订单详情 */
+        get: (orderId: string, init?: RequestInit) => Promise<BusinessTransactionAggregate>;
+        /** 订单退款记录 */
+        listRefunds: (orderId: string, init?: RequestInit) => Promise<{
+            refundId: string;
+            amount: number;
+            reason: string;
+            status: string;
+            requestedAt: string;
+        }[]>;
+    };
+    cashier: {
+        /** 会员查找 (手机号/卡号) */
+        lookupMember: (query: string, init?: RequestInit) => Promise<BusinessCashierMemberLookupResult | null>;
+        /** 会员消费记录 (走 transactions 模块) */
+        listMemberTransactions: (memberId: string, init?: RequestInit) => Promise<{
+            orderId: string;
+            orderNo: string;
+            status: string;
+            totalAmount: number;
+            currency: string;
+            paymentStatus?: string;
+            createdAt: string;
+        }[]>;
+        /** 商品扫码查询 */
+        lookupProduct: (sku: string, init?: RequestInit) => Promise<BusinessCashierProductItem | null>;
+        /** 商品目录列表 */
+        listProducts: (query?: {
+            limit?: number;
+            offset?: number;
+        }, init?: RequestInit) => Promise<BusinessCashierProductListPage>;
+        /** 支付渠道统计 */
+        getChannelStats: (init?: RequestInit) => Promise<{
+            channel: string;
+            today: number;
+            month: number;
+        }[]>;
+        /** 创建订单 (POS) */
+        createOrder: (body: {
+            clientOrderId: string;
+            memberId?: string;
+            items: Array<{
+                productId: string;
+                quantity: number;
+                unitPriceCents: number;
+                discountCents?: number;
+            }>;
+            discountCents?: number;
+            taxCents?: number;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 提交订单 (DRAFT → PENDING) */
+        submitOrder: (orderId: string, init?: RequestInit) => Promise<unknown>;
+        /** 创建支付 */
+        createPayment: (orderId: string, body: {
+            method: "CASH" | "WECHAT" | "ALIPAY" | "CARD";
+            amountCents: number;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 创建退款 */
+        createRefund: (orderId: string, body: {
+            paymentId: string;
+            amountCents: number;
+            reason: string;
+        }, init?: RequestInit) => Promise<{
+            refundId: string;
+        }>;
+    };
+    refunds: {
+        /** 退款列表 */
+        list: (query?: {
+            memberId?: string;
+            orderId?: string;
+            status?: string;
+            limit?: number;
+        }, init?: RequestInit) => Promise<{
+            refundId: string;
+            tenantId: string;
+            orderId: string;
+            paymentId: string;
+            memberId: string;
+            refundAmount: number;
+            reason: string;
+            operator?: string;
+            status: string;
+            requestedAt: string;
+            completedAt?: string;
+            reviewedAt?: string;
+            reviewedBy?: string;
+            reviewNote?: string;
+        }[]>;
+        /** 待处理退款 */
+        listPending: (query?: {
+            limit?: number;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 退款 dashboard */
+        getDashboard: (init?: RequestInit) => Promise<unknown>;
+        /** 退款详情 */
+        get: (refundId: string, init?: RequestInit) => Promise<{
+            refundId: string;
+            orderId: string;
+            paymentId: string;
+            memberId: string;
+            refundAmount: number;
+            reason: string;
+            status: string;
+            requestedAt: string;
+            completedAt?: string;
+            reviewedAt?: string;
+            reviewedBy?: string;
+            reviewNote?: string;
+        }>;
+        /** 审批退款 */
+        approve: (refundId: string, body: {
+            operator?: string;
+            note?: string;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 拒绝退款 */
+        reject: (refundId: string, body: {
+            operator?: string;
+            note?: string;
+        }, init?: RequestInit) => Promise<unknown>;
+    };
+    finance: {
+        /** 账户列表 */
+        listAccounts: (query?: {
+            storeId?: string;
+        }, init?: RequestInit) => Promise<BusinessFinanceAccountRecord[]>;
+        /** 账户详情 */
+        getAccount: (accountId: string, init?: RequestInit) => Promise<BusinessFinanceAccountRecord>;
+        /** 营收汇总 */
+        getRevenueSummary: (query: {
+            storeId?: string;
+            startDate: string;
+            endDate: string;
+        }, init?: RequestInit) => Promise<BusinessRevenueSummary>;
+        /** 日营收 */
+        getDailyRevenue: (query: {
+            storeId?: string;
+            date: string;
+        }, init?: RequestInit) => Promise<BusinessDailyRevenueSummary>;
+        /** 财务流水 */
+        listLedgers: (query?: {
+            storeId?: string;
+            type?: BusinessFinanceLedgerRecord["type"];
+            orderId?: string;
+            transactionId?: string;
+            category?: string;
+            recordedAfter?: string;
+            recordedBefore?: string;
+            limit?: number;
+        }, init?: RequestInit) => Promise<BusinessFinanceLedgerRecord[]>;
+        /** 结算列表 */
+        listSettlements: (query?: {
+            storeId?: string;
+            settlementStatus?: BusinessFinanceSettlementRecord["settlementStatus"];
+            startAfter?: string;
+            endBefore?: string;
+            limit?: number;
+        }, init?: RequestInit) => Promise<BusinessFinanceSettlementRecord[]>;
+        /** 结算详情 */
+        getSettlement: (settlementId: string, init?: RequestInit) => Promise<BusinessFinanceSettlementRecord>;
+        /** 发票列表 */
+        listInvoices: (query?: {
+            storeId?: string;
+            orderId?: string;
+            status?: BusinessFinanceInvoiceRecord["status"];
+            type?: BusinessFinanceInvoiceRecord["type"];
+        }, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord[]>;
+        /** 发票详情 */
+        getInvoice: (invoiceId: string, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord>;
+        /** 发票开具 */
+        issueInvoice: (invoiceId: string, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord>;
+        /** 发票作废 */
+        cancelInvoice: (invoiceId: string, init?: RequestInit) => Promise<BusinessFinanceInvoiceRecord>;
+    };
+    paymentGateway: {
+        /** 发起支付 */
+        pay: (body: {
+            orderId: string;
+            amount: number;
+            currency: string;
+            provider: string;
+            metadata?: Record<string, unknown>;
+            locale?: string;
+            returnUrl?: string;
+            webhookUrl?: string;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 查询支付结果 */
+        queryPayment: (transactionId: string, init?: RequestInit) => Promise<unknown>;
+        /** 发起退款 */
+        refund: (body: {
+            transactionId: string;
+            amount: number;
+            reason: string;
+        }, init?: RequestInit) => Promise<unknown>;
+        /** 查询退款状态 */
+        queryRefund: (refundId: string, init?: RequestInit) => Promise<unknown>;
+    };
+    budget: {
+        /** 预算列表 */
+        list: (query?: {
+            tenantId?: string;
+            status?: string;
+            category?: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            tenantId: string;
+            name: string;
+            category: string;
+            totalCents: number;
+            usedCents: number;
+            remainingCents: number;
+            currency: string;
+            period: string;
+            status: string;
+            version: number;
+            notes: string;
+            createdAt: string;
+            updatedAt: string;
+        }[]>;
+        /** 创建预算 */
+        create: (body: {
+            tenantId: string;
+            name: string;
+            category: string;
+            totalCents: number;
+            currency?: string;
+            period: string;
+            notes?: string;
+            idempotencyKey: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            version: number;
+        }>;
+        /** 提交审批 */
+        submitForApproval: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 关闭预算 */
+        close: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 审批请求列表 */
+        listApprovals: (query?: {
+            budgetId?: string;
+            status?: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            budgetId: string;
+            budgetName: string;
+            requester: string;
+            amountCents: number;
+            reason: string;
+            status: "PENDING" | "APPROVED" | "REJECTED";
+            version: number;
+            createdAt: string;
+        }[]>;
+        /** 批准审批请求 */
+        approveApproval: (approvalId: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 驳回审批请求 */
+        rejectApproval: (approvalId: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+    };
+    promotions: {
+        /** 促销列表 */
+        list: (query?: {
+            tenantId?: string;
+            storeId?: string;
+            status?: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            name: string;
+            type: string;
+            discount: string;
+            scope: string;
+            start: string;
+            end: string;
+            budget: number;
+            used: number;
+            status: "active" | "scheduled" | "ended" | "draft";
+            targetGoal?: string;
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+        }[]>;
+        /** 创建促销 */
+        create: (body: {
+            tenantId: string;
+            storeId: string;
+            name: string;
+            type: string;
+            discount: string;
+            scope: string;
+            start: string;
+            end: string;
+            budget: number;
+            targetGoal?: string;
+            idempotencyKey: string;
+        }, init?: RequestInit) => Promise<{
+            id: string;
+            version: number;
+        }>;
+        /** 发布草稿促销 */
+        publish: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+        /** 结束促销 */
+        end: (id: string, body: {
+            idempotencyKey: string;
+            version: number;
+        }, init?: RequestInit) => Promise<{
+            status: string;
+            version: number;
+        }>;
+    };
+    raw: ApiClient;
+};
+type BusinessClient = ReturnType<typeof createBusinessClient>;
 /** 计算下次 backoff 延迟 (供测试与 UI 共享)
  *  - attemptNum = 1 → initialDelayMs (第一次重试前)
  *  - attemptNum = 2 → initialDelayMs * multiplier
@@ -538,4 +1116,4 @@ declare function subscribeStream(client: ApiClient, opts: SseSubscribeOptions): 
  */
 declare function computeBackoffDelay(attemptNum: number, initialDelayMs?: number, backoffMultiplier?: number): number;
 
-export { ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type WebFoundationAlertPanelApp, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };
+export { type ActorHeaderOptions, ApiClient, type ApiClientOptions, ApiError, type BuildRuntimeGovernanceReplayRequestOptions, type BuildRuntimeGovernanceSubmitRequestOptions, type BusinessCashierMemberLookupResult, type BusinessCashierProductItem, type BusinessCashierProductListPage, type BusinessClient, type BusinessDailyRevenueSummary, type BusinessFinanceAccountRecord, type BusinessFinanceInvoiceRecord, type BusinessFinanceLedgerRecord, type BusinessFinanceSettlementRecord, type BusinessOrderListItem, type BusinessOrderListPage, type BusinessRevenueSummary, type BusinessTransactionAggregate, type BusinessTransactionOrder, type BusinessTransactionOrderItem, type BusinessTransactionPayment, type BusinessTransactionRefund, type CreateFoundationAlertMutationExecutorOptions, type CreateFoundationAlertPanelClientAccessOptions, type CreateRuntimeGovernancePanelBindingsOptions, type CreateRuntimeGovernancePanelClientOptions, type CreateWebFoundationAlertPanelClientAccessOptions, type FoundationBootstrapWiringMeta, type FoundationGovernanceReadModel, type FoundationGovernanceReadModelClient, type FoundationPortalConsumerSnapshotBase, type LytStoreCapabilityAccessItem, type LytStoreCapabilityAccessViewResponse, type RuntimeGovernancePanelClient, type RuntimeGovernancePresetLike, type SseSubscribeOptions, type SseSubscribeStatus, type SseSubscription, type TenantConfigAuditLog, type TenantConfigBatchInput, type TenantConfigCategory, type TenantConfigEffective, type TenantConfigItem, type TenantConfigItemDefinition, type TenantConfigLevel, type TenantConfigSensitivity, type TenantConfigValueType, type TenantConfigWorkbenchCode, type TransactionOrderStatus, type TransactionPaymentStatus, type WebFoundationAlertPanelApp, buildActorHeaders, buildRuntimeGovernanceReplayRequest, buildRuntimeGovernanceSubmitRequest, computeBackoffDelay, createBusinessClient, createFoundationAlertClient, createFoundationAlertMutationExecutor, createFoundationAlertPanelClientAccess, createFoundationBootstrapWiringMeta, createFoundationGovernanceReadModelLoader, createFoundationPortalConsumerSnapshotBase, createRuntimeGovernancePanelBindings, createRuntimeGovernancePanelClient, createWebFoundationAlertPanelClientAccess, emptyFoundationGovernanceOverviewSummary, fallbackPortalConsumerDescriptor, getDefaultApiBaseUrl, loadFoundationConsumerDescriptor, loadFoundationGovernanceReadModel, subscribeStream };

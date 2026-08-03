@@ -11,6 +11,11 @@ import assert from 'node:assert/strict'
 import { PushController } from './push.controller'
 import { APNsService, PushNotificationScheduler, WebSocketService } from './push.service'
 import { PushPlatform, PushPriority, PushScheduleStatus, PushStatus } from './push.entity'
+import { DndConfigService, FrequencyCapService } from './dnd-config'
+import { PushPriorityGuard } from './push-priority.guard'
+import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
+import { PushPreferenceService } from './push-preference.service'
+import { PushStatsService } from './push-stats.service'
 
 // ── 4 个新增角色定义 ──
 const ROLES = {
@@ -22,10 +27,20 @@ const ROLES = {
 
 // ── 辅助工厂 ──
 function makeController(): PushController {
+  const dndConfig = new DndConfigService()
+  const frequencyCap = new FrequencyCapService()
+  const priorityGuard = new PushPriorityGuard(dndConfig, frequencyCap)
+  const emailChannel = new EmailPushChannel()
+  const smsChannel = new SmsPushChannel()
+  const dualChannelRouter = new DualChannelRouter()
+  dualChannelRouter.register(emailChannel)
+  dualChannelRouter.register(smsChannel)
   const apnsService = new APNsService()
   const wsService = new WebSocketService()
   const scheduler = new PushNotificationScheduler(apnsService)
-  return new PushController(apnsService, wsService, scheduler)
+  const preferenceService = new PushPreferenceService()
+  const statsService = new PushStatsService()
+  return new PushController(apnsService, wsService, scheduler, priorityGuard, dndConfig, frequencyCap, dualChannelRouter, preferenceService, statsService)
 }
 
 const tenantContext = {
@@ -94,7 +109,7 @@ describe(`${ROLES.HR} push 人事通知推送角色测试`, () => {
       alert: '社保公积金缴纳提醒',
     })
 
-    const history = ctrl.getPushHistory(token)
+    const history = await ctrl.getPushHistory(token)
     assert.ok(history.length >= 2)
     assert.equal(history[0].payload.alert, '入职培训通知')
     assert.equal(history[1].payload.alert, '社保公积金缴纳提醒')
@@ -137,7 +152,7 @@ describe(`${ROLES.Safety} push 安全告警推送角色测试`, () => {
     const revokeResult = await ctrl.revokeToken({ deviceToken: token })
     assert.equal(revokeResult.success, true)
 
-    const history = ctrl.getPushHistory(token)
+    const history = await ctrl.getPushHistory(token)
     const revoked = history.filter((r) => r.status === PushStatus.Revoked)
     assert.ok(revoked.length >= 1)
   })
@@ -161,7 +176,7 @@ describe(`${ROLES.Safety} push 安全告警推送角色测试`, () => {
     assert.equal(result.success, true)
 
     // revokeToken 会创建一条 revoked 记录
-    const history = ctrl.getPushHistory('nonexistent_token_short')
+    const history = await ctrl.getPushHistory('nonexistent_token_short')
     assert.ok(history.length >= 1)
     assert.equal(history[0].status, PushStatus.Revoked)
   })

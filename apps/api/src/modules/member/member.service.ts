@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { Injectable, Optional } from '@nestjs/common'
+import { Inject, Injectable, Optional } from '@nestjs/common'
 import type { RuntimeGovernanceReceipt } from '@m5/types'
 import { PrismaService } from '../../prisma/prisma.service'
 import {
@@ -55,10 +55,32 @@ export function resetMemberServiceTestState() {
 @Injectable()
 export class MemberService {
   constructor(
-    @Optional() private readonly prisma?: PrismaService,
-    @Optional() private readonly runtimeGovernanceService?: RuntimeGovernanceService,
-    @Optional() private readonly marketingMetricsService?: MarketingMetricsService
+    @Optional() @Inject(PrismaService) private readonly prisma?: PrismaService,
+    @Optional() @Inject(RuntimeGovernanceService) private readonly runtimeGovernanceService?: RuntimeGovernanceService,
+    @Optional() @Inject(MarketingMetricsService) private readonly marketingMetricsService?: MarketingMetricsService
   ) {}
+
+  /**
+   * BS-0115: 注入桥接服务用于成长值变更后自动评估等级
+   */
+  private _tierBridge: import('./member-tier-bridge.service').MemberTierBridgeService | null = null
+
+  /**
+   * BS-0115: 设置桥接服务实例（由模块注入或测试手动设置）
+   */
+  setTierBridge(bridge: import('./member-tier-bridge.service').MemberTierBridgeService): void {
+    this._tierBridge = bridge
+  }
+
+  /**
+   * BS-0115: 在 addPoints/revokePoints 后调用桥接评估等级
+   */
+  private syncMemberLevel(profile: MemberProfile): void {
+    if (!this._tierBridge) return
+    const bridge = this._tierBridge
+    const result = bridge.evaluateMemberTier(profile, profile.memberLevelKey as import('../member-level/member-level.entity').MemberLevelKey | undefined)
+    profile.memberLevelKey = result.memberLevelKey
+  }
 
   private getLytMemberSnapshotModel():
     | {
@@ -143,6 +165,7 @@ export class MemberService {
   private getMemberProfileExtensionModel():
     | {
         findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+        findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
         upsert?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
       }
     | undefined {
@@ -153,6 +176,7 @@ export class MemberService {
     }
     return model as {
       findUnique?: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>
+      findMany?: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>
       upsert?: (args: Record<string, unknown>) => Promise<Record<string, unknown>>
     }
   }
@@ -1435,6 +1459,66 @@ export class MemberService {
     })
   }
 
+  /**
+   * 批量查询 lytMemberSnapshot，消除列表场景的 N+1 查询。
+   * 对每个 memberProfileId 只返回最新的（按 updatedAtFromSource desc）一条记录。
+   */
+  private async batchFindSnapshotsByProfileIds(
+    memberProfileIds: string[],
+    tenantContext: RequestTenantContext
+  ): Promise<Map<string, LytMemberSnapshot>> {
+    const result = new Map<string, LytMemberSnapshot>()
+    if (memberProfileIds.length === 0) {
+      return result
+    }
+    const snapshotModel = this.getLytMemberSnapshotModel()
+    if (!snapshotModel?.findMany) {
+      return result
+    }
+    const records = await snapshotModel.findMany({
+      where: {
+        tenantId: tenantContext.tenantId,
+        memberProfileId: { in: memberProfileIds }
+      },
+      orderBy: [{ updatedAtFromSource: 'desc' }]
+    })
+    // 因为 findMany 按 updatedAtFromSource desc 返回，同一 memberProfileId 的第一条就是最新的
+    for (const record of records) {
+      const pid = this.normalizeSnapshotString(record.memberProfileId)!;
+      if (result.has(pid)) {
+        continue
+      }
+      result.set(pid, this.toLytMemberSnapshot({
+        snapshotId: String(record.id),
+        tenantContext: {
+          tenantId: String(record.tenantId),
+          brandId: this.normalizeSnapshotString(record.brandId),
+          storeId: this.normalizeSnapshotString(record.storeId),
+          marketCode: tenantContext.marketCode
+        },
+        memberProfileId: pid,
+        externalMemberId: String(record.externalMemberId),
+        memberCode: this.normalizeSnapshotString(record.memberCode),
+        mobile: this.normalizeSnapshotString(record.mobile),
+        nickname: this.normalizeSnapshotString(record.nickname),
+        levelCode: this.normalizeSnapshotString(record.levelCode),
+        points: this.normalizeSnapshotNumber(record.points),
+        growthValue: this.normalizeSnapshotNumber(record.growthValue),
+        status: this.normalizeSnapshotString(record.status) ?? 'ACTIVE',
+        updatedAtFromSource: record.updatedAtFromSource instanceof Date
+          ? record.updatedAtFromSource.toISOString()
+          : String(record.updatedAtFromSource),
+        rawVersion: this.normalizeSnapshotString(record.rawVersion),
+        rawPayload:
+          record.rawPayload && typeof record.rawPayload === 'object'
+            ? (record.rawPayload as Record<string, unknown>)
+            : undefined,
+        source: 'prisma'
+      }))
+    }
+    return result
+  }
+
   private async findMemberProfileExtension(memberProfileId: string) {
     const extensionModel = this.getMemberProfileExtensionModel()
     if (!extensionModel?.findUnique) {
@@ -1453,6 +1537,36 @@ export class MemberService {
       address: this.normalizeSnapshotString(record.address),
       notes: this.normalizeSnapshotString(record.notes)
     }
+  }
+
+  /**
+   * 批量查询 memberProfileExtension，消除列表场景的 N+1 查询。
+   */
+  private async batchFindMemberProfileExtensions(
+    memberProfileIds: string[]
+  ): Promise<Map<string, { email?: string | null; address?: string | null; notes?: string | null }>> {
+    const result = new Map<string, { email?: string | null; address?: string | null; notes?: string | null }>()
+    if (memberProfileIds.length === 0) {
+      return result
+    }
+    const extensionModel = this.getMemberProfileExtensionModel()
+    if (!extensionModel?.findMany) {
+      return result
+    }
+    const records = await extensionModel.findMany({
+      where: {
+        memberProfileId: { in: memberProfileIds }
+      }
+    })
+    for (const record of records) {
+      const key = record.memberProfileId as string
+      result.set(key, {
+        email: this.normalizeSnapshotString(record.email),
+        address: this.normalizeSnapshotString(record.address),
+        notes: this.normalizeSnapshotString(record.notes)
+      })
+    }
+    return result
   }
 
   private async saveMemberProfileExtension(input: {
@@ -1554,6 +1668,7 @@ export class MemberService {
 
   /**
    * 为会员增加积分，自动重新计算等级
+   * BS-0115: 包含 6 阶 18 级桥接评估
    */
   addPoints(memberId: string, points: number): MemberProfile {
     const profile = memberStore.get(memberId)
@@ -1569,6 +1684,9 @@ export class MemberService {
     const newLevel = computeMemberLevel(profile.points)
     profile.level = newLevel
     profile.lastActiveAt = new Date().toISOString()
+
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(profile)
 
     return profile
   }
@@ -1586,6 +1704,9 @@ export class MemberService {
     profile.growthValue = Math.max(0, (profile.growthValue ?? 0) - points)
     profile.level = computeMemberLevel(profile.points)
     profile.lastActiveAt = new Date().toISOString()
+
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(profile)
 
     return profile
   }
@@ -1763,6 +1884,8 @@ export class MemberService {
       snapshot,
       extension
     })
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(hydrated)
     await this.recordMemberMutationHistory({
       memberId,
       tenantContext,
@@ -1844,6 +1967,8 @@ export class MemberService {
       snapshot,
       extension
     })
+    // BS-0115: 桥接评估 6 阶 18 级
+    this.syncMemberLevel(hydrated)
     await this.recordMemberMutationHistory({
       memberId,
       tenantContext,
@@ -2157,9 +2282,18 @@ export class MemberService {
       return this.getProfile(memberId)
     }
 
-    const memberProfile = await this.prisma.memberProfile.findUnique({
-      where: { id: memberId }
-    })
+    let memberProfile
+    try {
+      memberProfile = await this.prisma.memberProfile.findUnique({
+        where: { id: memberId }
+      })
+    } catch (error) {
+      const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : undefined
+      if (code === 'P2021' || code === 'P1010' || code === 'P1001') {
+        return this.getProfile(memberId)
+      }
+      throw error
+    }
     if (!memberProfile || memberProfile.tenantId !== tenantContext.tenantId) {
       return undefined
     }
@@ -2511,15 +2645,35 @@ export class MemberService {
       take: 100
     })
 
+    if (profiles.length === 0) {
+      return []
+    }
+
+    // Batch: 预加载 user
+    const userIds = [...new Set(profiles.map(p => p.userId).filter(Boolean) as string[])]
+    const userMap = new Map<string, { id: string; mobile: string }>()
+    if (userIds.length > 0) {
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, mobile: true }
+      })
+      for (const u of users) {
+        userMap.set(u.id as string, u as { id: string; mobile: string })
+      }
+    }
+
+    // Batch: 预加载 snapshot
+    const profileIds = profiles.map(p => p.id)
+    const snapshotMap = await this.batchFindSnapshotsByProfileIds(profileIds, tenantContext)
+
+    // Batch: 预加载 extension
+    const extensionMap = await this.batchFindMemberProfileExtensions(profileIds)
+
     const results: MemberProfile[] = []
     for (const memberProfile of profiles) {
-      const user = memberProfile.userId
-        ? await this.prisma.user.findUnique({
-            where: { id: memberProfile.userId }
-          })
-        : null
-      const snapshot = await this.findSnapshotByMemberProfileId(memberProfile.id, tenantContext)
-      const extension = await this.findMemberProfileExtension(memberProfile.id)
+      const user = memberProfile.userId ? userMap.get(memberProfile.userId) ?? null : null
+      const snapshot = snapshotMap.get(memberProfile.id) ?? null
+      const extension = extensionMap.get(memberProfile.id) ?? null
       results.push(
         this.hydratePersistentProfile({
           memberProfile,
@@ -2903,5 +3057,27 @@ export class MemberService {
 
   getSession(sessionToken: string): MemberSession | undefined {
     return memberSessionStore.get(sessionToken)
+  }
+
+  /**
+   * 查询会员余额/积分概览 — 供 storefront checkout 调用
+   * 返回：可用余额（分）、可用积分、冻结积分、可用优惠券张数
+   */
+  getMemberBalance(memberId: string): {
+    balance: number
+    points: number
+    frozenPoints: number
+    couponCount: number
+  } {
+    const profile = memberStore.get(memberId)
+    if (!profile) {
+      return { balance: 0, points: 0, frozenPoints: 0, couponCount: 0 }
+    }
+    return {
+      balance: 0,          // 余额暂未接入，后续从 loyalty 模块读取
+      points: profile.points,
+      frozenPoints: 0,      // 冻结积分暂未接入
+      couponCount: 0,       // 优惠券计数暂未接入，后续从 coupon 模块读取
+    }
   }
 }

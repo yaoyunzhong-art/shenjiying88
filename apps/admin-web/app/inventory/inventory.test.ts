@@ -179,7 +179,8 @@ describe('admin-inventory: 反例', () => {
   });
 
   it('filterItemsByStatus 不存在的状态返回空', () => {
-    assert.equal(filterItemsByStatus(BASE_ITEMS, 'BROKEN' as any).length, 0);
+    // @ts-expect-error -- 测试不存在的 status 值 'BROKEN'
+    assert.equal(filterItemsByStatus(BASE_ITEMS, 'BROKEN' as InventoryItem['status']).length, 0);
   });
 
   it('入库存数量不能超过 int32', () => {

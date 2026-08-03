@@ -117,7 +117,7 @@ export class CostTrackerService {
       enablePromptCache: cfg.enablePromptCache,
       fallbackProvider: 'openai',
     }
-    this.logger.log(
+    this.logger.debug(
       `CostTracker initialized: hard=$${this.budget.hardLimitUsd} soft=$${this.budget.softLimitUsd} cache=${this.budget.enablePromptCache}`
     )
   }

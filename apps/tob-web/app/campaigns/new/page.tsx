@@ -1,3 +1,4 @@
+'use client';
 /**
  * campaigns/new/page.tsx — 营销活动创建/编辑表单页 (ToB)
  *
@@ -7,7 +8,6 @@
  * - 预览摘要
  * - 完整 .test.tsx 测试覆盖
  */
-'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { PageShell, Badge } from '@m5/ui';

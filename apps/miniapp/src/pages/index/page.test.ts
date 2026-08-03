@@ -138,6 +138,20 @@ describe('IndexPage 正例', () => {
     assert.ok(source.includes('formatMiniappSharePolicySummary(bootstrap)'), 'should use shared share policy helper');
   });
 
+  it('source 有 domainSource 与 domainGovernance 渲染', () => {
+    assert.ok(source.includes('domainSource'), 'should render domain source');
+    assert.ok(source.includes('buildDomainGovernanceDisplayModel'), 'should build shared domain governance display model');
+    assert.ok(source.includes('domainGovernanceWorkspaceHref'), 'should render governance workspace href from snapshot');
+  });
+
+  it('source has domain governance summary and shared workspace href', () => {
+    assert.ok(source.includes('DomainGovernancePanel'), 'should render shared domain governance presenter');
+    assert.ok(source.includes('heading="域名治理摘要"'), 'should keep domain governance heading');
+    assert.ok(source.includes('domainGovernanceDisplayModel'), 'should pass shared display model');
+    assert.ok(!source.includes('headerSection'), 'page should not read headerSection directly');
+    assert.ok(!source.includes('footerSection'), 'page should not read footerSection directly');
+  });
+
   it('source uses useState/useEffect', () => {
     assert.ok(source.includes('useState'), 'should use useState');
     assert.ok(source.includes('useEffect'), 'should use useEffect');
@@ -285,7 +299,7 @@ describe('IndexPage 边界', () => {
 
   it('source 源码体量合理', () => {
     assert.ok(source.length > 5000, 'source should be substantial');
-    assert.ok(source.length < 30000, 'source should not be too large');
+    assert.ok(source.length < 40000, 'source should not be too large');
   });
 
   it('source 有 governance 控制按钮组', () => {

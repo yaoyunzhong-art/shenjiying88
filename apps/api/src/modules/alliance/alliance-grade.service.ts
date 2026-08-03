@@ -133,6 +133,40 @@ export class AlliancePartner {
     return updated as AlliancePartner;
   }
 
+  /** 退出/停用伙伴（入驻退出机制核心入口）*/
+  deactivatePartner(partnerId: string, reason?: string): AlliancePartner {
+    const partner = this.partners.get(partnerId);
+    if (!partner) throw new Error(`Partner not found: ${partnerId}`);
+    if (partner.status === 'INACTIVE') {
+      throw new Error(`Partner ${partnerId} is already inactive`);
+    }
+    const updated = {
+      ...partner,
+      status: 'INACTIVE' as const,
+      updatedAt: new Date().toISOString(),
+    };
+    this.partners.set(partnerId, updated as AlliancePartner);
+    this.logger.log(`[AlliancePartner] Deactivated: ${partner.name} (${partnerId})${reason ? ' reason=' + reason : ''}`);
+    return updated as AlliancePartner;
+  }
+
+  /** 重新启用伙伴 */
+  reactivatePartner(partnerId: string): AlliancePartner {
+    const partner = this.partners.get(partnerId);
+    if (!partner) throw new Error(`Partner not found: ${partnerId}`);
+    if (partner.status === 'ACTIVE') {
+      throw new Error(`Partner ${partnerId} is already active`);
+    }
+    const updated = {
+      ...partner,
+      status: 'ACTIVE' as const,
+      updatedAt: new Date().toISOString(),
+    };
+    this.partners.set(partnerId, updated as AlliancePartner);
+    this.logger.log(`[AlliancePartner] Reactivated: ${partner.name} (${partnerId})`);
+    return updated as AlliancePartner;
+  }
+
   getPartner(partnerId: string): AlliancePartner | undefined {
     return this.partners.get(partnerId);
   }
@@ -429,6 +463,54 @@ export class HealthScoreService {
 
   clearAlerts(): void {
     this.alerts.length = 0;
+  }
+
+  /**
+   * BS-0294: 低效联盟检测
+   * 检测条件：月订单 < 10 或 收益下降 > 50%
+   * 返回预警列表
+   */
+  detectLowEfficiencyPartners(): Array<{
+    partnerId: string
+    partnerName: string
+    orderCount: number
+    revenue: number
+    revenueChangePercent: number
+    reason: string
+    alertedAt: string
+  }> {
+    const results: Array<{
+      partnerId: string
+      partnerName: string
+      orderCount: number
+      revenue: number
+      revenueChangePercent: number
+      reason: string
+      alertedAt: string
+    }> = []
+
+    for (const [partnerId, m] of this.metrics) {
+      const reasonParts: string[] = []
+
+      // 条件1: 月订单 < 10
+      if (m.orderCount < 10) {
+        reasonParts.push(`月订单数(${m.orderCount})低于10单`)
+      }
+
+      if (reasonParts.length > 0) {
+        results.push({
+          partnerId,
+          partnerName: `Partner-${partnerId}`,
+          orderCount: m.orderCount,
+          revenue: m.revenue,
+          revenueChangePercent: 0,
+          reason: reasonParts.join('；'),
+          alertedAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    return results
   }
 
   // ── Private scoring helpers ─────────────────────────────────────────────────

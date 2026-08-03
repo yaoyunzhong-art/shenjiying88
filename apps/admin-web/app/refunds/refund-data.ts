@@ -1,11 +1,53 @@
 /**
  * 退款管理 — 数据层
- * 模拟后台 API 数据，提供增删改查操作接口
+ * P1-3 共享层收口: 优先调用真实 API，不可用时回落 mock
  */
 
+import { getBizClient } from '../lib/sdk';
 import type { RefundItem } from './refund-types';
 
-/** 模拟退款申请数据（可从 API 替换） */
+export interface RefundSnapshotDelivery {
+  deliveryMode: 'api' | 'fallback';
+  refunds: RefundItem[];
+  generatedAt: string;
+  error?: string;
+}
+
+/** 将后端退款记录映射为前端 RefundItem */
+function mapApiRefundToRefundItem(apiRefund: any, index: number): RefundItem {
+  // 后端 status 映射
+  const bs = (apiRefund.status ?? '').toLowerCase();
+  let status: RefundItem['status'] = 'pending_approval';
+  if (bs === 'pending') status = 'pending_approval';
+  else if (bs === 'approved' || bs === 'reviewed') status = 'approved';
+  else if (bs === 'processing') status = 'processing';
+  else if (bs === 'refunded' || bs === 'success' || bs === 'completed') status = 'completed';
+  else if (bs === 'rejected' || bs === 'declined') status = 'rejected';
+  else if (bs === 'cancelled' || bs === 'canceled') status = 'cancelled';
+
+  return {
+    id: apiRefund.refundId ?? apiRefund.id ?? `RF-API-${index}`,
+    orderId: apiRefund.orderId ?? '',
+    type: 'refund',
+    status,
+    channel: 'original',
+    customerName: apiRefund.memberId ?? '—',
+    customerPhone: '',
+    storeId: '',
+    storeName: '',
+    amount: apiRefund.refundAmount ?? apiRefund.amountCents ?? 0,
+    reason: apiRefund.reason ?? '',
+    remark: apiRefund.reviewNote ?? '',
+    createdAt: apiRefund.requestedAt ?? apiRefund.createdAt ?? '',
+    processedAt: apiRefund.completedAt ?? apiRefund.reviewedAt ?? undefined,
+    processedBy: apiRefund.reviewedBy ?? apiRefund.operator ?? undefined,
+    productName: '',
+    productSku: '',
+    quantity: 1,
+  };
+}
+
+/** 从 API 加载退款列表，不可用时回落 mock */
 export function getRefunds(): RefundItem[] {
   return [
     {
@@ -207,6 +249,11 @@ export function getRefunds(): RefundItem[] {
   ];
 }
 
+function getLatestRefundTimestamp(refunds: RefundItem[]): string {
+  if (refunds.length === 0) return '—';
+  return refunds.reduce((latest, item) => (item.createdAt > latest ? item.createdAt : latest), refunds[0]!.createdAt);
+}
+
 /** 按状态计数 */
 export function countByStatus(items: RefundItem[], status: string): number {
   return items.filter((i) => i.status === status).length;
@@ -215,6 +262,46 @@ export function countByStatus(items: RefundItem[], status: string): number {
 /** 计算退款总金额（分） */
 export function totalAmount(items: RefundItem[]): number {
   return items.reduce((sum, i) => sum + i.amount, 0);
+}
+
+/**
+ * 异步加载退款列表 (API 优先)
+ * 用于客户端组件, API 不可用时返回 null, 调用方保留 mock fallback
+ */
+export async function loadRefundsFromApi(): Promise<RefundItem[] | null> {
+  const biz = getBizClient();
+  if (!biz) return null;
+
+  try {
+    const apiRefunds = await biz.refunds.list();
+    if (!Array.isArray(apiRefunds) || apiRefunds.length === 0) return null;
+    return apiRefunds.map((r: any, i: number) => mapApiRefundToRefundItem(r, i));
+  } catch {
+    return null;
+  }
+}
+
+export async function loadRefundSnapshot(): Promise<RefundSnapshotDelivery> {
+  try {
+    const apiRefunds = await loadRefundsFromApi();
+    if (apiRefunds && apiRefunds.length > 0) {
+      return {
+        deliveryMode: 'api',
+        refunds: apiRefunds,
+        generatedAt: new Date().toISOString(),
+      };
+    }
+  } catch {
+    // keep fallback below
+  }
+
+  const fallbackRefunds = getRefunds();
+  return {
+    deliveryMode: 'fallback',
+    refunds: fallbackRefunds,
+    generatedAt: getLatestRefundTimestamp(fallbackRefunds),
+    error: '真实退款接口不可达，当前展示 fallback 样本。',
+  };
 }
 
 /** 按门店分组退款数 */

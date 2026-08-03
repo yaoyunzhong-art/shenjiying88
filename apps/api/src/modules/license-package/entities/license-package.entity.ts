@@ -12,7 +12,7 @@ export class LicensePackage {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 100, unique: true })
   name!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -36,19 +36,19 @@ export class LicensePackage {
   @Column({ type: 'simple-array', nullable: true })
   features?: string[];
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'is_deleted', default: false })
+  @Column({ name: 'is_deleted', type: 'boolean', default: false })
   isDeleted!: boolean;
 
-  @Column({ name: 'created_by', nullable: true })
+  @Column({ name: 'created_by', type: 'varchar', length: 64, nullable: true })
   createdBy?: string;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ name: 'updated_by', type: 'varchar', length: 64, nullable: true })
   updatedBy?: string;
 
-  @Column({ name: 'deleted_by', nullable: true })
+  @Column({ name: 'deleted_by', type: 'varchar', length: 64, nullable: true })
   deletedBy?: string;
 
   @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })

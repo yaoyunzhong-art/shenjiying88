@@ -179,6 +179,8 @@ export interface PortalLoginEntry {
   ssoEnabled: boolean;
 }
 
+export type PortalDomainSource = 'custom' | 'default';
+
 export interface BasePortal {
   audience: PortalAudience;
   scopeType: PortalScopeType;
@@ -187,6 +189,7 @@ export interface BasePortal {
   channel: PortalChannel;
   name: string;
   primaryDomain?: string;
+  domainSource?: PortalDomainSource;
   supportedLanguages: LanguageCode[];
 }
 

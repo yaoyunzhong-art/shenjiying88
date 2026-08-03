@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,26 +8,150 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import {
+  getNativeAppOrderTransaction,
+  submitNativeAppOrderPayment,
+  type NativeAppTransactionAggregate,
+} from '../../market-bootstrap';
+import type { PaymentRouteParams } from '../../utils/order-route';
+import {
+  getPaymentChannelLabel,
+  normalizePaymentChannel,
+  PAYMENT_CHANNEL_OPTIONS,
+  type PaymentChannel,
+} from '../../utils/payment-channel';
 
-type PaymentChannel = 'WECHAT_PAY' | 'ALIPAY' | 'CASH' | 'MEMBER_CARD';
+type PaymentParams = {
+  Payment: PaymentRouteParams;
+};
 
-const paymentChannels: { id: PaymentChannel; name: string; icon: string }[] = [
-  { id: 'WECHAT_PAY', name: '微信支付', icon: '💚' },
-  { id: 'ALIPAY', name: '支付宝', icon: '💙' },
-  { id: 'CASH', name: '现金', icon: '💵' },
-  { id: 'MEMBER_CARD', name: '会员卡', icon: '💳' },
-];
+const MAX_PAYMENT_AMOUNT = 999999.99;
 
 export function PaymentScreen() {
-  const [amount, setAmount] = useState('');
-  const [selectedChannel, setSelectedChannel] = useState<PaymentChannel>('WECHAT_PAY');
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: {
+      goBack: () => void;
+      navigate?: (route: string, params?: Record<string, unknown>) => void;
+    };
+  }).__mockNavigation ?? { goBack: () => {}, navigate: () => {} };
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: PaymentParams['Payment'];
+  }).__mockRoute ?? {};
+
+  let navigation = fallbackNavigation;
+  try {
+    navigation = useNavigation();
+  } catch {
+    navigation = fallbackNavigation;
+  }
+
+  let route = { params: fallbackRouteParams } as RouteProp<PaymentParams, 'Payment'>;
+  try {
+    route = useRoute<RouteProp<PaymentParams, 'Payment'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<PaymentParams, 'Payment'>;
+  }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
+  const shouldFetchOrder = (() => {
+    const globals = globalThis as {
+      __mockRoute?: PaymentParams['Payment'];
+      __mockOrderFetchEnabled?: boolean;
+    };
+    return Boolean(routeParams?.orderId) && (!globals.__mockRoute || globals.__mockOrderFetchEnabled === true);
+  })();
+
+  const initialAmount = routeParams?.amount;
+  const initialChannel = routeParams?.paymentChannel ?? 'WECHAT_PAY';
+  const [amount, setAmount] = useState(initialAmount?.toString() ?? '');
+  const [selectedChannel, setSelectedChannel] = useState<PaymentChannel>(initialChannel);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showMemberInput, setShowMemberInput] = useState(false);
   const [memberPhone, setMemberPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [orderAggregate, setOrderAggregate] = useState<NativeAppTransactionAggregate | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderFetchError, setOrderFetchError] = useState<string | null>(null);
+  const numericAmount = Number(amount);
+  const resolvedOrderNo = orderAggregate?.order.orderNo ?? routeParams?.orderNo ?? 'N/A';
+  const resolvedOrderId = orderAggregate?.order.orderId ?? routeParams?.orderId ?? 'N/A';
+  const resolvedOrderAmount = orderAggregate?.payment?.amount ?? orderAggregate?.order.totalAmount ?? routeParams?.amount ?? 0;
+  const resolvedPaymentChannel = normalizePaymentChannel(
+    orderAggregate?.payment?.channel ?? routeParams?.paymentChannel,
+  );
+  const resolvedPaymentChannelLabel = getPaymentChannelLabel(resolvedPaymentChannel);
+  const memberPhoneValid = /^1\d{10}$/.test(memberPhone.trim());
+  const canSubmitAmount =
+    amount.trim().length > 0 &&
+    Number.isFinite(numericAmount) &&
+    numericAmount > 0 &&
+    numericAmount <= MAX_PAYMENT_AMOUNT;
+  const canSubmit =
+    canSubmitAmount &&
+    (selectedChannel !== 'MEMBER_CARD' || memberPhoneValid) &&
+    (!shouldFetchOrder || !orderLoading);
+
+  const fetchOrder = useCallback(() => {
+    const orderId = routeParams?.orderId;
+
+    if (!orderId || !shouldFetchOrder) {
+      setOrderAggregate(null);
+      setOrderFetchError(null);
+      setOrderLoading(false);
+      return () => {};
+    }
+
+    let cancelled = false;
+    setOrderLoading(true);
+    setOrderFetchError(null);
+
+    getNativeAppOrderTransaction(orderId)
+      .then((aggregate) => {
+        if (cancelled) {
+          return;
+        }
+
+        setOrderAggregate(aggregate);
+        setAmount((previousAmount) => (
+          previousAmount.trim().length === 0
+            ? String(aggregate.payment?.amount ?? aggregate.order.totalAmount)
+            : previousAmount
+        ));
+
+        if (!routeParams.paymentChannel) {
+          const hydratedChannel = normalizePaymentChannel(aggregate.payment?.channel);
+          if (hydratedChannel) {
+            setSelectedChannel(hydratedChannel);
+          }
+        }
+
+        setOrderLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+
+        setOrderAggregate(null);
+        setOrderFetchError(
+          error instanceof Error && error.message
+            ? error.message
+            : '订单信息加载失败，请重试',
+        );
+        setOrderLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeParams?.orderId, routeParams.paymentChannel, shouldFetchOrder]);
+
+  useEffect(() => fetchOrder(), [fetchOrder]);
 
   const handleNumberPress = (num: string) => {
     if (num === 'C') {
@@ -36,13 +160,21 @@ export function PaymentScreen() {
       setAmount((prev) => prev.slice(0, -1));
     } else if (num === '.') {
       if (!amount.includes('.')) {
-        setAmount((prev) => prev + '.');
+        setAmount((prev) => (prev.length === 0 ? '0.' : `${prev}.`));
       }
     } else {
       if (amount.includes('.') && (amount.split('.')[1]?.length ?? 0) >= 2) {
         return;
       }
-      setAmount((prev) => prev + num);
+      setAmount((prev) => {
+        if (prev === '0' && num === '0') {
+          return prev;
+        }
+        if (prev === '0') {
+          return num;
+        }
+        return prev + num;
+      });
     }
   };
 
@@ -56,9 +188,20 @@ export function PaymentScreen() {
   };
 
   const handleSubmit = () => {
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert('提示', '请输入有效金额');
+    if (orderLoading) {
+      Alert.alert('提示', '订单信息同步中，请稍后再试');
+      return;
+    }
+    if (!canSubmitAmount) {
+      const invalidAmountMessage =
+        numericAmount > MAX_PAYMENT_AMOUNT
+          ? `收款金额不能超过 ¥${MAX_PAYMENT_AMOUNT.toFixed(2)}`
+          : '请输入有效金额';
+      Alert.alert('提示', invalidAmountMessage);
+      return;
+    }
+    if (selectedChannel === 'MEMBER_CARD' && !memberPhoneValid) {
+      Alert.alert('提示', '请输入正确的会员手机号');
       return;
     }
     setShowConfirmModal(true);
@@ -67,10 +210,35 @@ export function PaymentScreen() {
   const handleConfirmPayment = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const paymentPaidAt = new Date().toISOString();
+      const aggregate = routeParams?.orderId
+        ? await submitNativeAppOrderPayment(routeParams.orderId, {
+            amount: numericAmount,
+            paymentChannel: selectedChannel,
+            externalPaymentId: `app-pos-${routeParams.orderId}`,
+            paidAt: paymentPaidAt,
+            source: 'app-cashier',
+          })
+        : undefined;
       setShowConfirmModal(false);
-      Alert.alert('提示', '支付成功', [
-        { text: '确定', onPress: () => setAmount('') },
+      Alert.alert('提示', '收款成功，订单状态已更新', [
+        {
+          text: '确定',
+          onPress: () => {
+            if (routeParams?.orderId) {
+              navigation.navigate?.('OrderDetail', {
+                orderId: routeParams.orderId,
+                orderNo: aggregate?.order.orderNo ?? routeParams.orderNo,
+                paymentStatus: 'PAID',
+                paymentAmount: aggregate?.payment?.amount ?? numericAmount,
+                paymentPaidAt: aggregate?.order.paidAt ?? aggregate?.payment?.completedAt ?? paymentPaidAt,
+                paymentChannel: normalizePaymentChannel(aggregate?.payment?.channel) ?? selectedChannel,
+              });
+              return;
+            }
+            setAmount('');
+          },
+        },
       ]);
     } catch {
       Alert.alert('错误', '支付失败，请重试');
@@ -107,6 +275,45 @@ export function PaymentScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {(routeParams?.orderId || routeParams?.orderNo) && (
+          <Card style={styles.orderCard}>
+            <Text style={styles.orderTitle}>待支付订单</Text>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>订单号</Text>
+              <Text style={styles.orderValue}>{resolvedOrderNo}</Text>
+            </View>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>订单ID</Text>
+              <Text style={styles.orderValue}>{resolvedOrderId}</Text>
+            </View>
+            <View style={styles.orderRow}>
+              <Text style={styles.orderKey}>待收金额</Text>
+              <Text style={styles.orderValue}>¥{resolvedOrderAmount.toFixed(2)}</Text>
+            </View>
+            {resolvedPaymentChannelLabel ? (
+              <View style={styles.orderRow}>
+                <Text style={styles.orderKey}>原支付渠道</Text>
+                <Text style={styles.orderValue}>{resolvedPaymentChannelLabel}</Text>
+              </View>
+            ) : null}
+            {orderLoading ? (
+              <Text style={styles.orderHint}>正在同步真实订单信息...</Text>
+            ) : null}
+            {orderFetchError ? (
+              <>
+                <Text style={styles.orderHint}>订单信息加载失败，可重试或按当前金额继续收款</Text>
+                <Text style={styles.orderErrorText}>{orderFetchError}</Text>
+                <Button
+                  title="重试加载"
+                  onPress={fetchOrder}
+                  variant="outline"
+                  size="small"
+                  style={styles.retryButton}
+                />
+              </>
+            ) : null}
+          </Card>
+        )}
         <Card style={styles.amountCard}>
           <Text style={styles.amountLabel}>收款金额</Text>
           <View style={styles.amountDisplay}>
@@ -120,7 +327,7 @@ export function PaymentScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>支付方式</Text>
           <View style={styles.channelsGrid}>
-            {paymentChannels.map((channel) => (
+            {PAYMENT_CHANNEL_OPTIONS.map((channel) => (
               <TouchableOpacity
                 key={channel.id}
                 style={[
@@ -163,7 +370,7 @@ export function PaymentScreen() {
           title="确认收款"
           onPress={handleSubmit}
           style={styles.submitButton}
-          disabled={!amount}
+          disabled={!canSubmit}
         />
       </View>
 
@@ -180,7 +387,7 @@ export function PaymentScreen() {
               ¥{parseFloat(amount || '0').toFixed(2)}
             </Text>
             <Text style={styles.modalChannel}>
-              支付方式：{paymentChannels.find((c) => c.id === selectedChannel)?.name}
+              支付方式：{PAYMENT_CHANNEL_OPTIONS.find((c) => c.id === selectedChannel)?.name}
             </Text>
             <View style={styles.modalButtons}>
               <Button
@@ -215,6 +422,44 @@ const styles = StyleSheet.create({
     margin: 16,
     alignItems: 'center',
     paddingVertical: 32,
+  },
+  orderCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 8,
+  },
+  orderTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  orderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  orderKey: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  orderValue: {
+    fontSize: 14,
+    color: '#333333',
+  },
+  orderHint: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#666666',
+  },
+  orderErrorText: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#FF3B30',
+  },
+  retryButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
   },
   amountLabel: {
     fontSize: 14,

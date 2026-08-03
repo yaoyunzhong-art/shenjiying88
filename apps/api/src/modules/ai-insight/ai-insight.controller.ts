@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Query, Body, Headers } from '@nestjs/common'
+import { Controller, Get, Post, Put, Param, Query, Body, Headers, UseGuards } from '@nestjs/common'
 import { AiInsightService } from './ai-insight.service'
 import {
   GenerateReportDto,
@@ -9,8 +9,10 @@ import {
   GenerateForecastDto,
   DashboardQueryDto
 } from './ai-insight.dto'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('ai-insight')
+@UseGuards(TenantGuard)
 export class AiInsightController {
   constructor(private readonly insightService: AiInsightService) {}
 

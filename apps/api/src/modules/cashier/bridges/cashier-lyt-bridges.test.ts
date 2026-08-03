@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { CashierToLytBridge } from './cashier-to-lyt.bridge'
 import { LytToCashierBridge } from './lyt-to-cashier.bridge'
 import type { ILytAdapter } from '../../lyt/interfaces/lyt-adapter.interface'
+import { LytConnectionStatus } from '../../lyt/interfaces/lyt-adapter.interface'
 import type { LytOrderPayload, LytOrderResult, LytMemberProfile } from '@m5/domain'
 /**
  * Bridge 测试 (P1-1.4)
@@ -49,6 +50,74 @@ class FakeLytAdapter implements ILytAdapter {
   async updateMember(input: { memberId: string; tier?: string; [k: string]: unknown }) {
     this.updateMemberCalls.push(input)
     return { status: 'UPDATED' as const, memberId: input.memberId }
+  }
+
+  // WP-01A stub methods
+  async connect(_endpoint: string, _creds: Record<string, unknown>) {
+    return {
+      sessionId: 'stub-session',
+      status: LytConnectionStatus.Connected,
+      connectedAt: new Date().toISOString(),
+      metadata: {},
+    };
+  }
+  async disconnect(_sessionId: string) {
+    return { success: true, sessionId: _sessionId, disconnectedAt: new Date().toISOString() };
+  }
+  async getConnectionStatus(_sessionId?: string) {
+    return { status: LytConnectionStatus.Disconnected as LytConnectionStatus };
+  }
+  async query() {
+    return { data: [], total: 0, page: 1, pageSize: 10, hasMore: false };
+  }
+  async operate() {
+    return { success: true, operationId: 'stub', entityId: undefined, message: 'stub' };
+  }
+  async validate() {
+    return { valid: true, checks: [] };
+  }
+  async getVenues() { return []; }
+  async getDevices() { return []; }
+  async getMemberInfo() {
+    return { memberId: 'stub', status: 'ACTIVE' as const };
+  }
+  async getOrderInfo() {
+    return { orderId: 'stub', totalAmount: 0, status: 'CREATED' as const };
+  }
+  async sign() {
+    return { signature: '', algorithm: 'sha256', timestamp: '', nonce: '' };
+  }
+  async verifySignature() { return true; }
+  async decrypt() {
+    return { plaintext: '', algorithm: '' };
+  }
+  async startPoll(_taskType: any, _entityId: string) {
+    return {
+      taskId: '', taskType: 'order-status' as const, entityId: _entityId,
+      status: 'PENDING' as const, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+  }
+  async getPollStatus() {
+    return {
+      taskId: '', taskType: 'order-status' as const, status: 'FAILED' as const,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+  }
+  async cancelPoll() {
+    return { success: true, taskId: '' };
+  }
+  async handleCallback() {
+    return { accepted: true, eventId: '', processedBy: 'stub' };
+  }
+  wrapError(error: unknown) {
+    return { code: 'LYT_STUB', category: 'unknown' as const, message: String(error), retryable: false, adapterName: 'FakeLytAdapter' };
+  }
+  isRetryable() { return false; }
+  getTimeoutDowngradeConfig() {
+    return {
+      connectTimeoutMs: 3000, readTimeoutMs: 5000, useCacheOnTimeout: true,
+      cacheTtlMs: 60000, useFallbackOnTimeout: true, downgradeLogLevel: 'warn' as const,
+    };
   }
 }
 const fakeCtx = {

@@ -8,6 +8,10 @@ import type {
   FoundationOperationsOverviewResponse,
   FoundationWorkspaceQuery
 } from '@m5/types';
+import {
+  resolveServerRequestContext,
+  type ServerRequestContextEvidence,
+} from './lib/server-request-context';
 
 const FALLBACK_TENANT_ID = 'tenant-demo';
 const FALLBACK_BRAND_ID = 'brand-demo';
@@ -15,6 +19,13 @@ const FALLBACK_STORE_ID = 'store-001';
 const FALLBACK_MARKET_CODE = 'cn-mainland';
 const DEFAULT_MODULE_KEY: FoundationModuleKey = 'trust-governance';
 const DEFAULT_CONSUMER = 'workbench';
+const FOUNDATION_WORKSPACE_ACTOR = {
+  actorId: 'admin-foundation-workspace',
+  actorName: 'Admin Foundation Workspace',
+  actorType: 'employee-user',
+  roles: ['TENANT_ADMIN', 'OPERATIONS'],
+  permissions: ['foundation.governance.read'],
+} as const;
 
 interface FoundationModuleHealth {
   module: string;
@@ -61,16 +72,32 @@ export interface FoundationWorkspaceSnapshot {
   generatedAt: string;
   query: Required<FoundationWorkspaceQuery>;
   workspace: FoundationWorkspaceData;
+  requestContext: ServerRequestContextEvidence;
 }
 
-function createFoundationWorkspaceClient() {
-  return new ApiClient({
-    baseUrl: getDefaultApiBaseUrl(),
-    tenantId: FALLBACK_TENANT_ID,
-    brandId: FALLBACK_BRAND_ID,
-    storeId: FALLBACK_STORE_ID,
-    marketCode: FALLBACK_MARKET_CODE
+function createFoundationWorkspaceClient(init: RequestInit = {}) {
+  const requestContext = resolveServerRequestContext({
+    requestHeaders: init.headers,
+    fallbackScope: {
+      tenantId: FALLBACK_TENANT_ID,
+      brandId: FALLBACK_BRAND_ID,
+      storeId: FALLBACK_STORE_ID,
+      marketCode: FALLBACK_MARKET_CODE,
+    },
+    actorFallback: FOUNDATION_WORKSPACE_ACTOR,
   });
+
+  return {
+    client: new ApiClient({
+    baseUrl: getDefaultApiBaseUrl(),
+      tenantId: requestContext.scope.tenantId,
+      brandId: requestContext.scope.brandId,
+      storeId: requestContext.scope.storeId,
+      marketCode: requestContext.scope.marketCode,
+      headers: requestContext.headers,
+    }),
+    requestContext: requestContext.evidence,
+  };
 }
 
 function normalizeQuery(query: FoundationWorkspaceQuery = {}): Required<FoundationWorkspaceQuery> {
@@ -331,7 +358,7 @@ export async function loadFoundationWorkspace(
   init: RequestInit = {}
 ): Promise<FoundationWorkspaceSnapshot> {
   const normalized = normalizeQuery(query);
-  const client = createFoundationWorkspaceClient();
+  const { client, requestContext } = createFoundationWorkspaceClient(init);
 
   try {
     const [bootstrap, overview, selectedModuleDetail] = await Promise.all([
@@ -341,11 +368,21 @@ export async function loadFoundationWorkspace(
     ]);
 
     const blueprint = toBlueprintSubset(bootstrap);
+    const generatedAt = [
+      selectedModuleDetail.generatedAt,
+      overview.generatedAt,
+      blueprint.generatedAt,
+    ]
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .sort()
+      .at(-1) ?? new Date().toISOString();
+
     return {
       deliveryMode: 'api',
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       query: normalized,
-      workspace: buildWorkspaceData(blueprint, overview, selectedModuleDetail, normalized)
+      workspace: buildWorkspaceData(blueprint, overview, selectedModuleDetail, normalized),
+      requestContext,
     };
   } catch {
     const generatedAt = new Date().toISOString();
@@ -367,7 +404,8 @@ export async function loadFoundationWorkspace(
         buildFallbackOverview(generatedAt),
         buildFallbackModuleDetail(normalized.moduleKey, generatedAt),
         normalized
-      )
+      ),
+      requestContext,
     };
   }
 }

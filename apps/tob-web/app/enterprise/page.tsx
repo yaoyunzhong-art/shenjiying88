@@ -1,9 +1,9 @@
+'use client';
 /**
  * enterprise/page.tsx — 企业门户入口页 (Enterprise Landing Page)
  * 功能: 企业注册/登录入口、产品功能介绍、快速通道
  * 角色视角: 企业管理员 / 品牌运营者
  */
-'use client';
 
 import React from 'react';
 import Link from 'next/link';

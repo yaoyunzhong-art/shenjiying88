@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 import {
   FormPageScaffold,
@@ -148,27 +148,39 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
 
 // ---- 页面 ----
 
+import { useTriState } from '../../_components/useTriState';
+import { TriStateRenderer } from '../../_components/TriStateRenderer';
+
 export default function NewProductPage() {
+  const { loading, error, wrapLoad } = useTriState();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const handleSubmit = React.useCallback(
     async (formData: Record<string, unknown>): Promise<FormPageSubmitResult> => {
-      // Simulate API call
-      await new Promise((r) => setTimeout(r, 600));
+      setSubmitError(null);
+      // Simulate API call with error handling
+      const result = await wrapLoad(
+        (async () => {
+          await new Promise((r) => setTimeout(r, 600));
+          const typedData = formData as unknown as NewProductFormData;
 
-      const typedData = formData as unknown as NewProductFormData;
+          if (!typedData.name || !typedData.category || !typedData.storeName) {
+            return { data: formData, message: '请填写所有必填项' };
+          }
 
-      // Simulate validation
-      if (!typedData.name || !typedData.category || !typedData.storeName) {
-        return {
-          data: formData,
-          message: '请填写所有必填项',
-        };
+          return {
+            data: typedData as unknown as Record<string, unknown>,
+            message: `「${typedData.name}」创建成功！`,
+          };
+        })(),
+      );
+
+      if (!result) {
+        setSubmitError('提交失败，请稍后重试');
+        return { data: formData, message: '提交失败，请稍后重试' };
       }
 
-      // Simulate success
-      return {
-        data: typedData as unknown as Record<string, unknown>,
-        message: `「${typedData.name}」创建成功！`,
-      };
+      return result;
     },
     [],
   );
@@ -177,11 +189,18 @@ export default function NewProductPage() {
     <PageShell
       title="新增作品/产品"
     >
+      <TriStateRenderer
+        loading={loading}
+        empty={false}
+        error={submitError}
+        onRetry={() => setSubmitError(null)}
+      >
       <FormPageScaffold
         meta={{ title: '新增作品/产品' }}
         fields={FIELDS}
         onSubmit={handleSubmit}
       />
+      </TriStateRenderer>
     </PageShell>
   );
 }

@@ -5,7 +5,9 @@ import {
   type CacheService
 } from '../../infrastructure/cache/cache.module'
 import {
+  QueueChannel,
   QueueEntity,
+  QueueSource,
   QueueStatus,
   QueueType,
   QUEUE_STATUS_TRANSITIONS
@@ -15,6 +17,16 @@ const queueStore = new Map<string, QueueEntity>()
 
 // Per-tenant per-type queue number counter
 const queueNumberCounters = new Map<string, number>()
+
+// Per-tenant-per-resource load factor (multiplier for estimated wait time)
+// loadFactor: >1 means slower than baseline, <1 means faster than baseline
+const loadFactorStore = new Map<string, number>()
+
+/** Default minutes per person/group for wait estimation */
+const DEFAULT_BASE_WAIT_MIN = 5
+
+/** Default load factor (1.0 = normal) */
+const DEFAULT_LOAD_FACTOR = 1.0
 
 export interface CreateQueueInput {
   tenantId: string
@@ -27,6 +39,10 @@ export interface CreateQueueInput {
   resourceName?: string
   priority?: number
   remark?: string
+  /** WP-12A: 排队来源 */
+  source?: QueueSource
+  /** WP-12A: 排队渠道 */
+  channel?: QueueChannel
 }
 
 /**
@@ -43,6 +59,10 @@ export interface JoinQueueInput {
   resourceName?: string
   priority?: number
   remark?: string
+  /** WP-12A: 排队来源 */
+  source?: QueueSource
+  /** WP-12A: 排队渠道 */
+  channel?: QueueChannel
 }
 
 export interface QueuePosition {
@@ -91,9 +111,10 @@ export class QueueService {
     const prefix = prefixMap[input.type]
     const queueNumber = `${prefix}${String(currentNumber).padStart(3, '0')}`
 
-    // Calculate estimated wait
+    // Calculate estimated wait with dynamic load factor
     const aheadCount = this.countAhead(input.tenantId, input.type)
-    const estimatedWaitMin = aheadCount * 5 // 5 min per person/group default
+    const loadFactor = this.getLoadFactor(input.tenantId, input.resourceId)
+    const estimatedWaitMin = Math.round(aheadCount * DEFAULT_BASE_WAIT_MIN * loadFactor)
 
     const entry = new QueueEntity()
     entry.id = `queue-${randomUUID()}`
@@ -110,6 +131,11 @@ export class QueueService {
     entry.priority = input.priority ?? 0
     entry.estimatedWaitMin = estimatedWaitMin
     entry.remark = input.remark
+
+    // WP-12A: 双模排队 source + channel
+    entry.source = input.source ?? QueueSource.Onsite
+    entry.channel = input.channel ?? QueueChannel.Terminal
+
     entry.createdAt = now
     entry.updatedAt = now
 
@@ -132,6 +158,8 @@ export class QueueService {
       resourceId?: string
       userId?: string
       queueNumber?: string
+      source?: QueueSource
+      channel?: QueueChannel
     }
   ): QueueEntity[] {
     return Array.from(queueStore.values())
@@ -141,6 +169,8 @@ export class QueueService {
       .filter((q) => (filter?.resourceId ? q.resourceId === filter.resourceId : true))
       .filter((q) => (filter?.userId ? q.userId === filter.userId : true))
       .filter((q) => (filter?.queueNumber ? q.queueNumber === filter.queueNumber : true))
+      .filter((q) => (filter?.source ? q.source === filter.source : true))
+      .filter((q) => (filter?.channel ? q.channel === filter.channel : true))
       .sort((a, b) => a.queueNumber.localeCompare(b.queueNumber))
   }
 
@@ -152,6 +182,8 @@ export class QueueService {
       resourceId?: string
       userId?: string
       queueNumber?: string
+      source?: QueueSource
+      channel?: QueueChannel
       page?: number
       pageSize?: number
       sortBy?: string
@@ -166,7 +198,9 @@ export class QueueService {
       status: filter?.status,
       resourceId: filter?.resourceId,
       userId: filter?.userId,
-      queueNumber: filter?.queueNumber
+      queueNumber: filter?.queueNumber,
+      source: filter?.source,
+      channel: filter?.channel
     })
 
     // Sort
@@ -302,9 +336,10 @@ export class QueueService {
     if (idx === -1) {
       return { position: -1, estimatedWaitMinutes: 0, entry: null }
     }
+    const loadFactor = this.getLoadFactor(tenantId, resourceId)
     return {
       position: idx + 1,
-      estimatedWaitMinutes: (idx + 1) * 5,
+      estimatedWaitMinutes: Math.round((idx + 1) * DEFAULT_BASE_WAIT_MIN * loadFactor),
       entry: waiting[idx]
     }
   }
@@ -501,18 +536,299 @@ export class QueueService {
     }
   }
 
-  private countAhead(tenantId: string, type: QueueType): number {
+  private countAhead(tenantId: string, type: QueueType, resourceId?: string): number {
     return Array.from(queueStore.values()).filter(
       (q) =>
         q.tenantId === tenantId &&
         q.type === type &&
-        (q.status === QueueStatus.Waiting || q.status === QueueStatus.Called)
+        (q.status === QueueStatus.Waiting || q.status === QueueStatus.Called) &&
+        (resourceId ? q.resourceId === resourceId : true)
     ).length
+  }
+
+  // Testing helper
+  // ── 负载因子管理 ─────────────────────────────────────────────────
+
+  /**
+   * BS-0275: 获取当前负载因子
+   * loadFactor key = `{tenantId}:{resourceId}` (resourceId 可选)
+   * 默认 1.0
+   */
+  getLoadFactor(tenantId: string, resourceId?: string): number {
+    // 优先查询 resource 级别的负载因子
+    if (resourceId) {
+      const resourceKey = `${tenantId}:${resourceId}`
+      const resourceFactor = loadFactorStore.get(resourceKey)
+      if (resourceFactor !== undefined) return resourceFactor
+    }
+    // 回退到 tenant 级别的负载因子
+    const tenantKey = tenantId
+    return loadFactorStore.get(tenantKey) ?? DEFAULT_LOAD_FACTOR
+  }
+
+  /**
+   * BS-0275: 设置负载因子（动态调整等待时间）
+   * - loadFactor > 1: 慢于基线（繁忙时段）
+   * - loadFactor < 1: 快于基线（空闲时段）
+   * - loadFactor = 1: 基线速度
+   * 范围: 0.5 ~ 3.0
+   */
+  setLoadFactor(tenantId: string, loadFactor: number, resourceId?: string): void {
+    const clamped = Math.max(0.5, Math.min(3.0, loadFactor))
+    const key = resourceId ? `${tenantId}:${resourceId}` : tenantId
+    loadFactorStore.set(key, Math.round(clamped * 10) / 10)
+  }
+
+  /**
+   * BS-0275: 动态计算预计等待时间
+   * 根据当前排队人数 × 负载因子 × 基线时间
+   */
+  calculateDynamicWait(
+    tenantId: string,
+    resourceId?: string,
+    type?: QueueType
+  ): { aheadCount: number; loadFactor: number; estimatedWaitMin: number } {
+    const effectiveType = type ?? QueueType.Waiting
+    const aheadCount = this.countAhead(tenantId, effectiveType, resourceId)
+    const loadFactor = this.getLoadFactor(tenantId, resourceId)
+    const estimatedWaitMin = Math.round(aheadCount * DEFAULT_BASE_WAIT_MIN * loadFactor)
+    return { aheadCount, loadFactor, estimatedWaitMin }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // WP-12A: 双模排队 + 渠道同步
+  // ════════════════════════════════════════════════════════════════
+
+  /**
+   * 按来源获取队列（线上 vs 现场）
+   */
+  getQueueBySource(
+    tenantId: string,
+    source: QueueSource,
+    resourceId?: string
+  ): QueueEntity[] {
+    return Array.from(queueStore.values())
+      .filter((q) => q.tenantId === tenantId)
+      .filter((q) => q.source === source)
+      .filter((q) => (resourceId ? q.resourceId === resourceId : true))
+      .filter((q) =>
+        q.status === QueueStatus.Waiting ||
+        q.status === QueueStatus.Called ||
+        q.status === QueueStatus.Serving
+      )
+      .sort((a, b) => {
+        if (a.priority !== b.priority) return b.priority - a.priority
+        return a.queueNumber.localeCompare(b.queueNumber)
+      })
+  }
+
+  /**
+   * 按渠道获取队列（微信/App/终端/Kiosk）
+   */
+  getQueueByChannel(
+    tenantId: string,
+    channel: QueueChannel,
+    resourceId?: string
+  ): QueueEntity[] {
+    return Array.from(queueStore.values())
+      .filter((q) => q.tenantId === tenantId)
+      .filter((q) => q.channel === channel)
+      .filter((q) => (resourceId ? q.resourceId === resourceId : true))
+      .filter((q) => q.status === QueueStatus.Waiting)
+      .sort((a, b) => {
+        if (a.priority !== b.priority) return b.priority - a.priority
+        return a.queueNumber.localeCompare(b.queueNumber)
+      })
+  }
+
+  /**
+   * WP-12A: 带 source/channel 的排队统计分析
+   * 返回各来源/渠道的排队统计数据
+   */
+  getDualModeStats(tenantId: string, resourceId?: string): {
+    online: { waiting: number; called: number; serving: number }
+    onsite: { waiting: number; called: number; serving: number }
+    byChannel: Record<string, { waiting: number }>
+    total: number
+  } {
+    const active = Array.from(queueStore.values())
+      .filter((q) => q.tenantId === tenantId)
+      .filter((q) => (resourceId ? q.resourceId === resourceId : true))
+
+    const countStatus = (
+      arr: QueueEntity[],
+      ...statuses: QueueStatus[]
+    ): number => arr.filter((q) => statuses.includes(q.status)).length
+
+    const online = active.filter((q) => q.source === QueueSource.Online)
+    const onsite = active.filter((q) => q.source === QueueSource.Onsite)
+
+    // Group by channel
+    const byChannel: Record<string, { waiting: number }> = {}
+    for (const ch of Object.values(QueueChannel)) {
+      const chanEntries = active.filter((q) => q.channel === ch)
+      byChannel[ch] = { waiting: countStatus(chanEntries, QueueStatus.Waiting) }
+    }
+
+    return {
+      online: {
+        waiting: countStatus(online, QueueStatus.Waiting),
+        called: countStatus(online, QueueStatus.Called),
+        serving: countStatus(online, QueueStatus.Serving)
+      },
+      onsite: {
+        waiting: countStatus(onsite, QueueStatus.Waiting),
+        called: countStatus(onsite, QueueStatus.Called),
+        serving: countStatus(onsite, QueueStatus.Serving)
+      },
+      byChannel,
+      total: active.filter((q) =>
+        [QueueStatus.Waiting, QueueStatus.Called, QueueStatus.Serving].includes(q.status)
+      ).length
+    }
+  }
+
+  /**
+   * WP-12A: 队列状态同步
+   * 某个渠道（如微信）查询时可获得全渠道排队状态
+   */
+  getSyncStatus(
+    memberId: string,
+    tenantId: string
+  ): {
+    entries: QueueEntity[]
+    hasActiveQueue: boolean
+    activeEntry: QueueEntity | null
+  } {
+    const entries = Array.from(queueStore.values())
+      .filter((q) => q.tenantId === tenantId && q.userId === memberId)
+      .filter((q) =>
+        q.status === QueueStatus.Waiting ||
+        q.status === QueueStatus.Called ||
+        q.status === QueueStatus.Serving
+      )
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+
+    const activeEntry = entries[0] ?? null
+    return {
+      entries,
+      hasActiveQueue: entries.length > 0,
+      activeEntry
+    }
+  }
+
+  /**
+   * WP-12A: 为特定渠道创建排队
+   */
+  joinByChannel(
+    input: JoinQueueInput & { channel: QueueChannel }
+  ): QueueEntity {
+    return this.create({
+      tenantId: input.tenantId,
+      type: input.queueType,
+      userId: input.memberId,
+      userName: input.memberName ?? input.memberId,
+      partySize: 1,
+      resourceId: input.resourceId,
+      resourceName: input.resourceName,
+      priority: input.priority,
+      remark: input.remark,
+      source: input.channel === QueueChannel.WeChat || input.channel === QueueChannel.App
+        ? QueueSource.Online
+        : QueueSource.Onsite,
+      channel: input.channel
+    })
+  }
+
+  /**
+   * WP-12A: 转换排队入口（例如线上转现场）
+   */
+  transferEntry(
+    entryId: string,
+    tenantId: string,
+    targetSource: QueueSource
+  ): QueueEntity {
+    const entry = this.assertOwned(entryId, tenantId)
+    if (entry.source === targetSource) {
+      throw new Error(`Entry ${entryId} is already ${targetSource}`)
+    }
+    entry.source = targetSource
+    entry.channel = targetSource === QueueSource.Onsite
+      ? QueueChannel.Terminal
+      : QueueChannel.WeChat
+    entry.updatedAt = new Date()
+    queueStore.set(entryId, entry)
+    return entry
+  }
+
+  /**
+   * WP-12A: 等待时间预测（按渠道差异化）
+   * 线上排队等待时间 = 基础时间 × 线上排队人数 × 负载因子
+   * 现场排队等待时间 = 基础时间 × 现场排队人数 × 负载因子
+   */
+  getEstimatedWaitBySource(
+    tenantId: string,
+    resourceId?: string
+  ): {
+    onlineAhead: number
+    onsiteAhead: number
+    onlineWaitMin: number
+    onsiteWaitMin: number
+    totalWaitMin: number
+  } {
+    const onlineAhead = this.getQueueBySource(tenantId, QueueSource.Online, resourceId).length
+    const onsiteAhead = this.getQueueBySource(tenantId, QueueSource.Onsite, resourceId).length
+    const loadFactor = this.getLoadFactor(tenantId, resourceId)
+
+    return {
+      onlineAhead,
+      onsiteAhead,
+      onlineWaitMin: Math.round(onlineAhead * DEFAULT_BASE_WAIT_MIN * loadFactor),
+      onsiteWaitMin: Math.round(onsiteAhead * DEFAULT_BASE_WAIT_MIN * loadFactor),
+      totalWaitMin: Math.round((onlineAhead + onsiteAhead) * DEFAULT_BASE_WAIT_MIN * loadFactor)
+    }
+  }
+
+  // ── BS-0295: 系统容量检测 ────────────────────────────────
+
+  /**
+   * BS-0295: 获取系统容量/负载状态
+   * 排队取号时检测系统负载，超过阈值返回系统繁忙状态
+   * 状态端点: GET /queue/capacity
+   */
+  getCapacityStatus(tenantId: string): {
+    loadFactor: number
+    waitingCount: number
+    capacityThreshold: number
+    isBusy: boolean
+    message: string
+  } {
+    const loadFactor = this.getLoadFactor(tenantId)
+    const waitingEntries = Array.from(queueStore.values()).filter(
+      (q) => q.tenantId === tenantId && q.status === QueueStatus.Waiting
+    )
+    const waitingCount = waitingEntries.length
+
+    // 负载阈值: loadFactor >= 2.0 或等待人数 >= 15 视为繁忙
+    const capacityThreshold = 2.0
+    const waitingThreshold = 15
+    const isBusy = loadFactor >= capacityThreshold || waitingCount >= waitingThreshold
+
+    return {
+      loadFactor,
+      waitingCount,
+      capacityThreshold,
+      isBusy,
+      message: isBusy
+        ? '系统繁忙，当前排队人数较多，预计等待时间较长'
+        : '系统运行正常'
+    }
   }
 
   // Testing helper
   resetQueueStoresForTests(): void {
     queueStore.clear()
     queueNumberCounters.clear()
+    loadFactorStore.clear()
   }
 }

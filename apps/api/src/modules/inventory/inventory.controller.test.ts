@@ -4,6 +4,10 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { InventoryController } from './inventory.controller'
 import { InventoryService, resetInventoryServiceTestState } from './inventory.service'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
 
 type AnyFn = (...args: any[]) => any
 interface MockServiceOverrides {
@@ -50,9 +54,45 @@ function makeController(overrides: MockServiceOverrides = {}) {
 const tenantCtx = { tenantId: 't-1', brandId: 'b-1', storeId: 's-1' }
 
 describe('InventoryController — Route metadata', () => {
+  const stockReadHandlers = [
+    InventoryController.prototype.checkStock,
+    InventoryController.prototype.getLowStockProducts,
+    InventoryController.prototype.getStockRecords,
+  ]
+
+  const stockFormHandlers = [
+    InventoryController.prototype.stockIn,
+    InventoryController.prototype.stockOut,
+    InventoryController.prototype.adjustStock,
+  ]
+
+  const resolvePermissions = (handler: Function) =>
+    Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+
+  const resolveTenantScope = (handler: Function) =>
+    Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+
   it('controller path is inventory', () => {
     const path = Reflect.getMetadata('path', InventoryController)
     assert.equal(path, 'inventory')
+  })
+
+  it('stock transfer routes should require tenant scope', () => {
+    ;[...stockReadHandlers, ...stockFormHandlers].forEach((handler) => {
+      assert.deepEqual(resolveTenantScope(handler), {})
+    })
+  })
+
+  it('stock transfer read routes should reuse stock-transfer:read', () => {
+    stockReadHandlers.forEach((handler) => {
+      assert.deepEqual(resolvePermissions(handler), ['stock-transfer:read'])
+    })
+  })
+
+  it('stock transfer mutation routes should reuse stock-transfer:form:read', () => {
+    stockFormHandlers.forEach((handler) => {
+      assert.deepEqual(resolvePermissions(handler), ['stock-transfer:form:read'])
+    })
   })
 
   it('createProduct POST products', () => {

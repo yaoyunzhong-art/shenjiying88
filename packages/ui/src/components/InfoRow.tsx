@@ -5,6 +5,7 @@ import React from 'react';
 interface InfoRowProps {
   label: string;
   value: React.ReactNode;
+  href?: string;
   labelColor?: string;
   valueColor?: string;
   labelFontSize?: number;
@@ -15,16 +16,28 @@ interface InfoRowProps {
 export function InfoRow({
   label,
   value,
+  href,
   labelColor = '#94a3b8',
   valueColor = '#f8fafc',
   labelFontSize = 13,
   valueFontSize = 14,
   gap = 4,
 }: InfoRowProps) {
+  const renderValue = () => {
+    if (href && typeof value === 'string') {
+      return (
+        <a href={href} style={{ color: '#bfdbfe', textDecoration: 'none' }}>
+          {value}
+        </a>
+      );
+    }
+    return value;
+  };
+
   return (
     <div>
       <div style={{ fontSize: labelFontSize, color: labelColor, marginBottom: gap }}>{label}</div>
-      <div style={{ fontSize: valueFontSize, color: valueColor }}>{value}</div>
+      <div style={{ fontSize: valueFontSize, color: valueColor }}>{renderValue()}</div>
     </div>
   );
 }

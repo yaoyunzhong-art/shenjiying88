@@ -1,9 +1,11 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { TenantContext } from '../tenant/tenant.decorator';
 import type { RequestTenantContext } from '../tenant/tenant.types';
 import { MarketService } from './market.service';
+import { TenantGuard } from '../agent/tenant.guard';
 
 @Controller('markets')
+@UseGuards(TenantGuard)
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
 

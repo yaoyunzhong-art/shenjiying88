@@ -13,13 +13,23 @@ import type {
 } from '@m5/types';
 import { runAgentSessionStream } from '../../agent-view-model';
 
-interface AgentSessionDetailClientProps {
+export interface AgentSessionDetailClientProps {
   session: AgentSession;
   execution: AgentExecution | null;
   evaluation: QualityEvaluation | null;
   config: AgentConfig | null;
   deliveryMode: 'api' | 'fallback';
   error?: string;
+  sourceEvidence: {
+    deliveryMode: 'api' | 'fallback';
+    detailSource: string;
+    executionSource: string;
+    evaluationSource: string;
+    configSource: string;
+    refreshPath: string;
+    streamSource: string;
+    referenceTime: string;
+  };
 }
 
 const STATUS_LABEL: Record<AgentSessionStatus, string> = {
@@ -390,7 +400,8 @@ export default function AgentSessionDetailClient({
   evaluation,
   config,
   deliveryMode,
-  error
+  error,
+  sourceEvidence
 }: AgentSessionDetailClientProps) {
   const [messageFilter, setMessageFilter] = useState<'all' | AgentMessage['role']>('all');
   const [showRaw, setShowRaw] = useState(false);
@@ -498,6 +509,30 @@ export default function AgentSessionDetailClient({
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div
+        style={{
+          padding: '10px 14px',
+          borderRadius: 8,
+          background: 'rgba(15, 23, 42, 0.45)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          color: '#cbd5e1',
+          fontSize: 12,
+          lineHeight: 1.7
+        }}
+      >
+        <div>
+          Delivery {sourceEvidence.deliveryMode} · 详情来源: {sourceEvidence.detailSource}
+        </div>
+        <div>
+          execution: {sourceEvidence.executionSource} · evaluation: {sourceEvidence.evaluationSource}
+        </div>
+        <div>
+          config: {sourceEvidence.configSource} · refresh: {sourceEvidence.refreshPath}
+        </div>
+        <div style={{ color: '#94a3b8' }}>
+          referenceTime: {sourceEvidence.referenceTime} · stream: {sourceEvidence.streamSource}
+        </div>
+      </div>
       {/* fallback 警告 */}
       {deliveryMode === 'fallback' ? (
         <div

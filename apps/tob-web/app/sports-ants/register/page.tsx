@@ -1,9 +1,9 @@
+'use client';
 /**
  * 运动蚂蚁账户注册页面
  * BigAnts Account Registration
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

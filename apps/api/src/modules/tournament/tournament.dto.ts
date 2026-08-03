@@ -8,13 +8,15 @@ import {
   Min,
   Max,
   IsObject,
-  IsNumber
+  IsNumber,
+  IsPositive
 } from 'class-validator'
 import 'reflect-metadata'
 import {
   TournamentType,
   TournamentStatus,
   MatchStatus,
+  JoinType,
   type TournamentRules,
   type TournamentPrizes
 } from './tournament.entity'
@@ -187,4 +189,67 @@ export class RankingQueryDto {
   @Max(100)
   @IsOptional()
   limit?: number
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Enhanced Join DTOs
+// ═══════════════════════════════════════════════════════════════════════
+
+export class JoinTournamentDto {
+  @IsString()
+  userId!: string
+
+  @IsEnum(JoinType)
+  joinType!: JoinType
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Redemption DTOs
+// ═══════════════════════════════════════════════════════════════════════
+
+export class RedeemDto {
+  @IsString()
+  userId!: string
+
+  @IsString()
+  prizeId!: string
+
+  @IsInt()
+  @Min(1)
+  points!: number
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Prediction DTOs
+// ═══════════════════════════════════════════════════════════════════════
+
+export class PredictionDto {
+  @IsString()
+  userId!: string
+
+  @IsString()
+  matchId!: string
+
+  @IsString()
+  prediction!: string
+
+  @IsInt()
+  @Min(1)
+  stake!: number
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Vote DTOs
+// ═══════════════════════════════════════════════════════════════════════
+
+export class VoteDto {
+  @IsString()
+  userId!: string
+
+  @IsString()
+  contestantId!: string
+
+  @IsInt()
+  @Min(1)
+  votes!: number
 }

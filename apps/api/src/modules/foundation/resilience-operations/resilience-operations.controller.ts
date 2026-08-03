@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import { RequirePermissions, RequireRoles, RequireTenantScope } from '../identity-access/identity-access.decorator'
 import {
   ObservabilityQueryDto,
@@ -7,8 +7,10 @@ import {
   StageEdgeReplayDto
 } from './resilience-operations.dto'
 import { ResilienceOperationsService } from './resilience-operations.service'
+import { TenantGuard } from '../../agent/tenant.guard';
 
 @Controller('foundation/resilience-operations')
+@UseGuards(TenantGuard)
 @RequireTenantScope()
 export class ResilienceOperationsController {
   constructor(private readonly resilienceOperationsService: ResilienceOperationsService) {}

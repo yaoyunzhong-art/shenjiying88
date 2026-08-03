@@ -10,6 +10,8 @@ import {
   summarizeFoundationModuleDetail
 } from '../../../foundation-detail-view-model';
 import { useDetailActions } from '../../../components/use-detail-actions';
+import SnapshotRefreshButton from '../../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 interface FoundationModuleDetailClientProps {
   snapshot: FoundationModuleDetail;
@@ -45,6 +47,7 @@ function getModuleWorkspaceHref(moduleKey: string): string | null {
 }
 
 function ModuleBoard({ snapshot }: { snapshot: FoundationModuleDetail }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const moduleInfo = snapshot.module!;
   const indicators = formatFoundationIndicator(snapshot.detail);
   const workspaceHref = getModuleWorkspaceHref(moduleInfo.key);
@@ -73,6 +76,26 @@ function ModuleBoard({ snapshot }: { snapshot: FoundationModuleDetail }) {
 
       <div style={panelStyle}>
         <h2 style={sectionTitleStyle}>模块说明</h2>
+        <div
+          style={{
+            marginBottom: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+            当前详情页已切到 E54 三层壳，刷新按钮仅通过 router.refresh() 触发服务端快照重拉。
+          </p>
+          <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
+        </div>
         <p style={{ color: '#cbd5f5', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{moduleInfo.purpose}</p>
         <p style={{ marginTop: 10, fontSize: 12, color: '#94a3b8' }}>{summarizeFoundationModuleDetail(snapshot)}</p>
         <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -227,6 +250,7 @@ function ModuleBoard({ snapshot }: { snapshot: FoundationModuleDetail }) {
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: FoundationModuleDetail }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <WorkspaceBreadcrumb
@@ -234,6 +258,15 @@ function NotFoundPanel({ snapshot }: { snapshot: FoundationModuleDetail }) {
       />
       <div style={panelStyle}>
         <h2 style={sectionTitleStyle}>未找到 Foundation 模块</h2>
+        <div style={{ marginBottom: 12 }}>
+          <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
+        </div>
         <p style={{ color: '#cbd5f5', fontSize: 14, lineHeight: 1.6 }}>
           模块 Key <code style={{ color: '#f87171' }}>{snapshot.moduleKey || '（空）'}</code> 不在当前 blueprint 范围内。
         </p>

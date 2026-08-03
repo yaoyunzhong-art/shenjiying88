@@ -1,7 +1,10 @@
 import {
   Controller, Get, Post, Body, Param, Query,
   UsePipes, ValidationPipe, Delete, Patch,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { PerformanceService } from './performance.service'
 import {
   MultiLevelConfigDto, SetCacheDto, MSetCacheDto, MGetCacheDto,
@@ -21,6 +24,7 @@ import type {
   ScaleHistoryEntry, CostEstimate, OptimizationSuggestion,
 } from './performance.entity'
 
+@UseGuards(TenantGuard)
 @Controller('performance')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class PerformanceController {

@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import 'reflect-metadata'
+import assert from 'node:assert/strict'
 import { RBACController } from './rbac.controller'
 import { RBACService, Role, Permission } from './rbac.service'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
+import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 
 function createController() {
   const service = new RBACService()
@@ -9,6 +16,53 @@ function createController() {
 }
 
 describe('RBACController', () => {
+  describe('metadata', () => {
+    const readHandlers = [
+      RBACController.prototype.getUserRoles,
+      RBACController.prototype.checkPermission,
+      RBACController.prototype.authorize,
+      RBACController.prototype.getUserReport,
+      RBACController.prototype.getRolePermissions,
+      RBACController.prototype.getProtectedActions,
+    ]
+    const writeHandlers = [
+      RBACController.prototype.assignRole,
+      RBACController.prototype.revokeRole,
+      RBACController.prototype.registerPolicy,
+      RBACController.prototype.registerProtectedActions,
+    ]
+
+    const resolvePermissions = (handler: Function) =>
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler) ??
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, RBACController)
+
+    const resolveTenantScope = (handler: Function) =>
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler) ??
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, RBACController)
+
+    it('controller 不应继续保持 Public', () => {
+      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, RBACController), undefined)
+    })
+
+    it('所有端点应要求 tenant scope', () => {
+      ;[...readHandlers, ...writeHandlers].forEach((handler) => {
+        assert.deepStrictEqual(resolveTenantScope(handler), {})
+      })
+    })
+
+    it('读接口应复用 identity-access:read', () => {
+      readHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['identity-access:read'])
+      })
+    })
+
+    it('写接口应复用 identity-access:write', () => {
+      writeHandlers.forEach((handler) => {
+        assert.deepStrictEqual(resolvePermissions(handler), ['identity-access:write'])
+      })
+    })
+  })
+
   describe('assignRole', () => {
     it('should assign a role and return assignment details', async () => {
       const { controller } = createController()

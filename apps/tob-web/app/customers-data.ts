@@ -1,6 +1,10 @@
 /**
- * customers-data.ts — 企业客户 mock 数据 (ToB 客户管理)
+ * customers-data.ts — 企业客户数据层
+ *
+ * 兼容既有详情/新建页使用的本地样本，同时为列表页提供 CRM 真数据映射。
  */
+
+import { getDefaultApiBaseUrl } from '@m5/sdk';
 
 export type CustomerStatus = 'active' | 'suspended' | 'pending' | 'churned';
 export type CustomerTier = 'platinum' | 'gold' | 'silver' | 'standard';
@@ -51,7 +55,6 @@ export const CUSTOMER_INDUSTRY_MAP: Record<CustomerIndustry, string> = {
 export const CUSTOMER_STATUSES: CustomerStatus[] = ['active', 'suspended', 'pending', 'churned'];
 export const CUSTOMER_TIERS: CustomerTier[] = ['platinum', 'gold', 'silver', 'standard'];
 export const CUSTOMER_INDUSTRIES: CustomerIndustry[] = ['retail', 'tech', 'finance', 'manufacturing', 'healthcare', 'education'];
-/* test requirements: CUSTOMER_STATUSES CUSTOMER_TIERS CUSTOMER_INDUSTRIES */
 
 export const MOCK_CUSTOMERS: CustomerItem[] = [
   {
@@ -325,3 +328,237 @@ export const MOCK_CUSTOMERS: CustomerItem[] = [
     lastActivity: '2026-06-16',
   },
 ];
+
+export type CustomerListStatus = 'active' | 'inactive' | 'churned' | 'lead';
+
+export interface CustomerListItem {
+  id: string;
+  companyName: string;
+  contactEmail: string;
+  contactPhone: string;
+  status: CustomerListStatus;
+  engagementScore: number;
+  totalSpentCents: number;
+  visitCount: number;
+  lastActivity: string;
+  tags: string[];
+}
+
+export interface CustomerStatsSnapshot {
+  total: number;
+  byStatus: Record<CustomerListStatus, number>;
+  avgScore: number;
+  totalSpentCents: number;
+  totalTickets: number;
+}
+
+export interface CustomersSnapshotDelivery {
+  deliveryMode: 'api' | 'fallback';
+  customers: CustomerListItem[];
+  stats: CustomerStatsSnapshot;
+  generatedAt: string;
+  error?: string;
+}
+
+export const CUSTOMER_LIST_STATUS_MAP: Record<
+  CustomerListStatus,
+  { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' }
+> = {
+  active: { label: '活跃', variant: 'success' },
+  inactive: { label: '沉默', variant: 'warning' },
+  churned: { label: '已流失', variant: 'danger' },
+  lead: { label: '线索', variant: 'neutral' },
+};
+
+export const CUSTOMER_LIST_STATUSES: CustomerListStatus[] = ['active', 'inactive', 'churned', 'lead'];
+
+const DEFAULT_TENANT_ID = 'demo-tenant';
+
+type CrmCustomerProfile = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: CustomerListStatus;
+  engagementScore: number;
+  totalSpentCents: number;
+  visitCount: number;
+  lastVisitAt: string;
+  tags?: string[];
+  updatedAt?: string;
+};
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`;
+}
+
+function resolveCustomersApiBaseUrl(): string {
+  return ensureTrailingSlash(getDefaultApiBaseUrl().trim() || 'http://localhost:3001/api/v1');
+}
+
+function resolveTenantId(): string {
+  const configured =
+    process.env.M5_TOB_TENANT_ID ??
+    process.env.NEXT_PUBLIC_M5_TOB_TENANT_ID ??
+    process.env.M5_TENANT_ID ??
+    process.env.NEXT_PUBLIC_M5_TENANT_ID ??
+    DEFAULT_TENANT_ID;
+
+  const normalized = configured.trim();
+  return normalized.length > 0 ? normalized : DEFAULT_TENANT_ID;
+}
+
+function buildHeaders(): HeadersInit {
+  return {
+    'x-tenant-id': resolveTenantId(),
+  };
+}
+
+function unwrapApiPayload<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    const wrapped = payload as { success?: boolean; data?: T; message?: string };
+    if (!wrapped.success) {
+      throw new Error(wrapped.message ?? 'API error');
+    }
+    return wrapped.data as T;
+  }
+  return payload as T;
+}
+
+function mapLegacyStatus(status: CustomerStatus): CustomerListStatus {
+  switch (status) {
+    case 'active':
+      return 'active';
+    case 'churned':
+      return 'churned';
+    case 'suspended':
+      return 'inactive';
+    case 'pending':
+      return 'lead';
+    default:
+      return 'lead';
+  }
+}
+
+function mapCrmCustomer(item: CrmCustomerProfile): CustomerListItem {
+  return {
+    id: item.id,
+    companyName: item.name,
+    contactEmail: item.email,
+    contactPhone: item.phone,
+    status: item.status,
+    engagementScore: item.engagementScore,
+    totalSpentCents: item.totalSpentCents,
+    visitCount: item.visitCount,
+    lastActivity: item.lastVisitAt || item.updatedAt || '—',
+    tags: Array.isArray(item.tags) ? item.tags : [],
+  };
+}
+
+export function mapLegacyCustomerToListItem(item: CustomerItem): CustomerListItem {
+  return {
+    id: item.id,
+    companyName: item.companyName,
+    contactEmail: item.contactEmail,
+    contactPhone: item.contactPhone,
+    status: mapLegacyStatus(item.status),
+    engagementScore: Math.min(100, item.activeContracts * 10 + (item.monthlySpend > 0 ? 20 : 0)),
+    totalSpentCents: Math.round(item.totalSpend * 100),
+    visitCount: item.totalContracts,
+    lastActivity: item.lastActivity,
+    tags: [CUSTOMER_TIER_MAP[item.tier].label, CUSTOMER_INDUSTRY_MAP[item.industry]],
+  };
+}
+
+export function buildFallbackCustomerList(items: CustomerItem[] = MOCK_CUSTOMERS): CustomerListItem[] {
+  return items.map(mapLegacyCustomerToListItem);
+}
+
+export function buildCustomerStats(customers: CustomerListItem[]): CustomerStatsSnapshot {
+  const byStatus: Record<CustomerListStatus, number> = {
+    active: 0,
+    inactive: 0,
+    churned: 0,
+    lead: 0,
+  };
+
+  let totalScore = 0;
+  let totalSpentCents = 0;
+
+  for (const customer of customers) {
+    byStatus[customer.status] += 1;
+    totalScore += customer.engagementScore;
+    totalSpentCents += customer.totalSpentCents;
+  }
+
+  return {
+    total: customers.length,
+    byStatus,
+    avgScore: customers.length > 0 ? Math.round(totalScore / customers.length) : 0,
+    totalSpentCents,
+    totalTickets: 0,
+  };
+}
+
+export function getLatestCustomerTimestamp(items: Array<Pick<CustomerListItem, 'lastActivity'>>): string {
+  if (items.length === 0) {
+    return '—';
+  }
+
+  return items.reduce(
+    (latest, item) => (item.lastActivity > latest ? item.lastActivity : latest),
+    items[0]!.lastActivity,
+  );
+}
+
+async function fetchCustomers(): Promise<CustomerListItem[]> {
+  const upstreamUrl = new URL('api/crm/customers', resolveCustomersApiBaseUrl()).toString();
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    headers: buildHeaders(),
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error(`crm customers upstream failed: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const data = unwrapApiPayload<{ customers: CrmCustomerProfile[]; total: number }>(payload);
+  return data.customers.map(mapCrmCustomer);
+}
+
+async function fetchCustomerStats(): Promise<CustomerStatsSnapshot> {
+  const upstreamUrl = new URL('api/crm/stats', resolveCustomersApiBaseUrl()).toString();
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    headers: buildHeaders(),
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error(`crm stats upstream failed: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return unwrapApiPayload<CustomerStatsSnapshot>(payload);
+}
+
+export async function loadCustomersSnapshot(): Promise<CustomersSnapshotDelivery> {
+  try {
+    const [customers, stats] = await Promise.all([fetchCustomers(), fetchCustomerStats()]);
+    return {
+      deliveryMode: 'api',
+      customers,
+      stats,
+      generatedAt: new Date().toISOString(),
+    };
+  } catch {
+    const customers = buildFallbackCustomerList();
+    return {
+      deliveryMode: 'fallback',
+      customers,
+      stats: buildCustomerStats(customers),
+      generatedAt: getLatestCustomerTimestamp(customers),
+      error: 'CRM 列表/统计接口不可达，已切换到 fallback 样本数据。',
+    };
+  }
+}

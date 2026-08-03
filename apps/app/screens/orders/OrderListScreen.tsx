@@ -1,143 +1,265 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { OrderCard } from '../../components/OrderCard';
+import { OrderListFilterBar } from '../../components/OrderListFilterBar';
+import { OrderListItemCard } from '../../components/OrderListItemCard';
+import { OrderListLoadMoreFooter } from '../../components/OrderListLoadMoreFooter';
+import { OrderListStatePanel } from '../../components/OrderListStatePanel';
+import {
+  listNativeAppOrdersPage,
+} from '../../market-bootstrap';
+import type {
+  OrderDetailRouteParams,
+  OrderRuntimeRouteParams,
+} from '../../utils/order-route';
+import {
+  buildOrderDetailRouteParams,
+} from '../../utils/order-finance';
+import {
+  mergeRuntimeOrderIntoTarget,
+} from '../../utils/order-runtime';
+import {
+  buildRuntimeFallbackOrderSummary,
+  mapApiOrderToSummaryView,
+  type OrderSummaryViewModel,
+} from '../../utils/order-view';
+import {
+  buildOrderListQuery,
+  filterOrderListByStatus,
+  mergePagedOrders,
+  mockOrderListSummaries,
+  orderDateRangeFilters,
+  orderStatusFilters,
+  type OrderDateRange,
+  type OrderStatus,
+} from '../../utils/order-list-state';
+import type { NativeAppOrderListQuery } from '../../market-bootstrap';
 
 type OrderStackParamList = {
-  OrderList: undefined;
-  OrderDetail: { orderId: string };
+  OrderList: OrderRuntimeRouteParams | undefined;
+  OrderDetail: OrderDetailRouteParams;
 };
 
 type OrderListNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderList'>;
 
-type OrderStatus = 'ALL' | 'PENDING' | 'PAID' | 'REFUNDED';
-
-interface OrderItem {
-  orderId: string;
-  orderNo: string;
-  totalAmount: number;
-  currency: string;
-  status: 'PENDING' | 'PAID' | 'REFUNDED' | 'CANCELLED';
-  createdAt: string;
-  itemCount: number;
-}
-
-const mockOrders: OrderItem[] = [
-  {
-    orderId: 'order-001',
-    orderNo: 'ORD20260612001',
-    totalAmount: 156.00,
-    currency: 'CNY',
-    status: 'PAID',
-    createdAt: '2026-06-12T10:30:00.000Z',
-    itemCount: 3,
-  },
-  {
-    orderId: 'order-002',
-    orderNo: 'ORD20260612002',
-    totalAmount: 89.50,
-    currency: 'CNY',
-    status: 'PENDING',
-    createdAt: '2026-06-12T11:15:00.000Z',
-    itemCount: 2,
-  },
-  {
-    orderId: 'order-003',
-    orderNo: 'ORD20260611001',
-    totalAmount: 320.00,
-    currency: 'CNY',
-    status: 'REFUNDED',
-    createdAt: '2026-06-11T14:20:00.000Z',
-    itemCount: 5,
-  },
-  {
-    orderId: 'order-004',
-    orderNo: 'ORD20260610001',
-    totalAmount: 68.00,
-    currency: 'CNY',
-    status: 'PAID',
-    createdAt: '2026-06-10T09:45:00.000Z',
-    itemCount: 1,
-  },
-];
-
-const statusFilters: { id: OrderStatus; label: string }[] = [
-  { id: 'ALL', label: '全部' },
-  { id: 'PENDING', label: '待支付' },
-  { id: 'PAID', label: '已完成' },
-  { id: 'REFUNDED', label: '已退款' },
-];
-
 export function OrderListScreen() {
-  const navigation = useNavigation<OrderListNavigationProp>();
+  const fallbackNavigation = (globalThis as {
+    __mockNavigation?: OrderListNavigationProp;
+  }).__mockNavigation;
+  const fallbackRouteParams = (globalThis as {
+    __mockRoute?: OrderStackParamList['OrderList'];
+  }).__mockRoute;
+  let navigation = fallbackNavigation as OrderListNavigationProp;
+  try {
+    navigation = useNavigation<OrderListNavigationProp>();
+  } catch {
+    navigation = fallbackNavigation as OrderListNavigationProp;
+  }
+  let route = { params: fallbackRouteParams } as RouteProp<OrderStackParamList, 'OrderList'>;
+  try {
+    route = useRoute<RouteProp<OrderStackParamList, 'OrderList'>>();
+  } catch {
+    route = { params: fallbackRouteParams } as RouteProp<OrderStackParamList, 'OrderList'>;
+  }
+  const routeParams = route.params && Object.keys(route.params).length > 0
+    ? route.params
+    : fallbackRouteParams;
+  const shouldFetchOrders = (() => {
+    const globals = globalThis as {
+      __mockRoute?: OrderStackParamList['OrderList'];
+      __mockOrderListFetchEnabled?: boolean;
+    };
+    return !globals.__mockRoute || globals.__mockOrderListFetchEnabled === true;
+  })();
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus>('ALL');
+  const [selectedDateRange, setSelectedDateRange] = useState<OrderDateRange>('ALL_TIME');
+  const [currentPage, setCurrentPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
-  const [orders] = useState<OrderItem[]>(mockOrders);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [apiOrders, setApiOrders] = useState<OrderSummaryViewModel[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const baseQuery = useMemo(
+    () => buildOrderListQuery(selectedFilter, selectedDateRange),
+    [selectedFilter, selectedDateRange],
+  );
 
-  const filteredOrders = selectedFilter === 'ALL'
-    ? orders
-    : orders.filter((order) => order.status === selectedFilter);
+  const loadOrders = useCallback(async (
+    query: NativeAppOrderListQuery = baseQuery,
+    mode: 'replace' | 'append' = 'replace',
+  ) => {
+    const result = await listNativeAppOrdersPage(query);
+    const mappedOrders = result.items.map(mapApiOrderToSummaryView);
+    setApiOrders((previousOrders) => (
+      mode === 'append' ? mergePagedOrders(previousOrders, mappedOrders) : mappedOrders
+    ));
+    setHasMore(result.page * result.pageSize < result.total);
+    setFetchError(null);
+    return result;
+  }, [baseQuery]);
+
+  const handleRetryFetch = useCallback(() => {
+    setCurrentPage(1);
+    setFetchError(null);
+    setApiOrders(null);
+    listNativeAppOrdersPage(buildOrderListQuery(selectedFilter, selectedDateRange))
+      .then((result) => {
+        setApiOrders(result.items.map(mapApiOrderToSummaryView));
+        setHasMore(result.page * result.pageSize < result.total);
+      })
+      .catch(() => {
+        setFetchError('订单加载失败，请重试');
+      });
+  }, [selectedFilter, selectedDateRange]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!shouldFetchOrders) {
+      setApiOrders(null);
+      setHasMore(false);
+      return;
+    }
+
+    setCurrentPage(1);
+    listNativeAppOrdersPage(baseQuery)
+      .then((result) => {
+        if (!cancelled) {
+          setApiOrders(result.items.map(mapApiOrderToSummaryView));
+          setHasMore(result.page * result.pageSize < result.total);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setApiOrders(null);
+          setFetchError('订单加载失败');
+          setHasMore(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseQuery, shouldFetchOrders]);
+
+  const orders = apiOrders ?? mockOrderListSummaries;
+  const routeRuntimeOrder = routeParams?.orderId && !orders.some((order) => order.orderId === routeParams.orderId)
+    ? buildRuntimeFallbackOrderSummary(routeParams)
+    : undefined;
+  const ordersWithRuntimeFallback = routeRuntimeOrder ? [...orders, routeRuntimeOrder] : orders;
+  const ordersWithRuntimeState = ordersWithRuntimeFallback.map((order) => (
+    mergeRuntimeOrderIntoTarget(order, routeParams)
+  ));
+
+  const filteredOrders = filterOrderListByStatus(ordersWithRuntimeState, selectedFilter);
 
   const handleOrderPress = (orderId: string) => {
-    navigation.navigate('OrderDetail', { orderId });
+    const matchedOrder = ordersWithRuntimeState.find((item) => item.orderId === orderId);
+    navigation.navigate(
+      'OrderDetail',
+      matchedOrder
+        ? buildOrderDetailRouteParams({ order: matchedOrder })
+        : { orderId },
+    );
   };
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    if (!shouldFetchOrders) {
+      setTimeout(() => setRefreshing(false), 1000);
+      return;
+    }
+
+    const refreshQuery = buildOrderListQuery(selectedFilter, selectedDateRange);
+    setCurrentPage(1);
+    loadOrders(refreshQuery, 'replace')
+      .catch(() => {
+        setApiOrders(null);
+        setFetchError('订单刷新失败');
+        setHasMore(false);
+      })
+      .finally(() => {
+        setRefreshing(false);
+      });
+  }, [loadOrders, selectedDateRange, selectedFilter, shouldFetchOrders]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!shouldFetchOrders || loadingMore || !hasMore) {
+      return;
+    }
+
+    const nextPage = currentPage + 1;
+    const nextQuery = buildOrderListQuery(selectedFilter, selectedDateRange, nextPage);
+    setLoadingMore(true);
+
+    loadOrders(nextQuery, 'append')
+      .then((result) => {
+        setCurrentPage(nextPage);
+        setHasMore(result.page * result.pageSize < result.total);
+      })
+      .catch(() => {
+        setHasMore(false);
+      })
+      .finally(() => {
+        setLoadingMore(false);
+      });
+  }, [currentPage, hasMore, loadOrders, loadingMore, selectedDateRange, selectedFilter, shouldFetchOrders]);
+
+  const handleFilterChange = useCallback((nextFilter: OrderStatus) => {
+    setSelectedFilter(nextFilter);
+    setCurrentPage(1);
   }, []);
 
-  const renderFilterTab = ({ id, label }: { id: OrderStatus; label: string }) => (
-    <TouchableOpacity
-      key={id}
-      style={[styles.filterTab, selectedFilter === id && styles.filterTabActive]}
-      onPress={() => setSelectedFilter(id)}
-      activeOpacity={0.7}
-    >
-      <Text
-        style={[
-          styles.filterTabText,
-          selectedFilter === id && styles.filterTabTextActive,
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const handleDateRangeChange = useCallback((nextRange: OrderDateRange) => {
+    setSelectedDateRange(nextRange);
+    setCurrentPage(1);
+  }, []);
 
-  const renderOrder = ({ item }: { item: OrderItem }) => (
-    <OrderCard
-      orderId={item.orderId}
-      orderNo={item.orderNo}
-      totalAmount={item.totalAmount}
-      currency={item.currency}
-      status={item.status}
-      createdAt={item.createdAt}
-      itemCount={item.itemCount}
+  const renderOrder = ({ item }: { item: OrderSummaryViewModel }) => (
+    <OrderListItemCard
+      order={item}
       onPress={() => handleOrderPress(item.orderId)}
     />
   );
 
-  const renderEmptyList = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>📋</Text>
-      <Text style={styles.emptyText}>暂无订单</Text>
-    </View>
-  );
+  const renderListFooter = () => {
+    return (
+      <OrderListLoadMoreFooter
+        visible={Boolean(shouldFetchOrders && apiOrders?.length && hasMore)}
+        loading={loadingMore}
+        onPress={handleLoadMore}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterContainer}>
-        {statusFilters.map(renderFilterTab)}
-      </View>
+      <OrderListFilterBar
+        options={orderStatusFilters}
+        activeOption={selectedFilter}
+        onChange={handleFilterChange}
+      />
+      <OrderListFilterBar
+        options={orderDateRangeFilters}
+        activeOption={selectedDateRange}
+        onChange={handleDateRangeChange}
+        variant="chip"
+      />
+      {fetchError && shouldFetchOrders ? (
+        <OrderListStatePanel
+          icon="⚠️"
+          title="加载失败"
+          message={fetchError}
+          actionLabel="重试"
+          onActionPress={handleRetryFetch}
+        />
+      ) : (
       <FlatList
         data={filteredOrders}
         renderItem={renderOrder}
@@ -146,9 +268,16 @@ export function OrderListScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
-        ListEmptyComponent={renderEmptyList}
+        ListEmptyComponent={(
+          <OrderListStatePanel
+            icon="📋"
+            message="暂无订单"
+          />
+        )}
+        ListFooterComponent={renderListFooter}
         showsVerticalScrollIndicator={false}
       />
+      )}
     </View>
   );
 }
@@ -158,49 +287,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  filterContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  filterTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
-  },
-  filterTabActive: {
-    backgroundColor: '#007AFF',
-  },
-  filterTabText: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  filterTabTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
   listContent: {
     paddingVertical: 8,
     flexGrow: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: '#999999',
   },
 });

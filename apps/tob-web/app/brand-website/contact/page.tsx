@@ -1,9 +1,9 @@
+'use client';
 /**
  * 咨询落地页
  * 统一咨询表单 + 联系方式
  */
 
-'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';

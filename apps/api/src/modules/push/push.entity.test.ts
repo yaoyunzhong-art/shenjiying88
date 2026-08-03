@@ -9,7 +9,8 @@ import {
   ScheduledPush,
   WSClient,
   WSMessage,
-  PushStats
+  PushStats,
+  PushRecordEntity
 } from './push.entity'
 
 describe('Push Entity - Enums', () => {
@@ -193,3 +194,265 @@ describe('Push Entity - Interfaces', () => {
     expect(getPriorityLabel(PushPriority.Low)).toBe('低优')
   })
 })
+
+// ── PushRecordEntity (TypeORM 持久化实体) 测试 ────────────────────────────
+
+describe('PushRecordEntity - CRUD (无数据库)', () => {
+  // 准备通用的合约数据
+  const makeRecord = (overrides: Partial<PushRecord> = {}): PushRecord => ({
+    id: 'push_test_001',
+    deviceToken: 'a'.repeat(64),
+    platform: PushPlatform.iOS as any,
+    payload: { alert: 'Test push', badge: 1, sound: 'default' },
+    priority: PushPriority.High as any,
+    status: PushStatus.Sent as any,
+    sentAt: '2026-07-21T00:00:00.000Z',
+    tenantId: 'tenant_test',
+    memberId: 'member_test',
+    ...overrides,
+  })
+
+  // ── C: fromContract → 新建 token 写入 ──
+
+  it('C-1: fromContract 应正确构建实体 (id 为 PrimaryGeneratedColumn，fromContract 不设置)', () => {
+    const record = makeRecord()
+    const entity = PushRecordEntity.fromContract(record)
+
+    // id 是 @PrimaryGeneratedColumn('uuid')，由 DB 生成，fromContract 不设置
+    expect(entity.id).toBeUndefined()
+    expect(entity.deviceToken).toBe('a'.repeat(64))
+    expect(entity.platform).toBe('iOS')
+    expect(entity.payload).toEqual({ alert: 'Test push', badge: 1, sound: 'default' })
+    expect(entity.priority).toBe('HIGH')
+    expect(entity.status).toBe('SENT')
+    expect(entity.sentAt).toBeInstanceOf(Date)
+    expect(entity.sentAt!.toISOString()).toBe('2026-07-21T00:00:00.000Z')
+    expect(entity.tenantId).toBe('tenant_test')
+    expect(entity.memberId).toBe('member_test')
+    expect(entity.createdAt).toBeInstanceOf(Date)
+  })
+
+  it('C-2: fromContract 应允许 payload 为复杂嵌套对象', () => {
+    const payload = {
+      alert: 'Complex payload',
+      extra: { deep: { key: 'value' }, list: [1, 2, 3] },
+      sound: 'custom.wav',
+    }
+    const record = makeRecord({ payload })
+    const entity = PushRecordEntity.fromContract(record)
+
+    expect(entity.payload?.alert).toBe('Complex payload')
+    expect(entity.payload?.extra).toEqual({ deep: { key: 'value' }, list: [1, 2, 3] })
+    expect(entity.payload?.sound).toBe('custom.wav')
+  })
+
+  it('C-3: fromContract 应正确处理所有平台类型', () => {
+    const platforms = [
+      { platform: 'iOS' as const, contract: PushPlatform.iOS },
+      { platform: 'ANDROID' as const, contract: PushPlatform.Android },
+      { platform: 'WEB' as const, contract: PushPlatform.Web },
+    ]
+    for (const p of platforms) {
+      const entity = PushRecordEntity.fromContract(makeRecord({ platform: p.contract as any }))
+      expect(entity.platform).toBe(p.platform)
+    }
+  })
+
+  it('C-4: fromContract 应正确处理所有优先级', () => {
+    const priorities = [
+      { priority: 'HIGH' as const, contract: PushPriority.High },
+      { priority: 'NORMAL' as const, contract: PushPriority.Normal },
+      { priority: 'LOW' as const, contract: PushPriority.Low },
+    ]
+    for (const p of priorities) {
+      const entity = PushRecordEntity.fromContract(makeRecord({ priority: p.contract as any }))
+      expect(entity.priority).toBe(p.priority)
+    }
+  })
+
+  it('C-5: fromContract 应正确处理所有状态', () => {
+    const statuses = [
+      { status: 'PENDING' as const, contract: PushStatus.Pending },
+      { status: 'SENT' as const, contract: PushStatus.Sent },
+      { status: 'FAILED' as const, contract: PushStatus.Failed },
+      { status: 'CANCELLED' as const, contract: PushStatus.Cancelled },
+      { status: 'REVOKED' as const, contract: PushStatus.Revoked },
+    ]
+    for (const s of statuses) {
+      const entity = PushRecordEntity.fromContract(makeRecord({ status: s.contract as any }))
+      expect(entity.status).toBe(s.status)
+    }
+  })
+
+  // ── R: toContract → 按 platform / deviceToken 查询 ──
+
+  it('R-1: toContract 应正确转换为接口合约 (模拟 DB 返回后赋值 id)', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    // 模拟 TypeORM 从 DB 加载后自动填充 id
+    entity.id = 'push_db_001'
+    const contract = entity.toContract()
+
+    expect(contract.id).toBe('push_db_001')
+    expect(contract.deviceToken).toBe('a'.repeat(64))
+    expect(contract.platform).toBe(PushPlatform.iOS)
+    expect(contract.payload.alert).toBe('Test push')
+    expect(contract.payload.badge).toBe(1)
+    expect(contract.payload.sound).toBe('default')
+    expect(contract.priority).toBe(PushPriority.High)
+    expect(contract.status).toBe(PushStatus.Sent)
+    expect(contract.sentAt).toBe('2026-07-21T00:00:00.000Z')
+    expect(contract.tenantId).toBe('tenant_test')
+    expect(contract.memberId).toBe('member_test')
+  })
+
+  it('R-2: toContract 在 payload 为 null/undefined 时应回退到空 alert', () => {
+    // 模拟 payload 为 undefined (数据库可能返回 null)
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    entity.payload = undefined
+    const contract = entity.toContract()
+
+    // toContract 会回退到 { alert: '' }
+    expect(contract.payload.alert).toBe('')
+  })
+
+  it('R-3: toContract 在 sentAt 为 undefined 时应回退到当前时间', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    entity.sentAt = undefined
+    const contract = entity.toContract()
+
+    // sentAt 回退到 new Date().toISOString()，应该是一个有效 ISO 字符串
+    expect(() => new Date(contract.sentAt)).not.toThrow()
+    expect(typeof contract.sentAt).toBe('string')
+  })
+
+  it('R-4: toContract 应正确反映不同平台的值', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord({ platform: PushPlatform.Android as any }))
+    const contract = entity.toContract()
+    expect(contract.platform).toBe(PushPlatform.Android)
+  })
+
+  it('R-5: toContract 应正确反映不同优先级的值', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord({ priority: PushPriority.Low as any }))
+    const contract = entity.toContract()
+    expect(contract.priority).toBe(PushPriority.Low)
+  })
+
+  it('R-6: toContract 应正确反映不同状态的值', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord({ status: PushStatus.Failed as any }))
+    const contract = entity.toContract()
+    expect(contract.status).toBe(PushStatus.Failed)
+  })
+
+  // ── U: 更新 token → 修改 entity 属性并重新转换 ──
+
+  it('U-1: 更新 deviceToken 应正确反映', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    const newToken = 'b'.repeat(64)
+    entity.deviceToken = newToken
+
+    const contract = entity.toContract()
+    expect(contract.deviceToken).toBe(newToken)
+  })
+
+  it('U-2: 更新 platform 应正确反映', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord({ platform: PushPlatform.iOS as any }))
+    entity.platform = 'ANDROID'
+
+    const contract = entity.toContract()
+    expect(contract.platform).toBe(PushPlatform.Android)
+  })
+
+  it('U-3: 更新 status 状态流转应正确', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord({ status: PushStatus.Pending as any }))
+
+    // 模拟: PENDING → SENT → REVOKED
+    entity.status = 'SENT'
+    expect(entity.toContract().status).toBe(PushStatus.Sent)
+
+    entity.status = 'REVOKED'
+    expect(entity.toContract().status).toBe(PushStatus.Revoked)
+  })
+
+  it('U-4: 更新 payload 应正确反映', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    entity.payload = { alert: 'Updated message', badge: 2, extra: { ref: 'order_123' } }
+
+    const contract = entity.toContract()
+    expect(contract.payload.alert).toBe('Updated message')
+    expect(contract.payload.badge).toBe(2)
+    expect(contract.payload.extra?.ref).toBe('order_123')
+  })
+
+  it('U-5: 更新 tenantId / memberId 应正确反映', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    entity.tenantId = 'tenant_new'
+    entity.memberId = 'member_new'
+
+    const contract = entity.toContract()
+    expect(contract.tenantId).toBe('tenant_new')
+    expect(contract.memberId).toBe('member_new')
+  })
+
+  // ── D: 删除 token (模拟清除 deviceToken) ──
+
+  it('D-1: 清空 deviceToken 应反映在合约中', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    entity.deviceToken = ''
+
+    const contract = entity.toContract()
+    expect(contract.deviceToken).toBe('')
+  })
+
+  it('D-2: 删除 tenantId 和 memberId (设为 undefined) 应反映', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    entity.tenantId = undefined
+    entity.memberId = undefined
+
+    const contract = entity.toContract()
+    expect(contract.tenantId).toBeUndefined()
+    expect(contract.memberId).toBeUndefined()
+  })
+
+  it('D-3: 重置所有字段后应得到最小合约', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord())
+    // 模拟删除后的状态: 清空所有可空字段
+    entity.deviceToken = ''
+    entity.payload = undefined
+    entity.sentAt = undefined
+    entity.tenantId = undefined
+    entity.memberId = undefined
+
+    const contract = entity.toContract()
+    expect(contract.deviceToken).toBe('')
+    expect(contract.payload.alert).toBe('')
+    expect(typeof contract.sentAt).toBe('string')
+    expect(contract.tenantId).toBeUndefined()
+    expect(contract.memberId).toBeUndefined()
+  })
+
+  // ── 边界测试 ──
+
+  it('EDGE-1: 超长 deviceToken (256字) 应正确存储', () => {
+    const longToken = 'x'.repeat(256)
+    const entity = PushRecordEntity.fromContract(makeRecord({ deviceToken: longToken }))
+
+    expect(entity.deviceToken).toBe(longToken)
+    expect(entity.deviceToken.length).toBe(256)
+  })
+
+  it('EDGE-2: payload 全空对象应正确传递', () => {
+    const entity = PushRecordEntity.fromContract(makeRecord({ payload: { alert: '' } }))
+
+    const contract = entity.toContract()
+    expect(contract.payload.alert).toBe('')
+  })
+
+  it('EDGE-3: sentAt 为未来时间应保留', () => {
+    const futureTime = '2099-12-31T23:59:59.999Z'
+    const entity = PushRecordEntity.fromContract(makeRecord({ sentAt: futureTime }))
+
+    const contract = entity.toContract()
+    expect(contract.sentAt).toBe(futureTime)
+  })
+})
+

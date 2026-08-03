@@ -191,8 +191,55 @@ export default function AgentDashboardClient({
     return { runningLive, completedLive, failedLive, totalEvents };
   }, [liveState]);
 
+  const sourceEvidence = useMemo(
+    () => ({
+      deliveryMode,
+      controlPlaneSource:
+        deliveryMode === 'api'
+          ? 'loadAgentDashboardSnapshot'
+          : 'FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS',
+      businessDataSource:
+        deliveryMode === 'api'
+          ? 'AgentDashboardSnapshot.sessions + AgentStats'
+          : 'fallback dashboard snapshot',
+      refreshPath: 'AgentDashboardPage -> loadAgentDashboardSnapshot',
+      generatedAt: timestamp,
+      streamSource:
+        deliveryMode === 'api'
+          ? 'runAgentSessionStream (RUNNING sessions only)'
+          : 'stream disabled in fallback',
+      note:
+        deliveryMode === 'api'
+          ? '仪表盘首屏统计来自实时 dashboard snapshot，运行中的会话再通过 stream 增量补充事件和步骤进度。'
+          : '仪表盘当前回退到 fallback dashboard snapshot，页面仅展示静态会话与统计证据，不进行实时 stream 订阅。'
+    }),
+    [deliveryMode, timestamp]
+  );
+
   return (
     <div data-testid="dashboard-client">
+      <div
+        style={{
+          marginBottom: 12,
+          padding: '12px 14px',
+          background: 'rgba(15, 23, 42, 0.4)',
+          border: '1px solid rgba(148, 163, 184, 0.18)',
+          borderRadius: 8,
+          color: '#cbd5e1',
+          lineHeight: 1.7
+        }}
+      >
+        <div style={{ fontSize: 13 }}>
+          Delivery {sourceEvidence.deliveryMode} · 控制面来源: {sourceEvidence.controlPlaneSource}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 13 }}>
+          业务数据: {sourceEvidence.businessDataSource} · 刷新路径: {sourceEvidence.refreshPath}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>
+          generatedAt: {sourceEvidence.generatedAt} · stream: {sourceEvidence.streamSource}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8' }}>{sourceEvidence.note}</div>
+      </div>
       <div
         style={{
           display: 'flex',

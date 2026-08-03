@@ -39,13 +39,16 @@ async function paySuccess(
     metadata?: Record<string, string>
   }> = {},
 ) {
-  const result = await controller.pay({
-    orderId: overrides.orderId ?? `order-e2e-${Date.now()}`,
-    amount: overrides.amount ?? 100,
-    currency: overrides.currency ?? 'USD',
-    provider: overrides.provider ?? 'paypal',
-    metadata: overrides.metadata,
-  })
+  const result = await controller.pay(
+    'tenant-test',
+    {
+      orderId: overrides.orderId ?? `order-e2e-${Date.now()}`,
+      amount: overrides.amount ?? 100,
+      currency: overrides.currency ?? 'USD',
+      provider: overrides.provider ?? 'paypal',
+      metadata: overrides.metadata,
+    },
+  )
   return result
 }
 
@@ -70,7 +73,7 @@ describe('PaymentGateway E2E — 支付流程', () => {
 
     it('PayPal 支付后能查询到交易', async () => {
       const created = await paySuccess(controller, { provider: 'paypal' })
-      const queried = await controller.queryPayment(created.transactionId)
+      const queried = await controller.queryPayment('tenant-test', created.transactionId)
       assert.equal(queried.transactionId, created.transactionId)
       assert.equal(queried.provider, 'paypal')
     })
@@ -87,7 +90,7 @@ describe('PaymentGateway E2E — 支付流程', () => {
 
     it('Stripe 支付后能查询交易状态', async () => {
       const created = await paySuccess(controller, { provider: 'stripe' })
-      const queried = await controller.queryPayment(created.transactionId)
+      const queried = await controller.queryPayment('tenant-test', created.transactionId)
       assert.equal(queried.status, 'pending')
     })
   })
@@ -145,7 +148,7 @@ describe('PaymentGateway E2E — 支付流程', () => {
   describe('错误处理', () => {
     it('负数金额应抛出 HttpException', async () => {
       try {
-        await controller.pay({ orderId: 'negative', amount: -1, currency: 'USD', provider: 'paypal' })
+        await controller.pay('tenant-test', { orderId: 'negative', amount: -1, currency: 'USD', provider: 'paypal' })
         assert.fail('应抛出异常')
       } catch (e) {
         assert.ok(e instanceof HttpException)
@@ -155,7 +158,7 @@ describe('PaymentGateway E2E — 支付流程', () => {
 
     it('零金额应抛出 HttpException', async () => {
       try {
-        await controller.pay({ orderId: 'zero', amount: 0, currency: 'USD', provider: 'paypal' })
+        await controller.pay('tenant-test', { orderId: 'zero', amount: 0, currency: 'USD', provider: 'paypal' })
         assert.fail('应抛出异常')
       } catch (e) {
         assert.ok(e instanceof HttpException)
@@ -165,12 +168,15 @@ describe('PaymentGateway E2E — 支付流程', () => {
 
     it('不支持的 provider 应抛出错误', async () => {
       try {
-        await controller.pay({
-          orderId: 'bad-provider',
-          amount: 100,
-          currency: 'USD',
-          provider: 'crypto' as any,
-        })
+        await controller.pay(
+          'tenant-test',
+          {
+            orderId: 'bad-provider',
+            amount: 100,
+            currency: 'USD',
+            provider: 'crypto' as any,
+          },
+        )
         assert.fail('应抛出异常')
       } catch (e) {
         assert.ok(e instanceof Error)
@@ -188,13 +194,13 @@ describe('PaymentGateway E2E — 支付查询', () => {
 
   it('应能查询已存在的交易', async () => {
     const created = await paySuccess(controller)
-    const queried = await controller.queryPayment(created.transactionId)
+    const queried = await controller.queryPayment('tenant-test', created.transactionId)
     assert.equal(queried.transactionId, created.transactionId)
   })
 
   it('查询不存在的交易应抛出 404', async () => {
     try {
-      await controller.queryPayment('TXN-NONEXIST-123456')
+      await controller.queryPayment('tenant-test', 'TXN-NONEXIST-123456')
       assert.fail('应抛出异常')
     } catch (e) {
       assert.ok(e instanceof HttpException)
@@ -218,7 +224,7 @@ describe('PaymentGateway E2E — 退款流程', () => {
     // 但 payWithPayPal 直接返回 pending，退款要等 capture
     // 这里测试: 对 pending 状态的交易退款应拒绝
     try {
-      await controller.refund({ transactionId: payment.transactionId })
+      await controller.refund('tenant-test', { transactionId: payment.transactionId })
       assert.fail('pending 状态的交易应拒绝退款')
     } catch (e) {
       assert.ok(e instanceof HttpException)
@@ -227,7 +233,7 @@ describe('PaymentGateway E2E — 退款流程', () => {
 
   it('对不存在的交易退款应抛出 404', async () => {
     try {
-      await controller.refund({ transactionId: 'TXN-NONEXIST' })
+      await controller.refund('tenant-test', { transactionId: 'TXN-NONEXIST' })
       assert.fail('应抛出异常')
     } catch (e) {
       assert.ok(e instanceof HttpException)
@@ -239,7 +245,7 @@ describe('PaymentGateway E2E — 退款流程', () => {
     const payment = await paySuccess(controller, { provider: 'paypal', amount: 100 })
     assert.equal(payment.status, 'pending')
     try {
-      await controller.refund({ transactionId: payment.transactionId })
+      await controller.refund('tenant-test', { transactionId: payment.transactionId })
       assert.fail('应抛出 REFUND_NOT_ALLOWED')
     } catch (e) {
       assert.ok(e instanceof HttpException)
@@ -256,7 +262,7 @@ describe('PaymentGateway E2E — 退款查询', () => {
 
   it('查询不存在的退款应抛出 404', async () => {
     try {
-      await controller.queryRefund('REF-NONEXIST-999')
+      await controller.queryRefund('tenant-test', 'REF-NONEXIST-999')
       assert.fail('应抛出异常')
     } catch (e) {
       assert.ok(e instanceof HttpException)

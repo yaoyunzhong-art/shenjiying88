@@ -4,16 +4,7 @@
  * 提供套餐管理、订阅管理、配额监控、计费与账单、试用管理 API。
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger'
 import { SaaSBillingService } from './saas-billing.service'
 import {
@@ -33,10 +24,21 @@ import type {
   TrialStatus,
   QuotaCheckResult,
 } from './saas-billing.entity'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const SAAS_BILLING_FINANCE_READ_PERMISSION = 'finance:read'
+const SAAS_BILLING_FINANCE_WRITE_PERMISSION = 'finance:*'
 
 @ApiTags('SaaS 计费')
 @Controller('saas-billing')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(SAAS_BILLING_FINANCE_READ_PERMISSION)
 export class SaaSBillingController {
   constructor(private readonly billingService: SaaSBillingService) {}
 
@@ -57,6 +59,7 @@ export class SaaSBillingController {
 
   @Post('plans')
   @ApiOperation({ summary: '创建自定义套餐' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   createPlan(@Body() dto: CreatePlanDto): PricingPlan {
     return this.billingService.createPlan(dto)
   }
@@ -65,6 +68,7 @@ export class SaaSBillingController {
 
   @Post('subscribe')
   @ApiOperation({ summary: '租户订阅套餐' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   subscribe(@Body() dto: SubscribeDto): TenantSubscription {
     return this.billingService.subscribe(dto.tenantId, dto.planId, dto.billingCycle)
   }
@@ -72,6 +76,7 @@ export class SaaSBillingController {
   @Post('subscriptions/:tenantId/change-plan')
   @ApiOperation({ summary: '变更订阅套餐' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   changePlan(@Param('tenantId') tenantId: string, @Body() dto: ChangePlanDto): TenantSubscription {
     return this.billingService.changePlan(tenantId, dto.newPlanId)
   }
@@ -79,6 +84,7 @@ export class SaaSBillingController {
   @Post('subscriptions/:tenantId/cancel')
   @ApiOperation({ summary: '取消订阅' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   cancelSubscription(@Param('tenantId') tenantId: string): { success: boolean } {
     this.billingService.cancelSubscription(tenantId)
     return { success: true }
@@ -87,6 +93,7 @@ export class SaaSBillingController {
   @Post('subscriptions/:tenantId/renew')
   @ApiOperation({ summary: '续费订阅' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   renewSubscription(@Param('tenantId') tenantId: string): TenantSubscription {
     return this.billingService.renew(tenantId)
   }
@@ -103,6 +110,7 @@ export class SaaSBillingController {
   @Post('quotas/:tenantId/record')
   @ApiOperation({ summary: '记录配额使用' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   recordUsage(@Param('tenantId') tenantId: string, @Body() dto: RecordUsageDto): { success: boolean } {
     this.billingService.recordUsage(tenantId, dto.quota, dto.amount)
     return { success: true }
@@ -118,6 +126,7 @@ export class SaaSBillingController {
   @Post('quotas/:tenantId/check')
   @ApiOperation({ summary: '检查配额是否充足' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   checkQuota(
     @Param('tenantId') tenantId: string,
     @Body() dto: CheckQuotaDto,
@@ -137,6 +146,7 @@ export class SaaSBillingController {
   @Post('invoices/generate/:tenantId')
   @ApiOperation({ summary: '生成账单' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   generateInvoice(@Param('tenantId') tenantId: string): Invoice {
     return this.billingService.generateInvoice(tenantId)
   }
@@ -144,6 +154,7 @@ export class SaaSBillingController {
   @Post('invoices/:invoiceId/pay')
   @ApiOperation({ summary: '标记账单已支付' })
   @ApiParam({ name: 'invoiceId', description: '发票 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   markPaid(@Param('invoiceId') invoiceId: string): { success: boolean } {
     this.billingService.markPaid(invoiceId)
     return { success: true }
@@ -160,6 +171,7 @@ export class SaaSBillingController {
 
   @Post('trial/start')
   @ApiOperation({ summary: '开始试用' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   startTrial(@Body() dto: StartTrialDto): TenantSubscription {
     return this.billingService.startTrial(dto.tenantId, dto.planId)
   }
@@ -167,6 +179,7 @@ export class SaaSBillingController {
   @Post('trial/:tenantId/convert')
   @ApiOperation({ summary: '试用转正' })
   @ApiParam({ name: 'tenantId', description: '租户 ID' })
+  @RequirePermissions(SAAS_BILLING_FINANCE_WRITE_PERMISSION)
   convertTrial(@Param('tenantId') tenantId: string): TenantSubscription {
     return this.billingService.convertTrial(tenantId)
   }

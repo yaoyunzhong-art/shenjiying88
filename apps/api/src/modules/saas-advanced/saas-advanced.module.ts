@@ -7,15 +7,18 @@
  */
 
 import { Module, Global } from '@nestjs/common'
+import { PrismaModule } from '../../prisma/prisma.module'
 import { CustomDomainService } from './custom-domain.service'
 import { CustomDomainController } from './custom-domain.controller'
 import { SsoService } from './sso.service'
 import { SsoController } from './sso.controller'
+import { DomainResolutionService } from './domain-resolution.service'
 
 @Global()
 @Module({
-  providers: [CustomDomainService, SsoService],
+  imports: [PrismaModule],
+  providers: [DomainResolutionService, CustomDomainService, SsoService],
   controllers: [CustomDomainController, SsoController],
-  exports: [CustomDomainService, SsoService],
+  exports: [DomainResolutionService, CustomDomainService, SsoService],
 })
 export class SaasAdvancedModule {}

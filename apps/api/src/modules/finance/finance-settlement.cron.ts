@@ -103,7 +103,7 @@ export class FinanceSettlementCron implements OnApplicationBootstrap {
         }
       }
     }, 60 * 60 * 1000)
-    this.logger.log('FinanceSettlementCron started (hourly check)')
+    this.logger.debug('FinanceSettlementCron started (hourly check)')
   }
 
   onApplicationShutdown(): void {

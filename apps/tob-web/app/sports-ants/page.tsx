@@ -1,10 +1,10 @@
+'use client';
 /**
  * 运动蚂蚁品牌官网首页
  * BigAnts Official Website - Premium Apple Style
  * 高端重置版 · 精致设计 · 流畅交互
  */
 
-'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';

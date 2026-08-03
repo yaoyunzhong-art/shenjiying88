@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { type CSSProperties } from 'react';
 import { StatusBadge, DetailActionBar, DetailClosureBar, WorkspaceBreadcrumb, type DetailClosureLink } from '@m5/ui';
 import type { RateLimitsLedgerDetail } from '../../../rate-limits-detail-view-model';
 import {
@@ -12,6 +13,8 @@ import {
 import { buildRateLimitsPolicyDetailHref } from '@m5/types';
 import { useDetailActions } from '../../../components/use-detail-actions';
 import { buildStandardBreadcrumb } from '../../../components/detail-workspace-registry';
+import SnapshotRefreshButton from '../../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 interface RateLimitsLedgerDetailClientProps {
   snapshot: RateLimitsLedgerDetail;
@@ -31,6 +34,7 @@ function LedgerBoard({
   record: NonNullable<RateLimitsLedgerDetail['record']>;
   snapshot: RateLimitsLedgerDetail;
 }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const ratio = ledgerConsumptionRatio(record);
   const blocked = isLedgerBlocked(record);
   const statusLabel = blocked ? '封禁' : ratio >= 0.8 ? '告警' : '健康';
@@ -44,6 +48,15 @@ function LedgerBoard({
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'rate-limits', detailLabel: snapshot.ledgerId })}
       />
@@ -150,8 +163,18 @@ function LedgerBoard({
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: RateLimitsLedgerDetail }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'rate-limits', detailLabel: snapshot.ledgerId || '未找到' })}
       />
@@ -191,27 +214,28 @@ function SummaryCard({ title, value, detail }: { title: string; value: string; d
   );
 }
 
-const summaryGridStyle: React.CSSProperties = {
+
+const summaryGridStyle: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
   gap: 12
 };
 
-const summaryCardStyle: React.CSSProperties = {
+const summaryCardStyle: CSSProperties = {
   border: '1px solid rgba(148,163,184,0.18)',
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
 };
 
-const panelStyle: React.CSSProperties = {
+const panelStyle: CSSProperties = {
   border: '1px solid rgba(148,163,184,0.18)',
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
 };
 
-const sectionTitleStyle: React.CSSProperties = {
+const sectionTitleStyle: CSSProperties = {
   fontSize: 14,
   color: '#94a3b8',
   marginBottom: 12,

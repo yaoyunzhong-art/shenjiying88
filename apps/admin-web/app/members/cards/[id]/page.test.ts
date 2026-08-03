@@ -145,7 +145,7 @@ describe('members/cards/[id] — 日期格式化', () => {
   });
 
   it('6. 传入空字符串返回原值（反例）', () => {
-    assert.equal(formatDateShort(''), '');
+    assert.equal(formatDateShort(''), '—');
   });
 });
 

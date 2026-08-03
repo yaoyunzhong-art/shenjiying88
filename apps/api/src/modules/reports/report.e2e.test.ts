@@ -100,7 +100,8 @@ function buildController() {
   const ctrl = new ReportController(
     agg, cache, exp, qs,
     revenue, invTurn, memberGrowth, refundRate, orderConv,
-    prodRank, payMix, hourlyHeatmap, channelFunnel, inventoryAlert
+    prodRank, payMix, hourlyHeatmap, channelFunnel, inventoryAlert,
+    {} as any
   )
 
   return { ctrl, cache, exp }

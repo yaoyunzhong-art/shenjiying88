@@ -3,7 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { TrafficGovernanceGuard } from './common/guards/traffic-governance.guard';
-import { RequestGovernanceService } from './common/governance/request-governance.service';
+import { RateLimitGuard } from './common/guards/rate-limit.guard';
+import { RequestGovernanceModule } from './common/governance/request-governance.service';
 import { RequestAuditInterceptor } from './common/interceptors/request-audit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import configuration from './config/configuration';
@@ -23,6 +24,7 @@ import { LoyaltyModule } from './modules/loyalty/loyalty.module';
 import { MarketModule } from './modules/market/market.module';
 import { MemberModule } from './modules/member/member.module';
 import { PortalModule } from './modules/portal/portal.module';
+import { CsrfMiddleware } from './modules/security/csrf.middleware';
 import { TenantMiddleware } from './modules/tenant/tenant.middleware';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
@@ -85,12 +87,14 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { MultimediaModule } from './modules/multimedia/multimedia.module';
 import { FederatedLearningModule } from './modules/federated-learning/federated.module';
 import { PointsModule } from './modules/points/points.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { BrandCustomModule } from './modules/brand-custom/brand-custom.module';
 import { AiSalesModule } from './modules/ai-sales/ai-sales.module';
 import { AllianceModule } from './modules/alliance/alliance.module';
 import { DeployModule } from './modules/deploy/deploy.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AiProfileModule } from './modules/ai-profile/ai-profile.module';
 import { AiPushModule } from './modules/ai-push/ai-push.module';
 import { DeviceAdapterModule } from './modules/device-adapter/device-adapter.module';
 import { EdgeModule } from './modules/edge/edge.module';
@@ -119,8 +123,10 @@ import { AiMarketingModule } from './modules/ai-marketing/ai-marketing.module';
 import { OpenAPIModule } from './modules/openapi/openapi.module';
 import { LocaleModule } from './modules/locale/locale.module';
 import { DbKnowledgeModule } from './modules/db-knowledge/db-knowledge.module';
+import { EmpowerCardModule } from './modules/empower-card/empower-card.module';
 import { ScoutModule } from './modules/scout/scout.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
+import { LogisticsManagementModule } from './modules/logistics-management/logistics-management.module';
 import { RlsModule } from './modules/rls/rls.module';
 import { DevopsModule } from './modules/devops/devops.module';
 import { CrmModule } from './modules/crm/crm.module';
@@ -149,8 +155,26 @@ import { MemberSpendingAnalysisModule } from './modules/member-spending-analysis
 import { InventoryAlertModule } from './modules/inventory-alert/inventory-alert.module';
 import { EquipmentFaultReportModule } from './modules/equipment-fault-report/equipment-fault-report.module';
 import { DeviceUsageReportModule } from './modules/device-usage-report/device-usage-report.module';
+import { EmployeeMarketingModule } from './modules/employee-marketing/employee-marketing.module';
 import { EmployeePerformanceReviewModule } from './modules/employee-performance-review/employee-performance-review.module';
 import { CustomerSatisfactionModule } from './modules/customer-satisfaction/customer-satisfaction.module';
+import { ProcurementOrderModule } from './modules/procurement-order/procurement-order.module';
+import { SeoModule } from './modules/seo/seo.module';
+import { IntelligenceModule } from './modules/intelligence/intelligence.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { TeamBuildingModule } from './modules/team-building/team-building.module';
+import { HrModule } from './modules/hr/hr.module';
+import { BrandOperationsModule } from './modules/brand-operations/brand-operations.module';
+import { BrandAnalyticsModule } from './modules/brand-analytics/brand-analytics.module';
+import { MinorProtectionModule } from './modules/minor-protection/minor-protection.module';
+import { StoreModule } from './modules/store/store.module';
+import { StoreFrontModule } from './modules/storefront/storefront.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
+import { ProbationTransferModule } from './modules/transfer/probation-transfer.module';
+import { NoticeModule } from './modules/notice/notice.module';
+import { TerminalModule } from './modules/terminal/terminal.module';
+import { LogisticsSupplementModule } from './modules/logistics-supplement';
+import { OpenPlatformModule } from './modules/open-platform/open-platform.module';
 
 @Module({
   imports: [
@@ -176,7 +200,21 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     }),
     CacheModule.forRootInMemory(),
     EventBusModule.forRootInMemory(),
-    ...(process.env.NODE_ENV === 'production' ? [] : [TypeOrmCompatModule]),
+    ThrottlerModule.forRoot([
+      {
+        name: 'toc',
+        ttl: 60000,        // 60秒窗口
+        limit: (ctx) => {
+          const req = ctx.switchToHttp().getRequest()
+          const method = req.method
+          if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+            return 20  // 写操作: 20次/分钟
+          }
+          return 100  // GET/OPTIONS: 100次/分钟
+        },
+      },
+    ]),
+    TypeOrmCompatModule,
     PrismaModule,
     TenantModule,
     BootstrapModule,
@@ -254,6 +292,7 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     AllianceModule,
     DeployModule,
     AuditModule,
+    AiProfileModule,
     AiPushModule,
     DeviceAdapterModule,
     EdgeModule,
@@ -282,8 +321,10 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     OpenAPIModule,
     LocaleModule,
     DbKnowledgeModule,
+    EmpowerCardModule,
     ScoutModule,
     LogisticsModule,
+    LogisticsManagementModule,
     RlsModule,
     DevopsModule,
     VenueModule,
@@ -311,12 +352,34 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
     InventoryAlertModule,
     EquipmentFaultReportModule,
     DeviceUsageReportModule,
+    EmployeeMarketingModule,
     EmployeePerformanceReviewModule,
     CustomerSatisfactionModule,
+    ProcurementOrderModule,
+    SeoModule,
+    IntelligenceModule,
     ModulesModule,
+    CategoriesModule,
+    TeamBuildingModule,
+    HrModule,
+    BrandAnalyticsModule,
+    BrandOperationsModule,
+    MinorProtectionModule,
+    StoreModule,
+    StoreFrontModule,
+    FeedbackModule,
+    ProbationTransferModule,
+    NoticeModule,
+    TerminalModule,
+    LogisticsSupplementModule,
+    OpenPlatformModule,
+    RequestGovernanceModule,
   ],
   providers: [
-    RequestGovernanceService,
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: TrafficGovernanceGuard,
@@ -341,6 +404,6 @@ import { CustomerSatisfactionModule } from './modules/customer-satisfaction/cust
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('*');
+    consumer.apply(CsrfMiddleware, TenantMiddleware).forRoutes('*');
   }
 }

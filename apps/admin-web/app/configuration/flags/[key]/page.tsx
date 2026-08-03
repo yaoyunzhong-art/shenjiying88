@@ -42,19 +42,21 @@ export default async function ConfigurationFeatureFlagDetailPage({
     : await loadConfigurationFeatureFlagDetail('', query, { cache: 'no-store' });
 
   return (
-    <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title={snapshot.notFound ? '功能开关不存在' : `功能开关：${snapshot.key}`}
-        subtitle={
-          snapshot.notFound
-            ? '该功能开关不在当前 configuration-governance 范围内，可能已下线、租户不匹配或拼写错误。'
-            : '查看单个功能开关的元数据、灰度上下文、相关 flag 与跨工作台深链。'
-        }
-      >
-        <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载功能开关详情..." />}>
-          <ConfigurationFeatureFlagDetailClient snapshot={snapshot} />
-        </Suspense>
-      </PageShell>
-    </main>
+
+      <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title={snapshot.notFound ? '功能开关不存在' : `功能开关：${snapshot.key}`}
+          subtitle={
+            snapshot.notFound
+              ? '该功能开关不在当前 configuration-governance 范围内，可能已下线、租户不匹配或拼写错误。'
+              : '查看单个功能开关的元数据、灰度上下文、相关 flag 与跨工作台深链。'
+          }
+        >
+          <Suspense fallback={<LoadingSkeleton variant="card" rows={4} label="加载功能开关详情..." />}>
+            <ConfigurationFeatureFlagDetailClient snapshot={snapshot} />
+          </Suspense>
+        </PageShell>
+      </main>
+
   );
 }

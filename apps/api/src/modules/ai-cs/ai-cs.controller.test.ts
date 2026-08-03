@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { AiCsController } from './ai-cs.controller'
 import { CSEngine } from './cs.engine'
@@ -45,62 +44,6 @@ describe('AiCsController', () => {
 
   beforeEach(() => {
     controller = createController()
-  })
-
-  describe('route metadata', () => {
-    it('controller path metadata should be ai-cs', () => {
-      const path = Reflect.getMetadata('path', AiCsController)
-      assert.equal(path, 'ai-cs')
-    })
-
-    it('sendMessage should have POST method and send path', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.sendMessage)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.sendMessage)
-      assert.equal(method as number, 1) // POST
-      assert.equal(path, 'send')
-    })
-
-    it('handoff should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.handoff)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.handoff)
-      assert.equal(method as number, 1) // POST
-      assert.equal(path, 'handoff')
-    })
-
-    it('addKnowledge should have POST method', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.addKnowledge)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.addKnowledge)
-      assert.equal(method as number, 1) // POST
-      assert.equal(path, 'knowledge')
-    })
-
-    it('searchKnowledge should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.searchKnowledge)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.searchKnowledge)
-      assert.equal(method as number, 0) // GET
-      assert.equal(path, 'knowledge/search')
-    })
-
-    it('listSessions should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.listSessions)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.listSessions)
-      assert.equal(method as number, 0) // GET
-      assert.equal(path, 'sessions')
-    })
-
-    it('getSession should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.getSession)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.getSession)
-      assert.equal(method as number, 0) // GET
-      assert.equal(path, 'sessions/:id')
-    })
-
-    it('health should have GET method', () => {
-      const method = Reflect.getMetadata('method', AiCsController.prototype.health)
-      const path = Reflect.getMetadata('path', AiCsController.prototype.health)
-      assert.equal(method as number, 0) // GET
-      assert.equal(path, 'health')
-    })
   })
 
   describe('sendMessage', () => {

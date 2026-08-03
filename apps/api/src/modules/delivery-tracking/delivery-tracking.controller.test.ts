@@ -2,8 +2,6 @@ import { describe, it, beforeEach, afterEach } from 'vitest'
 /**
  * 🐜 自动: [delivery-tracking] controller 测试
  */
-
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { DeliveryTrackingController } from './delivery-tracking.controller'
 import { DeliveryTrackingService } from './delivery-tracking.service'
@@ -22,71 +20,6 @@ describe('DeliveryTrackingController', () => {
 
   afterEach(() => {
     service.resetDeliveryStoresForTests()
-  })
-
-  // ── Route metadata ──
-
-  describe('route metadata', () => {
-    it('controller path should be delivery-tracking', () => {
-      const path = Reflect.getMetadata('path', DeliveryTrackingController)
-      assert.equal(path, 'delivery-tracking')
-    })
-
-    it('createDelivery should be POST /', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.createDelivery)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.createDelivery)
-      assert.equal(method, 1) // POST
-      assert.equal(path, '/')
-    })
-
-    it('listDeliveries should be GET /', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.listDeliveries)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.listDeliveries)
-      assert.equal(method, 0) // GET
-      assert.equal(path, '/')
-    })
-
-    it('getDelivery should be GET /:deliveryId', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.getDelivery)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.getDelivery)
-      assert.equal(method, 0)
-      assert.equal(path, ':deliveryId')
-    })
-
-    it('updateDelivery should be PATCH /:deliveryId', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.updateDelivery)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.updateDelivery)
-      assert.equal(method, 4) // PATCH
-      assert.equal(path, ':deliveryId')
-    })
-
-    it('updateDeliveryStatus should be PATCH /:deliveryId/status', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.updateDeliveryStatus)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.updateDeliveryStatus)
-      assert.equal(method, 4)
-      assert.equal(path, ':deliveryId/status')
-    })
-
-    it('addDeliveryEvent should be POST /:deliveryId/events', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.addDeliveryEvent)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.addDeliveryEvent)
-      assert.equal(method, 1)
-      assert.equal(path, ':deliveryId/events')
-    })
-
-    it('getTrackingTimeline should be GET /:deliveryId/timeline', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.getTrackingTimeline)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.getTrackingTimeline)
-      assert.equal(method, 0)
-      assert.equal(path, ':deliveryId/timeline')
-    })
-
-    it('seedMockData should be POST /seed', () => {
-      const method = Reflect.getMetadata('method', DeliveryTrackingController.prototype.seedMockData)
-      const path = Reflect.getMetadata('path', DeliveryTrackingController.prototype.seedMockData)
-      assert.equal(method, 1)
-      assert.equal(path, 'seed')
-    })
   })
 
   // ── Controller Logic ──

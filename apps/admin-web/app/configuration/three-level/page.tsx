@@ -80,15 +80,17 @@ export default async function ThreeLevelConfigPage() {
   const snapshot = { ws, wt, wb };
 
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
-      <PageShell
-        title="三级独立配置"
-        subtitle="租户/品牌/门店三级工作台配置,考虑继承链 + 字段级脱敏。支持批量编辑与版本回滚。"
-      >
-        <Suspense fallback={<LoadingSkeleton variant="card" rows={6} label="加载三级配置..." />}>
-          <ThreeLevelConfigClient snapshot={snapshot} tenantId={FALLBACK_TENANT_ID} />
-        </Suspense>
-      </PageShell>
-    </main>
+
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 32 }}>
+        <PageShell
+          title="三级独立配置"
+          subtitle="租户/品牌/门店三级工作台配置,考虑继承链 + 字段级脱敏。支持批量编辑与版本回滚。"
+        >
+          <Suspense fallback={<LoadingSkeleton variant="card" rows={6} label="加载三级配置..." />}>
+            <ThreeLevelConfigClient snapshot={snapshot} tenantId={FALLBACK_TENANT_ID} />
+          </Suspense>
+        </PageShell>
+      </main>
+
   );
 }

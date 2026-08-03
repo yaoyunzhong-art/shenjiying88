@@ -1,4 +1,12 @@
-import type { Tournament, Match, Ranking, TeamRegistration } from './tournament.entity';
+import type {
+  Tournament,
+  Match,
+  Ranking,
+  TeamRegistration,
+  RedemptionRecord,
+  PredictionRecord,
+  VoteRecord
+} from './tournament.entity';
 
 /**
  * Contract types for tournament module cross-boundary communication.
@@ -21,8 +29,46 @@ export interface TournamentContract {
   currentParticipants: number;
   status: string;
   bannerImage?: string;
+  minParticipants: number;
+  entryFee: number;
+  prizePool: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** External contract for redemption (cross-module safe subset) */
+export interface RedemptionContract {
+  id: string;
+  tournamentId: string;
+  userId: string;
+  prizeId: string;
+  prizeLabel: string;
+  pointsCost: number;
+  status: string;
+  estimatedDelivery: string;
+  createdAt: string;
+}
+
+/** External contract for prediction (cross-module safe subset) */
+export interface PredictionContract {
+  id: string;
+  tournamentId: string;
+  matchId: string;
+  userId: string;
+  prediction: string;
+  stake: number;
+  status: string;
+  createdAt: string;
+}
+
+/** External contract for vote (cross-module safe subset) */
+export interface VoteContract {
+  id: string;
+  tournamentId: string;
+  contestantId: string;
+  userId: string;
+  votes: number;
+  createdAt: string;
 }
 
 /** External contract for match (cross-module safe subset) */
@@ -82,6 +128,9 @@ export function toTournamentContract(tournament: Tournament): TournamentContract
     maxParticipants: tournament.maxParticipants,
     currentParticipants: tournament.currentParticipants,
     status: tournament.status,
+    minParticipants: tournament.minParticipants,
+    entryFee: tournament.entryFee,
+    prizePool: tournament.prizePool,
     bannerImage: tournament.bannerImage,
     createdAt: tournament.createdAt,
     updatedAt: tournament.updatedAt,
@@ -136,6 +185,53 @@ export function toTeamRegistrationContract(reg: TeamRegistration): TeamRegistrat
     memberCount: reg.memberIds.length,
     status: reg.status,
     createdAt: reg.createdAt,
+  };
+}
+
+/**
+ * Convert internal RedemptionRecord to cross-module contract.
+ */
+export function toRedemptionContract(rec: RedemptionRecord): RedemptionContract {
+  return {
+    id: rec.id,
+    tournamentId: rec.tournamentId,
+    userId: rec.userId,
+    prizeId: rec.prizeId,
+    prizeLabel: rec.prizeLabel,
+    pointsCost: rec.pointsCost,
+    status: rec.status,
+    estimatedDelivery: rec.estimatedDelivery,
+    createdAt: rec.createdAt,
+  };
+}
+
+/**
+ * Convert internal PredictionRecord to cross-module contract.
+ */
+export function toPredictionContract(pred: PredictionRecord): PredictionContract {
+  return {
+    id: pred.id,
+    tournamentId: pred.tournamentId,
+    matchId: pred.matchId,
+    userId: pred.userId,
+    prediction: pred.prediction,
+    stake: pred.stake,
+    status: pred.status,
+    createdAt: pred.createdAt,
+  };
+}
+
+/**
+ * Convert internal VoteRecord to cross-module contract.
+ */
+export function toVoteContract(vote: VoteRecord): VoteContract {
+  return {
+    id: vote.id,
+    tournamentId: vote.tournamentId,
+    contestantId: vote.contestantId,
+    userId: vote.userId,
+    votes: vote.votes,
+    createdAt: vote.createdAt,
   };
 }
 

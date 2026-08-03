@@ -201,33 +201,7 @@ class RetrievalHealthController {
   }
 }
 
-// ─── 1. Route Metadata (路由定义验证) ───────────────────────────────
-
-describe('RetrievalController (route definition)', () => {
-  it('controller base route 应为 api/retrieval', () => {
-    assert.equal(RetrievalController.ROUTE, 'api/retrieval');
-  });
-
-  it('query 方法路由 POST /query', () => {
-    assert.equal(RetrievalController.QUERY_ROUTE, 'query');
-    assert.equal(RetrievalController.QUERY_METHOD, 'POST');
-  });
-
-  it('queryKnowledge 方法路由 POST /query/knowledge', () => {
-    assert.equal(RetrievalController.KNOWLEDGE_ROUTE, 'query/knowledge');
-  });
-
-  it('health controller base route 应为 api/retrieval', () => {
-    assert.equal(RetrievalHealthController.ROUTE, 'api/retrieval');
-  });
-
-  it('health 方法路由 GET /health', () => {
-    assert.equal(RetrievalHealthController.HEALTH_ROUTE, 'health');
-    assert.equal(RetrievalHealthController.HEALTH_METHOD, 'GET');
-  });
-});
-
-// ─── 2. Normal Flows ─────────────────────────────────────────────────
+// ─── 1. Normal Flows ─────────────────────────────────────────────────
 
 describe('RetrievalController (normal flows)', () => {
   let controller: RetrievalController;

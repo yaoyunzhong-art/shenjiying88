@@ -1,9 +1,9 @@
+'use client';
 /**
  * 团队预约 — P-38 Group Booking (前台自助预约)
  * 角色: 🤝 团建顾客
  * 功能: 选择活动类型、选择日期时间、填写人数、提交预约
  */
-'use client';
 
 import React, { useState } from 'react';
 

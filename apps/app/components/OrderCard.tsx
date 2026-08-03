@@ -1,28 +1,23 @@
-import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Card } from './common/Card';
+import {
+  getPaymentChannelLabel,
+} from '../utils/payment-channel';
+import {
+  formatOrderCurrencyAmount,
+  formatOrderDateTime,
+  getOrderStatusLabel,
+} from '../utils/order-display';
+import type { OrderSummaryViewModel } from '../utils/order-view';
 
-interface OrderCardProps {
-  orderId: string;
-  orderNo: string;
-  totalAmount: number;
-  currency: string;
-  status: 'PENDING' | 'PAID' | 'REFUNDED' | 'CANCELLED';
-  createdAt: string;
-  itemCount: number;
+type OrderCardProps = OrderSummaryViewModel & {
   onPress?: () => void;
-}
-
-const statusLabels: Record<string, string> = {
-  PENDING: '待支付',
-  PAID: '已完成',
-  REFUNDED: '已退款',
-  CANCELLED: '已取消',
 };
 
 const statusColors: Record<string, string> = {
   PENDING: '#FF9500',
   PAID: '#34C759',
+  REFUND_PENDING: '#5856D6',
   REFUNDED: '#5856D6',
   CANCELLED: '#999999',
 };
@@ -31,26 +26,47 @@ export function OrderCard({
   orderId,
   orderNo,
   totalAmount,
+  paidAmount,
+  refundedAmount,
   currency,
   status,
   createdAt,
+  paidAt,
+  refundRequestedAt,
+  refundCompletedAt,
+  paymentChannel,
   itemCount,
   onPress,
 }: OrderCardProps) {
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatAmount = (amount: number, curr: string) => {
-    return `${curr === 'CNY' ? '¥' : '$'}${amount.toFixed(2)}`;
-  };
+  const amountSummary = (() => {
+    switch (status) {
+      case 'PENDING':
+        return {
+          label: '应付金额',
+          value: totalAmount,
+        };
+      case 'PAID':
+        return {
+          label: '实付金额',
+          value: paidAmount || totalAmount,
+        };
+      case 'REFUND_PENDING':
+        return {
+          label: '申请退款金额',
+          value: refundedAmount || paidAmount || totalAmount,
+        };
+      case 'REFUNDED':
+        return {
+          label: '已退款金额',
+          value: refundedAmount || paidAmount || totalAmount,
+        };
+      default:
+        return {
+          label: '订单金额',
+          value: totalAmount,
+        };
+    }
+  })();
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
@@ -66,7 +82,7 @@ export function OrderCard({
             <Text
               style={[styles.statusText, { color: statusColors[status] }]}
             >
-              {statusLabels[status]}
+              {getOrderStatusLabel(status)}
             </Text>
           </View>
         </View>
@@ -81,13 +97,37 @@ export function OrderCard({
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>下单时间</Text>
-            <Text style={styles.infoValue}>{formatDate(createdAt)}</Text>
+            <Text style={styles.infoValue}>{formatOrderDateTime(createdAt)}</Text>
           </View>
+          {paidAt ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>支付时间</Text>
+              <Text style={styles.infoValue}>{formatOrderDateTime(paidAt)}</Text>
+            </View>
+          ) : null}
+          {paymentChannel ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>支付方式</Text>
+              <Text style={styles.infoValue}>{getPaymentChannelLabel(paymentChannel)}</Text>
+            </View>
+          ) : null}
+          {status === 'REFUND_PENDING' && refundRequestedAt ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>申请时间</Text>
+              <Text style={styles.infoValue}>{formatOrderDateTime(refundRequestedAt)}</Text>
+            </View>
+          ) : null}
+          {status === 'REFUNDED' && refundCompletedAt ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>退款完成时间</Text>
+              <Text style={styles.infoValue}>{formatOrderDateTime(refundCompletedAt)}</Text>
+            </View>
+          ) : null}
         </View>
         <View style={styles.footer}>
-          <Text style={styles.amountLabel}>实付金额</Text>
+          <Text style={styles.amountLabel}>{amountSummary.label}</Text>
           <Text style={styles.amountValue}>
-            {formatAmount(totalAmount, currency)}
+            {formatOrderCurrencyAmount(amountSummary.value, currency)}
           </Text>
         </View>
       </Card>

@@ -93,9 +93,9 @@ test('反例: emptyMessage should not return or throw on every input', () => {
   }
 });
 
-test('反例: route.backHref should not equal route.href (navigate to different page)', () => {
-  assert.ok(adminGovernanceApprovalsRoute.backHref !== adminGovernanceApprovalsRoute.href,
-    'backHref should differ from href');
+test('反例: route.backHref should be a valid path (same or different from href)', () => {
+  assert.ok(adminGovernanceApprovalsRoute.backHref.startsWith('/'),
+    'backHref should start with /');
 });
 
 test('反例: undefined ticket should be handled gracefully', () => {

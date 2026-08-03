@@ -168,7 +168,7 @@ export default function LLMConfigClient() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // TODO: 调用API获取真实数据
+      // TODO(LLM-API): 调用API获取真实LLM配置数据
       await new Promise((resolve) => setTimeout(resolve, 500));
     } finally {
       setLoading(false);
@@ -205,14 +205,14 @@ export default function LLMConfigClient() {
 
   // 删除配置
   const handleDelete = async (configId: string) => {
-    // TODO: 调用API删除
+    // TODO(LLM-API): 调用API删除LLM配置
     setConfigs((prev) => prev.filter((c) => c.id !== configId));
     message.success('配置已删除');
   };
 
   // 提交表单
   const handleSubmit = async (values: CreateConfigForm) => {
-    // TODO: 调用API创建/更新
+    // TODO(LLM-API): 调用API创建/更新LLM配置
     if (editingConfig) {
       setConfigs((prev) =>
         prev.map((c) =>
@@ -249,7 +249,7 @@ export default function LLMConfigClient() {
 
   // 提交接入申请
   const handleApply = async (configId: string) => {
-    // TODO: 调用API提交申请
+    // TODO(LLM-API): 调用API提交LLM接入申请
     message.success('接入申请已提交');
   };
 
@@ -492,7 +492,7 @@ export default function LLMConfigClient() {
 
                 <Card title="调用趋势">
                   <div className="h-64 flex items-center justify-center text-gray-400">
-                    图表展示区域 (TODO: 接入图表库)
+                    {/* TODO(LLM-UI): 接入图表库展示调用趋势 */}
                   </div>
                 </Card>
               </>

@@ -5,6 +5,7 @@ import {
   PortalChannel,
   PortalScopeType,
   StorefrontSurface,
+  type PortalDomainSource,
   type StorePortal,
   type TobPortal
 } from '@m5/domain'
@@ -16,6 +17,7 @@ import { toMarketProfileContract, toRegionalConfigOverrideContract } from '../ma
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { TenantConfigService } from '../tenant-config/tenant-config.service'
+import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
 
 const PORTAL_SUPPORTED_LANGUAGES = Object.values(LanguageCode)
 
@@ -24,11 +26,19 @@ export class PortalService {
   constructor(
     private readonly marketService: MarketService,
     private readonly foundationService: FoundationService,
-    @Optional() private readonly tenantConfigService?: TenantConfigService
+    @Optional() private readonly tenantConfigService?: TenantConfigService,
+    @Optional() private readonly domainResolutionService?: DomainResolutionService,
   ) {}
 
   resolveTenantPortal(context: RequestTenantContext): TobPortal {
     const marketProfile = this.getEffectiveMarketProfile(context)
+    const primary = this.resolveScopedPrimaryDomain(
+      {
+        scopeType: 'TENANT',
+        tenantId: context.tenantId,
+      },
+      `${context.tenantId}.${marketProfile.marketCode}.b2b.local`,
+    )
     return {
       audience: PortalAudience.ToB,
       scopeType: PortalScopeType.Tenant,
@@ -37,7 +47,8 @@ export class PortalService {
       marketCode: marketProfile.marketCode,
       channel: PortalChannel.Web,
       name: `${context.tenantId} ToB 官网`,
-      primaryDomain: `${context.tenantId}.${marketProfile.marketCode}.b2b.local`,
+      primaryDomain: primary.domain,
+      domainSource: primary.source,
       supportedLanguages: marketProfile.locale.supportedLanguages,
       heroTitle: `${context.tenantId} 企业级经营门户`,
       heroSubtitle: '覆盖品牌、门店、会员、营销、赛事、财务与全球化配置的统一 SaaS 官网。',
@@ -53,6 +64,14 @@ export class PortalService {
   resolveBrandPortal(context: RequestTenantContext): TobPortal {
     const brandCode = context.brandId ?? 'brand-demo'
     const marketProfile = this.getEffectiveMarketProfile(context)
+    const primary = this.resolveScopedPrimaryDomain(
+      {
+        scopeType: 'BRAND',
+        tenantId: context.tenantId,
+        brandId: brandCode,
+      },
+      `${brandCode}.${context.tenantId}.${marketProfile.marketCode}.b2b.local`,
+    )
     return {
       audience: PortalAudience.ToB,
       scopeType: PortalScopeType.Brand,
@@ -62,7 +81,8 @@ export class PortalService {
       marketCode: marketProfile.marketCode,
       channel: PortalChannel.Web,
       name: `${brandCode} 品牌 ToB 官网`,
-      primaryDomain: `${brandCode}.${context.tenantId}.${marketProfile.marketCode}.b2b.local`,
+      primaryDomain: primary.domain,
+      domainSource: primary.source,
       supportedLanguages: marketProfile.locale.supportedLanguages,
       heroTitle: `${brandCode} 品牌经营官网`,
       heroSubtitle: '面向品牌招商、加盟合作、渠道拓展、品牌能力展示和后台登录入口。',
@@ -79,6 +99,15 @@ export class PortalService {
     const brandCode = context.brandId ?? 'brand-demo'
     const storeCode = context.storeId ?? 'store-001'
     const marketProfile = this.getEffectiveMarketProfile(context)
+    const primary = this.resolveScopedPrimaryDomain(
+      {
+        scopeType: 'STORE',
+        tenantId: context.tenantId,
+        brandId: brandCode,
+        storeId: storeCode,
+      },
+      `${storeCode}.${brandCode}.${context.tenantId}.${marketProfile.marketCode}.local`,
+    )
 
     return {
       audience: PortalAudience.ToC,
@@ -91,7 +120,8 @@ export class PortalService {
       marketCode: marketProfile.marketCode,
       channel: PortalChannel.Web,
       name: `${storeCode} 门店门户`,
-      primaryDomain: `${storeCode}.${brandCode}.${context.tenantId}.${marketProfile.marketCode}.local`,
+      primaryDomain: primary.domain,
+      domainSource: primary.source,
       supportedLanguages: marketProfile.locale.supportedLanguages,
       supportedSurfaces: [
         StorefrontSurface.OfficialSite,
@@ -151,6 +181,28 @@ export class PortalService {
         defaultLanguage: normalizedDefaultLanguage as typeof marketProfile.locale.defaultLanguage,
         supportedLanguages: normalizedSupportedLanguages as typeof marketProfile.locale.supportedLanguages,
       },
+    }
+  }
+
+  private resolveScopedPrimaryDomain(
+    scope: {
+      scopeType: 'TENANT' | 'BRAND' | 'STORE'
+      tenantId: string
+      brandId?: string
+      storeId?: string
+    },
+    fallbackDomain: string,
+  ): { domain: string; source: PortalDomainSource } {
+    const primaryDomain = this.domainResolutionService?.findPrimaryDomain(scope)
+    if (primaryDomain) {
+      return {
+        domain: primaryDomain,
+        source: 'custom',
+      }
+    }
+    return {
+      domain: fallbackDomain,
+      source: 'default',
     }
   }
 }

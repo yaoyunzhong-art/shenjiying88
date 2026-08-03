@@ -1,10 +1,10 @@
+'use client';
 /**
  * members/[id]/page.tsx — 会员详情页 (ToB 会员管理)
  *
  * 使用 DetailShell + InfoSection / InfoRow 结构展示会员信息
  * 支持编辑 + 状态流转
  */
-'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import React, { useMemo, useState, useCallback } from 'react';

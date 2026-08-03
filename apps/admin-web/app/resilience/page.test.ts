@@ -176,6 +176,22 @@ function computeStalePlans(plans: RecoveryPlanContract[], now?: number): number 
   return plans.filter((p) => isDrillStale(p, now)).length;
 }
 
+function buildResilienceSourceEvidence(deliveryMode: 'api' | 'fallback', generatedAt: string) {
+  return {
+    deliveryMode,
+    controlPlaneSource:
+      deliveryMode === 'api'
+        ? 'loadResilienceOperationsSnapshot'
+        : 'emptyOverview fallback snapshot',
+    businessDataSource:
+      deliveryMode === 'api'
+        ? 'ResilienceOverview snapshot'
+        : 'empty resilience overview',
+    refreshPath: 'ResiliencePage -> loadResilienceOperationsSnapshot',
+    generatedAt,
+  };
+}
+
 // ---- 正例 ----
 
 describe('resilience-page: 正例 (positive cases)', () => {
@@ -217,6 +233,23 @@ describe('resilience-page: 正例 (positive cases)', () => {
       assert.strictEqual(RECOVERY_PLAN_STATUS_LABEL.attention, '需关注');
       assert.strictEqual(RECOVERY_PLAN_STATUS_VARIANT.ready, 'success');
       assert.strictEqual(RECOVERY_PLAN_STATUS_VARIANT.attention, 'warning');
+    });
+  });
+
+  describe('source evidence', () => {
+    it('buildResilienceSourceEvidence should describe api mode', () => {
+      const evidence = buildResilienceSourceEvidence('api', '2026-06-14T08:00:00.000Z');
+      assert.strictEqual(evidence.deliveryMode, 'api');
+      assert.strictEqual(evidence.controlPlaneSource, 'loadResilienceOperationsSnapshot');
+      assert.strictEqual(evidence.businessDataSource, 'ResilienceOverview snapshot');
+      assert.strictEqual(evidence.refreshPath, 'ResiliencePage -> loadResilienceOperationsSnapshot');
+    });
+
+    it('buildResilienceSourceEvidence should describe fallback mode', () => {
+      const evidence = buildResilienceSourceEvidence('fallback', '2026-06-14T08:00:00.000Z');
+      assert.strictEqual(evidence.deliveryMode, 'fallback');
+      assert.strictEqual(evidence.controlPlaneSource, 'emptyOverview fallback snapshot');
+      assert.strictEqual(evidence.businessDataSource, 'empty resilience overview');
     });
   });
 

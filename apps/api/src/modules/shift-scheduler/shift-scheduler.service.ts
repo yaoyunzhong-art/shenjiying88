@@ -219,6 +219,14 @@ export class ShiftSchedulerService {
     }
   }
 
+  deleteShift(shiftId: string, tenantId: string): void {
+    const shift = this.getShift(shiftId, tenantId)
+    if (!shift) {
+      throw new Error(`Shift schedule not found: ${shiftId}`)
+    }
+    shiftStore.delete(shiftId)
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // Test Helpers
   // ═══════════════════════════════════════════════════════════════════

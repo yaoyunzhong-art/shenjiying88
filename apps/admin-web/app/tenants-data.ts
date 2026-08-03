@@ -1,49 +1,54 @@
-// ---- 租户管理数据类型与 Mock 数据 ----
-
 export interface TenantItem {
-  id: string;
-  code: string;
-  name: string;
-  marketCode: string;
-  status: 'active' | 'inactive' | 'pending' | 'suspended';
-  storeCount: number;
-  brandCount: number;
-  adminCount: number;
-  lastDeployed: string;
-  plan: 'enterprise' | 'professional' | 'starter';
-  billingMode: 'monthly' | 'yearly';
+  id: string
+  code: string
+  name: string
+  marketCode: string
+  status: 'active' | 'inactive' | 'pending' | 'suspended'
+  storeCount: number
+  brandCount: number
+  adminCount: number
+  lastDeployed: string
+  plan: 'enterprise' | 'professional' | 'starter'
+  billingMode: 'monthly' | 'yearly'
 }
 
 export interface TenantDetail extends TenantItem {
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  registeredAt: string;
-  timezone: string;
-  description: string;
+  contactName: string
+  contactEmail: string
+  contactPhone: string
+  registeredAt: string
+  timezone: string
+  description: string
 }
 
-export type TenantStatus = TenantItem['status'];
-export type TenantPlan = TenantItem['plan'];
-export type TenantBillingMode = TenantItem['billingMode'];
+export interface TenantsSnapshotDelivery {
+  deliveryMode: 'api' | 'fallback'
+  tenants: TenantItem[]
+  generatedAt: string
+  error?: string
+}
+
+export type TenantStatus = TenantItem['status']
+export type TenantPlan = TenantItem['plan']
+export type TenantBillingMode = TenantItem['billingMode']
 
 export const TENANT_STATUS_MAP: Record<TenantStatus, { label: string; variant: 'success' | 'warning' | 'danger' | 'neutral' }> = {
   active: { label: '运营中', variant: 'success' },
   inactive: { label: '已停用', variant: 'neutral' },
   pending: { label: '待激活', variant: 'warning' },
   suspended: { label: '已暂停', variant: 'danger' },
-};
+}
 
 export const TENANT_PLAN_MAP: Record<TenantPlan, { label: string; variant: 'success' | 'neutral' | 'warning' }> = {
   enterprise: { label: '企业版', variant: 'success' },
   professional: { label: '专业版', variant: 'neutral' },
   starter: { label: '入门版', variant: 'warning' },
-};
+}
 
 export const TENANT_BILLING_MAP: Record<TenantBillingMode, string> = {
   monthly: '月付',
   yearly: '年付',
-};
+}
 
 export const MOCK_TENANTS: TenantItem[] = [
   { id: 't1', code: 'TNT-001', name: '华润万象生活', marketCode: 'cn-mainland', status: 'active', storeCount: 5, brandCount: 3, adminCount: 12, lastDeployed: '2026-06-12 14:30', plan: 'enterprise', billingMode: 'yearly' },
@@ -61,14 +66,14 @@ export const MOCK_TENANTS: TenantItem[] = [
   { id: 't13', code: 'TNT-013', name: 'Brookfield Properties', marketCode: 'us-default', status: 'active', storeCount: 3, brandCount: 2, adminCount: 8, lastDeployed: '2026-06-12 07:00', plan: 'professional', billingMode: 'yearly' },
   { id: 't14', code: 'TNT-014', name: 'Landsec Group', marketCode: 'uk-default', status: 'inactive', storeCount: 1, brandCount: 1, adminCount: 2, lastDeployed: '2026-06-09 18:00', plan: 'starter', billingMode: 'monthly' },
   { id: 't15', code: 'TNT-015', name: '银泰商业', marketCode: 'cn-mainland', status: 'active', storeCount: 4, brandCount: 3, adminCount: 8, lastDeployed: '2026-06-12 11:30', plan: 'enterprise', billingMode: 'yearly' },
-];
+]
 
-export const TENANT_LIST_SEARCH_FIELDS: (keyof TenantItem)[] = ['code', 'name', 'marketCode'];
+export const TENANT_LIST_SEARCH_FIELDS: (keyof TenantItem)[] = ['code', 'name', 'marketCode']
 
 export const TENANT_LIST_COLUMN_KEYS = [
   'code', 'name', 'plan', 'marketCode', 'status',
   'storeCount', 'brandCount', 'adminCount', 'billingMode', 'lastDeployed',
-] as const;
+] as const
 
 export const TENANT_LIST_PRESET = {
   defaultPageSize: 10,
@@ -78,7 +83,7 @@ export const TENANT_LIST_PRESET = {
   plans: ['enterprise', 'professional', 'starter'] as const,
   billingModes: ['monthly', 'yearly'] as const,
   markets: ['cn-mainland', 'us-default', 'uk-default'] as const,
-};
+}
 
 export const MOCK_TENANT_DETAILS: Record<string, TenantDetail> = {
   t1: { id: 't1', code: 'TNT-001', name: '华润万象生活', marketCode: 'cn-mainland', status: 'active', storeCount: 5, brandCount: 3, adminCount: 12, lastDeployed: '2026-06-12 14:30', plan: 'enterprise', billingMode: 'yearly', contactName: '张华润', contactEmail: 'zhanghr@cr-mixc.com', contactPhone: '+86-10-8888-1111', registeredAt: '2024-01-15', timezone: 'Asia/Shanghai', description: '华润万象生活是中国领先的物业管理及商业运营服务提供商，已在全国多个核心城市部署 M5 体系。' },
@@ -87,7 +92,7 @@ export const MOCK_TENANT_DETAILS: Record<string, TenantDetail> = {
   t6: { id: 't6', code: 'TNT-006', name: 'Westfield Corp', marketCode: 'us-default', status: 'active', storeCount: 6, brandCount: 4, adminCount: 15, lastDeployed: '2026-06-12 08:30', plan: 'enterprise', billingMode: 'yearly', contactName: 'John Westfield', contactEmail: 'john.westfield@westfield.com', contactPhone: '+1-310-555-0100', registeredAt: '2024-02-01', timezone: 'America/Los_Angeles', description: 'Westfield is a global leader in retail real estate with flagship shopping centers across the US.' },
   t9: { id: 't9', code: 'TNT-009', name: '万达集团', marketCode: 'cn-mainland', status: 'active', storeCount: 8, brandCount: 5, adminCount: 18, lastDeployed: '2026-06-12 16:45', plan: 'enterprise', billingMode: 'yearly', contactName: '王万达', contactEmail: 'wangwd@wanda.com', contactPhone: '+86-10-9999-8888', registeredAt: '2023-11-01', timezone: 'Asia/Shanghai', description: '万达集团是中国最大的商业地产运营商，万达广场覆盖全国所有省份。' },
   t5: { id: 't5', code: 'TNT-005', name: '恒隆地产', marketCode: 'cn-mainland', status: 'suspended', storeCount: 2, brandCount: 1, adminCount: 4, lastDeployed: '2026-06-10 11:00', plan: 'professional', billingMode: 'yearly', contactName: '陈恒隆', contactEmail: 'chenchl@hanglung.com', contactPhone: '+86-21-4444-5555', registeredAt: '2024-07-15', timezone: 'Asia/Shanghai', description: '恒隆地产专注于高端商业地产，因系统升级暂时暂停运营。' },
-};
+}
 
 export const TENANT_DETAIL_LABELS = {
   overviewTitle: '租户信息',
@@ -112,10 +117,132 @@ export const TENANT_DETAIL_LABELS = {
   cancelButton: '取消',
   notFound: (id: string) => `租户 ${id} 不存在`,
   backToList: '返回租户列表',
-} as const;
+} as const
+
+const DEFAULT_API_ORIGIN = 'http://localhost:3001'
+
+function ensureTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value : `${value}/`
+}
+
+function resolveTenantsApiBaseUrl(): string {
+  const configured =
+    process.env.M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_M5_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    DEFAULT_API_ORIGIN
+
+  const normalized = configured.trim()
+  if (!normalized.length) {
+    return `${DEFAULT_API_ORIGIN}/api/v1/`
+  }
+  if (normalized.endsWith('/api/v1') || normalized.endsWith('/api/v1/')) {
+    return ensureTrailingSlash(normalized)
+  }
+  if (normalized.endsWith('/api') || normalized.endsWith('/api/')) {
+    return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/v1`)
+  }
+  return ensureTrailingSlash(`${normalized.replace(/\/$/, '')}/api/v1`)
+}
+
+function unwrapApiPayload<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
+    const wrapped = payload as { success?: boolean; data?: T; message?: string }
+    if (!wrapped.success) {
+      throw new Error(wrapped.message ?? 'API error')
+    }
+    return wrapped.data as T
+  }
+  return payload as T
+}
+
+function mapLifecycleStatus(status: unknown, fallback: TenantStatus): TenantStatus {
+  const normalized = typeof status === 'string' ? status.toUpperCase() : ''
+  if (normalized === 'ACTIVE') return 'active'
+  if (normalized === 'SUSPENDED') return 'suspended'
+  if (normalized === 'DELETED') return 'inactive'
+  return fallback
+}
+
+function mapQuotaTier(tier: unknown, fallback: TenantPlan): TenantPlan {
+  const normalized = typeof tier === 'string' ? tier.toUpperCase() : ''
+  if (normalized === 'ENTERPRISE') return 'enterprise'
+  if (normalized === 'PRO') return 'professional'
+  if (normalized === 'FREE') return 'starter'
+  return fallback
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+async function fetchTenantLifecycleStatus(tenantId: string): Promise<string> {
+  const upstreamUrl = new URL(`tenant/lifecycle/${tenantId}/status`, resolveTenantsApiBaseUrl()).toString()
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`tenant lifecycle upstream failed: ${response.status}`)
+  }
+  const payload = unwrapApiPayload<{ status?: string } | null>(await response.json())
+  return payload?.status ?? ''
+}
+
+async function fetchTenantQuota(tenantId: string): Promise<Record<string, unknown> | null> {
+  const upstreamUrl = new URL(`tenant/quota/${tenantId}`, resolveTenantsApiBaseUrl()).toString()
+  const response = await fetch(upstreamUrl, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+  if (!response.ok) {
+    throw new Error(`tenant quota upstream failed: ${response.status}`)
+  }
+  const payload = unwrapApiPayload<Record<string, unknown> | null>(await response.json())
+  return isRecord(payload) ? payload : null
+}
+
+async function fetchTenantRecord(tenant: TenantItem): Promise<TenantItem> {
+  const [lifecycleStatus, quota] = await Promise.all([
+    fetchTenantLifecycleStatus(tenant.id),
+    fetchTenantQuota(tenant.id),
+  ])
+
+  return {
+    ...tenant,
+    status: mapLifecycleStatus(lifecycleStatus, tenant.status),
+    plan: mapQuotaTier(quota?.tier, tenant.plan),
+    storeCount:
+      typeof quota?.maxStores === 'number' && quota.maxStores > 0
+        ? Math.min(tenant.storeCount, quota.maxStores)
+        : tenant.storeCount,
+    lastDeployed:
+      typeof quota?.updatedAt === 'string' && quota.updatedAt.length > 0
+        ? quota.updatedAt
+        : tenant.lastDeployed,
+  }
+}
+
+export async function loadTenantsSnapshot(): Promise<TenantsSnapshotDelivery> {
+  try {
+    const tenants = await Promise.all(MOCK_TENANTS.map((tenant) => fetchTenantRecord(tenant)))
+    return {
+      deliveryMode: 'api',
+      tenants,
+      generatedAt: new Date().toISOString(),
+    }
+  } catch {
+    return {
+      deliveryMode: 'fallback',
+      tenants: MOCK_TENANTS,
+      generatedAt: new Date().toISOString(),
+      error: '租户治理实时接口不可达，已切换到 fallback 样本数据。',
+    }
+  }
+}
 
 export function getTenantById(id: string): TenantDetail | undefined {
-  return MOCK_TENANT_DETAILS[id];
+  return MOCK_TENANT_DETAILS[id]
 }
 
 export function computeTenantStats(tenants: TenantItem[]) {
@@ -124,5 +251,5 @@ export function computeTenantStats(tenants: TenantItem[]) {
     active: tenants.filter((t) => t.status === 'active').length,
     enterprise: tenants.filter((t) => t.plan === 'enterprise').length,
     markets: [...new Set(tenants.map((t) => t.marketCode))].length,
-  };
+  }
 }

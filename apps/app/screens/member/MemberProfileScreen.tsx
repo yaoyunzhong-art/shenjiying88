@@ -18,6 +18,8 @@ export function MemberProfileScreen() {
   const navigation = useNavigation();
   const session = useSession();
   const { logout } = useAppContext();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState(session.nickname ?? '');
   const [phone, setPhone] = useState('138****8888');
@@ -40,6 +42,21 @@ export function MemberProfileScreen() {
       },
     ]);
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>加载中...</Text>
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.permissionText}>数据获取失败: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -265,5 +282,11 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 100,
+  },
+  permissionText: {
+    color: '#333333',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 100,
   },
 });

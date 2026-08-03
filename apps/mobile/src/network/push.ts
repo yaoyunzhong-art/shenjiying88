@@ -56,18 +56,18 @@ export async function setupNotifications(): Promise<void> {
 
   // 注册 FCM token
   pushToken = await messaging().getToken();
-  console.log('[push] FCM token:', pushToken);
+  if (__DEV__) console.debug('[push] FCM token:', pushToken);
 
   // 监听 token 刷新
   messaging().onTokenRefresh((newToken) => {
     pushToken = newToken;
-    // TODO: 上报到后端
-    console.log('[push] token refreshed:', newToken);
+    // TODO(PUSH): 上报push token到后端
+    if (__DEV__) console.debug('[push] token refreshed:', newToken);
   });
 
   // 前台消息 → Notifee 本地展示
   messaging().onMessage(async (remoteMessage) => {
-    console.log('[push] foreground message:', remoteMessage);
+    if (__DEV__) console.debug('[push] foreground message:', remoteMessage);
     await notifee.displayNotification({
       title: remoteMessage.notification?.title ?? '神机营',
       body: remoteMessage.notification?.body ?? '',
@@ -85,20 +85,20 @@ export async function setupNotifications(): Promise<void> {
 
   // 后台消息 → 自动展示 (Android) / 静默 (iOS)
   messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-    console.log('[push] background message:', remoteMessage);
+    if (__DEV__) console.debug('[push] background message:', remoteMessage);
     return Promise.resolve();
   });
 
   // 用户点击通知
   messaging().onNotificationOpenedApp((remoteMessage) => {
-    console.log('[push] opened from background:', remoteMessage);
-    // TODO: 导航到对应页面
+    if (__DEV__) console.debug('[push] opened from background:', remoteMessage);
+    // TODO(PUSH): 导航到对应消息页面
   });
 
   // 杀死状态点击
   const initialNotification = await messaging().getInitialNotification();
   if (initialNotification) {
-    console.log('[push] opened from quit state:', initialNotification);
+    if (__DEV__) console.debug('[push] opened from quit state:', initialNotification);
   }
 }
 

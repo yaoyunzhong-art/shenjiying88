@@ -1,144 +1,65 @@
-/**
- * 🐜 自动: [openapi] [B] OpenAPI 工作台页面测试
- *
- * L1 冒烟测试 — 验证页面级工具函数和状态常量
- */
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-// ---- PII 脱敏工具（与 page.tsx maskPII 保持同步） ----
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'openapi-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'openapi-data.ts'), 'utf-8')
+})
 
-function maskPII(data: Record<string, any>): Record<string, any> {
-  const result = { ...data };
-  const piiKeys = ['email', 'phone', 'idCard', 'password', 'token', 'ssn', 'creditCard'];
-  for (const key of Object.keys(result)) {
-    if (piiKeys.includes(key)) result[key] = '***MASKED***';
-  }
-  return result;
-}
+describe('OpenApiWorkbenchClient — 客户端渲染层', () => {
+  it('应声明 use client 并支持 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
+  })
 
-describe('maskPII', () => {
-  it('脱敏 email', () => {
-    const result = maskPII({ email: 'alice@x.com' });
-    assert.strictEqual(result.email, '***MASKED***');
-  });
+  it('应保留五个工作台 tab 与指标卡', () => {
+    assert.ok(CLIENT_SRC.includes("type TabId = 'keys' | 'webhooks' | 'sandboxes' | 'usage' | 'sign'"))
+    assert.ok(CLIENT_SRC.includes('MetricCard'))
+    assert.ok(CLIENT_SRC.includes('API Keys'))
+    assert.ok(CLIENT_SRC.includes('活跃订阅'))
+    assert.ok(CLIENT_SRC.includes('今日调用'))
+    assert.ok(CLIENT_SRC.includes('异常数'))
+  })
 
-  it('脱敏 phone', () => {
-    const result = maskPII({ phone: '13800000000' });
-    assert.strictEqual(result.phone, '***MASKED***');
-  });
+  it('应保留签名验证演练与 PII 脱敏展示', () => {
+    assert.ok(CLIENT_SRC.includes('buildCanonicalString'))
+    assert.ok(CLIENT_SRC.includes('verifySignatureWindow'))
+    assert.ok(CLIENT_SRC.includes("reason: 'missing_fields'"))
+    assert.ok(CLIENT_SRC.includes('maskPII'))
+    assert.ok(CLIENT_SRC.includes('PII 脱敏演示'))
+    assert.ok(CLIENT_SRC.includes('验证签名'))
+  })
+})
 
-  it('脱敏 password', () => {
-    const result = maskPII({ password: 'secret123' });
-    assert.strictEqual(result.password, '***MASKED***');
-  });
+describe('OpenApiWorkbenchData — 工具与样本一致性', () => {
+  it('应暴露颜色映射和签名窗口逻辑', () => {
+    assert.ok(DATA_SRC.includes('ACTIVE:'))
+    assert.ok(DATA_SRC.includes('DEAD_LETTER:'))
+    assert.ok(DATA_SRC.includes('LIVE:'))
+    assert.ok(DATA_SRC.includes('SANDBOX:'))
+    assert.ok(DATA_SRC.includes('5 * 60 * 1000'))
+  })
 
-  it('脱敏 token', () => {
-    const result = maskPII({ token: 'eyJhbGciOiJIUzI1NiJ9' });
-    assert.strictEqual(result.token, '***MASKED***');
-  });
+  it('应保留 webhook、dead-letter、sandbox 与 usage 样本', () => {
+    assert.ok(DATA_SRC.includes('https://hooks.example.com/orders'))
+    assert.ok(DATA_SRC.includes("status: 'DEAD_LETTER'"))
+    assert.ok(DATA_SRC.includes("name: 'load-test'"))
+    assert.ok(DATA_SRC.includes("endpoint: '/api/payments'"))
+  })
+})
 
-  it('非 PII 字段不脱敏', () => {
-    const result = maskPII({ name: 'Alice', age: 30 });
-    assert.strictEqual(result.name, 'Alice');
-    assert.strictEqual(result.age, 30);
-  });
-
-  it('混合字段', () => {
-    const result = maskPII({ name: 'Alice', email: 'a@x.com', phone: '13800000000' });
-    assert.strictEqual(result.name, 'Alice');
-    assert.strictEqual(result.email, '***MASKED***');
-    assert.strictEqual(result.phone, '***MASKED***');
-  });
-
-  it('空对象返回空对象', () => {
-    const result = maskPII({});
-    assert.deepStrictEqual(result, {});
-  });
-
-  it('idCard 字段脱敏', () => {
-    const result = maskPII({ idCard: '110101199001011234' });
-    assert.strictEqual(result.idCard, '***MASKED***');
-  });
-});
-
-// ---- 状态常量 ----
-
-describe('STATUS_COLOR', () => {
-  const STATUS_COLOR: Record<string, string> = {
-    ACTIVE: 'bg-green-100 text-green-700',
-    PAUSED: 'bg-yellow-100 text-yellow-700',
-    DELETED: 'bg-gray-100 text-gray-700',
-    REVOKED: 'bg-red-100 text-red-700',
-    EXPIRED: 'bg-orange-100 text-orange-700',
-    PURGED: 'bg-gray-100 text-gray-700',
-    PENDING: 'bg-blue-100 text-blue-700',
-    SUCCESS: 'bg-green-100 text-green-700',
-    FAILED: 'bg-red-100 text-red-700',
-    DEAD_LETTER: 'bg-purple-100 text-purple-700',
-  };
-
-  it('包含所有必需的状态', () => {
-    const required = ['ACTIVE', 'PAUSED', 'DELETED', 'REVOKED', 'EXPIRED',
-      'PURGED', 'PENDING', 'SUCCESS', 'FAILED', 'DEAD_LETTER'];
-    for (const key of required) {
-      assert.ok(STATUS_COLOR[key], '缺少状态: ' + key);
-    }
-  });
-});
-
-describe('ENV_COLOR', () => {
-  const ENV_COLOR: Record<string, string> = {
-    LIVE: 'bg-blue-100 text-blue-700',
-    TEST: 'bg-yellow-100 text-yellow-700',
-    SANDBOX: 'bg-green-100 text-green-700',
-  };
-
-  it('包含 3 个环境', () => {
-    assert.strictEqual(Object.keys(ENV_COLOR).length, 3);
-    assert.ok(ENV_COLOR.LIVE);
-    assert.ok(ENV_COLOR.TEST);
-    assert.ok(ENV_COLOR.SANDBOX);
-  });
-});
-
-// ---- 签名 canonical string 构建 ----
-
-describe('canonicalString', () => {
-  it('POST 请求格式正确', () => {
-    const method = 'POST';
-    const url = '/api/orders';
-    const timestamp = 1719560000000;
-    const nonce = 'nonce-abc';
-    const body = '{"amount":100}';
-    const canonical = method.toUpperCase() + '\n' + url + '\n' + timestamp + '\n' + nonce + '\n' + body;
-    assert.ok(canonical.startsWith('POST'), 'should start with method');
-    assert.ok(canonical.includes(url), 'should include URL');
-    assert.ok(canonical.includes(body), 'should include body');
-    assert.ok(canonical.includes('nonce-abc'), 'should include nonce');
-  });
-
-  it('GET 请求 body 为空', () => {
-    const canonical = 'GET\n/api/members\n1719560000000\nnonce-def\n';
-    const lines = canonical.split('\n');
-    assert.strictEqual(lines[0], 'GET');
-    assert.strictEqual(lines[1], '/api/members');
-    assert.strictEqual(lines[lines.length - 1], '');
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe('Openapi — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
-});
+describe('OpenApiWorkbenchPage — 页面结构补充断言', () => {
+  it('应继续从 page 层渲染来源态与 client renderer', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(PAGE_SRC.includes('<OpenApiWorkbenchClient snapshot={snapshot} />'))
+  })
+})

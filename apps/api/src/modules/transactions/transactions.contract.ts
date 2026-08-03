@@ -2,6 +2,8 @@ import type {
   TransactionRefundStatus,
   TransactionRefundRecord,
   TransactionAggregate,
+  TransactionOrderListItem,
+  TransactionOrderListPage,
   LytOrderSnapshot,
   LytPaymentSnapshot,
   MemberTransactionTimelineEntry,
@@ -33,20 +35,57 @@ export interface TransactionRefundContract {
 /** External contract for transaction aggregate summary */
 export interface TransactionAggregateContract {
   orderId: string
+  orderNo: string
   tenantId: string
   memberId: string
+  memberNickname?: string
   orderStatus: string
   paymentStatus?: string
   totalAmount: number
   currency: string
   paidAmount?: number
+  paymentChannel?: string
+  paymentQrCodeUrl?: string
+  paymentUrl?: string
+  paymentExpiresAt?: string
+  paidAt?: string
   refundedAmount: number
   refundStatus?: TransactionRefundStatus
   refundCount: number
+  refundRequestedAt?: string
+  refundCompletedAt?: string
+  awardedPoints?: number
   couponCode?: string
   blindboxPlanId?: string
   createdAt: string
   updatedAt: string
+}
+
+/** External contract for order list item used by app order list */
+export interface TransactionOrderListItemContract {
+  orderId: string
+  orderNo: string
+  memberId: string
+  status: string
+  itemCount: number
+  totalAmount: number
+  paidAmount: number
+  refundedAmount: number
+  refundRequestedAt?: string
+  refundCompletedAt?: string
+  paymentChannel?: string
+  currency: string
+  createdAt: string
+  updatedAt: string
+  paidAt?: string
+}
+
+/** External contract for paginated order list used by app order list */
+export interface TransactionOrderListPageContract {
+  items: TransactionOrderListItemContract[]
+  total: number
+  page: number
+  pageSize: number
 }
 
 /** External contract for LYT order snapshot */
@@ -112,7 +151,7 @@ export function toTransactionRefundContract(
 ): TransactionRefundContract {
   return {
     refundId: refund.refundId,
-    tenantId: refund.tenantContext.tenantId,
+    tenantId: refund.tenantContext.tenantId ?? '',
     orderId: refund.orderId,
     paymentId: refund.paymentId,
     memberId: refund.memberId,
@@ -132,26 +171,76 @@ export function toTransactionRefundContract(
 export function toTransactionAggregateContract(
   aggregate: TransactionAggregate,
 ): TransactionAggregateContract {
+  const latestRefund = [...aggregate.refunds].sort((left, right) => {
+    const leftTime = new Date(left.completedAt ?? left.requestedAt).getTime()
+    const rightTime = new Date(right.completedAt ?? right.requestedAt).getTime()
+    return rightTime - leftTime
+  })[0]
   const refundedAmount = aggregate.refunds
     .filter((r) => r.status === ('COMPLETED' as TransactionRefundStatus))
     .reduce((sum, r) => sum + r.refundAmount, 0)
 
   return {
     orderId: aggregate.order.orderId,
-    tenantId: aggregate.order.tenantContext.tenantId,
-    memberId: aggregate.order.memberId,
+    orderNo: aggregate.order.orderNo ?? '',
+    tenantId: aggregate.order.tenantContext.tenantId ?? '',
+    memberId: aggregate.order.memberId ?? '',
+    memberNickname: aggregate.memberNickname,
     orderStatus: aggregate.order.status,
     paymentStatus: aggregate.payment?.status,
     totalAmount: aggregate.order.totalAmount,
     currency: aggregate.order.currency,
     paidAmount: aggregate.payment?.amount,
+    paymentChannel: aggregate.payment?.channel,
+    paymentQrCodeUrl: aggregate.payment?.qrCodeUrl,
+    paymentUrl: aggregate.payment?.paymentUrl,
+    paymentExpiresAt: aggregate.payment?.expiresAt,
+    paidAt: aggregate.order.paidAt ?? aggregate.payment?.completedAt,
     refundedAmount,
-    refundStatus: aggregate.refunds[0]?.status,
+    refundStatus: latestRefund?.status,
     refundCount: aggregate.refunds.length,
+    refundRequestedAt: latestRefund?.requestedAt,
+    refundCompletedAt: latestRefund?.completedAt,
+    awardedPoints: aggregate.settlement?.awardedPoints,
     couponCode: aggregate.order.couponCode,
     blindboxPlanId: aggregate.order.blindboxPlanId,
     createdAt: aggregate.order.createdAt,
     updatedAt: aggregate.order.updatedAt,
+  }
+}
+
+/** Convert internal TransactionOrderListItem to cross-module contract */
+export function toTransactionOrderListItemContract(
+  item: TransactionOrderListItem,
+): TransactionOrderListItemContract {
+  return {
+    orderId: item.orderId,
+    orderNo: item.orderNo,
+    memberId: item.memberId,
+    status: item.status,
+    itemCount: item.itemCount,
+    totalAmount: item.totalAmount,
+    paidAmount: item.paidAmount,
+    refundedAmount: item.refundedAmount,
+    refundRequestedAt: item.refundRequestedAt,
+    refundCompletedAt: item.refundCompletedAt,
+    paymentChannel: item.paymentChannel,
+    currency: item.currency,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    paidAt: item.paidAt,
+  }
+}
+
+/** Convert internal TransactionOrderListPage to cross-module contract */
+export function toTransactionOrderListPageContract(
+  page: TransactionOrderListPage,
+): TransactionOrderListPageContract {
+  return {
+    items: page.items.map((item) => toTransactionOrderListItemContract(item)),
+    total: page.total,
+    page: page.page,
+    pageSize: page.pageSize,
   }
 }
 
@@ -161,7 +250,7 @@ export function toLytOrderSnapshotContract(
 ): LytOrderSnapshotContract {
   return {
     snapshotId: snapshot.snapshotId,
-    tenantId: snapshot.tenantContext.tenantId,
+    tenantId: snapshot.tenantContext.tenantId ?? '',
     externalOrderId: snapshot.externalOrderId,
     orderNo: snapshot.orderNo,
     memberId: snapshot.memberId,
@@ -183,7 +272,7 @@ export function toLytPaymentSnapshotContract(
 ): LytPaymentSnapshotContract {
   return {
     snapshotId: snapshot.snapshotId,
-    tenantId: snapshot.tenantContext.tenantId,
+    tenantId: snapshot.tenantContext.tenantId ?? '',
     externalPaymentId: snapshot.externalPaymentId,
     externalOrderId: snapshot.externalOrderId,
     paymentChannel: snapshot.paymentChannel,

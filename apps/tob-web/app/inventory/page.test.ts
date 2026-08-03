@@ -1,70 +1,85 @@
-/**
- * page.test.ts — 进销存页面 L1 冒烟测试
- */
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { beforeEach, describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOURCE = resolve(__dirname, 'page.tsx');
+let PAGE_SRC = '';
+let CLIENT_SRC = '';
+let DATA_SRC = '';
 
-function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
-}
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'inventory-client.tsx'), 'utf-8');
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'inventory-page-data.ts'), 'utf-8');
+});
 
-describe('inventory/page — 正向测试', () => {
-  it('应包含"进销存管理"页面标题', () => {
-    const src = readSource();
-    assert.ok(src.includes('进销存管理'), '缺少"进销存管理"标题');
+describe('InventoryPage — 服务端壳层', () => {
+  it('页面应为 async server component 并导出动态配置', () => {
+    assert.ok(PAGE_SRC.includes('export default async function InventoryPage()'));
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic';"));
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0;'));
+    assert.ok(!PAGE_SRC.includes("'use client'"));
   });
 
-  it('应包含"商品管理"Tab', () => {
-    const src = readSource();
-    assert.ok(src.includes('商品管理'), '缺少"商品管理"Tab');
-  });
-
-  it('应包含"采购订单"Tab', () => {
-    const src = readSource();
-    assert.ok(src.includes('采购订单'), '缺少"采购订单"Tab');
-  });
-
-  it('应包含"库存盘点"Tab', () => {
-    const src = readSource();
-    assert.ok(src.includes('库存盘点'), '缺少"库存盘点"Tab');
-  });
-
-  it('应包含"跨店调拨"Tab', () => {
-    const src = readSource();
-    assert.ok(src.includes('跨店调拨'), '缺少"跨店调拨"Tab');
-  });
-
-  it('应包含新增商品按钮', () => {
-    const src = readSource();
-    assert.ok(src.includes('新增商品'), '缺少"新增商品"按钮');
+  it('页面应加载库存快照并透传给客户端组件', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadInventorySnapshot()'));
+    assert.ok(PAGE_SRC.includes('<InventoryClient snapshot={snapshot} />'));
   });
 });
 
-describe('inventory/page — 防御', () => {
-  it('应包含 use client 指令', () => {
-    const src = readSource();
-    assert.ok(src.includes("'use client'"), '缺少 use client');
+describe('InventoryPage — 来源态证据', () => {
+  it('页面应展示 Delivery、控制面来源、刷新路径与时间证据', () => {
+    assert.ok(PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'));
+    assert.ok(PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'));
+    assert.ok(PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'));
+    assert.ok(PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'));
+    assert.ok(PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'));
   });
 
-  it('应导入 PageShell from @m5/ui', () => {
-    const src = readSource();
-    assert.ok(src.includes('PageShell'), '缺少 PageShell 导入');
-    assert.ok(src.includes("@m5/ui"), '缺少 @m5/ui 导入');
+  it('应固证 fallback 样本来源说明', () => {
+    assert.ok(PAGE_SRC.includes('loadInventorySnapshot -> inventory-data.ts local snapshot'));
+    assert.ok(PAGE_SRC.includes('local inventory product, sku, purchase-order, check and transfer samples'));
+    assert.ok(PAGE_SRC.includes('fallback 样本态'));
+  });
+});
+
+describe('InventoryPageData — 快照合同', () => {
+  it('应定义 fallback 快照结构与 skuMap', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"));
+    assert.ok(DATA_SRC.includes('skuMap: Record<string, SKU[]>'));
+    assert.ok(DATA_SRC.includes('purchaseOrders: PurchaseOrder[]'));
+    assert.ok(DATA_SRC.includes('inventoryChecks: InventoryCheck[]'));
+    assert.ok(DATA_SRC.includes('transfers: CrossStoreTransfer[]'));
   });
 
-  it('应导入 inventory-data', () => {
-    const src = readSource();
-    assert.ok(src.includes('./inventory-data'), '缺少 inventory-data 导入');
+  it('应从 inventory-data.ts 样本构建服务端快照', () => {
+    assert.ok(DATA_SRC.includes('structuredClone'));
+    assert.ok(DATA_SRC.includes('MOCK_PRODUCTS'));
+    assert.ok(DATA_SRC.includes('MOCK_SKUS.filter((sku) => sku.productId === product.productId)'));
+  });
+});
+
+describe('InventoryClient — 客户端渲染层', () => {
+  it('客户端组件应声明 use client 并接收 snapshot', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"));
+    assert.ok(CLIENT_SRC.includes('snapshot: InventoryPageSnapshot'));
   });
 
-  it('应导入 inventory-service', () => {
-    const src = readSource();
-    assert.ok(src.includes('./inventory-service'), '缺少 inventory-service 导入');
+  it('客户端应支持 router.refresh 与规则页跳转', () => {
+    assert.ok(CLIENT_SRC.includes('useRouter'));
+    assert.ok(CLIENT_SRC.includes('router.refresh()'));
+    assert.ok(CLIENT_SRC.includes("router.push('/inventory/rules')"));
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新快照'"));
+  });
+
+  it('客户端应保留四个业务 Tab 与交互动作', () => {
+    assert.ok(CLIENT_SRC.includes('商品管理'));
+    assert.ok(CLIENT_SRC.includes('采购订单'));
+    assert.ok(CLIENT_SRC.includes('库存盘点'));
+    assert.ok(CLIENT_SRC.includes('跨店调拨'));
+    assert.ok(CLIENT_SRC.includes('receivePO'));
+    assert.ok(CLIENT_SRC.includes('approveTransfer'));
+    assert.ok(CLIENT_SRC.includes('executeTransfer'));
+    assert.ok(CLIENT_SRC.includes('receiveTransfer'));
   });
 });

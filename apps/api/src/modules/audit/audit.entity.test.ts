@@ -1,14 +1,15 @@
 /**
- * audit.entity.test.ts - 审计日志实体测试
+ * audit.entity.test.ts - 审计日志实体测试 (扩展版)
  * 正例 + 反例 + 边界测试
  *
  * TypeORM @Entity/@Column 装饰器在测试上下文无法反射完整元数据，
  * 这里直接测试实体类的纯 JS 属性赋值/类型/序列化。
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import type { AuditEventType, ActorType, RiskLevel } from './audit.entity'
+import { AuditLogEntity } from './audit.entity'
 
 interface AuditLogEntityLike {
   id?: string
@@ -85,7 +86,6 @@ describe('AuditLogEntity 实体形状', () => {
     assert.equal(log.actorId, 'admin_001')
     assert.equal(log.actorType, 'admin')
     assert.equal(log.riskLevel, 'medium')
-    // 可选字段应为 undefined
     assert.equal(log.tenantId, undefined)
     assert.equal(log.metadata, undefined)
     assert.equal(log.ipAddress, undefined)
@@ -114,6 +114,37 @@ describe('AuditLogEntity 实体形状', () => {
     assert.equal(log.consentVersion, 'v2.1')
   })
 
+  it('✅ 正例: AuditLogEntity 类可实例化', () => {
+    const entity = new AuditLogEntity()
+    // TypeORM 实体类可以 new 但字段初始化为 undefined (装饰器在纯测试中未激活)
+    expect(entity.id).toBeUndefined()
+    expect(entity.eventType).toBeUndefined()
+    expect(entity.riskLevel).toBeUndefined() // Column default 由 TypeORM 在 save 时填充
+  })
+
+  it('✅ 正例: AuditLogEntity 赋值后属性正确', () => {
+    const entity = new AuditLogEntity()
+    entity.id = 'abc-123'
+    entity.eventType = 'auth.login'
+    entity.actorId = 'user_001'
+    entity.actorType = 'user'
+    entity.riskLevel = 'high'
+    entity.tenantId = 't1'
+    entity.settlementId = 's1'
+    entity.settlementAmount = 10000
+
+    expect(entity.id).toBe('abc-123')
+    expect(entity.eventType).toBe('auth.login')
+    expect(entity.riskLevel).toBe('high')
+    expect(entity.settlementAmount).toBe(10000)
+  })
+
+  it('✅ 正例: AuditLogEntity 时间戳默认', () => {
+    const entity = new AuditLogEntity()
+    // @CreateDateColumn 由 TypeORM 在 save 时填充
+    expect(entity.timestamp).toBeUndefined()
+  })
+
   // ── 边界 ────────────────────────────────────────────────
   it('🔲 边界: 全部事件类型可赋值', () => {
     const allEventTypes: AuditEventType[] = [
@@ -127,6 +158,7 @@ describe('AuditLogEntity 实体形状', () => {
       'compliance.consent_recorded', 'compliance.dsr_submitted', 'compliance.dsr_processed',
     ]
 
+    expect(allEventTypes).toHaveLength(28)
     for (const evt of allEventTypes) {
       const log: AuditLogEntityLike = {
         eventType: evt,
@@ -175,6 +207,11 @@ describe('AuditLogEntity 实体形状', () => {
     assert.deepEqual(log.metadata, complexMeta)
   })
 
+  it('🔲 边界: metadata 为空对象', () => {
+    const log = createAuditLog({ metadata: {} })
+    assert.deepEqual(log.metadata, {})
+  })
+
   it('🔲 边界: 超长字段值', () => {
     const longIp = '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
     const longTraceId = 'trace_' + 'a'.repeat(90)
@@ -193,6 +230,40 @@ describe('AuditLogEntity 实体形状', () => {
       settlementAmount: 0,
     })
     assert.equal(log.settlementAmount, 0)
+  })
+
+  it('🔲 边界: 分账金额为负数 (异常场景)', () => {
+    const log = createAuditLog({
+      eventType: 'settlement.rejected',
+      settlementId: 'settlement_003',
+      settlementAmount: -100,
+    })
+    assert.equal(log.settlementAmount, -100)
+  })
+
+  it('🔲 边界: piiFields 空数组', () => {
+    const log = createAuditLog({
+      piiFields: [],
+    })
+    assert.deepEqual(log.piiFields, [])
+  })
+
+  it('🔲 边界: userAgent 长字符串', () => {
+    const longUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+    const log = createAuditLog({ userAgent: longUA })
+    expect(log.userAgent).toContain('iPhone')
+    expect(log.userAgent!.length).toBeGreaterThan(100)
+  })
+
+  it('🔲 边界: traceId 和 parentSpanId 同时赋值', () => {
+    const log = createAuditLog({ traceId: 'trace_full', parentSpanId: 'span_parent' })
+    assert.equal(log.traceId, 'trace_full')
+    assert.equal(log.parentSpanId, 'span_parent')
+  })
+
+  it('🔲 边界: consentVersion 空字符串', () => {
+    const log = createAuditLog({ consentVersion: '' })
+    assert.equal(log.consentVersion, '')
   })
 
   // ── JSON 序列化 ─────────────────────────────────────────
@@ -214,5 +285,20 @@ describe('AuditLogEntity 实体形状', () => {
     })
     const json = JSON.parse(JSON.stringify(log))
     assert.deepEqual(json.metadata, { nested: { key: 'val' }, arr: [1, 2, 3] })
+  })
+
+  it('✅ JSON 序列化: undefined 字段被省略', () => {
+    const log = createAuditLog()
+    const json = JSON.parse(JSON.stringify(log))
+    // settlementId 和 settlementAmount 为 undefined, JSON 省略
+    expect(json.settlementId).toBeUndefined()
+    expect(json.settlementAmount).toBeUndefined()
+  })
+
+  it('✅ JSON 序列化: 日期转为 ISO 字符串', () => {
+    const date = new Date('2026-07-01T12:00:00.000Z')
+    const log = createAuditLog({ timestamp: date })
+    const json = JSON.parse(JSON.stringify(log))
+    expect(json.timestamp).toBe('2026-07-01T12:00:00.000Z')
   })
 })

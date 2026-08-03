@@ -26,6 +26,8 @@ import {
   type FoundationWorkspaceData
 } from '../foundation-view-model';
 import { useDetailActions } from '../components/use-detail-actions';
+import SnapshotRefreshButton from '../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../components/use-snapshot-refresh'
 
 interface FoundationWorkspaceClientProps {
   workspace: FoundationWorkspaceData;
@@ -37,6 +39,7 @@ type TabKey = 'overview' | 'modules' | 'consumers' | 'baselines';
 export default function FoundationWorkspaceClient({ workspace, query }: FoundationWorkspaceClientProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const [search, setSearch] = useState('');
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh();
   const { actions } = useDetailActions({
     workspace: 'foundation',
     detailId: query.moduleKey ?? 'overview',
@@ -177,6 +180,18 @@ export default function FoundationWorkspaceClient({ workspace, query }: Foundati
 
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={topBarStyle}>
+        <div style={topBarMetaStyle}>
+          当前模块 {query.moduleKey} · 当前消费方 {query.consumer} · 模块数 {workspace.summary.modules}
+        </div>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="dark"
+  idleLabel="刷新快照"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <div style={{ marginBottom: 4 }}>
         <Tabs
           items={[
@@ -410,3 +425,17 @@ const linkStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600
 };
+
+const topBarStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 12,
+  flexWrap: 'wrap'
+};
+
+const topBarMetaStyle: React.CSSProperties = {
+  fontSize: 12,
+  color: '#94a3b8'
+};
+

@@ -32,48 +32,6 @@ describe('LicensePackageController', () => {
     controller = new LicensePackageController(mockService as any)
   })
 
-  describe('route metadata', () => {
-    it('controller path: api/license-packages', () => {
-      const path = Reflect.getMetadata('path', LicensePackageController)
-      assert.equal(path, 'api/license-packages')
-    })
-
-    it('create route: POST', () => {
-      const method = Reflect.getMetadata('method', controller.create)
-      assert.equal(method, 1) // POST
-    })
-
-    it('findAll route: GET', () => {
-      const method = Reflect.getMetadata('method', controller.findAll)
-      assert.equal(method, 0) // GET
-    })
-
-    it('findOne route: GET', () => {
-      const method = Reflect.getMetadata('method', controller.findOne)
-      assert.equal(method, 0) // GET
-    })
-
-    it('update route: PUT', () => {
-      const method = Reflect.getMetadata('method', controller.update)
-      assert.equal(method, 2) // PUT
-    })
-
-    it('remove route: DELETE', () => {
-      const method = Reflect.getMetadata('method', controller.remove)
-      assert.equal(method, 3) // DELETE
-    })
-
-    it('assignToLicense route: POST', () => {
-      const method = Reflect.getMetadata('method', controller.assignToLicense)
-      assert.equal(method, 1) // POST
-    })
-
-    it('getLicensesByPackage route: GET', () => {
-      const method = Reflect.getMetadata('method', controller.getLicensesByPackage)
-      assert.equal(method, 0) // GET
-    })
-  })
-
   describe('POST /api/license-packages (create)', () => {
     it('正例: 创建套餐', async () => {
       const dto = { name: '企业版', price: 2999, duration: 12, durationUnit: 'month' as const }

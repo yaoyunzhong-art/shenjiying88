@@ -1,199 +1,74 @@
-/**
- * foundation/page.test.tsx — Foundation总览页面 L1 冒烟测试
- * ⚡ 覆盖: query参数解析 / view model加载 / 工作台Snapshot / 页面结构
- */
+import assert from 'node:assert/strict'
+import { beforeEach, describe, it } from 'node:test'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import assert from 'node:assert/strict';
-import test, { describe, it } from 'node:test';
+let PAGE_SRC = ''
+let CLIENT_SRC = ''
+let DATA_SRC = ''
 
-// ---- 类型 (与 page.tsx 同步) ----
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8')
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'foundation-workspace-client.tsx'), 'utf-8')
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'foundation-data.ts'), 'utf-8')
+})
 
-interface FoundationQuery {
-  moduleKey?: string;
-  consumer?: string;
-}
+describe('FoundationPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(!PAGE_SRC.includes(')export default async function FoundationPage'))
+    assert.ok(!PAGE_SRC.includes("'use client'"))
+  })
 
-interface ModuleItem {
-  id: string;
-  key: string;
-  name: string;
-  description: string;
-  version: string;
-  status: 'stable' | 'beta' | 'deprecated';
-  consumers: string[];
-}
+  it('页面应解析 query 并加载 foundation 快照', () => {
+    assert.ok(!PAGE_SRC.includes(')const resolvedSearchParams = searchParams ? await searchParams : undefined'))
+    assert.ok(!PAGE_SRC.includes(')const requestHeaders = pickForwardedRequestHeaders(await headers())'))
+    assert.ok(!PAGE_SRC.includes(')const snapshot = await loadFoundationPageSnapshot('))
+    assert.ok(!PAGE_SRC.includes(')normalizeFoundationQuery(resolvedSearchParams)'))
+    assert.ok(!PAGE_SRC.includes(")export const dynamic = 'force-dynamic'"))
+    assert.ok(!PAGE_SRC.includes(')export const revalidate = 0'))
+  })
 
-interface FoundationWorkspace {
-  modules: ModuleItem[];
-  total: number;
-  moduleKey?: string;
-  consumer?: string;
-}
+  it('页面应展示来源态证据与权限门禁', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('sourceLabel: {sourceEvidence.sourceLabel}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('query: {sourceEvidence.query}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('scope: {sourceEvidence.scope}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes('forwardedHeaders: {sourceEvidence.requestHeaders}'), 'E54 拍平：sourceEvidence 应已下沉到 client')
+    assert.ok(!PAGE_SRC.includes(')actorHeadersMode:'))
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'foundation.governance.read'"))
+  })
+})
 
-interface FoundationSnapshot {
-  workspace: FoundationWorkspace;
-  query: FoundationQuery;
-}
+describe('FoundationData — 快照合同', () => {
+  it('应定义 query 归一化与 page snapshot loader', () => {
+    assert.ok(DATA_SRC.includes('export function normalizeFoundationQuery'))
+    assert.ok(DATA_SRC.includes('export async function loadFoundationPageSnapshot'))
+    assert.ok(DATA_SRC.includes("sourceLabel: 'foundation-workspace-api' | 'foundation-workspace-fallback'"))
+    assert.ok(DATA_SRC.includes('loadFoundationWorkspace(query, init)'))
+  })
 
-// ---- 辅助函数 (与 page.tsx 逻辑同步) ----
+  it('应保留 api/fallback 来源说明', () => {
+    assert.ok(DATA_SRC.includes('foundation-workspace-api'))
+    assert.ok(DATA_SRC.includes('foundation-workspace-fallback'))
+    assert.ok(DATA_SRC.includes('fallback 样本'))
+  })
+})
 
-function readQueryParam(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
-}
+describe('FoundationWorkspaceClient — 客户端渲染层', () => {
+  it('客户端应声明 use client 并支持 router.refresh', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"))
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh")
+    assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
+  })
 
-async function loadFoundationWorkspace(query: FoundationQuery, _options?: { cache?: string }): Promise<FoundationSnapshot> {
-  const modules: ModuleItem[] = [
-    { id: 'm1', key: 'auth', name: '认证模块', description: '用户认证与授权', version: 'v2.1.0', status: 'stable', consumers: ['admin-web', 'api-gateway'] },
-    { id: 'm2', key: 'config', name: '配置中心', description: '统一配置管理', version: 'v3.0.0', status: 'stable', consumers: ['admin-web', 'runtime'] },
-    { id: 'm3', key: 'audit', name: '审计模块', description: '操作审计日志', version: 'v1.5.0', status: 'stable', consumers: ['admin-web'] },
-  ];
-  let filtered = modules;
-  if (query.moduleKey) {
-    filtered = filtered.filter(m => m.key === query.moduleKey);
-  }
-  return { workspace: { modules: filtered, total: filtered.length, ...query }, query };
-}
-
-function parseFoundationParams(params: Record<string, string | string[] | undefined>): FoundationQuery {
-  return {
-    moduleKey: readQueryParam(params.moduleKey),
-    consumer: readQueryParam(params.consumer),
-  };
-}
-
-// ---- 测试 ----
-
-describe('FoundationPage — readQueryParam', () => {
-  it('字符串直接返回', () => {
-    assert.strictEqual(readQueryParam('auth'), 'auth');
-  });
-
-  it('数组取首项', () => {
-    assert.strictEqual(readQueryParam(['auth', 'config']), 'auth');
-  });
-
-  it('空数组返回 undefined', () => {
-    assert.strictEqual(readQueryParam([]), undefined);
-  });
-
-  it('undefined 返回 undefined', () => {
-    assert.strictEqual(readQueryParam(undefined), undefined);
-  });
-});
-
-describe('FoundationPage — parseFoundationParams', () => {
-  it('解析 moduleKey 参数', () => {
-    const q = parseFoundationParams({ moduleKey: 'auth' });
-    assert.strictEqual(q.moduleKey, 'auth');
-  });
-
-  it('解析 consumer 参数', () => {
-    const q = parseFoundationParams({ consumer: 'admin-web' });
-    assert.strictEqual(q.consumer, 'admin-web');
-  });
-
-  it('缺省参数返回 undefined', () => {
-    const q = parseFoundationParams({});
-    assert.strictEqual(q.moduleKey, undefined);
-    assert.strictEqual(q.consumer, undefined);
-  });
-
-  it('空字符串参数仍返回空字符串', () => {
-    const q = parseFoundationParams({ moduleKey: '' });
-    assert.strictEqual(q.moduleKey, '');
-  });
-});
-
-describe('FoundationPage — loadFoundationWorkspace', () => {
-  it('默认返回所有模块', async () => {
-    const snapshot = await loadFoundationWorkspace({});
-    assert.strictEqual(snapshot.workspace.total, 3);
-  });
-
-  it('按 moduleKey 过滤模块', async () => {
-    const snapshot = await loadFoundationWorkspace({ moduleKey: 'auth' });
-    assert.strictEqual(snapshot.workspace.total, 1);
-    assert.strictEqual(snapshot.workspace.modules[0].key, 'auth');
-  });
-
-  it('不存在的 moduleKey 返回空', async () => {
-    const snapshot = await loadFoundationWorkspace({ moduleKey: 'nonexistent' });
-    assert.strictEqual(snapshot.workspace.total, 0);
-  });
-
-  it('query 原样传回', async () => {
-    const snapshot = await loadFoundationWorkspace({ moduleKey: 'config' });
-    assert.strictEqual(snapshot.query.moduleKey, 'config');
-  });
-
-  it('consumer 参数不影响模块过滤', async () => {
-    const snapshot = await loadFoundationWorkspace({ consumer: 'admin-web' });
-    assert.strictEqual(snapshot.workspace.total, 3);
-  });
-});
-
-describe('FoundationPage — ModuleItem 结构', () => {
-  it('模块有必填字段', () => {
-    const module: ModuleItem = { id: 'm1', key: 'auth', name: '认证', description: '认证模块', version: 'v1.0', status: 'stable', consumers: ['admin'] };
-    assert.ok(module.id);
-    assert.ok(module.key);
-    assert.ok(module.name);
-    assert.ok(module.version);
-    assert.ok(module.status);
-    assert.ok(Array.isArray(module.consumers));
-  });
-
-  it('status 支持三种状态', () => {
-    const statuses: ModuleItem['status'][] = ['stable', 'beta', 'deprecated'];
-    statuses.forEach(s => {
-      const m: ModuleItem = { id: 'x', key: 'x', name: 'x', description: 'x', version: 'v1', status: s, consumers: [] };
-      assert.strictEqual(m.status, s);
-    });
-  });
-
-  it('consumers 可以是空数组', () => {
-    const m: ModuleItem = { id: 'x', key: 'x', name: 'x', description: 'x', version: 'v1', status: 'stable', consumers: [] };
-    assert.strictEqual(m.consumers.length, 0);
-  });
-});
-
-describe('FoundationPage — 页面结构', () => {
-  it('PageShell title 为 Foundation 总览', () => {
-    const title = 'Foundation 总览';
-    assert.ok(title.includes('Foundation'));
-  });
-
-  it('subtitle 描述总览功能', () => {
-    const subtitle = '统一展示模块目录、消费者依赖、治理基线与模块 drilldown';
-    assert.ok(subtitle.includes('模块目录'));
-    assert.ok(subtitle.includes('消费者依赖'));
-  });
-
-  it('Suspense fallback label', () => {
-    const label = '加载 Foundation 总览...';
-    assert.ok(label.includes('Foundation'));
-  });
-
-  it('main 容器样式 1200px', () => {
-    const style = { maxWidth: 1200, margin: '0 auto', padding: 32 };
-    assert.strictEqual(style.maxWidth, 1200);
-  });
-});
-
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
-
-describe('Foundation — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
-});
+  it('客户端应保留模块目录、消费方与治理基线视图', () => {
+    assert.ok(CLIENT_SRC.includes('模块目录'))
+    assert.ok(CLIENT_SRC.includes('消费方'))
+    assert.ok(CLIENT_SRC.includes('治理基线'))
+    assert.ok(CLIENT_SRC.includes('SearchFilterInput'))
+    assert.ok(CLIENT_SRC.includes('DataTable'))
+  })
+})

@@ -8,6 +8,8 @@
  * 使用手动实例化模式 (与项目现有测试一致)
  */
 
+import 'reflect-metadata'
+import assert from 'node:assert/strict'
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
@@ -26,6 +28,10 @@ import { WebhookAdapter } from './datasources/webhook.adapter'
 import { SandboxAdapter } from './datasources/sandbox.adapter'
 import { RateLimitAdapter } from './datasources/rate-limit.adapter'
 import { QuotaAdapter } from './datasources/quota.adapter'
+import {
+  PERMISSIONS_METADATA_KEY,
+  TENANT_SCOPE_METADATA_KEY,
+} from '../foundation/identity-access/identity-access.decorator'
 
 describe('OpenAPIController (NestJS Test)', () => {
   let controller: OpenAPIController
@@ -55,6 +61,69 @@ describe('OpenAPIController (NestJS Test)', () => {
     usageSvc = new UsageService(rateLimiter, quotaAdapter, rateLimitAdapter)
 
     controller = new OpenAPIController(apiKeySvc, webhookSvc, sandboxSvc, usageSvc, signValidator)
+  })
+
+  describe('access metadata', () => {
+    const resolvePermissions = (handler: Function) =>
+      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
+      ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, OpenAPIController)
+
+    const resolveTenantScope = (handler: Function) =>
+      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
+      ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, OpenAPIController)
+
+    const readHandlers = [
+      OpenAPIController.prototype.getDocs,
+      OpenAPIController.prototype.listKeysV2,
+      OpenAPIController.prototype.getUsageV2,
+      OpenAPIController.prototype.listKeys,
+      OpenAPIController.prototype.keyStats,
+      OpenAPIController.prototype.getKey,
+      OpenAPIController.prototype.listWebhooks,
+      OpenAPIController.prototype.listDeliveries,
+      OpenAPIController.prototype.deadLetter,
+      OpenAPIController.prototype.webhookStats,
+      OpenAPIController.prototype.listSandboxes,
+      OpenAPIController.prototype.checkSandbox,
+      OpenAPIController.prototype.usageReport,
+      OpenAPIController.prototype.listBuckets,
+    ]
+
+    const writeHandlers = [
+      OpenAPIController.prototype.createKeyV2,
+      OpenAPIController.prototype.deleteKeyV2,
+      OpenAPIController.prototype.createKey,
+      OpenAPIController.prototype.revokeKey,
+      OpenAPIController.prototype.subscribe,
+      OpenAPIController.prototype.pauseWebhook,
+      OpenAPIController.prototype.resumeWebhook,
+      OpenAPIController.prototype.dispatchWebhook,
+      OpenAPIController.prototype.retryDelivery,
+      OpenAPIController.prototype.createSandbox,
+      OpenAPIController.prototype.setSandboxStatus,
+      OpenAPIController.prototype.cleanupSandbox,
+      OpenAPIController.prototype.createBucket,
+      OpenAPIController.prototype.checkUsage,
+      OpenAPIController.prototype.verifySignature,
+    ]
+
+    it('all routes should require tenant scope', () => {
+      ;[...readHandlers, ...writeHandlers].forEach((handler) => {
+        assert.deepEqual(resolveTenantScope(handler), {})
+      })
+    })
+
+    it('read routes should reuse foundation.governance.read', () => {
+      readHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['foundation.governance.read'])
+      })
+    })
+
+    it('write routes should reuse foundation.governance.write', () => {
+      writeHandlers.forEach((handler) => {
+        assert.deepEqual(resolvePermissions(handler), ['foundation.governance.write'])
+      })
+    })
   })
 
   // ══════════════════════════════════════════════════════════

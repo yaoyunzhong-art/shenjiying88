@@ -1,10 +1,10 @@
+'use client';
 /**
  * 门店任务详情页 — Task Detail Page (Next.js App Router)
  * 角色视角: 👔店长 / 🏪全体门店员工
  * 类型: B-页面创建
  * 功能: 任务详情展示、状态流转(待处理→处理中→已完成)、编辑/删除操作
  */
-'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';

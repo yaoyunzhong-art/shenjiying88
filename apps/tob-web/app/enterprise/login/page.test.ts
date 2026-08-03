@@ -5,8 +5,23 @@
  * 角色视角：企业用户（SaaS 租户管理员）
  */
 
-import { describe, it, before } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const SOURCE = resolve(__dirname, 'page.tsx');
+const SERVICE_SOURCE = resolve(__dirname, '../../../lib/enterprise-auth-service.ts');
+
+function readSource(): string {
+  return readFileSync(SOURCE, 'utf-8');
+}
+
+function readServiceSource(): string {
+  return readFileSync(SERVICE_SOURCE, 'utf-8');
+}
 
 // ===== 从 page.tsx 中提取的纯函数逻辑 =====
 
@@ -129,5 +144,24 @@ describe('[EnterpriseLoginPage] localStorage Token 存储合约', () => {
       'enterprise_refresh_token',
       'enterprise_user',
     ]);
+  });
+
+  it('登录成功后通过 storeEnterpriseSession 统一写入用户缓存', () => {
+    const source = readSource();
+    assert.ok(source.includes('storeEnterpriseSession'), '应通过 storeEnterpriseSession 写入缓存');
+  });
+});
+
+describe('[EnterpriseLoginPage] 真 password 登录链路固证', () => {
+  it('页面应通过 enterpriseAuthService.login 触发 email_password 登录', () => {
+    const source = readSource();
+    assert.ok(source.includes('enterpriseAuthService.login'), '应调用 enterpriseAuthService.login');
+    assert.ok(source.includes("loginType: 'email_password'"), '应显式指定 email_password');
+  });
+
+  it('认证服务应调用真实 /auth/login/password 并透传 x-tenant-id', () => {
+    const source = readServiceSource();
+    assert.ok(source.includes('/auth/login/password'), '应调用真实 password 登录端点');
+    assert.ok(source.includes("'x-tenant-id': this.tenantId"), '应附带租户头');
   });
 });

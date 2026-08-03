@@ -14,11 +14,11 @@ export class LowcodePage {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   @Index()
   name!: string;
 
-  @Column({ name: 'template_id', length: 100 })
+  @Column({ name: 'template_id', type: 'varchar', length: 100 })
   templateId!: string;
 
   @Column({ type: 'jsonb', default: [] })
@@ -27,7 +27,7 @@ export class LowcodePage {
   @Column({ type: 'varchar', length: 20, default: 'draft' })
   status!: LowcodePageStatus;
 
-  @Column({ name: 'created_by', nullable: true })
+  @Column({ name: 'created_by', type: 'varchar', length: 64, nullable: true })
   createdBy?: string;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -42,7 +42,7 @@ export class LowcodeAuditMetric {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   @Index()
   name!: string;
 

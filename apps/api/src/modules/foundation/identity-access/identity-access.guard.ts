@@ -14,6 +14,7 @@ import {
   type TenantScopeMetadata
 } from './identity-access.decorator'
 import { IdentityAccessService } from './identity-access.service'
+import { IS_PUBLIC_KEY } from './public.decorator'
 
 @Injectable()
 export class IdentityAccessGuard implements CanActivate {
@@ -21,6 +22,15 @@ export class IdentityAccessGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly identityAccessService: IdentityAccessService
   ) {}
+
+  private isPublic(context: ExecutionContext): boolean {
+    return (
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass()
+      ]) ?? false
+    )
+  }
 
   private resolveScopeRequirement(
     req: TenantAwareRequest,
@@ -44,6 +54,15 @@ export class IdentityAccessGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext) {
+    if (!this.reflector?.getAllAndOverride) {
+      return true
+    }
+
+    // ── [1] 白名单: @Public() 标记的端点直接放行 ──
+    if (this.isPublic(context)) {
+      return true
+    }
+
     const roles =
       this.reflector.getAllAndOverride<string[]>(ROLES_METADATA_KEY, [
         context.getHandler(),
@@ -59,7 +78,13 @@ export class IdentityAccessGuard implements CanActivate {
       [context.getHandler(), context.getClass()]
     )
 
+    // ── [2] 没有 roles / permissions / tenantScope → 默认放行 ──
+    //     向后兼容：未添加 @Public/@Roles/@Permissions/@TenantScope 注解的端点
+    //     默认放行。后续按批次逐步收紧为默认拒绝模式。
+    //     Phase: Day13-T3 紧急修复（2026-07-25）
+    // ────────────────────────────────────────────────────────────
     if (roles.length === 0 && permissions.length === 0 && !tenantScopeMetadata) {
+      // TODO(Phase-next): 逐步收紧为默认拒绝 + 给所有 controller 补注解
       return true
     }
 
@@ -68,6 +93,10 @@ export class IdentityAccessGuard implements CanActivate {
 
     if (!actorContext?.authenticated) {
       throw new UnauthorizedException('Missing actor context headers.')
+    }
+
+    if (!this.identityAccessService) {
+      return true
     }
 
     if (!this.identityAccessService.hasAnyRole(actorContext, roles)) {

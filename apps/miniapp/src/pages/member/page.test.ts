@@ -145,6 +145,20 @@ describe('MemberPage 正例', () => {
     assert.ok(source.includes('挑战'), 'should show challenge');
   });
 
+  it('source 有 domainSource 与 domainGovernance 字段消费', () => {
+    assert.ok(source.includes('domainSource'), 'should reference domain source');
+    assert.ok(source.includes('buildDomainGovernanceDisplayModel'), 'should build shared domain governance display model');
+    assert.ok(source.includes('domainGovernanceWorkspaceHref'), 'should reference governance workspace href from snapshot');
+  });
+
+  it('source 有域名治理摘要与治理后台入口', () => {
+    assert.ok(source.includes('DomainGovernancePanel'), 'should render shared domain governance presenter');
+    assert.ok(source.includes('heading="域名治理"'), 'should keep domain governance heading');
+    assert.ok(source.includes('domainGovernanceDisplayModel'), 'should pass shared display model');
+    assert.ok(!source.includes('headerSection'), 'page should not read headerSection directly');
+    assert.ok(!source.includes('footerSection'), 'page should not read footerSection directly');
+  });
+
   it('runtime snapshot 初始 deliveryMode 为 fallback', () => {
     const snapshot = createMemberRuntimeSnapshot();
     assert.equal(snapshot.deliveryMode, 'fallback');

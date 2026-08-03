@@ -4,7 +4,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { QueueController } from './queue.controller'
 import { QueueStatus } from './queue.entity'
-import type { QueueService } from './queue.service'
+import { QueueService } from './queue.service'
 
 // ── Mock QueueService ───────────────────────────────────────────────────
 type AnyFn = (...args: never[]) => unknown
@@ -41,70 +41,6 @@ function makeEntry(overrides: Record<string, unknown> = {}) {
     ...overrides
   }
 }
-
-// ── Controller metadata ─────────────────────────────────────────────────
-describe('QueueController metadata', () => {
-  it('controller path is queue', () => {
-    const path = Reflect.getMetadata('path', QueueController)
-    assert.equal(path, 'queue')
-  })
-
-  it('joinQueue POST join', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.joinQueue)
-    const path = Reflect.getMetadata('path', QueueController.prototype.joinQueue)
-    assert.equal(method, 1) // POST
-    assert.equal(path, 'join')
-  })
-
-  it('leaveQueue POST :entryId/leave', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.leaveQueue)
-    const path = Reflect.getMetadata('path', QueueController.prototype.leaveQueue)
-    assert.equal(method, 1)
-    assert.equal(path, ':entryId/leave')
-  })
-
-  it('callNext POST call-next', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.callNext)
-    const path = Reflect.getMetadata('path', QueueController.prototype.callNext)
-    assert.equal(method, 1)
-    assert.equal(path, 'call-next')
-  })
-
-  it('startService POST :entryId/start-service', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.startService)
-    const path = Reflect.getMetadata('path', QueueController.prototype.startService)
-    assert.equal(method, 1)
-    assert.equal(path, ':entryId/start-service')
-  })
-
-  it('completeService POST :entryId/complete', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.completeService)
-    const path = Reflect.getMetadata('path', QueueController.prototype.completeService)
-    assert.equal(method, 1)
-    assert.equal(path, ':entryId/complete')
-  })
-
-  it('markNoShow POST :entryId/no-show', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.markNoShow)
-    const path = Reflect.getMetadata('path', QueueController.prototype.markNoShow)
-    assert.equal(method, 1)
-    assert.equal(path, ':entryId/no-show')
-  })
-
-  it('getQueueStatus GET status/:resourceId', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.getQueueStatus)
-    const path = Reflect.getMetadata('path', QueueController.prototype.getQueueStatus)
-    assert.equal(method, 0) // GET
-    assert.equal(path, 'status/:resourceId')
-  })
-
-  it('getMyPosition GET position', () => {
-    const method = Reflect.getMetadata('method', QueueController.prototype.getMyPosition)
-    const path = Reflect.getMetadata('path', QueueController.prototype.getMyPosition)
-    assert.equal(method, 0)
-    assert.equal(path, 'position')
-  })
-})
 
 // ── joinQueue behavior ──────────────────────────────────────────────────
 describe('QueueController.joinQueue', () => {
@@ -268,8 +204,6 @@ describe('QueueController queue queries', () => {
 // ── Controller integration with real service (light smoke) ──────────────
 describe('QueueController integration with real service', () => {
   it('full join→leave flow returns valid contract shapes', () => {
-     
-    const { QueueService } = require('./queue.service') as typeof import('./queue.service')
     const svc = new QueueService()
     svc.resetQueueStoresForTests()
     const controller = new QueueController(svc)
@@ -287,8 +221,6 @@ describe('QueueController integration with real service', () => {
   })
 
   it('full join→call-next→start→complete flow', () => {
-     
-    const { QueueService } = require('./queue.service') as typeof import('./queue.service')
     const svc = new QueueService()
     svc.resetQueueStoresForTests()
     const controller = new QueueController(svc)

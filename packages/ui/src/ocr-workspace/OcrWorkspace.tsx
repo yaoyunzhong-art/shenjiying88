@@ -13,7 +13,7 @@ import {
   OCR_STATUS_LABELS, OCR_STATUS_COLORS,
   DOC_STATUS_LABELS, DOC_STATUS_COLORS,
   BLOCK_TYPE_LABELS, FORMAT_ICONS,
-  type OcrTask, type ParsedDocument, type EngineInfo,
+  type OcrTask, type ParsedDocument, type EngineInfo, type OcrEngine,
 } from './types'
 
 export interface OcrWorkspaceProps {
@@ -155,10 +155,10 @@ function StatBox({ label, value, testid, color }: { label: string; value: any; t
 function NewTaskForm({ isCompact }: { isCompact: boolean }) {
   const createMut = useCreateOcrTask()
   const [assetId, setAssetId] = useState('asset-new-001')
-  const [engine, setEngine] = useState('mock-paddleocr')
+  const [engine, setEngine] = useState<OcrEngine>('mock-paddleocr')
 
   const handleCreate = () => {
-    createMut.mutate({ sourceAssetId: assetId, engine: engine as any, language: 'auto' })
+    createMut.mutate({ sourceAssetId: assetId, engine, language: 'auto' })
   }
 
   return (
@@ -181,7 +181,7 @@ function NewTaskForm({ isCompact }: { isCompact: boolean }) {
         <select
           data-testid="ocr-new-engine"
           value={engine}
-          onChange={(e) => setEngine(e.target.value)}
+          onChange={(e) => setEngine(e.target.value as OcrEngine)}
           style={{ padding: '6px 10px', fontSize: 12, border: '1px solid #d9d9d9', borderRadius: 4 }}
         >
           <option value="mock-paddleocr">PaddleOCR</option>

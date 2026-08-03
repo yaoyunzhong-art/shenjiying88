@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
 import {
   NativeAppSession,
   NativeAppBootstrapSnapshot,
   createNativeAppFallbackSnapshot,
   createGuestNativeSession,
+  loadNativeAppBootstrapSnapshot,
 } from '../market-bootstrap';
 
 interface AppState {
@@ -67,6 +68,20 @@ interface AppProviderProps {
 
 export function AppProvider({ children }: AppProviderProps) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadNativeAppBootstrapSnapshot().then((snapshot) => {
+      if (!cancelled) {
+        dispatch({ type: 'SET_BOOTSTRAP', payload: snapshot });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = (session: NativeAppSession) => {
     dispatch({ type: 'SET_SESSION', payload: session });

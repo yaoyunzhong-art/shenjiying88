@@ -1,10 +1,10 @@
+'use client';
 /**
  * 门店编辑页 — Store Edit Page (Next.js App Router Page)
  * 角色视角: 👔区域经理 / 👨‍💼运营
  * 功能: 编辑门店基本信息、经营参数、状态调整
  * 类型: B-表单页 (含验证/提交/错误处理)
  */
-'use client';
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';

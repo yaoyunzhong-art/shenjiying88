@@ -1,45 +1,48 @@
-import { Suspense } from 'react';
-import { LoadingSkeleton, PageShell } from '@m5/ui';
-import { readIdentityAccessSessionDetailParam } from '@m5/types';
-import { loadIdentityAccessSessionDetail } from '../../../identity-access-detail-view-model';
-import IdentityAccessSessionDetailClient from './identity-access-session-detail-client';
+import { Suspense } from 'react'
+import { LoadingSkeleton, PageShell } from '@m5/ui'
+import { readIdentityAccessSessionDetailParam } from '@m5/types'
+import { loadIdentityAccessSessionDetail } from '../../../identity-access-detail-view-model'
+import IdentityAccessSessionDetailClient from './identity-access-session-detail-client'
 
 interface IdentityAccessSessionDetailPageProps {
-  params: Promise<{ session?: string | string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<{ session?: string | string[] }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 function readSession(value: string | string[] | undefined): string | null {
   if (Array.isArray(value)) {
-    return readIdentityAccessSessionDetailParam(value);
+    return readIdentityAccessSessionDetailParam(value)
   }
-  return readIdentityAccessSessionDetailParam(value);
+  return readIdentityAccessSessionDetailParam(value)
 }
 
 function readQueryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
-    return value[0];
+    return value[0]
   }
-  return value;
+  return value
 }
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function IdentityAccessSessionDetailPage({
   params,
-  searchParams
+  searchParams,
 }: IdentityAccessSessionDetailPageProps) {
-  const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams]);
-  const session = readSession(resolvedParams.session);
+  const [resolvedParams, resolvedSearch] = await Promise.all([params, searchParams])
+  const session = readSession(resolvedParams.session)
 
   const query = {
     tenantId: readQueryParam(resolvedSearch.tenantId),
     brandId: readQueryParam(resolvedSearch.brandId),
     storeId: readQueryParam(resolvedSearch.storeId),
-    marketCode: readQueryParam(resolvedSearch.marketCode)
-  };
+    marketCode: readQueryParam(resolvedSearch.marketCode),
+  }
 
   const snapshot = session
     ? await loadIdentityAccessSessionDetail(session, query, { cache: 'no-store' })
-    : await loadIdentityAccessSessionDetail('', query, { cache: 'no-store' });
+    : await loadIdentityAccessSessionDetail('', query, { cache: 'no-store' })
 
   return (
     <main style={{ maxWidth: 1080, margin: '0 auto', padding: 32 }}>
@@ -56,5 +59,5 @@ export default async function IdentityAccessSessionDetailPage({
         </Suspense>
       </PageShell>
     </main>
-  );
+  )
 }

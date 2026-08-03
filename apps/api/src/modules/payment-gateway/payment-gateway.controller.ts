@@ -10,11 +10,23 @@
  *   GET  /payment-gateway/refund/:id   - 查询退款状态
  */
 
-import { Controller, Get, Post, Param, Body, HttpException, HttpStatus } from '@nestjs/common'
+import { Controller, Get, Post, Param, Body, Headers, HttpException, HttpStatus, UseGuards } from '@nestjs/common'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { PaymentGatewayService, PaymentError } from './payment-gateway.service'
 import { PayRequestDto, PayResultDto, RefundRequestDto } from './payment-gateway.dto'
 
+const PAYMENT_GATEWAY_READ_PERMISSION = 'payment:read'
+const PAYMENT_GATEWAY_WRITE_PERMISSION = 'payment:write'
+const PAYMENT_GATEWAY_REFUND_PERMISSION = 'payment:refund'
+
 @Controller('payment-gateway')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(PAYMENT_GATEWAY_READ_PERMISSION)
 export class PaymentGatewayController {
   constructor(private readonly paymentGatewayService: PaymentGatewayService) {}
 
@@ -23,13 +35,15 @@ export class PaymentGatewayController {
    * POST /payment-gateway/pay
    */
   @Post('pay')
-  async pay(@Body() dto: PayRequestDto): Promise<PayResultDto> {
+  @RequirePermissions(PAYMENT_GATEWAY_WRITE_PERMISSION)
+  async pay(@Headers('x-tenant-id') tenantId: string, @Body() dto: PayRequestDto): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.pay({
         orderId: dto.orderId,
         amount: dto.amount,
         currency: dto.currency,
         provider: dto.provider,
+        tenantId,
         metadata: dto.metadata,
         locale: dto.locale,
         returnUrl: dto.returnUrl,
@@ -51,9 +65,9 @@ export class PaymentGatewayController {
    * GET /payment-gateway/pay/:id
    */
   @Get('pay/:id')
-  async queryPayment(@Param('id') id: string): Promise<PayResultDto> {
+  async queryPayment(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string): Promise<PayResultDto> {
     try {
-      return await this.paymentGatewayService.query(id)
+      return await this.paymentGatewayService.query(id, tenantId)
     } catch (error) {
       if (error instanceof PaymentError) {
         const status =
@@ -74,12 +88,14 @@ export class PaymentGatewayController {
    * POST /payment-gateway/refund
    */
   @Post('refund')
-  async refund(@Body() dto: RefundRequestDto): Promise<PayResultDto> {
+  @RequirePermissions(PAYMENT_GATEWAY_REFUND_PERMISSION)
+  async refund(@Headers('x-tenant-id') tenantId: string, @Body() dto: RefundRequestDto): Promise<PayResultDto> {
     try {
       return await this.paymentGatewayService.refund({
         transactionId: dto.transactionId,
         amount: dto.amount,
         reason: dto.reason,
+        tenantId,
       })
     } catch (error) {
       if (error instanceof PaymentError) {
@@ -101,9 +117,9 @@ export class PaymentGatewayController {
    * GET /payment-gateway/refund/:id
    */
   @Get('refund/:id')
-  async queryRefund(@Param('id') id: string): Promise<PayResultDto> {
+  async queryRefund(@Headers('x-tenant-id') tenantId: string, @Param('id') id: string): Promise<PayResultDto> {
     try {
-      return await this.paymentGatewayService.queryRefund(id)
+      return await this.paymentGatewayService.queryRefund(id, tenantId)
     } catch (error) {
       if (error instanceof PaymentError) {
         const status =

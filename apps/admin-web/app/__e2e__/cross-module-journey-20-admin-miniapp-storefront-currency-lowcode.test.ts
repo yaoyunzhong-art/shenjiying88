@@ -390,7 +390,7 @@ describe('[L3-E2E] 链42: 低代码配置 → 多币种管理 → Storefront定�
 
     const templates = adminGetTemplates('payment');
     assert.equal(templates.length, 1);
-    assert.equal((templates[0].config as any).feePercent, 1.5);
+    assert.equal((templates[0].config as Record<string, number>).feePercent, 1.5);
   });
 
   // ════════════════════════════════════════════

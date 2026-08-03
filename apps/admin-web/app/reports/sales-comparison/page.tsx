@@ -1,12 +1,11 @@
-'use client'
+import SalesComparisonClient from './sales-comparison-client'
+import { loadSalesComparisonSnapshot } from './sales-comparison-data'
 
-import React from 'react';
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-export default function SalesComparisonPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>📊 销售对比报表</h1>
-      <p>多维度销售数据对比分析</p>
-    </div>
-  )
+export default async function SalesComparisonPage() {
+  const snapshot = await loadSalesComparisonSnapshot()
+
+  return <SalesComparisonClient snapshot={snapshot} />
 }

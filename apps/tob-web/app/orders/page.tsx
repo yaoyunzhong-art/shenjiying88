@@ -1,8 +1,8 @@
+'use client';
 /**
  * orders/page.tsx — 订单列表页 (ToB 订单管理)
  * 功能: 搜索 / 状态筛选 / 付款状态筛选 / 统计卡片 / 分页
  */
-'use client';
 
 import React, { useMemo, useState } from 'react';
 import {

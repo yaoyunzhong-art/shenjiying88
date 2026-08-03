@@ -9,10 +9,23 @@
  * - GET /api/members/:id/levels — 查看会员等级
  */
 
-import { Controller, Get, Post, Param, Body, HttpException, HttpStatus } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+
 import { MemberStoreAService } from './member-store-a.service'
 import type { RegisterRequest, PointsEarnRequest, PointsRedeemRequest } from './member-store-a.service'
 
+@UseGuards(TenantGuard)
 @Controller('api/members')
 export class MemberStoreAController {
   constructor(private readonly svc: MemberStoreAService) {}

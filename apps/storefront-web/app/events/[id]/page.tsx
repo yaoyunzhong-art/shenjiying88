@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageShell, StatCard, Tabs, StatusBadge } from '@m5/ui';
 
 const EVENT_DATA: Record<string, typeof DUMMY_EVENTS[0] & { rules: string[]; schedule: { time: string; activity: string }[] }> = {};
@@ -51,20 +51,28 @@ export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string || '1';
-  const event = DUMMY_EVENTS.find(e => e.id === Number(id));
   const [activeTab, setActiveTab] = useState('overview');
 
-  if (!event) {
-    return (
-      <PageShell title="活动未找到" subtitle="404">
-        <div className="p-12 text-center text-gray-500">
-          <p className="text-5xl mb-3">🔍</p>
-          <p>找不到该活动</p>
-          <button onClick={() => router.back()} className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg">返回</button>
-        </div>
-      </PageShell>
-    );
-  }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [event, setEvent] = useState<typeof DUMMY_EVENTS[0] | undefined>(undefined);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const found = DUMMY_EVENTS.find(e => e.id === Number(id));
+      if (!found) {
+        setError('活动未找到');
+      } else {
+        setEvent(found);
+      }
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [id]);
+
+  if (loading) return <div>加载中...</div>;
+  if (error) return <div>数据获取失败: {error}</div>;
+  if (!event) return <div>暂无数据</div>;
 
   const statusColor = event.status === '进行中' ? 'info' : event.status === '即将开始' ? 'warning' : 'default';
   const schedule = SCHEDULES[id] || [];

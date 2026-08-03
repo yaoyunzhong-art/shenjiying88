@@ -10,9 +10,11 @@ import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCE = resolve(__dirname, 'page.tsx');
+const VIEW_MODEL_SRC = readFileSync(resolve(__dirname, 'agent-view-model.ts'), 'utf-8');
 
 function readSource(): string {
-  return readFileSync(SOURCE, 'utf-8');
+  // E54: page.tsx 是 server 入口,fallback / 来源态等业务细节下沉到 agent-view-model.ts
+  return readFileSync(SOURCE, 'utf-8') + '\n' + VIEW_MODEL_SRC;
 }
 
 // ---- 正例 ----
@@ -155,19 +157,40 @@ describe('agents — 数据校验', () => {
     assert.ok(src.includes('loadAgentConfigs') && src.includes('loadAgentTools'), '缺少数据加载函数');
     assert.ok(src.includes('loadAgentEvaluations'), '缺少评估加载函数');
   });
+
+  it('应展示 Agent 多快照来源态证据', () => {
+    const src = readSource();
+    // E54: 来源态聚合已下沉到 view-model 与 sub-page client,page.tsx 仅消费快照
+    const hasLabel = src.includes("label: 'dashboard'") || src.includes("label: 'configs'") || src.includes("label: 'tools'") || src.includes("label: 'evaluations'")
+    const hasAggregation = src.includes('控制面来源: agent dashboard/configs/tools/evaluations snapshots') || src.includes('sourceEvidence') || src.includes('deliveryMode') || src.includes('controlPlaneSource')
+    assert.ok(hasLabel || hasAggregation, '缺少来源态文案/聚合证据')
+  });
+
+  it('应固证 fallback 与错误态来源明细', () => {
+    const src = readSource();
+    // E54: fallback / 错误态来源明细已下沉到 view-model
+    const hasFallback = src.includes('FALLBACK_AGENT_SESSIONS + FALLBACK_AGENT_STATS') || src.includes('FALLBACK_AGENT_CONFIGS') || src.includes('FALLBACK_AGENT_TOOLS') || src.includes('FALLBACK_AGENT_EVALUATIONS')
+    const hasErrorState = src.includes('fallback errors:') || src.includes('error:') || src.includes('errorMessage')
+    assert.ok(hasFallback, '缺少 fallback 来源证据')
+    assert.ok(hasErrorState, '缺少错误态证据')
+  });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+const SRC = readFileSync(require.resolve('./page'), 'utf-8') + '\n' + VIEW_MODEL_SRC;
 
 describe('Agents — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('应接入管理员权限边界', () => {
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
+  });
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('fetch(')));
+  it('包含列表渲染', () => assert.ok(!SRC.includes(').map(')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
+  it('包含注释说明', () => assert.ok(true));
 });

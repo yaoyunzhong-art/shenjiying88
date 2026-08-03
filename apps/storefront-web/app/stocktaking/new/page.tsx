@@ -1,9 +1,9 @@
+'use client';
 /**
  * 新建盘点单 — Stocktaking Create Form Page (Next.js App Router Page)
  * 角色视角: 👔店长 / 🔧仓管
  * 功能: 选择门店、盘点区域、商品范围，填写盘点说明，提交后进入盘点状态
  */
-'use client';
 
 import React from 'react';
 import { useRouter } from 'next/navigation';

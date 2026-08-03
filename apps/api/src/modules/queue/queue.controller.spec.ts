@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import type { RequestTenantContext } from '../tenant/tenant.types';
-import { QueueType, QueueStatus } from './queue.entity';
+import { QueueChannel, QueueSource, QueueType, QueueStatus } from './queue.entity';
 import { toQueueEntryContract } from './queue.contract';
 
 // ── Mock NestJS decorators ──────────────────────────────────────────
@@ -66,6 +66,8 @@ type MockQueueService = {
     resourceName?: string;
     priority?: number;
     remark?: string;
+    source?: QueueSource;
+    channel?: QueueChannel;
   }) => ReturnType<typeof toQueueEntryContract>;
   leaveQueue: (entryId: string, tenantId: string) => ReturnType<typeof toQueueEntryContract>;
   callNext: (
@@ -114,6 +116,8 @@ function createMockQueueService(): MockQueueService {
       userName: input.memberName ?? input.memberId,
       phone: undefined,
       partySize: 1,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       resourceId: input.resourceId,
       resourceName: input.resourceName,
       status: QueueStatus.Waiting,
@@ -136,6 +140,8 @@ function createMockQueueService(): MockQueueService {
       userName: '张三',
       phone: undefined,
       partySize: 1,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
       status: QueueStatus.Cancelled,
@@ -158,6 +164,8 @@ function createMockQueueService(): MockQueueService {
       userName: '李四',
       phone: undefined,
       partySize: 1,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       resourceId,
       resourceName: '游戏机1号',
       status: QueueStatus.Called,
@@ -180,6 +188,8 @@ function createMockQueueService(): MockQueueService {
       userName: '王五',
       phone: undefined,
       partySize: 2,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
       status: QueueStatus.Serving,
@@ -202,6 +212,8 @@ function createMockQueueService(): MockQueueService {
       userName: '赵六',
       phone: undefined,
       partySize: 1,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
       status: QueueStatus.Completed,
@@ -224,6 +236,8 @@ function createMockQueueService(): MockQueueService {
       userName: '孙七',
       phone: undefined,
       partySize: 1,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       resourceId: 'machine-1',
       resourceName: '游戏机1号',
       status: QueueStatus.NoShow,
@@ -261,6 +275,8 @@ function createMockQueueService(): MockQueueService {
             userName: '周八',
             phone: undefined,
             partySize: 1,
+            source: QueueSource.Online,
+            channel: QueueChannel.WeChat,
             resourceId,
             resourceName: '游戏机2号',
             status: QueueStatus.Waiting,

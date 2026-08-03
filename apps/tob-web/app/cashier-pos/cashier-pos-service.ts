@@ -239,7 +239,7 @@ export async function requestRefund(
     }
   }
   return apiRequest<RefundRequest>(
-    '/cashier/refunds',
+    `/cashier/orders/${encodeURIComponent(orderId)}/refunds`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -1,10 +1,20 @@
-import { Controller, Get, Query } from '@nestjs/common'
+import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { GetDiagnosticsDto, GetOperationSnapshotDto, GetRecommendationsDto } from './analytics.dto'
 import { AnalyticsService } from './analytics.service'
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const ANALYTICS_REPORT_READ_PERMISSION = 'report:read'
 
 @Controller('analytics')
+@UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(ANALYTICS_REPORT_READ_PERMISSION)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 

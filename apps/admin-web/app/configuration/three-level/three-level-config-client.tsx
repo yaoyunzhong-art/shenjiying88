@@ -1,4 +1,5 @@
 'use client';
+import { useSnapshotRefresh } from '../../components/use-snapshot-refresh'
 
 /**
  * 三级独立配置 - 客户端 (tab 切换 / 编辑 / 回滚)

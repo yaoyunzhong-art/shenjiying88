@@ -92,3 +92,112 @@ export interface RenderedEmail {
 export interface PreviewThemeResult {
   html: string
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：品牌版本管理
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface BrandVersion {
+  id: string
+  tenantId: string
+  theme: BrandTheme
+  domainConfig: DomainConfig
+  note: string
+  createdAt: Date
+}
+
+export interface VersionDiffResult {
+  version1: { id: string; createdAt: Date }
+  version2: { id: string; createdAt: Date }
+  themeChanges: ThemeDiffEntry[]
+  domainChanges: DomainDiffEntry[]
+  hasChanges: boolean
+}
+
+export interface ThemeDiffEntry {
+  field: string
+  label: string
+  before: string | undefined
+  after: string | undefined
+}
+
+export interface DomainDiffEntry {
+  field: string
+  label: string
+  before: string | undefined
+  after: string | undefined
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：自定义脚本注入
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type InjectScriptLocation = 'head' | 'body_start' | 'body_end'
+
+export interface InjectScript {
+  id: string
+  tenantId: string
+  location: InjectScriptLocation
+  name: string
+  content: string
+  enabled: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：自定义字体管理
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type FontFormat = 'woff' | 'woff2' | 'ttf' | 'eot'
+
+export interface CustomFont {
+  id: string
+  tenantId: string
+  name: string
+  url: string
+  format: FontFormat
+  weight?: string
+  style?: string
+  createdAt: Date
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：多语言品牌设置
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface LocaleSetting {
+  tenantId: string
+  locale: string
+  brandName: string
+  description?: string
+  tagline?: string
+  updatedAt: Date
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 新增：品牌健康检查
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type HealthCheckStatus = 'pass' | 'fail' | 'warn'
+
+export interface HealthCheckItem {
+  field: string
+  label: string
+  status: HealthCheckStatus
+  message: string
+}
+
+export interface BrandHealthScore {
+  tenantId: string
+  brandName: string
+  completeness: number
+  checks: HealthCheckItem[]
+}
+
+export interface CompletenessReport {
+  generatedAt: Date
+  totalTenants: number
+  averageCompleteness: number
+  scores: BrandHealthScore[]
+}

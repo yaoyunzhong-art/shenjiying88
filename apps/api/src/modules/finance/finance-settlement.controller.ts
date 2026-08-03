@@ -10,10 +10,29 @@
  *   GET    /api/finance/settlement/metrics          — 结算指标
  */
 
-import { Controller, Get, Post, Body, Query, Param, Logger } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Param,
+  Logger,
+  UseGuards,
+} from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceSettlementCron, type SettlementPeriodicity } from './finance-settlement.cron'
+
+const FINANCE_SETTLEMENT_READ_PERMISSION = 'finance:read'
+const FINANCE_SETTLEMENT_WRITE_PERMISSION = 'finance:*'
 
 // ─── DTO ──────────────────────────────────────────────────
 
@@ -27,7 +46,10 @@ export class AcknowledgeNotificationDto {
 
 // ─── Controller ──────────────────────────────────────────
 
+@UseGuards(TenantGuard)
 @Controller('finance/settlement')
+@RequireTenantScope()
+@RequirePermissions(FINANCE_SETTLEMENT_READ_PERMISSION)
 export class FinanceSettlementController {
   private readonly logger = new Logger(FinanceSettlementController.name)
 
@@ -38,6 +60,7 @@ export class FinanceSettlementController {
    * 手动触发结算
    */
   @Post('run')
+  @RequirePermissions(FINANCE_SETTLEMENT_WRITE_PERMISSION)
   async run(
     @TenantContext() _tenantContext: RequestTenantContext,
     @Body() body: RunSettlementDto
@@ -98,6 +121,7 @@ export class FinanceSettlementController {
    * 标记通知已读
    */
   @Post('notifications/ack')
+  @RequirePermissions(FINANCE_SETTLEMENT_WRITE_PERMISSION)
   acknowledgeNotification(
     @TenantContext() _tenantContext: RequestTenantContext,
     @Body() body: AcknowledgeNotificationDto
@@ -115,6 +139,7 @@ export class FinanceSettlementController {
    * 全部已读
    */
   @Post('notifications/ack-all')
+  @RequirePermissions(FINANCE_SETTLEMENT_WRITE_PERMISSION)
   acknowledgeAll(
     @TenantContext() _tenantContext: RequestTenantContext
   ) {

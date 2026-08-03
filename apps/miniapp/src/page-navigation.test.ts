@@ -15,7 +15,7 @@ import {
 /**
  * miniapp (Taro) Page Navigation — L1 页面导航冒烟测试 (JMeter 风格: 正例 + 反例 + 边界)
  *
- * 根据 app.config.ts 页面路由表定义: ['pages/index/index', 'pages/member/index']
+ * 根据 app.config.ts 页面路由表定义，当前覆盖首页、会员页和供应链高频页
  * 模拟页面间导航行为：路由解析、导航决策、页面间数据传递、
  * 无效路径拒绝、深层嵌套导航、循环导航保护。
  */
@@ -23,13 +23,14 @@ import {
 function createPortalBootstrapFixture(): PortalBootstrapResponse {
   return {
     tenantPortal: {
-      audience: 'TOB', scopeType: 'TENANT', scopeCode: 't', tenantCode: 't', marketCode: 'cn-mainland', channel: 'WEB', name: 't ToB', primaryDomain: 't.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/login', ssoEnabled: true },
+      audience: 'TOB', scopeType: 'TENANT', scopeCode: 't', tenantCode: 't', marketCode: 'cn-mainland', channel: 'WEB', name: 't ToB', primaryDomain: 't.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/login', ssoEnabled: true }, domainSource: 'default'
     },
     brandPortal: {
-      audience: 'TOB', scopeType: 'BRAND', scopeCode: 'b', tenantCode: 't', brandCode: 'b', marketCode: 'cn-mainland', channel: 'WEB', name: 'b ToB', primaryDomain: 'b.t.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/b/login', ssoEnabled: true },
+      audience: 'TOB', scopeType: 'BRAND', scopeCode: 'b', tenantCode: 't', brandCode: 'b', marketCode: 'cn-mainland', channel: 'WEB', name: 'b ToB', primaryDomain: 'b.t.cn-mainland.b2b.local', supportedLanguages: ['zh-CN'], heroTitle: 'title', heroSubtitle: '', solutionTags: [], loginEntry: { label: '登录', loginPath: '/cn-mainland/t/b/login', ssoEnabled: true }, domainSource: 'default'
     },
     storePortal: {
       audience: 'TOC', scopeType: 'STORE', scopeCode: 'store-001', tenantCode: 't', brandCode: 'b', storeCode: 'store-001', storeName: 'store-001', marketCode: 'cn-mainland', channel: 'WEB', name: 'store-001', primaryDomain: 'store-001.b.t.cn-mainland.local', supportedLanguages: ['zh-CN'], supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINIAPP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      domainSource: 'default',
     },
     marketProfile: {
       marketCode: 'cn-mainland', marketName: '中国大陆', countryCode: 'CN',
@@ -52,7 +53,25 @@ function createPortalBootstrapFixture(): PortalBootstrapResponse {
 const APP_ROUTES: string[] = [
   'pages/index/index',
   'pages/member/index',
+  'pages/sales-tools/index',
+  'pages/redeem-center/index',
+  'pages/customer-service/index',
+  'pages/purchase-orders/index',
+  'pages/purchase-orders/detail/index',
+  'pages/return-orders/index',
+  'pages/return-orders/detail/index',
 ];
+
+const AUTH_REQUIRED_ROUTES = new Set<string>([
+  'pages/member/index',
+  'pages/sales-tools/index',
+  'pages/redeem-center/index',
+  'pages/customer-service/index',
+  'pages/purchase-orders/index',
+  'pages/purchase-orders/detail/index',
+  'pages/return-orders/index',
+  'pages/return-orders/detail/index',
+]);
 
 interface NavigationTarget {
   route: string;
@@ -106,7 +125,7 @@ function resolveNavigation(
 
   // 检查授权 — 需要登录
   const memberRoute = 'pages/member/index';
-  if (to === memberRoute && !authenticated) {
+  if (AUTH_REQUIRED_ROUTES.has(to) && !authenticated) {
     return {
       allowed: false,
       redirectTo: 'pages/index/index',
@@ -133,7 +152,7 @@ function resolveNavigation(
     redirectTo: to,
     reason: 'NAVIGATE',
     requiresAuth: false,
-    isTabBar: to === memberRoute,
+      isTabBar: to === memberRoute,
   };
 }
 
@@ -175,6 +194,22 @@ test('miniapp navigation: member page route is registered', () => {
   assert.equal(isRouteRegistered('pages/member/index'), true);
 });
 
+test('miniapp navigation: purchase orders routes are registered', () => {
+  assert.equal(isRouteRegistered('pages/purchase-orders/index'), true);
+  assert.equal(isRouteRegistered('pages/purchase-orders/detail/index'), true);
+});
+
+test('miniapp navigation: G6 linkage routes are registered', () => {
+  assert.equal(isRouteRegistered('pages/sales-tools/index'), true);
+  assert.equal(isRouteRegistered('pages/redeem-center/index'), true);
+  assert.equal(isRouteRegistered('pages/customer-service/index'), true);
+});
+
+test('miniapp navigation: return orders routes are registered', () => {
+  assert.equal(isRouteRegistered('pages/return-orders/index'), true);
+  assert.equal(isRouteRegistered('pages/return-orders/detail/index'), true);
+});
+
 test('miniapp navigation: member can navigate from index to member', () => {
   const decision = resolveNavigation('pages/index/index', 'pages/member/index', true, 'MEMBER');
 
@@ -184,8 +219,58 @@ test('miniapp navigation: member can navigate from index to member', () => {
   assert.equal(decision.isTabBar, true);
 });
 
+test('miniapp navigation: authenticated operator can navigate to purchase orders list', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/purchase-orders/index', true, 'MEMBER');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/purchase-orders/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
+test('miniapp navigation: authenticated operator can navigate to sales tools', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/sales-tools/index', true, 'MEMBER');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/sales-tools/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
+test('miniapp navigation: authenticated operator can navigate to redeem center from member page', () => {
+  const decision = resolveNavigation('pages/member/index', 'pages/redeem-center/index', true, 'MEMBER');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/redeem-center/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
+test('miniapp navigation: authenticated operator can navigate to return orders detail', () => {
+  const decision = resolveNavigation('pages/return-orders/index', 'pages/return-orders/detail/index', true, 'SVIP');
+
+  assert.equal(decision.allowed, true);
+  assert.equal(decision.redirectTo, 'pages/return-orders/detail/index');
+  assert.equal(decision.reason, 'NAVIGATE');
+});
+
 test('miniapp navigation: guest navigates from index to member requires login', () => {
   const decision = resolveNavigation('pages/index/index', 'pages/member/index', false, 'GUEST');
+
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.redirectTo, 'pages/index/index');
+  assert.equal(decision.reason, 'AUTH_REQUIRED');
+  assert.equal(decision.requiresAuth, true);
+});
+
+test('miniapp navigation: guest cannot navigate to purchase orders list', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/purchase-orders/index', false, 'GUEST');
+
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.redirectTo, 'pages/index/index');
+  assert.equal(decision.reason, 'AUTH_REQUIRED');
+  assert.equal(decision.requiresAuth, true);
+});
+
+test('miniapp navigation: guest cannot navigate to customer service', () => {
+  const decision = resolveNavigation('pages/index/index', 'pages/customer-service/index', false, 'GUEST');
 
   assert.equal(decision.allowed, false);
   assert.equal(decision.redirectTo, 'pages/index/index');
@@ -407,7 +492,7 @@ test('miniapp navigation: each route in navigation stack respects path depth lim
   // 检查路由路径深度: pages/*/* 格式确保深度为 3
   for (const route of APP_ROUTES) {
     const segments = route.split('/');
-    assert.equal(segments.length, 3, `route ${route} should have exactly 3 segments (pages/xxx/xxx)`);
+    assert.ok(segments.length >= 3 && segments.length <= 4, `route ${route} should have 3 or 4 segments (pages/xxx/xxx or pages/xxx/xxx/xxx)`);
     assert.equal(segments[0], 'pages');
   }
 });
@@ -440,9 +525,19 @@ test('miniapp navigation: SVIP member still blocked from member page when unauth
   assert.equal(decision.reason, 'AUTH_REQUIRED');
 });
 
-test('miniapp navigation: app config pages list has exactly 2 routes', () => {
-  assert.equal(APP_ROUTES.length, 2);
-  assert.deepEqual(APP_ROUTES, ['pages/index/index', 'pages/member/index']);
+test('miniapp navigation: app config pages list has exactly 9 routes', () => {
+  assert.equal(APP_ROUTES.length, 9);
+  assert.deepEqual(APP_ROUTES, [
+    'pages/index/index',
+    'pages/member/index',
+    'pages/sales-tools/index',
+    'pages/redeem-center/index',
+    'pages/customer-service/index',
+    'pages/purchase-orders/index',
+    'pages/purchase-orders/detail/index',
+    'pages/return-orders/index',
+    'pages/return-orders/detail/index',
+  ]);
 });
 
 test('miniapp navigation: valid route contains only lowercase characters', () => {

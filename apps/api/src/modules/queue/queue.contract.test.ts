@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import {
+  QueueChannel,
+  QueueSource,
   QueueType,
   QueueStatus,
   QUEUE_STATUS_TRANSITIONS,
@@ -86,6 +88,8 @@ describe('queue.contract: QueueEntity', () => {
       status: QueueStatus.Waiting,
       priority: 0,
       estimatedWaitMin: 10,
+      source: QueueSource.Online,
+      channel: QueueChannel.WeChat,
       createdAt: new Date('2026-06-23T00:00:00.000Z'),
       updatedAt: new Date('2026-06-23T00:00:00.000Z')
     }
@@ -118,6 +122,8 @@ describe('queue.contract: QueueEntity', () => {
       servedAt: new Date('2026-06-23T00:10:00.000Z'),
       completedAt: new Date('2026-06-23T00:25:00.000Z'),
       remark: 'VIP',
+      source: QueueSource.Online,
+      channel: QueueChannel.App,
       createdAt: new Date('2026-06-23T00:00:00.000Z'),
       updatedAt: new Date('2026-06-23T00:25:00.000Z')
     }
@@ -145,6 +151,8 @@ describe('queue.contract: QueueEntryContract', () => {
       estimatedWaitMin: 0,
       calledAt: new Date('2026-06-23T00:05:00.000Z'),
       servedAt: new Date('2026-06-23T00:10:00.000Z'),
+      source: QueueSource.Online,
+      channel: QueueChannel.WeChat,
       createdAt: new Date('2026-06-23T00:00:00.000Z'),
       updatedAt: new Date('2026-06-23T00:10:00.000Z')
     }
@@ -169,6 +177,8 @@ describe('queue.contract: QueueEntryContract', () => {
       status: QueueStatus.Waiting,
       priority: 0,
       estimatedWaitMin: 0,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Terminal,
       createdAt: new Date('2026-06-23T00:00:00.000Z'),
       updatedAt: new Date('2026-06-23T00:00:00.000Z')
     }
@@ -192,6 +202,8 @@ describe('queue.contract: QueueEntryContract', () => {
       status: QueueStatus.Cancelled,
       priority: 0,
       estimatedWaitMin: 0,
+      source: QueueSource.Onsite,
+      channel: QueueChannel.Kiosk,
       createdAt: new Date(),
       updatedAt: new Date()
     }

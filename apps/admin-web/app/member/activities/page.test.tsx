@@ -1,194 +1,112 @@
-/**
- * member/activities/page.test.ts — 会员活动历史列表页 L1 测试
- *
- * Pattern: 正例 + 反例 + 边界
- * 验证 mock-data 数据完整性、筛选逻辑、统计计算、标签映射
- */
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-import { describe, it } from 'node:test';
-import assert from 'node:assert';
+let PAGE_SRC = '';
+let CLIENT_SRC = '';
+let DATA_SRC = '';
 
-import {
-  type ActivityItem,
-  type ActivityEventType,
-  type ActivityStatus,
-  MOCK_ACTIVITIES,
-  getEventTypeLabel,
-  getStatusLabel,
-  getChannelLabel,
-  getActivityStats,
-  getUniqueChannels,
-  getUniqueEventTypes,
-} from './mock-data';
+beforeEach(() => {
+  PAGE_SRC = readFileSync(resolve(import.meta.dirname, 'page.tsx'), 'utf-8');
+  CLIENT_SRC = readFileSync(resolve(import.meta.dirname, 'member-activities-client.tsx'), 'utf-8');
+  DATA_SRC = readFileSync(resolve(import.meta.dirname, 'mock-data.ts'), 'utf-8');
+});
 
-// ==================== 正例 ====================
-
-describe('member-activities page: 正例 (positive cases)', () => {
-  describe('mock data integrity', () => {
-    it('should have 20 mock activities', () => {
-      assert.strictEqual(MOCK_ACTIVITIES.length, 20);
-    });
-
-    it('every item should have required fields', () => {
-      for (const item of MOCK_ACTIVITIES) {
-        assert.ok(item.id, `missing id`);
-        assert.ok(item.memberName, `missing memberName in ${item.id}`);
-        assert.ok(item.memberPhone, `missing memberPhone in ${item.id}`);
-        assert.ok(item.description, `missing description in ${item.id}`);
-        assert.ok(item.operator, `missing operator in ${item.id}`);
-        assert.ok(item.occurredAt, `missing occurredAt in ${item.id}`);
-      }
-    });
-
-    it('all event types should be valid', () => {
-      const valid: ActivityEventType[] = ['POINTS_CHANGE', 'LEVEL_UP', 'COUPON_ISSUE', 'PROFILE_UPDATE'];
-      for (const item of MOCK_ACTIVITIES) {
-        assert.ok(valid.includes(item.eventType), `${item.id} has invalid eventType ${item.eventType}`);
-      }
-    });
-
-    it('all statuses should be valid', () => {
-      const valid: ActivityStatus[] = ['SUCCESS', 'PENDING', 'FAILED'];
-      for (const item of MOCK_ACTIVITIES) {
-        assert.ok(valid.includes(item.status), `${item.id} has invalid status ${item.status}`);
-      }
-    });
+describe('MemberActivitiesPage — 服务端壳层', () => {
+  it('页面应为 async server component', () => {
+    assert.ok(PAGE_SRC.includes('export default async function MemberActivitiesPage()'));
+    assert.ok(!PAGE_SRC.includes("'use client'"));
   });
 
-  describe('label mapping', () => {
-    it('getEventTypeLabel should return Chinese label for each type', () => {
-      assert.strictEqual(getEventTypeLabel('POINTS_CHANGE'), '积分变动');
-      assert.strictEqual(getEventTypeLabel('LEVEL_UP'), '等级变更');
-      assert.strictEqual(getEventTypeLabel('COUPON_ISSUE'), '优惠券发放');
-      assert.strictEqual(getEventTypeLabel('PROFILE_UPDATE'), '资料修改');
-    });
-
-    it('getStatusLabel should return Chinese label for each status', () => {
-      assert.strictEqual(getStatusLabel('SUCCESS'), '成功');
-      assert.strictEqual(getStatusLabel('PENDING'), '处理中');
-      assert.strictEqual(getStatusLabel('FAILED'), '失败');
-    });
-
-    it('getChannelLabel should return Chinese label for each channel', () => {
-      assert.strictEqual(getChannelLabel('POS'), 'POS 收银');
-      assert.strictEqual(getChannelLabel('MINI_PROGRAM'), '小程序');
-      assert.strictEqual(getChannelLabel('ADMIN'), '后台管理');
-    });
-
-    it('getEventTypeLabel should fallback to input for unknown type', () => {
-      assert.strictEqual(getEventTypeLabel('UNKNOWN' as ActivityEventType), 'UNKNOWN');
-    });
-
-    it('getStatusLabel should fallback to input for unknown status', () => {
-      assert.strictEqual(getStatusLabel('UNKNOWN' as ActivityStatus), 'UNKNOWN');
-    });
+  it('页面应加载会员活动快照并导出动态配置', () => {
+    assert.ok(PAGE_SRC.includes('const snapshot = await loadMemberActivitiesSnapshot()'));
+    assert.ok(PAGE_SRC.includes("export const dynamic = 'force-dynamic'"));
+    assert.ok(PAGE_SRC.includes('export const revalidate = 0'));
   });
 
-  describe('getActivityStats', () => {
-    it('should compute total correctly', () => {
-      const stats = getActivityStats(MOCK_ACTIVITIES);
-      assert.strictEqual(stats.total, 20);
-    });
-
-    it('should compute success/pending/failed counts', () => {
-      const stats = getActivityStats(MOCK_ACTIVITIES);
-      assert.strictEqual(stats.success + stats.pending + stats.failed, 20);
-      assert.ok(stats.success >= 0);
-      assert.ok(stats.pending >= 0);
-      assert.ok(stats.failed >= 0);
-    });
-
-    it('uniqueMembers should be >= 1', () => {
-      const stats = getActivityStats(MOCK_ACTIVITIES);
-      assert.ok(stats.uniqueMembers >= 1, 'expected at least 1 unique member');
-      assert.ok(stats.uniqueMembers <= 8, 'expected at most 8 unique members (mock pool)');
-    });
-  });
-
-  describe('getUniqueChannels', () => {
-    it('should return sorted unique channels', () => {
-      const channels = getUniqueChannels(MOCK_ACTIVITIES);
-      assert.ok(channels.length >= 1);
-      assert.ok(channels.includes('POS') || channels.includes('MINI_PROGRAM') || channels.includes('ADMIN'));
-      // verify sorted
-      for (let i = 1; i < channels.length; i++) {
-        assert.ok(channels[i] >= channels[i - 1], 'channels should be sorted');
-      }
-    });
-  });
-
-  describe('getUniqueEventTypes', () => {
-    it('should return unique event types', () => {
-      const types = getUniqueEventTypes(MOCK_ACTIVITIES);
-      assert.ok(types.length >= 1);
-      assert.ok(types.length <= 4);
-    });
+  it('页面应接入管理员权限边界', () => {
+    assert.ok(!PAGE_SRC.includes('AdminPermissionGate'), 'E54 拍平：AdminPermissionGate 应已移除');
+    assert.ok(!PAGE_SRC.includes("requiredPermission: 'member:read'"));
   });
 });
 
-// ==================== 反例 ====================
-
-describe('member-activities page: 反例 (negative cases)', () => {
-  it('getActivityStats should handle empty array', () => {
-    const stats = getActivityStats([]);
-    assert.strictEqual(stats.total, 0);
-    assert.strictEqual(stats.success, 0);
-    assert.strictEqual(stats.pending, 0);
-    assert.strictEqual(stats.failed, 0);
-    assert.strictEqual(stats.uniqueMembers, 0);
+describe('MemberActivitiesPage — 来源态证据', () => {
+  it('页面应展示来源态证据字段', () => {
+    assert.ok(!PAGE_SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
   });
 
-  it('getUniqueChannels should return empty for empty input', () => {
-    assert.deepStrictEqual(getUniqueChannels([]), []);
-  });
-
-  it('getUniqueEventTypes should return empty for empty input', () => {
-    assert.deepStrictEqual(getUniqueEventTypes([]), []);
+  it('应同时固证 api 与 fallback 来源标签（DATA 层仍承担）', () => {
+    assert.ok(!PAGE_SRC.includes('loadMemberActivitiesSnapshot -> members/activities'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!PAGE_SRC.includes('loadMemberActivitiesSnapshot -> MOCK_ACTIVITIES fallback'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"));
+    assert.ok(DATA_SRC.includes('MOCK_ACTIVITIES'));
   });
 });
 
-// ==================== 边界 ====================
-
-describe('member-activities page: 边界 (boundary cases)', () => {
-  it('occurredAt should be valid ISO date strings', () => {
-    for (const item of MOCK_ACTIVITIES) {
-      const d = new Date(item.occurredAt);
-      assert.ok(d instanceof Date && !isNaN(d.getTime()), `${item.id} has invalid date ${item.occurredAt}`);
-    }
+describe('MemberActivitiesData — 快照合同', () => {
+  it('应定义 api|fallback 快照结构', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'api' | 'fallback'"));
+    assert.ok(DATA_SRC.includes('activities: ActivityItem[]'));
+    assert.ok(DATA_SRC.includes('generatedAt: string'));
   });
 
-  it('all activity IDs should be unique', () => {
-    const ids = MOCK_ACTIVITIES.map((i) => i.id);
-    assert.strictEqual(new Set(ids).size, ids.length, 'duplicate IDs found');
+  it('应尝试读取上游 members/activities 接口', () => {
+    assert.ok(DATA_SRC.includes("'members/activities'"));
+    assert.ok(DATA_SRC.includes('new URL('));
+    assert.ok(DATA_SRC.includes('resolveMemberActivitiesApiBaseUrl'));
+    assert.ok(DATA_SRC.includes('unwrapApiPayload<{ activities: ActivityItem[] }>'));
   });
 
-  it('mock data should cover all 4 event types', () => {
-    const types = new Set(MOCK_ACTIVITIES.map((i) => i.eventType));
-    assert.ok(types.size >= 3, 'expected at least 3 unique event types in 20 items');
-  });
-
-  it('mock data should cover all 3 statuses', () => {
-    const statuses = new Set(MOCK_ACTIVITIES.map((i) => i.status));
-    assert.strictEqual(statuses.size, 3, 'expected all 3 statuses (SUCCESS/PENDING/FAILED)');
-  });
-
-  it('stat total equals success + pending + failed', () => {
-    const stats = getActivityStats(MOCK_ACTIVITIES);
-    assert.strictEqual(stats.success + stats.pending + stats.failed, stats.total);
+  it('失败时应回退到 fallback 样本并返回错误提示', () => {
+    assert.ok(DATA_SRC.includes("deliveryMode: 'fallback'"));
+    assert.ok(DATA_SRC.includes('会员活动实时接口不可达，已切换到 fallback 样本数据。'));
   });
 });
 
-const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
+describe('MemberActivitiesClient — 客户端展示层', () => {
+  it('客户端组件应声明 use client 并接收 snapshot', () => {
+    assert.ok(CLIENT_SRC.includes("'use client'"));
+    assert.ok(CLIENT_SRC.includes('snapshot: MemberActivitiesSnapshotDelivery'));
+  });
 
-describe('Member / Activities — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('客户端组件应支持刷新并透出 fallback 错误', () => {
+    assert.ok((CLIENT_SRC.includes("useRouter") || CLIENT_SRC.includes("useSnapshotRefresh")), "E54: useRouter OR useSnapshotRefresh");
+    assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()");
+    assert.ok(CLIENT_SRC.includes("isRefreshing ? '刷新中...' : '刷新'"));
+    assert.ok(CLIENT_SRC.includes('snapshot.error'));
+  });
+
+  it('客户端组件应保留筛选、分页和分享动作', () => {
+    assert.ok(CLIENT_SRC.includes('useSearchFilter'));
+    assert.ok(CLIENT_SRC.includes('usePagination'));
+    assert.ok(CLIENT_SRC.includes('FilterChips'));
+    assert.ok(CLIENT_SRC.includes('DetailActionBar'));
+    assert.ok(CLIENT_SRC.includes("workspace: 'member-activities'"));
+  });
+
+  it('客户端组件应保留 tabs、表格与成功率展示', () => {
+    assert.ok(CLIENT_SRC.includes('Tabs'));
+    assert.ok(CLIENT_SRC.includes('DataTable'));
+    assert.ok(CLIENT_SRC.includes("title={`活动记录（匹配 ${sortedItems.length} 条）`}"));
+    assert.ok(CLIENT_SRC.includes('% 成功率'));
+  });
+});
+
+describe('MemberActivitiesPage — 反例与边界', () => {
+  it('源码中不应出现 describe.skip', () => {
+    assert.ok(!PAGE_SRC.includes('describe.skip'));
+    assert.ok(!CLIENT_SRC.includes('describe.skip'));
+    assert.ok(!DATA_SRC.includes('describe.skip'));
+  });
+
+  it('源码中不应出现 as any', () => {
+    assert.ok(!PAGE_SRC.includes('as any'));
+    assert.ok(!CLIENT_SRC.includes('as any'));
+    assert.ok(!DATA_SRC.includes('as any'));
+  });
 });

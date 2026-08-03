@@ -6,6 +6,8 @@ import {
   Query,
   UseGuards,
   BadRequestException,
+} from '@nestjs/common'
+import {
   Headers,
   Logger,
   Inject
@@ -19,9 +21,16 @@ import {
   ApiUnauthorizedResponse
 } from '@nestjs/swagger'
 import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import { BillingWall } from '../foundation/commercial-billing/billing-wall'
 import { BillingServiceImpl, InMemoryBillingMeter } from '../foundation/commercial-billing/billing.service'
 import type { Bill, PricingPlan, Wallet } from '../foundation/commercial-billing/billing.port'
+
+const CASHIER_BILLING_FINANCE_READ_PERMISSION = 'finance:read'
+const CASHIER_BILLING_FINANCE_WRITE_PERMISSION = 'finance:*'
 
 /**
  * P3-5 商业化计费 admin 端点 (Cashier 模块)
@@ -41,6 +50,8 @@ import type { Bill, PricingPlan, Wallet } from '../foundation/commercial-billing
 @ApiTags('cashier-billing')
 @Controller('cashier/admin/billing')
 @UseGuards(TenantGuard)
+@RequireTenantScope()
+@RequirePermissions(CASHIER_BILLING_FINANCE_READ_PERMISSION)
 export class CashierBillingController {
   private readonly logger = new Logger(CashierBillingController.name)
 
@@ -99,6 +110,7 @@ export class CashierBillingController {
   }
 
   @Post('wallet/recharge')
+  @RequirePermissions(CASHIER_BILLING_FINANCE_WRITE_PERMISSION)
   @ApiOperation({
     summary: '充值',
     description: '向 tenant 钱包充值 (amount > 0), 同步更新 totalRecharged'
@@ -141,6 +153,7 @@ export class CashierBillingController {
   // ─── plan ──────────────────────────────────────
 
   @Post('plan')
+  @RequirePermissions(CASHIER_BILLING_FINANCE_WRITE_PERMISSION)
   @ApiOperation({
     summary: '设置 / 切换套餐',
     description: '为 tenant 设置或切换计费套餐 (FREE / FLAT / PER_UNIT / TIERED)'

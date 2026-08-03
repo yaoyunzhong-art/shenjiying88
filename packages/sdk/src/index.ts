@@ -42,6 +42,7 @@ import type {
   IntegrationWebhookSourceContract,
   ObservabilitySignalContract,
   PortalBootstrapResponse,
+  PortalDomainGovernanceSummaryContract,
   QuotaLedgerRecord,
   RateLimitPolicyRecord,
   RateLimitWorkspace,
@@ -171,6 +172,18 @@ export interface ApiClientOptions {
   marketCode?: string;
   token?: string;
   headers?: Record<string, string>;
+}
+
+export interface ActorHeaderOptions {
+  actorId: string;
+  actorType?: string;
+  actorName?: string;
+  tenantId?: string;
+  brandId?: string;
+  storeId?: string;
+  roles?: readonly string[];
+  permissions?: readonly string[];
+  authenticated?: boolean;
 }
 
 export interface FoundationGovernanceReadModel {
@@ -341,16 +354,16 @@ export function createRuntimeGovernancePanelBindings<TPreset>({
   buildSubmitRequest,
   buildReplayRequest,
   submitInit,
-  queryInit = { cache: 'no-store' },
+  queryInit = { cache: 'no-store' } as RequestInit,
   replayInit
 }: CreateRuntimeGovernancePanelBindingsOptions<TPreset>) {
   return {
     submitPreset: (preset: TPreset, nonce: string) =>
-      client.submitRuntimeGovernanceAction(buildSubmitRequest(preset, nonce), submitInit),
+      client.submitRuntimeGovernanceAction(buildSubmitRequest(preset, nonce), submitInit as RequestInit),
     queryReceipt: (receipt: RuntimeGovernanceReceipt) =>
-      client.getRuntimeGovernanceReceipt(receipt.receiptCode, queryInit),
+      client.getRuntimeGovernanceReceipt(receipt.receiptCode, queryInit as RequestInit),
     replayReceipt: (receipt: RuntimeGovernanceReceipt, nonce: string) =>
-      client.replayRuntimeGovernanceAction(receipt.receiptCode, buildReplayRequest(receipt, nonce), replayInit)
+      client.replayRuntimeGovernanceAction(receipt.receiptCode, buildReplayRequest(receipt, nonce), replayInit as RequestInit)
   };
 }
 
@@ -610,7 +623,8 @@ function normalizePath(path: string) {
   return path.startsWith('/') ? path : `/${path}`;
 }
 
-function buildHeaders(options: ApiClientOptions, headers?: HeadersInit) {
+type _HeadersInit = Record<string, string> | Array<[string, string]> | Headers
+function buildHeaders(options: ApiClientOptions, headers?: _HeadersInit) {
   return {
     ...(options.tenantId ? { 'x-tenant-id': options.tenantId } : {}),
     ...(options.brandId ? { 'x-brand-id': options.brandId } : {}),
@@ -619,6 +633,37 @@ function buildHeaders(options: ApiClientOptions, headers?: HeadersInit) {
     ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
     ...(options.headers ?? {}),
     ...(headers ?? {})
+  };
+}
+
+export function buildActorHeaders(options: ActorHeaderOptions): Record<string, string> {
+  const roles = Array.from(new Set((options.roles ?? []).map((item) => item.trim()).filter(Boolean)));
+  const permissions = Array.from(
+    new Set((options.permissions ?? []).map((item) => item.trim()).filter(Boolean)),
+  );
+
+  return {
+    'x-actor-id': options.actorId,
+    ...(options.actorType ? { 'x-actor-type': options.actorType } : {}),
+    ...(options.actorName ? { 'x-actor-name': options.actorName } : {}),
+    ...(options.tenantId ? { 'x-actor-tenant-id': options.tenantId } : {}),
+    ...(options.brandId ? { 'x-actor-brand-id': options.brandId } : {}),
+    ...(options.storeId ? { 'x-actor-store-id': options.storeId } : {}),
+    ...(roles.length > 0
+      ? {
+          'x-actor-roles': roles.join(','),
+          'x-roles': roles.join(','),
+        }
+      : {}),
+    ...(permissions.length > 0
+      ? {
+          'x-actor-permissions': permissions.join(','),
+          'x-permissions': permissions.join(','),
+        }
+      : {}),
+    ...(options.authenticated !== undefined
+      ? { 'x-actor-authenticated': String(options.authenticated) }
+      : {}),
   };
 }
 
@@ -733,7 +778,7 @@ const webFoundationAlertPanelMutationPresets: Record<
     ackNote: 'admin web auto triage',
     muteNote: 'admin web temporary mute',
     unmuteNote: 'admin web restore visibility',
-    muteInit: { cache: 'no-store' }
+    muteInit: { cache: 'no-store' as string } as RequestInit
   },
   'tob-web': {
     ackNote: 'tob web auto triage',
@@ -760,15 +805,15 @@ export function createWebFoundationAlertPanelClientAccess({
     ackNote: preset.ackNote,
     muteNote: preset.muteNote,
     unmuteNote: preset.unmuteNote,
-    drilldownInit: drilldownInit ?? { cache: 'no-store' },
-    muteInit: muteInit ?? preset.muteInit
+    drilldownInit: (drilldownInit ?? { cache: 'no-store' as string }) as RequestInit,
+    muteInit: (muteInit ?? preset.muteInit) as RequestInit
   });
 }
 
 export async function loadFoundationConsumerDescriptor(
   client: Pick<ApiClient, 'getFoundationConsumer'>,
   consumer: FoundationConsumerKey,
-  init: RequestInit = { cache: 'no-store' }
+  init: RequestInit = { cache: 'no-store' as string } as RequestInit
 ): Promise<FoundationConsumerDescriptor | null> {
   try {
     const descriptor = await client.getFoundationConsumer(consumer, init);
@@ -780,7 +825,7 @@ export async function loadFoundationConsumerDescriptor(
 
 export async function loadFoundationGovernanceReadModel(
   client: Pick<ApiClient, 'getFoundationAlertCatalog' | 'getFoundationOverview'>,
-  init: RequestInit = { cache: 'no-store' }
+  init: RequestInit = { cache: 'no-store' as string } as RequestInit
 ): Promise<FoundationGovernanceReadModel> {
   const fallbackGeneratedAt = new Date().toISOString();
   const [governanceCatalog, governanceOverview] = await Promise.all([
@@ -852,7 +897,7 @@ export class ApiClient {
   async request<T>(path: string, init: RequestInit = {}): Promise<ApiResult<T>> {
     const response = await fetch(`${normalizeBaseUrl(this.options.baseUrl)}${normalizePath(path)}`, {
       ...init,
-      headers: buildHeaders(this.options, init.headers)
+      headers: buildHeaders(this.options, init.headers as _HeadersInit | undefined)
     });
 
     if (!response.ok) {
@@ -944,6 +989,10 @@ export class ApiClient {
 
   async getPortalBootstrap(init: RequestInit = {}) {
     return this.getData<PortalBootstrapResponse>('/portals/bootstrap', init);
+  }
+
+  async getPortalDomainGovernanceSummary(init: RequestInit = {}) {
+    return this.getData<PortalDomainGovernanceSummaryContract>('/portals/domain-governance', init);
   }
 
   async getWorkbenchBootstrap(init: RequestInit = {}) {
@@ -1442,7 +1491,7 @@ export class ApiClient {
     const response = await fetch(url, {
       ...init,
       method: 'POST',
-      headers: buildHeaders(this.options, init.headers),
+      headers: buildHeaders(this.options, init.headers as _HeadersInit | undefined),
       body: JSON.stringify(body)
     });
 
@@ -1819,6 +1868,795 @@ export function subscribeStream(
     getLastEventId: () => lastEventId
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P1-3: 共享层收口 — Business API 端点 (checkout/cashier/orders/refunds/payments)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface BusinessOrderListItem {
+  orderId: string;
+  orderNo: string;
+  memberId: string;
+  status: string;
+  itemCount?: number;
+  totalAmount: number;
+  paidAmount: number;
+  refundedAmount: number;
+  refundRequestedAt?: string;
+  refundCompletedAt?: string;
+  paymentChannel?: string;
+  paymentStatus?: string;
+  refundStatus?: string;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string;
+}
+
+export interface BusinessOrderListPage {
+  items: BusinessOrderListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// ── 交易状态类型（与后端 CashierOrderStatus / CashierPaymentStatus 保持同步）──
+export type TransactionOrderStatus =
+  | 'CREATED'
+  | 'PENDING_PAYMENT'
+  | 'PAID'
+  | 'PAYMENT_FAILED'
+  | 'CLOSED';
+
+export type TransactionPaymentStatus =
+  | 'PENDING'
+  | 'SUCCEEDED'
+  | 'FAILED';
+
+export interface BusinessTransactionOrderItem {
+  skuId: string;
+  title?: string;
+  quantity: number;
+  price: number;
+}
+
+export interface BusinessTransactionOrder {
+  orderId: string;
+  orderNo?: string;
+  memberId: string;
+  currency: string;
+  totalAmount: number;
+  status: TransactionOrderStatus;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string;
+  closedAt?: string;
+  closeReason?: string;
+  items?: BusinessTransactionOrderItem[];
+}
+
+export interface BusinessTransactionPayment {
+  paymentId: string;
+  orderId: string;
+  externalPaymentId?: string;
+  channel?: string;
+  amount: number;
+  status: TransactionPaymentStatus;
+  qrCodeUrl?: string;
+  paymentUrl?: string;
+  expiresAt?: string;
+  transactionNo?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
+export interface BusinessTransactionRefund {
+  refundId: string;
+  orderId: string;
+  paymentId: string;
+  memberId: string;
+  refundAmount: number;
+  reason: string;
+  status: string;
+  requestedAt: string;
+  completedAt?: string;
+}
+
+export interface BusinessTransactionAggregate {
+  order: BusinessTransactionOrder;
+  payment?: BusinessTransactionPayment;
+  memberNickname?: string;
+  refunds: BusinessTransactionRefund[];
+}
+
+export interface BusinessCashierMemberLookupResult {
+  id: string;
+  name: string;
+  phone: string;
+  memberNo: string;
+  tier: string;
+  points: number;
+  discountRate: number;
+}
+
+export interface BusinessCashierProductItem {
+  sku: string;
+  name: string;
+  price: number;
+  category: string;
+  stock: number;
+}
+
+export interface BusinessCashierProductListPage {
+  items: BusinessCashierProductItem[];
+  total: number;
+}
+
+export interface BusinessFinanceLedgerRecord {
+  id: string;
+  tenantId: string;
+  brandId?: string;
+  storeId?: string;
+  type: 'REVENUE' | 'EXPENSE' | 'REFUND' | 'ADJUSTMENT';
+  amount: number;
+  balance: number;
+  orderId?: string;
+  transactionId?: string;
+  description: string;
+  category?: string;
+  recordedAt: string;
+  createdAt: string;
+}
+
+export interface BusinessRevenueSummary {
+  storeId?: string;
+  totalRevenue: number;
+  totalExpense: number;
+  totalRefund: number;
+  netRevenue: number;
+  transactionCount: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
+export interface BusinessFinanceAccountRecord {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  name: string;
+  type: 'CASH' | 'WECHAT' | 'ALIPAY' | 'BANK' | 'OTHER';
+  balance: number;
+  status: 'ACTIVE' | 'FROZEN' | 'CLOSED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessFinanceSettlementRecord {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  startDate: string;
+  endDate: string;
+  totalRevenue: number;
+  totalExpense: number;
+  netProfit: number;
+  settlementStatus: 'PENDING' | 'CONFIRMED' | 'DISPUTED';
+  settledAt?: string;
+  createdAt: string;
+}
+
+export interface BusinessFinanceInvoiceRecord {
+  id: string;
+  tenantId: string;
+  storeId?: string;
+  orderId?: string;
+  invoiceNo: string;
+  amount: number;
+  taxAmount: number;
+  totalAmount: number;
+  type: 'REGULAR' | 'VAT';
+  status: 'DRAFT' | 'ISSUED' | 'CANCELLED';
+  issuedAt?: string;
+  buyerInfo?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface BusinessDailyRevenueSummary {
+  date: string;
+  storeId?: string;
+  revenue: number;
+  expense: number;
+  refund: number;
+  netRevenue: number;
+  transactionCount: number;
+}
+
+function buildBusinessOrderListPath(query?: {
+  memberId?: string;
+  status?: string;
+  paymentStatus?: string;
+  limit?: number;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  if (!query) {
+    return '/transactions/orders';
+  }
+
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      params.set(key, String(value));
+    }
+  });
+
+  const search = params.toString();
+  return search ? `/transactions/orders?${search}` : '/transactions/orders';
+}
+
+function normalizeBusinessOrderListResponse(
+  payload: BusinessOrderListItem[] | BusinessOrderListPage
+): BusinessOrderListPage {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length,
+    };
+  }
+
+  return payload;
+}
+
+/**
+ * 创建统一业务 API 客户端 (cashier/checkout/orders/refunds 面向前端消费)
+ *
+ * 用法:
+ * ```ts
+ * const biz = createBusinessClient()
+ * const orders = await biz.orders.list()
+ * const member = await biz.member.lookup('13800138001')
+ * ```
+ */
+export function createBusinessClient(
+  options?: string | (Omit<ApiClientOptions, 'baseUrl'> & { baseUrl?: string })
+) {
+  const resolvedOptions =
+    typeof options === 'string'
+      ? { baseUrl: options }
+      : { ...(options ?? {}), baseUrl: options?.baseUrl ?? getDefaultApiBaseUrl() };
+  const api = new ApiClient({
+    ...resolvedOptions,
+    baseUrl: resolvedOptions.baseUrl,
+  });
+
+  return {
+    // ── Checkout (POST /api/v1/transactions/checkout) ──
+    checkout: {
+      /** 发起结账 */
+      start: (body: {
+        memberId: string;
+        items: Array<{ productId: string; quantity: number; unitPriceCents: number }>;
+        paymentChannel: string;
+        couponCode?: string;
+      }, init?: RequestInit) =>
+        api.postData<{ orderId: string; transactionId: string; totalCents: number }>('/transactions/checkout', body, init),
+    },
+
+    // ── Orders (GET/POST /api/v1/transactions/orders) ──
+    orders: {
+      /** 订单列表 */
+      list: (query?: {
+        memberId?: string;
+        status?: string;
+        paymentStatus?: string;
+        limit?: number;
+        fromDate?: string;
+        toDate?: string;
+        page?: number;
+        pageSize?: number;
+      }, init?: RequestInit) =>
+        api.getData<BusinessOrderListItem[] | BusinessOrderListPage>(
+          buildBusinessOrderListPath(query),
+          init,
+        ).then((payload) => normalizeBusinessOrderListResponse(payload).items),
+
+      /** 订单分页列表 */
+      listPage: (query?: {
+        memberId?: string;
+        status?: string;
+        paymentStatus?: string;
+        limit?: number;
+        fromDate?: string;
+        toDate?: string;
+        page?: number;
+        pageSize?: number;
+      }, init?: RequestInit) =>
+        api.getData<BusinessOrderListItem[] | BusinessOrderListPage>(
+          buildBusinessOrderListPath(query),
+          init,
+        ).then((payload) => normalizeBusinessOrderListResponse(payload)),
+
+      /** 订单详情 */
+      get: (orderId: string, init?: RequestInit) =>
+        api.getData<BusinessTransactionAggregate>(`/transactions/orders/${orderId}`, init),
+
+      /** 订单退款记录 */
+      listRefunds: (orderId: string, init?: RequestInit) =>
+        api.getData<Array<{
+          refundId: string;
+          amount: number;
+          reason: string;
+          status: string;
+          requestedAt: string;
+        }>>(`/transactions/orders/${orderId}/refunds`, init),
+    },
+
+    // ── Cashier (GET/POST /api/v1/cashier/*) ──
+    cashier: {
+      /** 会员查找 (手机号/卡号) */
+      lookupMember: (query: string, init?: RequestInit) =>
+        api.getData<BusinessCashierMemberLookupResult | null>(
+          `/cashier/members/lookup?q=${encodeURIComponent(query)}`,
+          init,
+        ),
+
+      /** 会员消费记录 (走 transactions 模块) */
+      listMemberTransactions: (memberId: string, init?: RequestInit) =>
+        api.getData<Array<{
+          orderId: string;
+          orderNo: string;
+          status: string;
+          totalAmount: number;
+          currency: string;
+          paymentStatus?: string;
+          createdAt: string;
+        }>>(`/transactions/members/${memberId}`, init),
+
+      /** 商品扫码查询 */
+      lookupProduct: (sku: string, init?: RequestInit) =>
+        api.getData<BusinessCashierProductItem | null>(
+          `/cashier/products/${encodeURIComponent(sku)}`, init,
+        ),
+
+      /** 商品目录列表 */
+      listProducts: (query?: { limit?: number; offset?: number }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.limit !== undefined) params.set('limit', String(query.limit));
+        if (query?.offset !== undefined) params.set('offset', String(query.offset));
+        const search = params.toString();
+        return api.getData<BusinessCashierProductListPage>(
+          search ? `/cashier/products?${search}` : '/cashier/products',
+          init,
+        );
+      },
+
+      /** 支付渠道统计 */
+      getChannelStats: (init?: RequestInit) =>
+        api.getData<Array<{ channel: string; today: number; month: number }>>('/cashier/stats/channels', init),
+
+      /** 创建订单 (POS) */
+      createOrder: (body: {
+        clientOrderId: string;
+        memberId?: string;
+        items: Array<{ productId: string; quantity: number; unitPriceCents: number; discountCents?: number }>;
+        discountCents?: number;
+        taxCents?: number;
+      }, init?: RequestInit) =>
+        api.postData('/cashier/orders', body, init),
+
+      /** 提交订单 (DRAFT → PENDING) */
+      submitOrder: (orderId: string, init?: RequestInit) =>
+        api.postData(`/cashier/orders/${orderId}/submit`, {}, init),
+
+      /** 创建支付 */
+      createPayment: (orderId: string, body: {
+        method: 'CASH' | 'WECHAT' | 'ALIPAY' | 'CARD';
+        amountCents: number;
+      }, init?: RequestInit) =>
+        api.postData(`/cashier/orders/${orderId}/payments`, body, init),
+
+      /** 创建退款 */
+      createRefund: (orderId: string, body: {
+        paymentId: string;
+        amountCents: number;
+        reason: string;
+      }, init?: RequestInit): Promise<{ refundId: string }> =>
+        api.postData<{ refundId: string }>(`/cashier/orders/${orderId}/refunds`, body, init),
+    },
+
+    // ── Refunds (GET/POST /api/v1/transactions/refunds) ──
+    refunds: {
+      /** 退款列表 */
+      list: (query?: {
+        memberId?: string;
+        orderId?: string;
+        status?: string;
+        limit?: number;
+      }, init?: RequestInit) =>
+        (() => {
+          const searchParams = new URLSearchParams();
+          if (query?.memberId) searchParams.set('memberId', query.memberId);
+          if (query?.orderId) searchParams.set('orderId', query.orderId);
+          if (query?.status) searchParams.set('status', query.status);
+          if (typeof query?.limit === 'number') searchParams.set('limit', String(query.limit));
+          const suffix = searchParams.toString();
+          return api.getData<Array<{
+            refundId: string;
+            tenantId: string;
+            orderId: string;
+            paymentId: string;
+            memberId: string;
+            refundAmount: number;
+            reason: string;
+            operator?: string;
+            status: string;
+            requestedAt: string;
+            completedAt?: string;
+            reviewedAt?: string;
+            reviewedBy?: string;
+            reviewNote?: string;
+          }>>(`/transactions/refunds${suffix ? `?${suffix}` : ''}`, init);
+        })(),
+
+      /** 待处理退款 */
+      listPending: (query?: { limit?: number }, init?: RequestInit) =>
+        api.getData(`/transactions/refunds/pending${typeof query?.limit === 'number' ? `?limit=${query.limit}` : ''}`, init),
+
+      /** 退款 dashboard */
+      getDashboard: (init?: RequestInit) =>
+        api.getData('/transactions/refunds/dashboard', init),
+
+      /** 退款详情 */
+      get: (refundId: string, init?: RequestInit) =>
+        api.getData<{
+          refundId: string;
+          orderId: string;
+          paymentId: string;
+          memberId: string;
+          refundAmount: number;
+          reason: string;
+          status: string;
+          requestedAt: string;
+          completedAt?: string;
+          reviewedAt?: string;
+          reviewedBy?: string;
+          reviewNote?: string;
+        }>(`/transactions/refunds/${refundId}`, init),
+
+      /** 审批退款 */
+      approve: (refundId: string, body: { operator?: string; note?: string }, init?: RequestInit) =>
+        api.postData(`/transactions/refunds/${refundId}/approve`, body, init),
+
+      /** 拒绝退款 */
+      reject: (refundId: string, body: { operator?: string; note?: string }, init?: RequestInit) =>
+        api.postData(`/transactions/refunds/${refundId}/reject`, body, init),
+    },
+
+    // ── Finance (GET /api/v1/finance/*) ──
+    finance: {
+      /** 账户列表 */
+      listAccounts: (query?: { storeId?: string }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        const search = params.toString();
+        return api.getData<BusinessFinanceAccountRecord[]>(
+          search ? `/finance/accounts?${search}` : '/finance/accounts',
+          init,
+        );
+      },
+
+      /** 账户详情 */
+      getAccount: (accountId: string, init?: RequestInit) =>
+        api.getData<BusinessFinanceAccountRecord>(`/finance/accounts/${accountId}`, init),
+
+      /** 营收汇总 */
+      getRevenueSummary: (query: {
+        storeId?: string;
+        startDate: string;
+        endDate: string;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set('storeId', query.storeId);
+        params.set('startDate', query.startDate);
+        params.set('endDate', query.endDate);
+        return api.getData<BusinessRevenueSummary>(
+          `/finance/revenue/summary?${params.toString()}`,
+          init,
+        );
+      },
+
+      /** 日营收 */
+      getDailyRevenue: (query: {
+        storeId?: string;
+        date: string;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query.storeId) params.set('storeId', query.storeId);
+        params.set('date', query.date);
+        return api.getData<BusinessDailyRevenueSummary>(
+          `/finance/revenue/daily?${params.toString()}`,
+          init,
+        );
+      },
+
+      /** 财务流水 */
+      listLedgers: (query?: {
+        storeId?: string;
+        type?: BusinessFinanceLedgerRecord['type'];
+        orderId?: string;
+        transactionId?: string;
+        category?: string;
+        recordedAfter?: string;
+        recordedBefore?: string;
+        limit?: number;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        if (query?.type) params.set('type', query.type);
+        if (query?.orderId) params.set('orderId', query.orderId);
+        if (query?.transactionId) params.set('transactionId', query.transactionId);
+        if (query?.category) params.set('category', query.category);
+        if (query?.recordedAfter) params.set('recordedAfter', query.recordedAfter);
+        if (query?.recordedBefore) params.set('recordedBefore', query.recordedBefore);
+        if (query?.limit !== undefined) params.set('limit', String(query.limit));
+        const search = params.toString();
+        return api.getData<BusinessFinanceLedgerRecord[]>(
+          search ? `/finance/ledgers?${search}` : '/finance/ledgers',
+          init,
+        );
+      },
+
+      /** 结算列表 */
+      listSettlements: (query?: {
+        storeId?: string;
+        settlementStatus?: BusinessFinanceSettlementRecord['settlementStatus'];
+        startAfter?: string;
+        endBefore?: string;
+        limit?: number;
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        if (query?.settlementStatus) params.set('settlementStatus', query.settlementStatus);
+        if (query?.startAfter) params.set('startAfter', query.startAfter);
+        if (query?.endBefore) params.set('endBefore', query.endBefore);
+        if (query?.limit !== undefined) params.set('limit', String(query.limit));
+        const search = params.toString();
+        return api.getData<BusinessFinanceSettlementRecord[]>(
+          search ? `/finance/settlements?${search}` : '/finance/settlements',
+          init,
+        );
+      },
+
+      /** 结算详情 */
+      getSettlement: (settlementId: string, init?: RequestInit) =>
+        api.getData<BusinessFinanceSettlementRecord>(`/finance/settlements/${settlementId}`, init),
+
+      /** 发票列表 */
+      listInvoices: (query?: {
+        storeId?: string;
+        orderId?: string;
+        status?: BusinessFinanceInvoiceRecord['status'];
+        type?: BusinessFinanceInvoiceRecord['type'];
+      }, init?: RequestInit) => {
+        const params = new URLSearchParams();
+        if (query?.storeId) params.set('storeId', query.storeId);
+        if (query?.orderId) params.set('orderId', query.orderId);
+        if (query?.status) params.set('status', query.status);
+        if (query?.type) params.set('type', query.type);
+        const search = params.toString();
+        return api.getData<BusinessFinanceInvoiceRecord[]>(
+          search ? `/finance/invoices?${search}` : '/finance/invoices',
+          init,
+        );
+      },
+
+      /** 发票详情 */
+      getInvoice: (invoiceId: string, init?: RequestInit) =>
+        api.getData<BusinessFinanceInvoiceRecord>(`/finance/invoices/${invoiceId}`, init),
+
+      /** 发票开具 */
+      issueInvoice: (invoiceId: string, init?: RequestInit) =>
+        api.postData<BusinessFinanceInvoiceRecord>(`/finance/invoices/${invoiceId}/issue`, {}, init),
+
+      /** 发票作废 */
+      cancelInvoice: (invoiceId: string, init?: RequestInit) =>
+        api.postData<BusinessFinanceInvoiceRecord>(`/finance/invoices/${invoiceId}/cancel`, {}, init),
+    },
+
+    // ── Payment Gateway (GET/POST /api/v1/payment-gateway) ──
+    paymentGateway: {
+      /** 发起支付 */
+      pay: (body: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        provider: string;
+        metadata?: Record<string, unknown>;
+        locale?: string;
+        returnUrl?: string;
+        webhookUrl?: string;
+      }, init?: RequestInit) =>
+        api.postData('/payment-gateway/pay', body, init),
+
+      /** 查询支付结果 */
+      queryPayment: (transactionId: string, init?: RequestInit) =>
+        api.getData(`/payment-gateway/pay/${transactionId}`, init),
+
+      /** 发起退款 */
+      refund: (body: {
+        transactionId: string;
+        amount: number;
+        reason: string;
+      }, init?: RequestInit) =>
+        api.postData('/payment-gateway/refund', body, init),
+
+      /** 查询退款状态 */
+      queryRefund: (refundId: string, init?: RequestInit) =>
+        api.getData(`/payment-gateway/refund/${refundId}`, init),
+    },
+
+    // ── Budget (GET/POST /api/v1/finance/budgets) ──
+    budget: {
+      /** 预算列表 */
+      list: (query?: {
+        tenantId?: string;
+        status?: string;
+        category?: string;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          id: string;
+          tenantId: string;
+          name: string;
+          category: string;
+          totalCents: number;
+          usedCents: number;
+          remainingCents: number;
+          currency: string;
+          period: string;
+          status: string;
+          version: number;
+          notes: string;
+          createdAt: string;
+          updatedAt: string;
+        }>>('/finance/budgets', { ...init, headers: { ...(query ? {
+          'x-tenant-id': query.tenantId ?? '',
+          'x-status': query.status ?? '',
+          'x-category': query.category ?? '',
+        } : {}), ...(init?.headers ?? {}) } }),
+
+      /** 创建预算 */
+      create: (body: {
+        tenantId: string;
+        name: string;
+        category: string;
+        totalCents: number;
+        currency?: string;
+        period: string;
+        notes?: string;
+        idempotencyKey: string;
+      }, init?: RequestInit) =>
+        api.postData<{ id: string; version: number }>('/finance/budgets', body, init),
+
+      /** 提交审批 */
+      submitForApproval: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/${id}/submit`, body, init),
+
+      /** 关闭预算 */
+      close: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/${id}/close`, body, init),
+
+      /** 审批请求列表 */
+      listApprovals: (query?: {
+        budgetId?: string;
+        status?: string;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          id: string;
+          budgetId: string;
+          budgetName: string;
+          requester: string;
+          amountCents: number;
+          reason: string;
+          status: 'PENDING' | 'APPROVED' | 'REJECTED';
+          version: number;
+          createdAt: string;
+        }>>('/finance/budgets/approvals', { ...init, headers: { ...(query ? {
+          'x-budget-id': query.budgetId ?? '',
+          'x-status': query.status ?? '',
+        } : {}), ...(init?.headers ?? {}) } }),
+
+      /** 批准审批请求 */
+      approveApproval: (approvalId: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/approvals/${approvalId}/approve`, body, init),
+
+      /** 驳回审批请求 */
+      rejectApproval: (approvalId: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/finance/budgets/approvals/${approvalId}/reject`, body, init),
+    },
+
+    // ── Promotions (GET/POST /api/v1/marketing/promotions) ──
+    promotions: {
+      /** 促销列表 */
+      list: (query?: {
+        tenantId?: string;
+        storeId?: string;
+        status?: string;
+      }, init?: RequestInit) =>
+        api.getData<Array<{
+          id: string;
+          name: string;
+          type: string;
+          discount: string;
+          scope: string;
+          start: string;
+          end: string;
+          budget: number;
+          used: number;
+          status: 'active' | 'scheduled' | 'ended' | 'draft';
+          targetGoal?: string;
+          version: number;
+          createdAt: string;
+          updatedAt: string;
+        }>>('/marketing/promotions', { ...init, headers: { ...(query ? {
+          'x-tenant-id': query.tenantId ?? '',
+          'x-store-id': query.storeId ?? '',
+          'x-status': query.status ?? '',
+        } : {}), ...(init?.headers ?? {}) } }),
+
+      /** 创建促销 */
+      create: (body: {
+        tenantId: string;
+        storeId: string;
+        name: string;
+        type: string;
+        discount: string;
+        scope: string;
+        start: string;
+        end: string;
+        budget: number;
+        targetGoal?: string;
+        idempotencyKey: string;
+      }, init?: RequestInit) =>
+        api.postData<{ id: string; version: number }>('/marketing/promotions', body, init),
+
+      /** 发布草稿促销 */
+      publish: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/marketing/promotions/${id}/publish`, body, init),
+
+      /** 结束促销 */
+      end: (id: string, body: {
+        idempotencyKey: string;
+        version: number;
+      }, init?: RequestInit) =>
+        api.postData<{ status: string; version: number }>(`/marketing/promotions/${id}/end`, body, init),
+    },
+
+    // ── Convenience: 原始 ApiClient 实例 (用于自定义请求) ──
+    raw: api,
+  };
+}
+
+export type BusinessClient = ReturnType<typeof createBusinessClient>;
 
 /** 计算下次 backoff 延迟 (供测试与 UI 共享)
  *  - attemptNum = 1 → initialDelayMs (第一次重试前)

@@ -52,13 +52,13 @@ export class BootstrapService {
   /** 注册模块状态 */
   registerModule(module: string, status: FoundReadyStatus['status'], details?: string): void {
     this.moduleStatuses.set(module, { module, status, details });
-    this.logger.log(`模块状态: ${module} → ${status}${details ? ` (${details})` : ''}`);
+    this.logger.debug(`模块状态: ${module} → ${status}${details ? ` (${details})` : ''}`);
   }
 
   /** 标记系统可运行 */
   markRunning(): void {
     this.phase = 'running';
-    this.logger.log('系统进入运行态');
+    this.logger.debug('系统进入运行态');
   }
 
   getHealth(): BootstrapHealthResponse {

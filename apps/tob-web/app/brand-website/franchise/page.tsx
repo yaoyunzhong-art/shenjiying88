@@ -1,9 +1,9 @@
+'use client';
 /**
  * 招商加盟合作页 - Franchise Page
  * 三类合作模式，投资回报、合作政策
  */
 
-'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';

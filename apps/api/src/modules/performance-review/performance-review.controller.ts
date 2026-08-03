@@ -6,7 +6,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
@@ -17,6 +20,7 @@ import {
 } from './performance-review.dto'
 import { PerformanceReviewService } from './performance-review.service'
 
+@UseGuards(TenantGuard)
 @Controller('performance-reviews')
 export class PerformanceReviewController {
   constructor(private readonly reviewService: PerformanceReviewService) {}

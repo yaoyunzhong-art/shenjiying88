@@ -5,10 +5,17 @@ import {
   Param,
   Patch,
   Post,
-  Query
+  Query,
+  UseGuards,
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
 import {
   toNotificationDispatchContract,
   toNotificationTemplateContract
@@ -25,13 +32,20 @@ import {
 } from './notification.entity'
 import { NotificationService } from './notification.service'
 
+const NOTIFICATION_READ_PERMISSION = 'notification:read'
+const NOTIFICATION_WRITE_PERMISSION = 'notification:write'
+
+@UseGuards(TenantGuard)
 @Controller('notifications')
+@RequireTenantScope()
+@RequirePermissions(NOTIFICATION_READ_PERMISSION)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   // ── Template endpoints ──
 
   @Post('templates')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   registerTemplate(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: RegisterNotificationTemplateDto
@@ -77,6 +91,7 @@ export class NotificationController {
   }
 
   @Patch('templates/:id')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   updateTemplate(
     @Param('id') id: string,
     @Body() body: UpdateNotificationTemplateDto
@@ -88,6 +103,7 @@ export class NotificationController {
   // ── Dispatch endpoints ──
 
   @Post('send')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   send(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: SendNotificationDto
@@ -130,12 +146,14 @@ export class NotificationController {
   }
 
   @Post('dispatches/:id/retry')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   retryDispatch(@Param('id') id: string) {
     const dispatch = this.notificationService.retryDispatch(id)
     return dispatch ? toNotificationDispatchContract(dispatch) : null
   }
 
   @Post('dispatches/:id/cancel')
+  @RequirePermissions(NOTIFICATION_WRITE_PERMISSION)
   cancelDispatch(@Param('id') id: string) {
     const dispatch = this.notificationService.cancelDispatch(id)
     return dispatch ? toNotificationDispatchContract(dispatch) : null

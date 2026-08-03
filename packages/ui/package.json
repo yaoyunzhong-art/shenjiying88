@@ -3,12 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
   "dependencies": {
     "@m5/types": "workspace:*",
+    "antd": "^6.5.0",
     "react": "18.3.1"
   },
   "devDependencies": {
@@ -20,8 +29,8 @@
     "react-dom": "18.3.1"
   },
   "scripts": {
-    "build": "tsup src/index.tsx --format cjs --dts",
-    "dev": "tsup src/index.tsx --format cjs --dts --watch",
+    "build": "tsup src/index.tsx --format esm,cjs --dts",
+    "dev": "tsup src/index.tsx --format esm,cjs --dts --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test $(find src -type f -name '*.test.ts' -o -name '*.test.tsx' | sort)"

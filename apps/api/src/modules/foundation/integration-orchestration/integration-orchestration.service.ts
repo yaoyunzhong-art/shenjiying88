@@ -1,6 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { EventStatus, FoundationScopeType, Prisma } from '@prisma/client'
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import { TrustGovernanceService } from '../trust-governance/trust-governance.service'
 import type { FoundationModuleDescriptor } from '../foundation.types'
@@ -37,8 +37,8 @@ interface AcceptWebhookInput {
 @Injectable()
 export class IntegrationOrchestrationService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly trustGovernanceService: TrustGovernanceService
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(TrustGovernanceService) private readonly trustGovernanceService: TrustGovernanceService
   ) {}
 
   private readonly webhookSources: WebhookSource[] = [

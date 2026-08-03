@@ -20,6 +20,13 @@ import {
   Logger,
   UseGuards
 } from '@nestjs/common'
+
+import { TenantGuard } from '../agent/tenant.guard'
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { FinanceReconciliationService } from './finance-reconciliation.service'
@@ -32,13 +39,20 @@ import {
   ManualMatchDto,
   ManualAdjustmentDto,
   ReconciliationStatsQueryDto,
+  ReconciliationQueryDto,
   ReconciliationChannel
 } from './dto/create-reconciliation.dto'
+
+const FINANCE_RECONCILIATION_READ_PERMISSION = 'finance:read'
+const FINANCE_RECONCILIATION_WRITE_PERMISSION = 'finance:*'
 
 /**
  * 无需显式 TenantGuard — @TenantContext() 内部处理租户注入
  */
+@UseGuards(TenantGuard)
 @Controller('finance/reconciliation')
+@RequireTenantScope()
+@RequirePermissions(FINANCE_RECONCILIATION_READ_PERMISSION)
 export class FinanceReconciliationController {
   private readonly logger = new Logger(FinanceReconciliationController.name)
 
@@ -55,6 +69,7 @@ export class FinanceReconciliationController {
    * 创建对账批次
    */
   @Post('batches')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   createBatch(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateReconciliationBatchDto
@@ -91,6 +106,7 @@ export class FinanceReconciliationController {
    * 完成对账批次
    */
   @Post('batches/:batchId/complete')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   completeBatch(
     @Param('batchId') batchId: string,
     @TenantContext() tenantContext: RequestTenantContext
@@ -131,6 +147,7 @@ export class FinanceReconciliationController {
    * 创建对账交易记录
    */
   @Post('transactions')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   createTransaction(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: CreateReconciliationTransactionDto
@@ -167,6 +184,7 @@ export class FinanceReconciliationController {
    * 更新对账交易
    */
   @Put('transactions/:transactionId')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   updateTransaction(
     @Param('transactionId') transactionId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -184,6 +202,7 @@ export class FinanceReconciliationController {
    * 自动匹配
    */
   @Post('batches/:batchId/auto-match')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   autoMatch(
     @Param('batchId') batchId: string,
     @TenantContext() tenantContext: RequestTenantContext,
@@ -204,6 +223,7 @@ export class FinanceReconciliationController {
    * 手动匹配
    */
   @Post('manual-match')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   manualMatch(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: ManualMatchDto
@@ -216,6 +236,7 @@ export class FinanceReconciliationController {
    * 手动调账
    */
   @Post('adjustment')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   manualAdjustment(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: ManualAdjustmentDto
@@ -232,6 +253,7 @@ export class FinanceReconciliationController {
    * 批量导入外部交易
    */
   @Post('import')
+  @RequirePermissions(FINANCE_RECONCILIATION_WRITE_PERMISSION)
   importExternalTransactions(
     @TenantContext() tenantContext: RequestTenantContext,
     @Body() body: {
@@ -261,6 +283,18 @@ export class FinanceReconciliationController {
    * GET /api/finance/reconciliation/stats
    * 获取对账统计
    */
+  /**
+   * POST /api/finance/reconciliation/query
+   * 查询对账历史记录（按日期范围/门店/状态筛选）
+   */
+  @Post('query')
+  queryReconciliationHistory(
+    @TenantContext() tenantContext: RequestTenantContext,
+    @Body() body: ReconciliationQueryDto
+  ) {
+    return this.reconciliationService.queryReconciliationHistory(tenantContext, body)
+  }
+
   @Get('stats')
   getReconciliationStats(
     @TenantContext() tenantContext: RequestTenantContext,

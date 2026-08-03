@@ -25,3 +25,5 @@ node_modules/.pnpm/@next+swc-darwin-arm64@*/**
 apps/admin-web/.next/cache/**
 apps/storefront-web/.next/cache/**
 apps/tob-web/.next/cache/**
+.DS_Store
+packages/ui/dist/

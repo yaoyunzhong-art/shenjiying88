@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { type CSSProperties } from 'react';
 import { StatusBadge, DetailActionBar, DetailClosureBar, WorkspaceBreadcrumb, type DetailClosureLink } from '@m5/ui';
 import type { RateLimitsPolicyDetail } from '../../../rate-limits-detail-view-model';
 import {
@@ -13,6 +14,8 @@ import {
 import { buildRateLimitsLedgerDetailHref } from '@m5/types';
 import { useDetailActions } from '../../../components/use-detail-actions';
 import { buildStandardBreadcrumb } from '../../../components/detail-workspace-registry';
+import SnapshotRefreshButton from '../../../components/snapshot-refresh-button'
+import { useSnapshotRefresh } from '../../../components/use-snapshot-refresh'
 
 interface RateLimitsPolicyDetailClientProps {
   snapshot: RateLimitsPolicyDetail;
@@ -32,6 +35,7 @@ function PolicyBoard({
   record: NonNullable<RateLimitsPolicyDetail['record']>;
   snapshot: RateLimitsPolicyDetail;
 }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   const active = isPolicyActive(record);
   const { actions } = useDetailActions({
     workspace: 'rate-limits',
@@ -40,6 +44,15 @@ function PolicyBoard({
   });
   return (
     <div style={{ display: 'grid', gap: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'rate-limits', detailLabel: snapshot.policyId })}
       />
@@ -157,8 +170,18 @@ function PolicyBoard({
 }
 
 function NotFoundPanel({ snapshot }: { snapshot: RateLimitsPolicyDetail }) {
+  const { isRefreshing, handleRefresh } = useSnapshotRefresh()
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <SnapshotRefreshButton
+  onRefresh={handleRefresh}
+  isRefreshing={isRefreshing}
+  variant="accent"
+  idleLabel="刷新"
+  loadingLabel="刷新中..."
+/>
+      </div>
       <WorkspaceBreadcrumb
         {...buildStandardBreadcrumb({ workspace: 'rate-limits', detailLabel: snapshot.policyId || '未找到' })}
       />
@@ -200,27 +223,28 @@ function SummaryCard({ title, value, detail }: { title: string; value: string; d
 
 // DeepLinkCard has been removed in favor of <DetailClosureBar> from @m5/ui.
 
-const summaryGridStyle: React.CSSProperties = {
+
+const summaryGridStyle: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
   gap: 12
 };
 
-const summaryCardStyle: React.CSSProperties = {
+const summaryCardStyle: CSSProperties = {
   border: '1px solid rgba(148,163,184,0.18)',
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
 };
 
-const panelStyle: React.CSSProperties = {
+const panelStyle: CSSProperties = {
   border: '1px solid rgba(148,163,184,0.18)',
   borderRadius: 12,
   padding: 16,
   background: 'rgba(15,23,42,0.55)'
 };
 
-const sectionTitleStyle: React.CSSProperties = {
+const sectionTitleStyle: CSSProperties = {
   fontSize: 14,
   color: '#94a3b8',
   marginBottom: 12,
@@ -229,7 +253,7 @@ const sectionTitleStyle: React.CSSProperties = {
   letterSpacing: 0.4
 };
 
-const dimensionChipStyle: React.CSSProperties = {
+const dimensionChipStyle: CSSProperties = {
   fontSize: 12,
   color: '#93c5fd',
   background: 'rgba(59,130,246,0.12)',

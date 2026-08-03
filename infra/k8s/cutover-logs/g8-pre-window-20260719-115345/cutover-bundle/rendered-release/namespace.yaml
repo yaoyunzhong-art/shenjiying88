@@ -1,0 +1,11 @@
+# ═══════════════════════════════════════════════════════════════
+# M5 — K8s Namespace
+# ═══════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m5
+  labels:
+    name: m5
+    environment: production
+    app.kubernetes.io/part-of: shenjiying

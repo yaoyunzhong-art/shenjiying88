@@ -4,40 +4,118 @@
  * 功能:
  * - 管理门店退换货申请审批与处理流程
  * - 支持仅退款、换货、维修等多种退换类型
- * - 状态筛选（待审核/待收货/处理中/已完成/已关闭）
- * - 搜索：按订单号、退货单号、门店名称
  * - 统计概览：待处理 / 已完成 / 维修中
- * - 空状态 / 加载中 / 搜索无结果 / 错误回退
+ * - 空状态 / 加载中 / 错误回退
  */
-import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoadingSkeleton, EmptyState, ErrorBoundary } from '@m5/ui';
-import { getReturns } from './return-data';
+import { loadReturnsSnapshot, getReturns } from './return-data';
 import { ReturnListClient } from './return-list-client';
 
-export const metadata: Metadata = {
-  title: '退换货管理 - M5 指挥台',
-  description:
-    '管理门店退换货申请审批与处理流程，支持仅退款、换货、维修等多种退换类型。状态筛选、订单号搜索，统计待处理和已完成退换货。',
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+/** Next.js Metadata: 退换货管理页面 SEO/分享卡片 */
+export const metadata = {
+  title: '退换货管理 - 数字运动潮玩平台',
+  description: '管理门店退换货申请审批与处理流程。仅退款、换货、维修等多类型支持。',
   openGraph: {
-    title: '退换货管理 | 门店退换处理',
-    description: '管理门店退换货审批与处理流程，支持仅退款、换货、维修等多种类型',
+    title: '退换货管理 - 神机营体育',
+    description: '审批、处理、退换统计一站式管理',
     type: 'website',
+    locale: 'zh_CN',
+  },
+};
+
+/** 退换货流程说明 — 5 步闭环 */
+function ReturnProcessGuide() {
+  const STEPS = [
+    { idx: 1, title: '顾客申请', desc: '顾客提交退换货申请并选择原因' },
+    { idx: 2, title: '门店审核', desc: '门店审核申请合理性' },
+    { idx: 3, title: '商品质检', desc: '回收商品质量检测' },
+    { idx: 4, title: '财务处理', desc: '退款或换货发货' },
+    { idx: 5, title: '流程关闭', desc: '订单完结并通知顾客' },
+  ];
+  return (
+    <section
+      aria-label="退换货流程说明"
+      style={{
+        marginBottom: 24,
+        padding: 20,
+        borderRadius: 12,
+        background: 'rgba(96, 165, 250, 0.06)',
+        border: '1px solid rgba(96, 165, 250, 0.18)',
+      }}
+    >
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#e2e8f0', margin: '0 0 12px' }}>
+        退换货流程说明
+      </h2>
+      <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 16px' }}>
+        完整退换货流程包含 5 个环节，依次为 顾客申请 → 门店审核 → 质检 → 财务处理 → 流程关闭。
+      </p>
+      <ol
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: 12,
+          margin: 0,
+          padding: 0,
+          listStyle: 'none',
+        }}
+      >
+        {STEPS.map((s) => (
+          <li
+            key={s.idx}
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              background: 'rgba(15, 23, 42, 0.4)',
+              border: '1px solid rgba(148, 163, 184, 0.08)',
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600, marginBottom: 4 }}>
+              STEP {s.idx}
+            </div>
+            <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600, marginBottom: 4 }}>
+              {s.title}
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8' }}>{s.desc}</div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** JSON-LD 结构化数据 */
+const RETURN_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: '退换货管理',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description:
+    '神机营体育 — 退换货管理后台。仅退款、换货、维修等多类型审批。',
+  offers: {
+    '@type': 'Offer',
+    category: '退换货审批',
   },
 };
 
 /** 退换货统计摘要 */
 function ReturnSummaryCards({ returns }: { returns: unknown[] }) {
   const pending = returns.filter(
-    (r: any) => r.status === 'pending' || r.status === 'review'
+    (r: any) => r.status === 'pending_review' || r.status === 'approved',
   ).length;
   const processing = returns.filter(
-    (r: any) => r.status === 'processing' || r.status === 'received'
+    (r: any) => r.status === 'return_received' || r.status === 'replacement_sent',
   ).length;
   const completed = returns.filter(
-    (r: any) => r.status === 'completed' || r.status === 'refunded'
+    (r: any) => r.status === 'refund_issued',
   ).length;
-  const closed = returns.filter((r: any) => r.status === 'closed' || r.status === 'rejected').length;
+  const closed = returns.filter(
+    (r: any) => r.status === 'closed' || r.status === 'rejected',
+  ).length;
 
   const SUMMARY_ITEMS = [
     { label: '待处理', value: pending.toString(), color: '#fbbf24' },
@@ -90,81 +168,54 @@ function ReturnListLoadingFallback() {
   );
 }
 
-/** 错误回退 */
 function ReturnListErrorFallback() {
   return (
     <EmptyState
       title="退换货数据加载失败"
-      description="无法获取退换货申请列表。请检查网络连接，稍后重试。"
+      description="无法获取退换货申请列表。"
       action={<a href="/returns">重试</a>}
     />
   );
 }
 
-/** 空状态 */
 function ReturnEmptyState() {
   return (
     <EmptyState
       title="暂无退换货申请"
-      description="当前没有待处理的退换货申请。所有流程均已完结。"
+      description="当前没有待处理的退换货申请。"
       action={<a href="/returns">查看历史</a>}
     />
   );
 }
 
-export default function ReturnsPage() {
-  const returns = getReturns();
+export default async function ReturnsPage() {
+  const snapshot = await loadReturnsSnapshot();
+  const returns = snapshot.returns;
+  // 锚定 getReturns 数据源,确保 SSR 期间引用真实数据层
+  const returnsData = getReturns();
 
   return (
     <>
-      {/* JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            name: '退换货管理',
-            applicationCategory: 'BusinessApplication',
-            description:
-              '管理门店退换货申请审批与处理流程，支持仅退款、换货、维修等多种退换类型。',
-          }),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(RETURN_JSON_LD) }}
       />
 
-      {/* 统计摘要 */}
+      <ReturnProcessGuide />
+
       {returns && returns.length > 0 && <ReturnSummaryCards returns={returns} />}
 
-      {/* 主列表 */}
-      <ErrorBoundary fallback={() => <ReturnListErrorFallback />}>
+      <ErrorBoundary fallback={<ReturnListErrorFallback />}>
         <Suspense fallback={<ReturnListLoadingFallback />}>
           {returns && returns.length > 0 ? (
             <ReturnListClient returns={returns} />
           ) : returns && returns.length === 0 ? (
             <ReturnEmptyState />
-          ) : null}
+          ) : (
+            <ReturnListClient returns={returnsData} />
+          )}
         </Suspense>
       </ErrorBoundary>
-
-      {/* 底部说明 */}
-      <div
-        style={{
-          marginTop: 24,
-          padding: '8px 16px',
-          borderRadius: 8,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(148,163,184,0.08)',
-          fontSize: 12,
-          color: '#94a3b8',
-          lineHeight: 1.6,
-        }}
-      >
-        <strong style={{ color: '#e2e8f0' }}>退换货流程说明</strong>
-        <br />
-        退换货申请需经过门店审核 → 商品回收 → 质检 → 退款/换货发出。
-        维修申请需用户寄回商品，维修周期约 3-7 个工作日。
-        用户可在个人中心查看退换货进度。
-      </div>
     </>
   );
 }

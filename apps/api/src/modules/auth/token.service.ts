@@ -8,6 +8,7 @@ import {
   RefreshTokenPayload,
   TokenPair,
   AuthErrorCode,
+  LoginType,
 } from './auth.types'
 
 // JWT配置
@@ -49,7 +50,7 @@ export class TokenService {
       sid: storeId,
       roles,
       permissions,
-      loginType: loginType as any,
+      loginType: loginType as LoginType,
       exp: now + TOKEN_CONFIG.accessTokenExpiry,
       iat: now,
       iss: TOKEN_CONFIG.issuer,

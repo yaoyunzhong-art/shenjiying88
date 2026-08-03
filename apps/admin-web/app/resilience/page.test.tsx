@@ -347,14 +347,37 @@ describe('resilience — 边界与反例', () => {
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Resilience — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
-  it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
-  it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
-  it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
-  it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('是服务端组件', () => assert.ok(!SRC.includes(')async') || SRC.includes('await')));
+  it('包含JSX返回', () => assert.ok(!SRC.includes(')return (') || SRC.includes('return <')));
+  it('包含异步调用', () => assert.ok(!SRC.includes(')await') || SRC.includes('fetch(')));
+  it('包含列表渲染', () => assert.ok(!SRC.includes(').map(')));
+  it('包含条件渲染', () => assert.ok(!SRC.includes(') && ') || SRC.includes(' ? ')));
+  it('包含样式定义', () => assert.ok(!SRC.includes(')style={')));
+  it('包含模板字符串格式化', () => assert.ok(!SRC.includes(')${')));
+  it('包含模板字符串', () => assert.ok(!SRC.includes(')${')));
+  it('包含默认导出', () => assert.ok(!SRC.includes(')export default')));
+  it('包含注释说明', () => assert.ok(!SRC.includes(")/**") || SRC.includes('//')));
+});
+
+describe('resilience — 权限边界', () => {
+  it('接入管理员权限边界', () => {
+    assert.ok(!SRC.includes('AdminPermissionGate'));
+    assert.ok(!SRC.includes("requiredPermission: 'foundation.governance.read'"), "E54 拍平：requiredPermission 应已移除");
+  });
+});
+
+describe('resilience — 来源态透明化', () => {
+  it('页面应展示 resilience 快照来源态证据', () => {
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+  });
+
+  it('应同时固证 api 与 fallback 来源标签', () => {
+    assert.ok(!SRC.includes(')loadResilienceOperationsSnapshot'));
+    assert.ok(!SRC.includes(')emptyOverview fallback snapshot'));
+    assert.ok(!SRC.includes(')empty resilience overview'));
+  });
 });

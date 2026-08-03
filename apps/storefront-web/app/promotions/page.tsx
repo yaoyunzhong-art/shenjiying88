@@ -549,7 +549,7 @@ export default function StorePromotionsPage() {
               { age: '36-45岁', icon: '🏠', fav: '家庭套票', fav2: '会员福利', pct1: 42, pct2: 35, color: '#f59e0b' },
               { age: '46岁以上', icon: '🧓', fav: '休闲娱乐', fav2: '优惠活动', pct1: 35, pct2: 40, color: '#a855f7' },
               { age: '整体分布', icon: '📊', fav: '亲子/竞技类', fav2: '社交/优惠类', pct1: 48, pct2: 35, color: '#64748b' },
-            ].map(function(g, i) {
+            ].map((g, i) => {
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #bae6fd', fontSize: 12 }}>
                   <span style={{ fontSize: 14, minWidth: 22 }}>{g.icon}</span>
@@ -591,23 +591,23 @@ export default function StorePromotionsPage() {
                 {/* 活动拉新效果对比 */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfeff', border: '1px solid #a5f3fc' }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#0e7490' }}>📈 活动拉新效果对比</h3>
-          {function(promos: Promotion[]) {
-            var byType: Record<string, Promotion[]> = {};
-            promos.forEach(function(p) {
-              var mapKey: Record<string, string> = { discount: '折扣', coupon: '优惠券', gift: '赠品', 'flash-sale': '秒杀' };
-              var key = mapKey[p.type] || p.type;
+          {((promos: Promotion[]) => {
+            const byType: Record<string, Promotion[]> = {};
+            promos.forEach((p) => {
+              const mapKey: Record<string, string> = { discount: '折扣', coupon: '优惠券', gift: '赠品', 'flash-sale': '秒杀' };
+              const key = mapKey[p.type] || p.type;
               if (!byType[key]) byType[key] = [];
               (byType[key] as Promotion[]).push(p);
             });
-            var typeOrder = ['折扣', '优惠券', '赠品', '秒杀'];
-            var typeIcons: Record<string, string> = { '折扣': '🏷️', '优惠券': '🎫', '赠品': '🎁', '秒杀': '⚡' };
-            var typeColors: Record<string, string> = { '折扣': '#7c3aed', '优惠券': '#2563eb', '赠品': '#059669', '秒杀': '#dc2626' };
-            var newMemberData = [125, 85, 60, 40];
+            const typeOrder = ['折扣', '优惠券', '赠品', '秒杀'];
+            const typeIcons: Record<string, string> = { '折扣': '🏷️', '优惠券': '🎫', '赠品': '🎁', '秒杀': '⚡' };
+            const typeColors: Record<string, string> = { '折扣': '#7c3aed', '优惠券': '#2563eb', '赠品': '#059669', '秒杀': '#dc2626' };
+            const newMemberData = [125, 85, 60, 40];
             return (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {typeOrder.map(function(t, i) {
-                  var count = (byType[t] || []).length;
-                  var newMembers = newMemberData[i] || 0;
+                {typeOrder.map((t, i) => {
+                  const count = (byType[t] || []).length;
+                  const newMembers = newMemberData[i] || 0;
                   return (
                     <div key={i} style={{ flex: '1 1 120px', padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #a5f3fc', textAlign: 'center' }}>
                       <div style={{ fontSize: 18 }}>{typeIcons[t]}</div>
@@ -626,11 +626,11 @@ export default function StorePromotionsPage() {
                 })}
               </div>
             );
-          }(MOCK_DATA)}
+          })(MOCK_DATA)}
         </div>
                 {/* 活动历史回顾 */}
-        {function(promos: Promotion[], i: number) {
-          var RECENT_ACTIVITIES = [
+        {((promos: Promotion[], i: number) => {
+          const RECENT_ACTIVITIES = [
             { name: '六一儿童节特惠', month: '6月', score: 92, participants: 480, feedback: '亲子活动评价很高' },
             { name: '端午节福利', month: '6月', score: 88, participants: 350, feedback: '会员专属感强' },
             { name: '暑期狂欢季', month: '7月', score: 95, participants: 620, feedback: '设备免费玩反馈最佳' },
@@ -638,9 +638,9 @@ export default function StorePromotionsPage() {
             { name: '夏日清凉大促', month: '7月', score: 85, participants: 410, feedback: '折扣活动受欢迎' },
             { name: '周末特惠票', month: '7月', score: 73, participants: 320, feedback: '周末人流大但转化一般' },
           ];
-          var avgScore = RECENT_ACTIVITIES.reduce(function(a, b) { return a + b.score; }, 0) / RECENT_ACTIVITIES.length;
-          var totalPax = RECENT_ACTIVITIES.reduce(function(a, b) { return a + b.participants; }, 0);
-          var topActivity = RECENT_ACTIVITIES.reduce(function(max, cur) { return cur.score > max.score ? cur : max; });
+          const avgScore = RECENT_ACTIVITIES.reduce((a, b) => a + b.score, 0) / RECENT_ACTIVITIES.length;
+          const totalPax = RECENT_ACTIVITIES.reduce((a, b) => a + b.participants, 0);
+          const topActivity = RECENT_ACTIVITIES.reduce((max, cur) => cur.score > max.score ? cur : max);
           return (
             <div style={{ marginTop: 16, padding: 16, borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa' }}>
               <h3 style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 600, color: '#9a3412' }}>📅 近3个月活动历史回顾</h3>
@@ -650,7 +650,7 @@ export default function StorePromotionsPage() {
                   { label: '参与人次', value: totalPax.toLocaleString(), color: '#2563eb', bg: '#eff6ff' },
                   { label: '最高评分', value: topActivity.name, color: '#059669', bg: '#f0fdf4' },
                   { label: '活动数量', value: RECENT_ACTIVITIES.length + '个', color: '#7c3aed', bg: '#f5f3ff' },
-                ].map(function(s, i) {
+                ].map((s, i) => {
                   return (
                     <div key={i} style={{ padding: 10, borderRadius: 8, background: s.bg, border: '1px solid #e5e7eb', textAlign: 'center' }}>
                       <div style={{ fontSize: 11, color: '#6b7280' }}>{s.label}</div>
@@ -660,8 +660,8 @@ export default function StorePromotionsPage() {
                 })}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {RECENT_ACTIVITIES.map(function(a, idx) {
-                  var barH = a.score;
+                {RECENT_ACTIVITIES.map((a, idx) => {
+                  const barH = a.score;
                   return (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#fff', border: '1px solid #fed7aa', fontSize: 12 }}>
                       <span style={{ fontWeight: 600, color: '#9a3412', width: 80 }}>{a.month} {a.name}</span>
@@ -680,17 +680,17 @@ export default function StorePromotionsPage() {
               </div>
             </div>
           );
-        }(MOCK_DATA, 0)}
+        })(MOCK_DATA, 0)}
 
                 {/* 活动新客转化效果 */}
         <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: '#ecfdf5', border: '1px solid #6ee7b7' }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#065f46' }}>🆕 活动新客转化效果</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {function(s, i) {
-              var icons = {优惠券: '🎫', 免费体验: '🎮', 团购活动: '👥', 联合推广: '🤝', 限时优惠: '⏰'} as const;
-              return s.map(function(e, idx) {
-                var barPct = Math.min(e.conversionRate * 2, 100);
-                var icon = (icons as Record<string, string>)[e.type] || '🎁';
+            {((s, i) => {
+              const icons = {优惠券: '🎫', 免费体验: '🎮', 团购活动: '👥', 联合推广: '🤝', 限时优惠: '⏰'} as const;
+              return s.map((e, idx) => {
+                const barPct = Math.min(e.conversionRate * 2, 100);
+                const icon = (icons as Record<string, string>)[e.type] || '🎁';
                 return (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #a7f3d0' }}>
                     <span style={{ fontSize: 16 }}>{icon}</span>
@@ -710,7 +710,7 @@ export default function StorePromotionsPage() {
                   </div>
                 );
               });
-            }([
+            })([
               { type: '优惠券', newMembers: 320, conversionRate: 28, campaigns: 12 },
               { type: '免费体验', newMembers: 240, conversionRate: 35, campaigns: 8 },
               { type: '团购活动', newMembers: 180, conversionRate: 22, campaigns: 6 },
@@ -720,7 +720,7 @@ export default function StorePromotionsPage() {
           </div>
           <div style={{ marginTop: 8, padding: '6px 12px', borderRadius: 6, background: 'rgba(5,150,105,0.06)', fontSize: 11, color: '#6b7280', display: 'flex', justifyContent: 'space-between' }}>
             <span>🏆 联合推广转化率最高 (40%)</span>
-            <span>📊 平均转化率: {Math.round([28,35,22,40,18].reduce(function(a,b){return a+b})/5)}%</span>
+            <span>📊 平均转化率: {Math.round([28,35,22,40,18].reduce((a,b) => a+b)/5)}%</span>
             <span>💡 限时优惠新客转化较低需优化</span>
           </div>
         </div>
@@ -735,7 +735,7 @@ export default function StorePromotionsPage() {
               { name: '新客专享', satisfaction: 0.95, participants: 180 },
               { name: '周末特惠', satisfaction: 0.85, participants: 450 },
               { name: '团队优惠', satisfaction: 0.90, participants: 120 },
-            ].map(function(a, i) {
+            ].map((a, i) => {
               return (
                 <div key={i} style={{ padding: 8, borderRadius: 8, background: '#fff', border: '1px solid #e9d5ff' }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 2 }}>{a.name}</div>
@@ -760,8 +760,8 @@ export default function StorePromotionsPage() {
               { month: '4月', budget: 80, used: 85, color: '#f59e0b' },
               { month: '5月', budget: 120, used: 88, color: '#3b82f6' },
               { month: '6月', budget: 100, used: 78, color: '#22c55e' },
-            ].map(function(b, i) {
-              var over = b.used > b.budget
+            ].map((b, i) => {
+              const over = b.used > b.budget
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6, background: '#fff', border: '1px solid #dcfce7', fontSize: 12 }}>
                   <span style={{ fontWeight: 600, color: '#166534', width: 40 }}>{b.month}</span>
@@ -785,9 +785,9 @@ export default function StorePromotionsPage() {
               { channel: '美团', invest: 8000, roi: 3.2, users: 6200, color: '#f59e0b' },
               { channel: '微信公众号', invest: 5000, roi: 2.6, users: 3800, color: '#059669' },
               { channel: '门店海报', invest: 3000, roi: 5.1, users: 2200, color: '#7c3aed' },
-            ].map(function(c, i) {
-              var maxInvest = 12000;
-              var barPct = (c.invest / maxInvest * 100);
+            ].map((c, i) => {
+              const maxInvest = 12000;
+              const barPct = (c.invest / maxInvest * 100);
               return (
                 <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fef3c7', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{c.channel}</div>
@@ -816,7 +816,7 @@ export default function StorePromotionsPage() {
               { dim: '26-35岁', rate: 45, pax: 675, color: '#f43f5e' },
               { dim: '36-45岁', rate: 20, pax: 300, color: '#f97316' },
               { dim: '46岁+', rate: 7, pax: 105, color: '#94a3b8' },
-            ].map(function(a, i) {
+            ].map((a, i) => {
               return (
                 <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6b7280' }}>{a.dim}</div>
@@ -833,7 +833,7 @@ export default function StorePromotionsPage() {
             {[
               { dim: '男性', rate: 38, pct: 38, color: '#3b82f6', icon: '♂' },
               { dim: '女性', rate: 62, pct: 62, color: '#ec4899', icon: '♀' },
-            ].map(function(g, i) {
+            ].map((g, i) => {
               return (
                 <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6b7280' }}>{g.icon} 性别: {g.dim}</div>
@@ -850,7 +850,7 @@ export default function StorePromotionsPage() {
               { dim: '高消费', rate: 52, pct: 52, pax: 340, color: '#7c3aed' },
               { dim: '中消费', rate: 32, pct: 32, pax: 210, color: '#f59e0b' },
               { dim: '低消费', rate: 16, pct: 16, pax: 105, color: '#94a3b8' },
-            ].map(function(c, i) {
+            ].map((c, i) => {
               return (
                 <div key={i} style={{ padding: 10, borderRadius: 8, background: '#fff', border: '1px solid #fce7f3', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: '#6b7280' }}>消费: {c.dim}</div>
@@ -885,8 +885,8 @@ export default function StorePromotionsPage() {
               { month: '10月', score: 78, peak: '国庆节', color: '#06b6d4' },
               { month: '11月', score: 68, peak: '双11', color: '#f59e0b' },
               { month: '12月', score: 92, peak: '圣诞+元旦', color: '#06b6d4' },
-            ].map(function(m, i) {
-              var isPeak = m.color === '#06b6d4';
+            ].map((m, i) => {
+              const isPeak = m.color === '#06b6d4';
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: isPeak ? '#f0fdfa' : '#fff', border: '1px solid ' + (isPeak ? '#99f6e4' : '#e5e7eb'), fontSize: 12 }}>
                   <span style={{ fontWeight: 600, color: '#0e7490', width: 40 }}>{m.month}</span>
@@ -915,8 +915,8 @@ export default function StorePromotionsPage() {
               { type: '会员专享', cost: 8000, revenue: 56000, roi: 7.0, ratio: 65, color: '#eab308' },
               { type: '限时秒杀', cost: 32000, revenue: 96000, roi: 3.0, ratio: 55, color: '#f97316' },
               { type: '裂变活动', cost: 6000, revenue: 38000, roi: 6.3, ratio: 78, color: '#06b6d4' },
-            ].map(function(a, i) {
-              var barW = Math.min(a.ratio, 100);
+            ].map((a, i) => {
+              const barW = Math.min(a.ratio, 100);
               return (
                 <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#fff', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>

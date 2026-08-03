@@ -16,6 +16,18 @@
 圈梁完整度: 100% ✅✅✅✅
 ```
 
+## 🌲 树哥圈梁对齐铁律（2026-07-17 21:40 大飞哥指令）
+
+每次修改后，树哥**必须**执行以下4步：
+
+```
+① TSC通过 → ② 测试存在 → ③ 圈梁表更新 → ④ PRD标记
+```
+
+详细规则见 `docs/knowledge/rules/ringbeam-alignment-rules.md`
+圈梁表位置: `docs/knowledge/phase-to-module-mapping.md`
+每日对齐记录: `docs/knowledge/alignment-final-YYYY-MM-DD.md`
+
 ## 产出汇总
 
 | 产出 | 数量 | 用途 |

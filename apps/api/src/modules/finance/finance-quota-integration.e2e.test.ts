@@ -121,11 +121,11 @@ it('e2e: createInvoice 正常路径创建 invoice + Campaign quota +1', async ()
 })
 
 it('e2e: tenant suspend 后 createInvoice 抛 TenantLifecycleBlockedException', async () => {
-  const { finance, lifecycle, close } = await buildAppWithQuota()
+  const { finance, quota, lifecycle, close } = await buildAppWithQuota()
   try {
     lifecycle.suspend('tenant-test', TenantStatusReason.BillingOverdue, 'billing')
     await assert.rejects(
-      () => guardedCreateInvoice(finance, undefined, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-susp')),
+      () => guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-susp')),
       TenantLifecycleBlockedException
     )
   } finally {
@@ -188,11 +188,12 @@ it('e2e: recordLedger 不计入 Campaign quota', async () => {
 })
 
 it('e2e: tenant reactivate 后 createInvoice 恢复', async () => {
-  const { finance, lifecycle, close } = await buildAppWithQuota()
+  const { finance, quota, lifecycle, close } = await buildAppWithQuota()
   try {
     lifecycle.suspend('tenant-test')
     await assert.rejects(
-      () => finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('o-susp'))
+      () => guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-susp')),
+      TenantLifecycleBlockedException
     )
     lifecycle.reactivate('tenant-test', 'admin')
     const invoice = await finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('o-recov'))
@@ -209,8 +210,11 @@ it('e2e: 多 tenant 隔离 - tenant-A suspend 不影响 tenant-B', async () => {
     lifecycle.initialize('tenant-B')
 
     lifecycle.suspend('tenant-test')
-    await assert.rejects(() => finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('iso-A')))
-    const invB = await finance.createInvoice(ctx('tenant-B'), makeInvoiceInput('iso-B'))
+    await assert.rejects(
+      () => guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('iso-A')),
+      TenantLifecycleBlockedException
+    )
+    const invB = await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-B'), makeInvoiceInput('iso-B'))
     assert.ok(invB.id)
     assert.equal(quota.getUsage('tenant-test').campaigns, 0)
     assert.equal(quota.getUsage('tenant-B').campaigns, 1)
@@ -254,4 +258,70 @@ it('e2e: 无 lifecycle/quota 注入 → 跳过 guard (向后兼容)', async () =
   const invoice = await finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('o-legacy'))
   assert.ok(invoice.id)
   assert.equal(invoice.status, InvoiceStatus.Draft)
+})
+
+it('e2e: tier 从 Free 升级到 Pro 后配额上限提升', async () => {
+  const { finance, quota, lifecycle, close } = await buildAppWithQuota()
+  try {
+    quota.setTier('tenant-test', TenantTier.Free)
+    quota.overrideQuota('tenant-test', { maxCampaigns: 2 })
+    await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-up1'))
+    await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-up2'))
+    assert.equal(quota.getUsage('tenant-test').campaigns, 2, 'Free 贷2个到上限')
+
+    quota.setTier('tenant-test', TenantTier.Pro)
+    // Pro 默认 10, 可再多创建
+    await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-up3'))
+    assert.equal(quota.getUsage('tenant-test').campaigns, 3, '升级Pro后可继续创建')
+  } finally {
+    await close()
+  }
+})
+
+it('e2e: resetQuota 后 usage 归零', async () => {
+  const { finance, quota, lifecycle, close } = await buildAppWithQuota()
+  try {
+    await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-r1'))
+    await guardedCreateInvoice(finance, quota, lifecycle, ctx('tenant-test'), makeInvoiceInput('o-r2'))
+    assert.equal(quota.getUsage('tenant-test').campaigns, 2)
+
+    quota.resetAll()
+    // After reset, usage is 0
+    const usage = quota.getUsage('tenant-test')
+    assert.equal(usage.campaigns, 0, 'reset后campaigns归零')
+  } finally {
+    await close()
+  }
+})
+
+it('e2e: 大金额发票创建成功', async () => {
+  const { finance, close } = await buildAppWithQuota()
+  try {
+    const large = makeInvoiceInput('o-large', 999999999)
+    const invoice = await finance.createInvoice(ctx('tenant-test'), large)
+    assert.ok(invoice.id)
+    assert.equal(invoice.amount, 999999999)
+    // totalAmount = amount + taxAmount, actual taxAmount is computed from service with Math.round
+    // 999999999 * 0.06 = 59999999.94 → actual taxAmount from service
+    assert.equal(invoice.taxAmount, invoice.amount * 0.06 + (invoice.amount % 100 !== 0 ? 0 : 0))
+    assert.equal(invoice.totalAmount, invoice.amount + invoice.taxAmount)
+  } finally {
+    await close()
+  }
+})
+
+it('e2e: 多张发票orderId各异', async () => {
+  const { finance, close } = await buildAppWithQuota()
+  try {
+    const inv1 = await finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('order-unique-1', 100))
+    const inv2 = await finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('order-unique-2', 200))
+    const inv3 = await finance.createInvoice(ctx('tenant-test'), makeInvoiceInput('order-unique-3', 300))
+    assert.ok(inv1.id !== inv2.id)
+    assert.ok(inv2.id !== inv3.id)
+    assert.equal(inv1.orderId, 'order-unique-1')
+    assert.equal(inv2.orderId, 'order-unique-2')
+    assert.equal(inv3.orderId, 'order-unique-3')
+  } finally {
+    await close()
+  }
 })

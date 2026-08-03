@@ -1,6 +1,6 @@
 // anomaly-detector.controller.ts - Phase-19 T26
 // 用途: 异常检测控制器 - POST /anomaly-detector/detect, /batch, /configure
-import { Controller, Post, Get, Body, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller, Post, Get, Body, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common'
 import { AnomalyDetectorService } from './anomaly-detector.service'
 import {
   AnomalyDetectRequestDto,
@@ -15,9 +15,11 @@ import type {
   AnomalyResult,
   AnomalyEngineStatus,
 } from './anomaly-detector.entity'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('anomaly-detector')
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@UseGuards(TenantGuard)
 export class AnomalyDetectorController {
   constructor(private readonly anomalyDetectorService: AnomalyDetectorService) {}
 

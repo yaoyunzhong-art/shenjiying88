@@ -1,9 +1,9 @@
+'use client';
 /**
  * 设备巡检详情页 — Device Inspection Detail Page (Next.js App Router Page)
  * 角色视角: 🔧设备巡检员 / 🎯运营专员
  * 功能: 巡检任务详情、检查项清单、异常上报、状态流转
  */
-'use client';
 
 import React, { use, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';

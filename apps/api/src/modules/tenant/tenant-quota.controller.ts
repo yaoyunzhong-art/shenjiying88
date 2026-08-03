@@ -21,13 +21,25 @@ import {
   NotFoundException,
   UsePipes,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common'
 import { TenantQuotaService } from './tenant-quota.service'
 import { TenantQuotaParamsDto, UpdateTenantQuotaDto } from './tenant-quota.dto'
 import type { TenantQuota, TenantQuotaUsage } from './tenant-quota.entity'
+import { TenantGuard } from '../agent/tenant.guard';
+import {
+  RequirePermissions,
+  RequireTenantScope,
+} from '../foundation/identity-access/identity-access.decorator'
+
+const TENANT_READ_PERMISSION = 'tenant:read'
+const TENANT_WRITE_PERMISSION = 'tenant:write'
 
 @Controller('tenants')
+@UseGuards(TenantGuard)
 @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+@RequireTenantScope()
+@RequirePermissions(TENANT_READ_PERMISSION)
 export class TenantQuotaController {
   constructor(private readonly tenantQuotaService: TenantQuotaService) {}
 
@@ -52,6 +64,7 @@ export class TenantQuotaController {
    * 未初始化时自动按 Free tier 初始化后再覆盖
    */
   @Put(':id/quota')
+  @RequirePermissions(TENANT_WRITE_PERMISSION)
   updateQuota(
     @Param() params: TenantQuotaParamsDto,
     @Body() body: UpdateTenantQuotaDto,
@@ -67,7 +80,7 @@ export class TenantQuotaController {
     // 如果有额外覆盖字段,应用 override
     const hasOverrides = Object.keys(overrides).length > 0
     if (hasOverrides) {
-      const quota = this.tenantQuotaService.overrideQuota(id, overrides as any)
+      const quota = this.tenantQuotaService.overrideQuota(id, overrides as Partial<Omit<TenantQuota, 'tenantId' | 'updatedAt'>>)
       return { data: quota }
     }
 

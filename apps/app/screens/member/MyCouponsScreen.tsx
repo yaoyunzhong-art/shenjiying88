@@ -15,8 +15,17 @@ const mockCoupons = {
   ],
 };
 
+type TabKey = 'available' | 'used' | 'expired';
+
+const tabConfig: Record<TabKey, { label: string; emptyIcon: string; emptyText: string }> = {
+  available: { label: '可用', emptyIcon: '🎫', emptyText: '暂无可用优惠券' },
+  used: { label: '已使用', emptyIcon: '✅', emptyText: '暂无已使用优惠券' },
+  expired: { label: '已过期', emptyIcon: '⏰', emptyText: '暂无已过期优惠券' },
+};
+
 export function MyCouponsScreen() {
-  const [activeTab, setActiveTab] = useState<'available' | 'used' | 'expired'>('available');
+  const [activeTab, setActiveTab] = useState<TabKey>('available');
+  const tab = tabConfig[activeTab];
   const coupons = mockCoupons[activeTab];
 
   return (
@@ -27,41 +36,48 @@ export function MyCouponsScreen() {
 
       {/* Tabs */}
       <View style={styles.tabs}>
-        {(['available', 'used', 'expired'] as const).map(tab => (
+        {(['available', 'used', 'expired'] as const).map(t => (
           <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
+            key={t}
+            style={[styles.tab, activeTab === t && styles.tabActive]}
+            onPress={() => setActiveTab(t)}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'available' ? '可用' : tab === 'used' ? '已使用' : '已过期'}
+            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>
+              {tabConfig[t].label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       <ScrollView style={{ flex: 1, padding: 16 }}>
-        {coupons.map(coupon => (
-          <View key={coupon.id} style={[styles.couponCard, activeTab !== 'available' && styles.couponCardDisabled]}>
-            <View style={styles.couponLeft}>
-              <Text style={styles.discountAmount}>
-                {typeof coupon.discount === 'number' && coupon.discount < 1
-                  ? `${Math.round(coupon.discount * 10)}折`
-                  : `¥${coupon.discount}`}
-              </Text>
-              <Text style={styles.couponDesc}>{coupon.desc}</Text>
-            </View>
-            <View style={styles.couponRight}>
-              <Text style={styles.couponTitle}>{coupon.title}</Text>
-              <Text style={styles.couponExpire}>有效期至 {coupon.expire}</Text>
-              {activeTab === 'available' && (
-                <TouchableOpacity style={styles.useBtn}>
-                  <Text style={styles.useBtnText}>立即使用</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+        {coupons.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>{tab.emptyIcon}</Text>
+            <Text style={styles.emptyText}>{tab.emptyText}</Text>
           </View>
-        ))}
+        ) : (
+          coupons.map(coupon => (
+            <View key={coupon.id} style={[styles.couponCard, activeTab !== 'available' && styles.couponCardDisabled]}>
+              <View style={styles.couponLeft}>
+                <Text style={styles.discountAmount}>
+                  {typeof coupon.discount === 'number' && coupon.discount < 1
+                    ? `${Math.round(coupon.discount * 10)}折`
+                    : `¥${coupon.discount}`}
+                </Text>
+                <Text style={styles.couponDesc}>{coupon.desc}</Text>
+              </View>
+              <View style={styles.couponRight}>
+                <Text style={styles.couponTitle}>{coupon.title}</Text>
+                <Text style={styles.couponExpire}>有效期至 {coupon.expire}</Text>
+                {activeTab === 'available' && (
+                  <TouchableOpacity style={styles.useBtn}>
+                    <Text style={styles.useBtnText}>立即使用</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -85,4 +101,18 @@ const styles = StyleSheet.create({
   couponExpire: { fontSize: 12, color: '#64748B', marginTop: 4 },
   useBtn: { backgroundColor: '#8B5CF6', paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 16 },
   useBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#94A3B8',
+  },
 });

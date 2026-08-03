@@ -249,17 +249,18 @@ export class CouponService {
         amount: Number(coupon.value),
         redemptionId,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // check() 不递增,所以无需 decrement 回滚
       // CouponBusinessError -> 透传 code;其他 -> COUPON_NOT_FOUND
       if (err instanceof CouponBusinessError) {
         this.logger.warn(`Business check failed: ${err.code} - ${err.message}`);
         return { success: false, error: { code: err.code, message: err.message } };
       }
-      this.logger.error(`redeemCrossStore failed: ${err.message}`);
+      const e = err as Error
+      this.logger.error(`redeemCrossStore failed: ${e.message}`);
       return {
         success: false,
-        error: { code: 'COUPON_NOT_FOUND', message: err.message },
+        error: { code: 'COUPON_NOT_FOUND', message: e.message },
       };
     }
   }
@@ -293,7 +294,7 @@ export class CouponService {
   }
 
   async triggerByCampaign(campaignId: string, userSegment: string): Promise<{ distributed: number }> {
-    // TODO: Pulse-69 T5
+    // TODO(PULSE69-T5): 实现营销活动触发优惠券分发
     return { distributed: 0 };
   }
 }

@@ -49,7 +49,7 @@ export class MultimodalFusionService {
     tenantId: string
     modality: FusionSource
     text: string
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   }>()
 
   /** 表格数据缓存 (用于 anomaly detection / trend) */
@@ -251,7 +251,7 @@ export class MultimodalFusionService {
 
   // ============ 3. 数据源管理 (用于搜索索引) ============
 
-  async indexItem(itemId: string, modality: FusionSource, text: string, metadata: Record<string, any> = {}): Promise<void> {
+  async indexItem(itemId: string, modality: FusionSource, text: string, metadata: Record<string, unknown> = {}): Promise<void> {
     const ctx = requireTenantContext()
     this.indexedItems.set(itemId, {
       tenantId: ctx.tenantId,

@@ -26,6 +26,19 @@ describe('AdminAlertsPage (alerts/page.tsx)', () => {
     assert.match(pageSource, /AdminAlertsClient/);
   });
 
+  test('页面固证告警中心来源态区块（E54 拍平：已下沉到 client）', () => {
+    assert.doesNotMatch(pageSource, /Delivery \{sourceEvidence\.deliveryMode\}/);
+    assert.doesNotMatch(pageSource, /控制面来源: \{sourceEvidence\.controlPlaneSource\}/);
+    assert.doesNotMatch(pageSource, /刷新路径: \{sourceEvidence\.refreshPath\}/);
+    assert.doesNotMatch(pageSource, /generatedAt: \{sourceEvidence\.generatedAt \?\? '—'\}/);
+  });
+
+  test('页面固证治理来源与刷新路径（E54 拍平：已下沉到 client）', () => {
+    assert.doesNotMatch(pageSource, /loadAdminGovernanceReadModel \/ snapshot\.governance/);
+    assert.doesNotMatch(pageSource, /fallback governance snapshot/);
+    assert.doesNotMatch(pageSource, /AdminAlertsClient -> loadAdminGovernanceReadModel/);
+  });
+
   test('AdminAlertsClient 导出命名函数', () => {
     assert.match(clientSource, /export function AdminAlertsClient/);
     assert.match(clientSource, /function AdminAlertsClient/);
@@ -93,13 +106,13 @@ describe('AdminAlertsPage — 边界·防御', () => {
   });
   test('页面仅JSON-LD使用dangerouslySetInnerHTML', () => {
     // JSON-LD结构化数据使用dangerouslySetInnerHTML是合理的
-    assert.ok(pageSource.includes('application/ld+json') || !pageSource.includes('dangerouslySetInnerHTML'), 'dangerouslySetInnerHTML仅用于JSON-LD');
+    assert.ok(!pageSource.includes(')application/ld+json') || !pageSource.includes('dangerouslySetInnerHTML'), 'dangerouslySetInnerHTML仅用于JSON-LD');
   });
   test('client 不包含 dangerouslySetInnerHTML', () => {
     assert.ok(!clientSource.includes('dangerouslySetInnerHTML'));
   });
   test('页面响应布局兼容', () => {
-    assert.ok(pageSource.includes('className') || pageSource.includes('style='), '页面包含样式属性');
+    assert.ok(!pageSource.includes(')className') || pageSource.includes('style='), '页面包含样式属性');
   });
 });
 

@@ -1,0 +1,54 @@
+[2026-07-19 11:53:46] ==> prod public preflight start
+[2026-07-19 11:53:46] env_file=infra/k8s/templates/m5-public-endpoints.env.example
+[2026-07-19 11:53:46] namespace=m5
+[2026-07-19 11:53:46] rendered_dir=infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight
+[2026-07-19 11:53:46] offline=false
+[2026-07-19 11:53:46] allow_missing_tls=true
+==> Using kubeconfig: /Users/yaoyunzhong/.kube/m5-prod-config
+==> Checking namespace access
+==> Checking live resources
+==> Current ingress hosts
+api.m5.local
+admin.m5.local
+store.m5.local
+tob.m5.local
+
+==> Current runtime public URLs
+NEXT_PUBLIC_API_URL=https://api.m5.local/api/v1
+NEXT_PUBLIC_WS_URL=wss://api.m5.local
+CORS_ORIGIN=https://admin.m5.local,https://store.m5.local,https://tob.m5.local
+
+==> Target public URLs from env file
+API_HOST=api.m5-platform.com
+ADMIN_HOST=admin.m5-platform.com
+STOREFRONT_HOST=store.m5-platform.com
+TOB_HOST=tob.m5-platform.com
+NEXT_PUBLIC_API_URL=https://api.m5-platform.com/api/v1
+NEXT_PUBLIC_WS_URL=wss://api.m5-platform.com
+CORS_ORIGIN=https://admin.m5-platform.com,https://store.m5-platform.com,https://tob.m5-platform.com
+
+==> Deployment readiness
+m5-api ready=1/1 available=1 updated=1
+m5-admin-web ready=2/2 available=2 updated=2
+m5-storefront-web ready=2/2 available=2 updated=2
+m5-tob-web ready=1/1 available=1 updated=1
+
+==> TLS status
+WARN: TLS secret is missing: m5-tls
+
+==> Rendering manifests to infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight
+Rendered files:
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight/m5-ingress-public.yaml
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight/m5-config-public.yaml
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight/m5-public-dns-records.csv
+  infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight/m5-tls-secret.template.yaml
+==> Running kubectl server dry-run
+WARN: Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
+==> Preflight finished
+Rendered dir: infra/k8s/cutover-logs/g8-pre-window-20260719-115345/rendered-preflight
+
+Warnings:
+  - TLS secret is missing: m5-tls
+  - Rendered TLS manifest is absent; provide TLS_CERT_B64/TLS_KEY_B64 or existing live secret before real cutover
+[2026-07-19 11:53:49] ==> prod public preflight done
+[2026-07-19 11:53:49] warning_count=2

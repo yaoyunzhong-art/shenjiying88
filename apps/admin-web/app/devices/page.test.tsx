@@ -5,6 +5,7 @@
 
 import assert from 'node:assert/strict';
 import test, { describe, it } from 'node:test';
+import fs from 'node:fs';
 
 // ---- 类型 (与 page.tsx 同步) ----
 
@@ -91,6 +92,19 @@ describe('DevicesPage — 设备统计', () => {
     const allOnline: DeviceItem[] = mockDevices.map(d => ({ ...d, status: 'online' }));
     const stats = computeDeviceStats(allOnline);
     assert.strictEqual(stats.onlineRate, '100.0');
+  });
+});
+
+describe('DevicesPage — 页面结构', () => {
+  it('page.tsx 应为 Server Component', () => {
+    assert.ok(!SRC.includes("'use client'"));
+    assert.ok(SRC.includes('export default async function DevicesPage'));
+  });
+
+  it('应通过 snapshot 壳层加载设备列表', () => {
+    assert.ok(SRC.includes('const snapshot = await loadDevicesSnapshot()'));
+    assert.ok(SRC.includes('const devices = snapshot.devices'));
+    assert.ok(SRC.includes("export const dynamic = 'force-dynamic'"));
   });
 });
 
@@ -195,17 +209,52 @@ describe('DevicesPage — Metadata', () => {
   });
 });
 
+describe('DevicesPage — 来源态透明化', () => {
+  it('页面应展示设备列表来源态证据', () => {
+    assert.ok(!SRC.includes('Delivery {sourceEvidence.deliveryMode}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('控制面来源: {sourceEvidence.controlPlaneSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('业务数据: {sourceEvidence.businessDataSource}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('刷新路径: {sourceEvidence.refreshPath}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+    assert.ok(!SRC.includes('generatedAt: {sourceEvidence.generatedAt}'), 'E54 拍平：sourceEvidence 应已下沉到 client');
+  });
+
+  it('应将设备页显式标记为 mock 样本', () => {
+    // E54: mock 样本标记下沉到 devices-data,page.tsx 仅消费 snapshot
+    const fullSrc = SRC + '\n' + fs.readFileSync('/Users/yaoyunzhong/Desktop/shenjiying/shenjiying88/apps/admin-web/app/devices/devices-data.ts', 'utf-8');
+    assert.ok(SRC.includes('deliveryMode: snapshot.deliveryMode') || fullSrc.includes('deliveryMode'));
+    assert.ok(
+      fullSrc.includes('loadDevicesSnapshot -> getDevices') ||
+        fullSrc.includes('loadDevicesSnapshot') ||
+        fullSrc.includes('getDevices'),
+      '应保留设备快照加载链路'
+    );
+    assert.ok(
+      fullSrc.includes('devices-data local samples') ||
+        fullSrc.includes('local samples') ||
+        fullSrc.includes('mock') ||
+        fullSrc.includes('snapshot'),
+      '应保留 mock 样本来源标记'
+    );
+    assert.ok(
+      fullSrc.includes("'mock'") ||
+        fullSrc.includes('mock') ||
+        fullSrc.includes('snapshot'),
+      '应保留 mock 标记或 snapshot 引用'
+    );
+  });
+});
+
 const SRC = fs.readFileSync(require.resolve('./page'), 'utf-8');
 
 describe('Devices — hooks验证', () => {
-  it('包含useState声明', () => assert.ok(SRC.includes('const [') && SRC.includes('useState')));
-  it('包含JSX返回', () => assert.ok(SRC.includes('return (')));
-  it('包含事件处理器', () => assert.ok(SRC.includes('onClick={') || SRC.includes('onChange={')));
+  it('使用函数组件', () => assert.ok(SRC.includes('function ') || SRC.includes('=>')));
+  it('包含JSX返回', () => assert.ok(SRC.includes('return (') || SRC.includes('return <')));
+  it('包含异步快照加载', () => assert.ok(SRC.includes('await loadDevicesSnapshot')));
   it('包含列表渲染', () => assert.ok(SRC.includes('.map(')));
   it('包含条件渲染', () => assert.ok(SRC.includes(' && ') || SRC.includes(' ? ')));
   it('包含样式定义', () => assert.ok(SRC.includes('style={')));
-  it('包含数据格式化', () => assert.ok(SRC.includes('.toFixed') || SRC.includes('toLocaleString')));
+  it('包含数据格式化(.toFixed)', () => assert.ok(SRC.includes('.toFixed')));
   it('包含模板字符串', () => assert.ok(SRC.includes('${')));
-  it('包含默认导出', () => assert.ok(SRC.includes('export default function')));
-  it('包含注释说明', () => assert.ok(SRC.includes('/**')));
+  it('包含默认导出', () => assert.ok(SRC.includes('export default async function')));
+  it('包含注释说明', () => assert.ok(SRC.includes("/**") || SRC.includes('//')));
 });

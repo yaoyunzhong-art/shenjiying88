@@ -1,9 +1,9 @@
+'use client';
 /**
  * AI实验详情页 — AI Experiment Detail (Next.js App Router Page)
  * 功能: 展示单条实验的完整配置、运行状态、指标趋势、对比组、处置操作
  * 角色视角: 运营经理 / 营销经理 / AI训练师
  */
-'use client';
 
 import React, { useMemo, useCallback } from 'react';
 import { notFound, useRouter } from 'next/navigation';

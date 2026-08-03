@@ -53,7 +53,8 @@ export function useDomainAdd() {
   return useMutation({
     mutationFn: async (domain: string) => {
       await new Promise((r) => setTimeout(r, 200))
-      return { id: `dom-${Date.now().toString(36)}`, domain } as any
+      // mock 返回：仅暴露 id 与 domain，其余字段在下一次 useDomainList 刷新后补齐
+      return { id: `dom-${Date.now().toString(36)}`, domain } as Pick<DomainMapping, 'id' | 'domain'>
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['domain', 'list'] }),
   })
