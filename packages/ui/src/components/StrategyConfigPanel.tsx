@@ -195,7 +195,7 @@ function ParamInput({
             style={{ accentColor: '#3b82f6' }}
           />
           <span style={{ fontSize: 12, color: '#94a3b8' }}>
-            {Boolean(currentVal) ? '已启用' : '未启用'}
+            {currentVal ? '已启用' : '未启用'}
           </span>
         </label>
       );

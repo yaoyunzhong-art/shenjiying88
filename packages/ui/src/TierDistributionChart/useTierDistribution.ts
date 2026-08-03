@@ -37,7 +37,7 @@ export function useTierDistribution(
     } finally {
       setLoading(false);
     }
-  }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params]);  
 
   useEffect(() => {
     load();

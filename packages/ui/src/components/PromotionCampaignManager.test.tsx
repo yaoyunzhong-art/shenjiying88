@@ -90,7 +90,7 @@ describe('PromotionCampaignManager', () => {
     assert.ok(html.includes('新会员首单减50'), '应展示第二个活动');
     assert.ok(html.includes('中秋节礼盒预售'), '应展示草稿活动');
     assert.ok(html.includes('周年庆大促'), '应展示已结束活动');
-    assert.ok(html.includes('role="region"') || html.includes('role=\\"region\\"'), '应设置 role=region');
+    assert.ok(html.includes('role="region"') || html.includes('role="region"'), '应设置 role=region');
   });
 
   test('筛选功能 — activeFilter 为 active 时只显示进行中', () => {

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint app next.config.mjs --ext .ts,.tsx,.mjs",
+    "lint": "eslint app next.config.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test 'app/**/*.test.ts' 'app/**/*.test.tsx'",
     "test:vitest": "vitest run"

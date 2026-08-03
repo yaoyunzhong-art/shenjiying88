@@ -132,7 +132,7 @@ function downloadCSV(data: Array<Record<string, string | number>>, filename: str
   URL.revokeObjectURL(url);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 let _html2canvas: any = null;
 
 async function getHtml2canvas(): Promise<any> {
