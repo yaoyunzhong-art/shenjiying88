@@ -234,9 +234,9 @@ test('AgentToolsClient', async (t) => {
       tools: MOCK_TOOLS,
       deliveryMode: 'api',
     }));
-    // Tabs 组件将 label 与 count 分开渲染，故分别断言
+    // Tabs mock 渲染为 "label (count)" 格式
     assert.match(html, /全部/);
-    assert.match(html, />5</);      // 5 tools total
+    assert.match(html, /全部\s*\(5\)/);  // 5 tools total
   });
 
   // ── 搜索框 ──

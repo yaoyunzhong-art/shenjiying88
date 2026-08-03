@@ -57,9 +57,9 @@ test('AgentSessionsClient', async (t) => {
     assert.match(html, /会话 ID/);
     assert.match(html, /使用配置/);
     assert.match(html, /最终输出/);
-    // Tabs 组件将 label 与 count 分开渲染，故分别断言
+    // Tabs mock 渲染为 "label (count)" 格式
     assert.match(html, /全部/);
-    assert.match(html, />3</);
+    assert.match(html, /全部\s*\(3\)/);
     assert.match(html, /运行中/);
     assert.match(html, /已完成/);
     assert.match(html, /失败/);

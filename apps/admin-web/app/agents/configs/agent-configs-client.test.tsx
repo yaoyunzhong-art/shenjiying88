@@ -155,8 +155,8 @@ test('AgentConfigsClient', async (t) => {
       deliveryMode: 'api',
     }));
     assert.match(html, /已启用/);
-    // StatusBadge 实际渲染 #86efac (success 变体文字色)
-    assert.match(html, /#86efac[\s\S]{0,200}已启用/);
+    // StatusBadge mock 通过 data-variant="success" 标识
+    assert.match(html, /data-variant="success"/);
   });
 
   await t.test('renders "已禁用" badge for disabled configs', () => {
@@ -165,8 +165,8 @@ test('AgentConfigsClient', async (t) => {
       deliveryMode: 'api',
     }));
     assert.match(html, /已禁用/);
-    // StatusBadge 实际渲染 #94a3b8 (neutral 变体文字色)
-    assert.match(html, /#94a3b8[\s\S]{0,200}已禁用/);
+    // StatusBadge mock 通过 data-variant="neutral" 标识
+    assert.match(html, /data-variant="neutral"/);
   });
 
   // ── Fallback 降级横幅 ──

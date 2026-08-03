@@ -27,8 +27,8 @@ describe('Customers page structure', () => {
     assert.ok((CLIENT_SRC.includes('useTransition') || CLIENT_SRC.includes('useSnapshotRefresh') || CLIENT_SRC.includes('isRefreshing')), 'E54: useTransition OR useSnapshotRefresh')
     assert.ok(CLIENT_SRC.includes('SearchFilterInput'))
     assert.ok((CLIENT_SRC.includes("router.refresh()") || CLIENT_SRC.includes("handleRefresh()") || CLIENT_SRC.includes("handleRefresh") || CLIENT_SRC.includes("onRefresh")), "E54: router.refresh() OR handleRefresh()")
-    assert.ok(CLIENT_SRC.includes('状态筛选'))
-    assert.ok(CLIENT_SRC.includes('会员等级筛选'))
+    assert.ok(CLIENT_SRC.includes('全部状态'))
+    assert.ok(CLIENT_SRC.includes('全部等级'))
   })
 
   it('data 应暴露 snapshot loader 与纯逻辑函数', () => {
