@@ -449,7 +449,7 @@ function CouponsPageContent() {
         <ListToolbar
           matchedCount={sortedItems.length}
           searchInput={<SearchFilterInput value={searchTerm} onChange={setSearchTerm} placeholder="搜索券码 / 优惠券名称 / 创建人..." />}
-          batchToggle={selection.selectedCount > 0 ? { active: true, onClear: selection.clear } : undefined}
+          batchToggle={selection.selectedCount > 0 ? { active: true, onClear: selection.clear } as any : undefined}
         />
 
         {/* 状态过滤 */}

@@ -141,6 +141,7 @@ describe('LogisticsSupplementService', () => {
         shiftEnd: '18:00',
         transportOrderIds: ['to-001'],
         status: 'scheduled' as const,
+        createdBy: 'u-001',
       })
       expect(s.id).toBeTruthy()
     })
@@ -150,6 +151,7 @@ describe('LogisticsSupplementService', () => {
         tenantId: TENANT_ID, driverId: 'D-001', driverName: '刘师傅',
         scheduleDate: '2026-08-01', shiftName: '早班', shiftStart: '08:00',
         shiftEnd: '18:00', transportOrderIds: [], status: 'scheduled' as const,
+        createdBy: 'u-001',
       })
       // getDriverSchedules uses driverId not scheduleDate for filtering
       const list = await svc.getDriverSchedules('D-001', '2026-08-01')
@@ -254,6 +256,8 @@ describe('LogisticsSupplementService', () => {
         responsibility: 'self' as const,
         description: '轻微追尾',
         propertyDamageCent: 200000,
+        createdBy: 'u-001',
+        resolved: false,
       })
       expect(r.id).toBeTruthy()
     })

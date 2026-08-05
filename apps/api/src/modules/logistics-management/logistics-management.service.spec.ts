@@ -62,8 +62,8 @@ describe('LogisticsManagementService', () => {
       const list = svc.listSupplyOrders(TENANT_ID)
       expect(list).toHaveLength(1)
 
-      const updated = svc.updateSupplyOrder(list[0].id, TENANT_ID, { status: 'completed' })
-      expect(updated.status).toBe('completed')
+      const updated = svc.updateSupplyOrder(list[0].id, TENANT_ID, { status: 'received' })
+      expect(updated.status).toBe('received')
     })
 
     it('正例: 按供应商筛选订单', () => {

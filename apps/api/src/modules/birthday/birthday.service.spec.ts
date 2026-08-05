@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { BirthdayService } from './birthday.service'
+import { BirthdayTier } from './birthday.entity'
 
 describe('BirthdayService', () => {
   let service: BirthdayService
@@ -20,7 +21,7 @@ describe('BirthdayService', () => {
 
       service.createPlan({
         memberId: 'm1', birthday, advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       const result = service.markUpcomingBirthdays(['m1'], { m1: birthday })
       expect(result.marked).toBe(1)
@@ -55,7 +56,7 @@ describe('BirthdayService', () => {
     it('creates a pending birthday plan', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'VIP', rewardType: 'gift', rewardValue: 200,
+        tier: BirthdayTier.VIP, rewardType: 'gift', rewardValue: 200,
         allowFriends: true, friendDiscount: 0.8,
       })
       expect(plan.memberId).toBe('m1')
@@ -68,7 +69,7 @@ describe('BirthdayService', () => {
       expect(() =>
         service.createPlan({
           memberId: '', birthday: '12-25', advanceDays: 7,
-          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+          tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 50,
         }),
       ).toThrow('memberId 不能为空')
     })
@@ -77,7 +78,7 @@ describe('BirthdayService', () => {
       expect(() =>
         service.createPlan({
           memberId: 'm1', birthday: '1225', advanceDays: 7,
-          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+          tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 50,
         }),
       ).toThrow('birthday 格式必须为 MM-DD')
     })
@@ -86,7 +87,7 @@ describe('BirthdayService', () => {
       expect(() =>
         service.createPlan({
           memberId: 'm1', birthday: '12-25', advanceDays: 99,
-          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+          tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 50,
         }),
       ).toThrow('advanceDays 必须在 0~30 范围内')
     })
@@ -95,7 +96,7 @@ describe('BirthdayService', () => {
       expect(() =>
         service.createPlan({
           memberId: 'm1', birthday: '12-25', advanceDays: 7,
-          tier: 'NORMAL', rewardType: 'coupon', rewardValue: 0,
+          tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 0,
         }),
       ).toThrow('rewardValue 必须大于 0')
     })
@@ -105,11 +106,11 @@ describe('BirthdayService', () => {
     it('lists all plans sorted by createdAt desc', () => {
       service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 50,
       })
       service.createPlan({
         memberId: 'm2', birthday: '01-01', advanceDays: 3,
-        tier: 'VIP', rewardType: 'discount', rewardValue: 100,
+        tier: BirthdayTier.VIP, rewardType: 'discount', rewardValue: 100,
       })
       expect(service.listPlans()).toHaveLength(2)
     })
@@ -122,7 +123,7 @@ describe('BirthdayService', () => {
       const targetMonth = `${now.getFullYear()}-${mm}`
       service.createPlan({
         memberId: 'm1', birthday: `${mm}-15`, advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 50,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 50,
       })
       const filtered = service.listPlans({ month: targetMonth })
       expect(filtered.length).toBeGreaterThanOrEqual(1)
@@ -137,7 +138,7 @@ describe('BirthdayService', () => {
     it('triggerPush changes plan status to active and creates reward', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       const reward = service.triggerPush(plan.id)
       expect(reward.type).toBe('coupon')
@@ -149,7 +150,7 @@ describe('BirthdayService', () => {
     it('throws when triggering non-pending plan', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       service.triggerPush(plan.id)
       expect(() => service.triggerPush(plan.id)).toThrow('不可触发推送')
@@ -158,7 +159,7 @@ describe('BirthdayService', () => {
     it('claimReward completes the plan', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       service.triggerPush(plan.id)
       const claimed = service.claimReward(plan.id)
@@ -169,7 +170,7 @@ describe('BirthdayService', () => {
     it('throws when claiming already claimed reward', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       service.triggerPush(plan.id)
       service.claimReward(plan.id)
@@ -184,7 +185,7 @@ describe('BirthdayService', () => {
     it('creates tracking record', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
         allowFriends: true, friendDiscount: 0.8,
       })
       const track = service.recordTracking({
@@ -197,7 +198,7 @@ describe('BirthdayService', () => {
     it('throws when plan does not allow friends', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       expect(() =>
         service.recordTracking({ planId: plan.id, friendInvited: 1 }),
@@ -207,7 +208,7 @@ describe('BirthdayService', () => {
     it('throws on negative values', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
         allowFriends: true, friendDiscount: 0.8,
       })
       expect(() =>
@@ -226,7 +227,7 @@ describe('BirthdayService', () => {
     it('aggregates friend stats from plans', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
         allowFriends: true, friendDiscount: 0.8,
       })
       service.recordTracking({ planId: plan.id, friendInvited: 2, totalSpend: 400 })
@@ -250,7 +251,7 @@ describe('BirthdayService', () => {
     it('reflects data after creating plans and rewards', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       service.triggerPush(plan.id)
       service.claimReward(plan.id)
@@ -273,7 +274,7 @@ describe('BirthdayService', () => {
       const birthday = `${month}-${futureDay}`
       service.createPlan({
         memberId: 'm1', birthday, advanceDays: 7,
-        tier: 'VIP', rewardType: 'gift', rewardValue: 500,
+        tier: BirthdayTier.VIP, rewardType: 'gift', rewardValue: 500,
       })
       const result = service.preloadEffects('m1')
       expect(result.hasActivePlan).toBe(true)
@@ -292,7 +293,7 @@ describe('BirthdayService', () => {
     it('aggregates member stats across plans', () => {
       const plan = service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
         allowFriends: true, friendDiscount: 0.8,
       })
       service.recordTracking({ planId: plan.id, friendInvited: 3, totalSpend: 600, returnVisitDays: 14 })
@@ -307,7 +308,7 @@ describe('BirthdayService', () => {
     it('clears all stores', () => {
       service.createPlan({
         memberId: 'm1', birthday: '12-25', advanceDays: 7,
-        tier: 'NORMAL', rewardType: 'coupon', rewardValue: 100,
+        tier: BirthdayTier.Standard, rewardType: 'coupon', rewardValue: 100,
       })
       expect(service.listPlans()).toHaveLength(1)
       service.reset()

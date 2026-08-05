@@ -16,7 +16,9 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { FunnelService } from './funnel.service'
-import type { TenantId, FunnelStep, FunnelResult, StepResult } from '../analytics-v2.entity'
+import type { TenantId, FunnelStep, FunnelResult } from '../analytics-v2.entity'
+
+type StepResult = { stepName: string; enteredCount: number; conversionRate: number; dropOffRate: number }
 
 // ═══════════════════════════════════════════════════════════════
 // Mock 数据工厂
@@ -27,7 +29,7 @@ function makeMockFunnelCalculator() {
     compute: vi.fn((input: { tenantId: TenantId; name: string; steps: FunnelStep[]; windowDays?: number }) => {
       const stepResults: StepResult[] = input.steps.map((s, i) => ({
         stepName: s.name,
-        userCount: 1000 - i * 200,
+        enteredCount: 1000 - i * 200,
         conversionRate: 1 - i * 0.15,
         dropOffRate: i === 0 ? 0 : 0.15,
       }))
@@ -38,7 +40,7 @@ function makeMockFunnelCalculator() {
         steps: input.steps,
         stepResults,
         totalConversionRate: 1 - (input.steps.length - 1) * 0.15,
-        createdAt: new Date(),
+        computedAt: new Date().toISOString(),
         windowDays: input.windowDays ?? 7,
       } satisfies FunnelResult
     }),
@@ -64,8 +66,8 @@ function mockStep(name: string, eventType: string): FunnelStep {
   return { name, eventType } as FunnelStep
 }
 
-function makeStepResult(stepName: string, userCount: number, conversionRate: number, dropOffRate: number): StepResult {
-  return { stepName, userCount, conversionRate, dropOffRate }
+function makeStepResult(stepName: string, enteredCount: number, conversionRate: number, dropOffRate: number): StepResult {
+  return { stepName, enteredCount, conversionRate, dropOffRate }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -180,8 +182,8 @@ describe('FunnelService — 查询漏斗', () => {
   it('[B7] listFunnels 返回指定租户漏斗列表', () => {
     const { service, mockAdapter } = ctx
     const funnels: FunnelResult[] = [
-      { id: 'f1', tenantId: 't1', name: '漏斗A', steps: [], stepResults: [], totalConversionRate: 0.5, createdAt: new Date(), windowDays: 7 },
-      { id: 'f2', tenantId: 't1', name: '漏斗B', steps: [], stepResults: [], totalConversionRate: 0.3, createdAt: new Date(), windowDays: 7 },
+      { id: 'f1', tenantId: 't1', name: '漏斗A', steps: [], stepResults: [], totalConversionRate: 0.5, computedAt: new Date().toISOString(), windowDays: 7 },
+      { id: 'f2', tenantId: 't1', name: '漏斗B', steps: [], stepResults: [], totalConversionRate: 0.3, computedAt: new Date().toISOString(), windowDays: 7 },
     ]
     mockAdapter._seed('t1', funnels)
     const list = service.listFunnels('t1')
@@ -192,7 +194,7 @@ describe('FunnelService — 查询漏斗', () => {
 
   it('[B8] getFunnel 存在时返回漏斗', () => {
     const { service, mockAdapter } = ctx
-    const funnel: FunnelResult = { id: 'f1', tenantId: 't1', name: '我的漏斗', steps: [], stepResults: [], totalConversionRate: 0.7, createdAt: new Date(), windowDays: 7 }
+    const funnel: FunnelResult = { id: 'f1', tenantId: 't1', name: '我的漏斗', steps: [], stepResults: [], totalConversionRate: 0.7, computedAt: new Date().toISOString(), windowDays: 7 }
     mockAdapter._seed('t1', [funnel])
     const found = service.getFunnel('t1', 'f1')
     expect(found).not.toBeNull()
@@ -218,8 +220,8 @@ describe('FunnelService — 漏斗对比', () => {
   it('[B10] compareFunnels 返回跨漏斗对比数据', () => {
     const { service, mockAdapter } = ctx
     mockAdapter._seed('t1', [
-      { id: 'f1', tenantId: 't1', name: '漏斗A', steps: [mockStep('s1', 'CLICK'), mockStep('s2', 'CONVERSION')], stepResults: [makeStepResult('s1', 1000, 1, 0), makeStepResult('s2', 500, 0.5, 0.5)], totalConversionRate: 0.5, createdAt: new Date(), windowDays: 7 },
-      { id: 'f2', tenantId: 't1', name: '漏斗B', steps: [mockStep('s1', 'CLICK'), mockStep('s2', 'CONVERSION'), mockStep('s3', 'PURCHASE')], stepResults: [makeStepResult('s1', 1000, 1, 0), makeStepResult('s2', 400, 0.4, 0.6), makeStepResult('s3', 200, 0.2, 0.5)], totalConversionRate: 0.2, createdAt: new Date(), windowDays: 7 },
+      { id: 'f1', tenantId: 't1', name: '漏斗A', steps: [mockStep('s1', 'CLICK'), mockStep('s2', 'CONVERSION')], stepResults: [makeStepResult('s1', 1000, 1, 0), makeStepResult('s2', 500, 0.5, 0.5)], totalConversionRate: 0.5, computedAt: new Date().toISOString(), windowDays: 7 },
+      { id: 'f2', tenantId: 't1', name: '漏斗B', steps: [mockStep('s1', 'CLICK'), mockStep('s2', 'CONVERSION'), mockStep('s3', 'PURCHASE')], stepResults: [makeStepResult('s1', 1000, 1, 0), makeStepResult('s2', 400, 0.4, 0.6), makeStepResult('s3', 200, 0.2, 0.5)], totalConversionRate: 0.2, computedAt: new Date().toISOString(), windowDays: 7 },
     ])
     const result = service.compareFunnels('t1', ['f1', 'f2'])
     expect(result).toHaveLength(2)
@@ -241,7 +243,7 @@ describe('FunnelService — 漏斗对比', () => {
   it('[B12] compareFunnels 过滤不存在的漏斗', () => {
     const { service, mockAdapter } = ctx
     mockAdapter._seed('t1', [
-      { id: 'f1', tenantId: 't1', name: '漏斗A', steps: [], stepResults: [], totalConversionRate: 0.5, createdAt: new Date(), windowDays: 7 },
+      { id: 'f1', tenantId: 't1', name: '漏斗A', steps: [], stepResults: [], totalConversionRate: 0.5, computedAt: new Date().toISOString(), windowDays: 7 },
     ])
     const result = service.compareFunnels('t1', ['f1', 'nonexistent'])
     expect(result).toHaveLength(1)
@@ -261,7 +263,7 @@ describe('FunnelService — 最大流失识别', () => {
   it('[B13] identifyBiggestDropOff 找到最大流失步骤', () => {
     const { service, mockAdapter } = ctx
     mockAdapter._seed('*', [
-      { id: 'f1', tenantId: '*', name: '测试漏斗', steps: [mockStep('浏览', 'PAGEVIEW'), mockStep('购物车', 'CLICK'), mockStep('支付', 'PURCHASE')], stepResults: [makeStepResult('浏览', 1000, 1, 0), makeStepResult('购物车', 500, 0.5, 0.5), makeStepResult('支付', 100, 0.1, 0.8)], totalConversionRate: 0.1, createdAt: new Date(), windowDays: 7 },
+      { id: 'f1', tenantId: '*', name: '测试漏斗', steps: [mockStep('浏览', 'PAGEVIEW'), mockStep('购物车', 'CLICK'), mockStep('支付', 'PURCHASE')], stepResults: [makeStepResult('浏览', 1000, 1, 0), makeStepResult('购物车', 500, 0.5, 0.5), makeStepResult('支付', 100, 0.1, 0.8)], totalConversionRate: 0.1, computedAt: new Date().toISOString(), windowDays: 7 },
     ])
     const result = service.identifyBiggestDropOff('f1')
     expect(result.funnel).not.toBeNull()
@@ -328,7 +330,7 @@ describe('FunnelService — 反例与边界', () => {
   it('[B18] listFunnels 不同租户隔离', () => {
     const { service, mockAdapter } = ctx
     mockAdapter._seed('t1', [
-      { id: 'f1', tenantId: 't1', name: '租户1的漏斗', steps: [], stepResults: [], totalConversionRate: 0.5, createdAt: new Date(), windowDays: 7 },
+      { id: 'f1', tenantId: 't1', name: '租户1的漏斗', steps: [], stepResults: [], totalConversionRate: 0.5, computedAt: new Date().toISOString(), windowDays: 7 },
     ])
     const listT1 = service.listFunnels('t1')
     const listT2 = service.listFunnels('t2')
@@ -366,7 +368,7 @@ describe('FunnelService — 边界覆盖', () => {
   it('[B21] getFunnel 传入空字符串租户', () => {
     const { service, mockAdapter } = ctx
     mockAdapter._seed('', [
-      { id: 'f1', tenantId: '', name: '空租户', steps: [], stepResults: [], totalConversionRate: 0.5, createdAt: new Date(), windowDays: 7 },
+      { id: 'f1', tenantId: '', name: '空租户', steps: [], stepResults: [], totalConversionRate: 0.5, computedAt: new Date().toISOString(), windowDays: 7 },
     ])
     const found = service.getFunnel('', 'f1')
     expect(found).not.toBeNull()

@@ -18,8 +18,8 @@ interface ListToolbarProps {
   sortControl?: React.ReactNode;
   /** 导出按钮 */
   exportButton?: React.ReactNode;
-  /** 批量操作切换 */
-  batchToggle?: React.ReactNode;
+  /** 批量操作切换（支持 ReactNode 或配置对象） */
+  batchToggle?: React.ReactNode | { active: boolean; onClear: () => void };
   /** 左侧额外内容 */
   leftExtra?: React.ReactNode;
   /** 右侧额外内容 */
@@ -47,7 +47,7 @@ export default function ListToolbar({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {sortControl}
             {exportButton}
-            {batchToggle}
+            {batchToggle as React.ReactNode}
             {rightExtra}
           </div>
         </div>

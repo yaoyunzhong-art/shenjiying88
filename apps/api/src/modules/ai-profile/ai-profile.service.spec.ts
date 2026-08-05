@@ -17,7 +17,6 @@ describe('AiProfileService', () => {
       storeId: 'store-001',
       tenantId: 'tenant-001',
       baseInfo: {
-        name: '张三',
         gender: 'male' as const,
         ageGroup: '26_35' as const,
         level: 'vip' as const,
@@ -35,15 +34,18 @@ describe('AiProfileService', () => {
         pushOpenRate: 0.45,
         pushClickRate: 0.15,
         messageReadRate: 0.35,
-        couponRedeemRate: 0.25,
-        socialShareRate: 0.1,
+        socialShareCount: 0,
+        reviewCount: 0,
+        avgRating: 0,
       },
       consumptionMetrics: {
-        totalSpent: 5000,
+        totalSpend: 5000,
         avgOrderAmount: 120,
-        totalOrders: 42,
+        monthSpend: 0,
         lastVisitDays: 5,
-        preferredCategories: ['抓娃娃', '盲盒'],
+        visitFrequency: 0,
+        favoriteCategory: '抓娃娃',
+        couponUsedCount: 0,
       },
       tags: ['高价值', '活跃'],
     }
@@ -54,36 +56,34 @@ describe('AiProfileService', () => {
       expect(profile.userId).toBe('user-001')
       expect(profile.createdAt).toBeInstanceOf(Date)
       expect(profile.updatedAt).toBeInstanceOf(Date)
-      expect(profile.baseInfo.name).toBe('张三')
     })
 
     it('should update an existing profile preserving createdAt', () => {
       const first = service.createOrUpdateProfile(baseDto)
-      const updateDto = { ...baseDto, id: first.id, baseInfo: { ...baseDto.baseInfo, name: '张三（更新）' } }
+      const updateDto = { ...baseDto, id: first.id, baseInfo: { ...baseDto.baseInfo } }
       const second = service.createOrUpdateProfile(updateDto)
       expect(second.id).toBe(first.id)
       expect(second.createdAt).toEqual(first.createdAt)
       expect(second.updatedAt.getTime()).toBeGreaterThanOrEqual(first.updatedAt.getTime())
-      expect(second.baseInfo.name).toBe('张三（更新）')
     })
   })
 
   describe('getProfile / getProfileByUserId / listProfiles', () => {
     beforeEach(() => {
       service.createOrUpdateProfile({
-        userId: 'user-001', storeId: 'store-001', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'vip', interests: [], consumptionHabbit: 'value' },
+        userId: 'user-001', storeId: 'store-001',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'vip', interests: [], consumptionHabbit: 'value' },
         activityMetrics: { totalVisits: 10, avgStayMinutes: 30, peakHourRate: 0.5, preferredTime: 'afternoon', preferredDays: ['Saturday'] },
-        engagementMetrics: { pushOpenRate: 0.3, pushClickRate: 0.1, messageReadRate: 0.2, couponRedeemRate: 0.1, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 1000, avgOrderAmount: 50, totalOrders: 20, lastVisitDays: 3, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.3, pushClickRate: 0.1, messageReadRate: 0.2, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 1000, avgOrderAmount: 50, monthSpend: 0, lastVisitDays: 3, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: [],
       })
       service.createOrUpdateProfile({
-        userId: 'user-002', storeId: 'store-002', tenantId: 't1',
-        baseInfo: { name: 'B', gender: 'female', ageGroup: '18_25', level: 'regular', interests: [], consumptionHabbit: 'value' },
+        userId: 'user-002', storeId: 'store-002',
+        baseInfo: { gender: 'female', ageGroup: '18_25', level: 'regular', interests: [], consumptionHabbit: 'value' },
         activityMetrics: { totalVisits: 5, avgStayMinutes: 20, peakHourRate: 0.3, preferredTime: 'morning', preferredDays: ['Monday'] },
-        engagementMetrics: { pushOpenRate: 0.2, pushClickRate: 0.05, messageReadRate: 0.1, couponRedeemRate: 0.05, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 500, avgOrderAmount: 30, totalOrders: 15, lastVisitDays: 10, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.2, pushClickRate: 0.05, messageReadRate: 0.1, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 500, avgOrderAmount: 30, monthSpend: 0, lastVisitDays: 10, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: [],
       })
     })
@@ -102,7 +102,7 @@ describe('AiProfileService', () => {
     it('getProfileByUserId returns correct profile', () => {
       const p = service.getProfileByUserId('user-002')
       expect(p).toBeDefined()
-      expect(p!.baseInfo.name).toBe('B')
+      expect(p!.userId).toBe('user-002')
     })
 
     it('getProfileByUserId returns undefined for unknown user', () => {
@@ -123,19 +123,19 @@ describe('AiProfileService', () => {
   describe('getSegmentUsers', () => {
     beforeEach(() => {
       service.createOrUpdateProfile({
-        userId: 'u1', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'vip', interests: ['盲盒', '赛车'], consumptionHabbit: 'experience' },
+        userId: 'u1', storeId: 's1',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'vip', interests: ['盲盒', '赛车'], consumptionHabbit: 'experience' },
         activityMetrics: { totalVisits: 10, avgStayMinutes: 30, peakHourRate: 0.5, preferredTime: 'afternoon', preferredDays: ['Saturday'] },
-        engagementMetrics: { pushOpenRate: 0.3, pushClickRate: 0.1, messageReadRate: 0.2, couponRedeemRate: 0.1, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 1000, avgOrderAmount: 50, totalOrders: 20, lastVisitDays: 3, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.3, pushClickRate: 0.1, messageReadRate: 0.2, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 1000, avgOrderAmount: 50, monthSpend: 0, lastVisitDays: 3, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: ['高价值', '活跃'],
       })
       service.createOrUpdateProfile({
-        userId: 'u2', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'B', gender: 'female', ageGroup: '18_25', level: 'regular', interests: ['抓娃娃'], consumptionHabbit: 'value' },
+        userId: 'u2', storeId: 's1',
+        baseInfo: { gender: 'female', ageGroup: '18_25', level: 'regular', interests: ['抓娃娃'], consumptionHabbit: 'value' },
         activityMetrics: { totalVisits: 5, avgStayMinutes: 20, peakHourRate: 0.3, preferredTime: 'morning', preferredDays: ['Monday'] },
-        engagementMetrics: { pushOpenRate: 0.2, pushClickRate: 0.05, messageReadRate: 0.1, couponRedeemRate: 0.05, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 500, avgOrderAmount: 30, totalOrders: 15, lastVisitDays: 10, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.2, pushClickRate: 0.05, messageReadRate: 0.1, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 500, avgOrderAmount: 30, monthSpend: 0, lastVisitDays: 10, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: ['新客'],
       })
     })
@@ -166,11 +166,11 @@ describe('AiProfileService', () => {
 
     it('returns timing recommendation for existing user', () => {
       service.createOrUpdateProfile({
-        userId: 'u1', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'vip', interests: [], consumptionHabbit: 'experience' },
+        userId: 'u1', storeId: 's1',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'vip', interests: [], consumptionHabbit: 'experience' },
         activityMetrics: { totalVisits: 25, avgStayMinutes: 60, peakHourRate: 0.7, preferredTime: 'evening', preferredDays: ['Saturday', 'Sunday'] },
-        engagementMetrics: { pushOpenRate: 0.45, pushClickRate: 0.15, messageReadRate: 0.35, couponRedeemRate: 0.25, socialShareRate: 0.1 },
-        consumptionMetrics: { totalSpent: 5000, avgOrderAmount: 120, totalOrders: 42, lastVisitDays: 35, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.45, pushClickRate: 0.15, messageReadRate: 0.35, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 5000, avgOrderAmount: 120, monthSpend: 0, lastVisitDays: 35, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: [],
       })
       const timing = service.calculateTiming('u1')
@@ -191,11 +191,11 @@ describe('AiProfileService', () => {
 
     it('returns stored timing after calculateTiming', () => {
       service.createOrUpdateProfile({
-        userId: 'u1', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'vip', interests: [], consumptionHabbit: 'value' },
+        userId: 'u1', storeId: 's1',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'vip', interests: [], consumptionHabbit: 'value' },
         activityMetrics: { totalVisits: 15, avgStayMinutes: 40, peakHourRate: 0.5, preferredTime: 'afternoon', preferredDays: ['Saturday'] },
-        engagementMetrics: { pushOpenRate: 0.3, pushClickRate: 0.1, messageReadRate: 0.2, couponRedeemRate: 0.1, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 1000, avgOrderAmount: 50, totalOrders: 20, lastVisitDays: 3, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.3, pushClickRate: 0.1, messageReadRate: 0.2, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 1000, avgOrderAmount: 50, monthSpend: 0, lastVisitDays: 3, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: [],
       })
       service.calculateTiming('u1')
@@ -214,11 +214,11 @@ describe('AiProfileService', () => {
 
     it('generates recommendations based on user profile', () => {
       service.createOrUpdateProfile({
-        userId: 'u1', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'vip', interests: ['盲盒', '抓娃娃'], consumptionHabbit: 'experience' },
+        userId: 'u1', storeId: 's1',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'vip', interests: ['盲盒', '抓娃娃'], consumptionHabbit: 'experience' },
         activityMetrics: { totalVisits: 20, avgStayMinutes: 50, peakHourRate: 0.6, preferredTime: 'evening', preferredDays: ['Saturday'] },
-        engagementMetrics: { pushOpenRate: 0.4, pushClickRate: 0.12, messageReadRate: 0.3, couponRedeemRate: 0.2, socialShareRate: 0.05 },
-        consumptionMetrics: { totalSpent: 3000, avgOrderAmount: 30, totalOrders: 100, lastVisitDays: 25, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.4, pushClickRate: 0.12, messageReadRate: 0.3, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 3000, avgOrderAmount: 30, monthSpend: 0, lastVisitDays: 25, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: ['低客单'],
       })
       const recs = service.generateContentRecommendations('u1', 3)
@@ -231,11 +231,11 @@ describe('AiProfileService', () => {
 
     it('limits results to the specified number', () => {
       service.createOrUpdateProfile({
-        userId: 'u2', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'B', gender: 'female', ageGroup: '18_25', level: 'vip', interests: ['赛车', '篮球'], consumptionHabbit: 'social' },
+        userId: 'u2', storeId: 's1',
+        baseInfo: { gender: 'female', ageGroup: '18_25', level: 'vip', interests: ['赛车', '篮球'], consumptionHabbit: 'social' },
         activityMetrics: { totalVisits: 30, avgStayMinutes: 70, peakHourRate: 0.8, preferredTime: 'evening', preferredDays: ['Saturday', 'Sunday'] },
-        engagementMetrics: { pushOpenRate: 0.5, pushClickRate: 0.2, messageReadRate: 0.4, couponRedeemRate: 0.3, socialShareRate: 0.2 },
-        consumptionMetrics: { totalSpent: 10000, avgOrderAmount: 200, totalOrders: 50, lastVisitDays: 2, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.5, pushClickRate: 0.2, messageReadRate: 0.4, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 10000, avgOrderAmount: 200, monthSpend: 0, lastVisitDays: 2, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: ['高价值'],
       })
       const recs = service.generateContentRecommendations('u2', 2)
@@ -319,11 +319,11 @@ describe('AiProfileService', () => {
   describe('generateWeeklyReport / getWeeklyReport', () => {
     it('generates a weekly report with stats', () => {
       service.createOrUpdateProfile({
-        userId: 'u1', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'regular', interests: [], consumptionHabbit: 'value' },
+        userId: 'u1', storeId: 's1',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'regular', interests: [], consumptionHabbit: 'value' },
         activityMetrics: { totalVisits: 5, avgStayMinutes: 20, peakHourRate: 0.3, preferredTime: 'morning', preferredDays: ['Monday'] },
-        engagementMetrics: { pushOpenRate: 0.2, pushClickRate: 0.05, messageReadRate: 0.1, couponRedeemRate: 0.05, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 100, avgOrderAmount: 20, totalOrders: 5, lastVisitDays: 2, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0.2, pushClickRate: 0.05, messageReadRate: 0.1, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 100, avgOrderAmount: 20, monthSpend: 0, lastVisitDays: 2, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: [],
       })
       const report = service.generateWeeklyReport('s1')
@@ -348,11 +348,11 @@ describe('AiProfileService', () => {
   describe('reset', () => {
     it('clears all stores', () => {
       service.createOrUpdateProfile({
-        userId: 'u1', storeId: 's1', tenantId: 't1',
-        baseInfo: { name: 'A', gender: 'male', ageGroup: '26_35', level: 'regular', interests: [], consumptionHabbit: 'value' },
+        userId: 'u1', storeId: 's1',
+        baseInfo: { gender: 'male', ageGroup: '26_35', level: 'regular', interests: [], consumptionHabbit: 'value' },
         activityMetrics: { totalVisits: 1, avgStayMinutes: 10, peakHourRate: 0.1, preferredTime: 'morning', preferredDays: ['Monday'] },
-        engagementMetrics: { pushOpenRate: 0, pushClickRate: 0, messageReadRate: 0, couponRedeemRate: 0, socialShareRate: 0 },
-        consumptionMetrics: { totalSpent: 0, avgOrderAmount: 0, totalOrders: 0, lastVisitDays: 0, preferredCategories: [] },
+        engagementMetrics: { pushOpenRate: 0, pushClickRate: 0, messageReadRate: 0, socialShareCount: 0, reviewCount: 0, avgRating: 0 },
+        consumptionMetrics: { totalSpend: 0, avgOrderAmount: 0, monthSpend: 0, lastVisitDays: 0, visitFrequency: 0, favoriteCategory: '', couponUsedCount: 0 },
         tags: [],
       })
       expect(service.listProfiles()).toHaveLength(1)

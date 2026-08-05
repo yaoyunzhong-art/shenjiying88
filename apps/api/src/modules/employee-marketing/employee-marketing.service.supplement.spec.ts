@@ -32,6 +32,7 @@ describe('EmployeeMarketingService — Supplement', () => {
         employeeId: 'e-001',
         code: 'PROMO001',
         type: 'coupon',
+        commissionRate: 0.1,
         validUntil: '2027-12-31',
         usageLimit: 100,
       })
@@ -53,7 +54,7 @@ describe('EmployeeMarketingService — Supplement', () => {
   describe('customerOptOut', () => {
     it('正例: 客户退订推广后 customerOptedOut 为 true', () => {
       const pc = svc.createPromoCode({
-        employeeId: 'e-001', code: 'OPT001', type: 'coupon',
+        employeeId: 'e-001', code: 'OPT001', type: 'coupon', commissionRate: 0.1,
         validUntil: '2027-12-31', usageLimit: 10,
       })
       const tracking = svc.trackPromotion({
@@ -78,7 +79,7 @@ describe('EmployeeMarketingService — Supplement', () => {
   describe('unbindCustomerTracking', () => {
     it('正例: 解除推广关系后 customerUnbindable 为 false', () => {
       const pc = svc.createPromoCode({
-        employeeId: 'e-001', code: 'UNBIND01', type: 'discount',
+        employeeId: 'e-001', code: 'UNBIND01', type: 'discount', commissionRate: 0.15,
         validUntil: '2027-12-31', usageLimit: 10,
       })
       const tracking = svc.trackPromotion({
@@ -248,7 +249,7 @@ describe('EmployeeMarketingService — Supplement', () => {
     it('正例: 有活跃员工时自动匹配师傅', () => {
       // 先创建推广码和追踪数据使员工进入排行榜
       const pc = svc.createPromoCode({
-        employeeId: 'e-mentor', code: 'MENTOR01', type: 'coupon',
+        employeeId: 'e-mentor', code: 'MENTOR01', type: 'coupon', commissionRate: 0.1,
         validUntil: '2027-12-31', usageLimit: 100,
       })
       svc.trackPromotion({
@@ -256,7 +257,7 @@ describe('EmployeeMarketingService — Supplement', () => {
       })
       svc.confirmTracking(pc.id.replace('pc-', 'pt-'))
       // 重新获取实际 tracking ID
-      const trackings = Array.from(svc['promoTrackingStore'] as Map<string, any>).map(([, v]) => v)
+      const trackings = Array.from((svc as any).promoTrackingStore.values()) as any[]
       for (const t of trackings) {
         svc.confirmTracking(t.id)
       }
@@ -282,13 +283,13 @@ describe('EmployeeMarketingService — Supplement', () => {
       // autoMatchMentor 要有已验证的 tracking 才可能成功
       // 直接通过内部调用触发 mentor 创建
       const pc = svc.createPromoCode({
-        employeeId: 'e-mentor2', code: 'MENTOR02', type: 'coupon',
+        employeeId: 'e-mentor2', code: 'MENTOR02', type: 'coupon', commissionRate: 0.1,
         validUntil: '2027-12-31', usageLimit: 100,
       })
       svc.trackPromotion({
         promoCodeId: pc.id, customerId: 'c-m2', commission: 100, orderId: 'o-m2',
       })
-      const trackings = Array.from(svc['promoTrackingStore'] as Map<string, any>).values()
+      const trackings = Array.from((svc as any).promoTrackingStore.values()) as any[]
       for (const t of trackings) {
         svc.confirmTracking(t.id)
       }
@@ -308,13 +309,13 @@ describe('EmployeeMarketingService — Supplement', () => {
     it('正例: 更新辅导成绩', () => {
       // 先通过自动匹配创建 mentor relation
       const pc = svc.createPromoCode({
-        employeeId: 'e-coach', code: 'COACH01', type: 'coupon',
+        employeeId: 'e-coach', code: 'COACH01', type: 'coupon', commissionRate: 0.1,
         validUntil: '2027-12-31', usageLimit: 100,
       })
       svc.trackPromotion({
         promoCodeId: pc.id, customerId: 'c-coach', commission: 200, orderId: 'o-coach',
       })
-      const trackings = Array.from(svc['promoTrackingStore'] as Map<string, any>).values()
+      const trackings = Array.from((svc as any).promoTrackingStore.values()) as any[]
       for (const t of trackings) {
         svc.confirmTracking(t.id)
       }

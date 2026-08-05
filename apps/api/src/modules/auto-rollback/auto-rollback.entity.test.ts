@@ -140,7 +140,7 @@ describe('AutoRollback Entity Types', () => {
         trigger: 'config rollback',
       }
       expect(snapshot.kind).toBe('CONFIG')
-      expect(snapshot.payload.featureFlags.new_checkout).toBe(false)
+      expect((snapshot.payload as any).featureFlags.new_checkout).toBe(false)
     })
 
     it('should handle empty payload', () => {

@@ -35,7 +35,7 @@ describe('BrandOperationsService', () => {
   // ═════════════════════════════════════════════════
 
   describe('BrandAsset', () => {
-    const base = () => ({ tenantId: 't1', brandId: 'b1', type: 'image' as const, url: 'https://x.com/a.png', name: 'logo' })
+    const base = () => ({ tenantId: 't1', brandId: 'b1', type: 'banner' as const, url: 'https://x.com/a.png', name: 'logo' })
 
     it('正例: createAsset 应创建并返回资产', () => {
       const a = service.createAsset(base())
@@ -57,9 +57,9 @@ describe('BrandOperationsService', () => {
     })
 
     it('正例: listAssets 应支持按类型和活跃度筛选', () => {
-      service.createAsset({ ...base(), type: 'image', active: true })
-      service.createAsset({ ...base(), type: 'video', name: 'v', active: false })
-      const images = service.listAssets('t1', { type: 'image' })
+      service.createAsset({ ...base(), type: 'banner', active: true })
+      service.createAsset({ ...base(), type: 'video', active: false })
+      const images = service.listAssets('t1', { type: 'banner' })
       expect(images).toHaveLength(1)
       const active = service.listAssets('t1', { active: true })
       expect(active).toHaveLength(1)
@@ -167,7 +167,7 @@ describe('BrandOperationsService', () => {
     })
 
     it('正例: 创建资产和活动后指标应递增', () => {
-      service.createAsset({ tenantId: 't1', brandId: 'b1', type: 'image', url: 'x.png', name: 'logo' })
+      service.createAsset({ tenantId: 't1', brandId: 'b1', type: 'banner', url: 'x.png', name: 'logo' })
       service.createCampaign({ tenantId: 't1', brandId: 'b1', title: 'test', description: 'd', storeIds: ['s1'], startDate: '2026-08-01', endDate: '2026-08-31', createdBy: 'admin' })
       const m = service.getMetrics('t1')
       expect(m.totalAssets).toBe(1)
@@ -184,8 +184,8 @@ describe('BrandOperationsService', () => {
       tenantId: 't1', brandId: 'b1',
       title: '联名活动', description: 'd',
       type: 'co_branding' as const,
-      partner: { id: 'p1', name: 'partner', grade: 'gold' as const },
-      revenueShare: { type: 'fixed' as const, rate: 0.5 },
+      partner: { name: 'partner', contactName: '联系人', contactPhone: '13800138000', grade: 'gold' as const },
+      revenueShare: { type: 'fixed_rate' as const, rate: 0.5 },
       startDate: '2026-08-01', endDate: '2026-08-31',
       createdBy: 'admin',
     })
@@ -251,7 +251,7 @@ describe('BrandOperationsService', () => {
 
   describe('RevenueShare', () => {
     const makeCollab = () => {
-      const c = service.createCollaboration({ tenantId: 't1', brandId: 'b1', title: '联名', description: 'd', type: 'co_branding' as const, partner: { id: 'p1', name: 'p', grade: 'gold' as const }, revenueShare: { type: 'fixed' as const, rate: 0.3 }, startDate: '2026-08-01', endDate: '2026-08-31', createdBy: 'admin' })
+      const c = service.createCollaboration({ tenantId: 't1', brandId: 'b1', title: '联名', description: 'd', type: 'co_branding' as const, partner: { name: 'p', contactName: '联系人', contactPhone: '13800138000', grade: 'gold' as const }, revenueShare: { type: 'fixed_rate' as const, rate: 0.3 }, startDate: '2026-08-01', endDate: '2026-08-31', createdBy: 'admin' })
       return c
     }
 
@@ -356,7 +356,7 @@ describe('BrandOperationsService', () => {
 
   describe('RecycleBin', () => {
     it('正例: softDeleteEntity + restoreFromRecycleBin 应完整恢复', () => {
-      const a = service.createAsset({ tenantId: 't1', brandId: 'b1', type: 'image', url: 'x.png', name: 'logo' })
+      const a = service.createAsset({ tenantId: 't1', brandId: 'b1', type: 'banner', url: 'x.png', name: 'logo' })
       const deleted = service.softDeleteEntity({ tenantId: 't1', entityType: 'asset', entityId: a.id, deletedBy: 'admin' })
       expect(deleted.id).toBeTruthy()
       expect(deleted.entitySummary).toContain('logo')
@@ -369,7 +369,7 @@ describe('BrandOperationsService', () => {
     })
 
     it('异常: 恢复已恢复项目应抛错', () => {
-      const a = service.createAsset({ tenantId: 't1', brandId: 'b1', type: 'image', url: 'x.png', name: 'logo' })
+      const a = service.createAsset({ tenantId: 't1', brandId: 'b1', type: 'banner', url: 'x.png', name: 'logo' })
       const deleted = service.softDeleteEntity({ tenantId: 't1', entityType: 'asset', entityId: a.id, deletedBy: 'admin' })
       service.restoreFromRecycleBin(deleted.id, 't1')
       expect(() => service.restoreFromRecycleBin(deleted.id, 't1')).toThrow()
@@ -450,7 +450,7 @@ describe('BrandOperationsService', () => {
 
   describe('CollaborationContract', () => {
     it('正例: createCollaborationContract 应创建合同', () => {
-      const c = service.createCollaboration({ tenantId: 't1', brandId: 'b1', title: '联名', description: 'd', type: 'co_branding' as const, partner: { id: 'p1', name: 'p', grade: 'gold' as const }, revenueShare: { type: 'fixed' as const, rate: 0.3 }, startDate: '2026-08-01', endDate: '2026-08-31', createdBy: 'admin' })
+      const c = service.createCollaboration({ tenantId: 't1', brandId: 'b1', title: '联名', description: 'd', type: 'co_branding' as const, partner: { name: 'p', contactName: '联系人', contactPhone: '13800138000', grade: 'gold' as const }, revenueShare: { type: 'fixed_rate' as const, rate: 0.3 }, startDate: '2026-08-01', endDate: '2026-08-31', createdBy: 'admin' })
       const contract = service.createCollaborationContract({ tenantId: 't1', collaborationId: c.id, contractNumber: 'CT-2026-001', title: '联名合同', effectiveDate: '2026-08-01', expiryDate: '2026-12-31', amount: 100000, createdBy: 'admin' })
       expect(contract.id).toBeTruthy()
       expect(contract.status).toBe('draft')
@@ -483,7 +483,7 @@ describe('BrandOperationsService', () => {
 
   describe('BrandChannel', () => {
     it('正例: createBrandChannel 应创建渠道', () => {
-      const ch = service.createBrandChannel({ tenantId: 't1', brandId: 'b1', name: '微信公众号', channelType: 'social' as const, config: { appId: 'wx123' }, createdBy: 'admin' })
+      const ch = service.createBrandChannel({ tenantId: 't1', brandId: 'b1', name: '微信公众号', type: 'social_media' as const, config: { accountId: 'wx123' }, createdBy: 'admin' })
       expect(ch.id).toBeTruthy()
       expect(ch.status).toBe('active')
     })

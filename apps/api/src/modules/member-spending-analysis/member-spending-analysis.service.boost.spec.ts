@@ -167,7 +167,6 @@ describe('[Boost] MemberSpendingAnalysisService — 正例/反例/边界/时序/
         categoryBreakdown: { '酒水': 2000, '餐饮': 1500 },
         peakHours: [20, 21, 22],
         favoriteDays: ['星期五', '星期六'],
-        createdAt: '',
       })
       expect(created.memberId).toBe('m-anal-001')
       expect(created.createdAt).toBeTruthy()
@@ -183,13 +182,11 @@ describe('[Boost] MemberSpendingAnalysisService — 正例/反例/边界/时序/
         memberId: 'm-seq-01', period: SpendingPeriod.DAILY,
         totalSpent: 1000, orderCount: 5,
         categoryBreakdown: { '酒水': 1000 }, peakHours: [20], favoriteDays: ['星期一'],
-        createdAt: '',
       })
       const a2 = await svc.create({
         memberId: 'm-seq-02', period: SpendingPeriod.WEEKLY,
         totalSpent: 5000, orderCount: 15,
         categoryBreakdown: { '酒水': 3000, '餐饮': 2000 }, peakHours: [21, 22], favoriteDays: ['星期六'],
-        createdAt: '',
       })
       expect(a1.memberId).toBe('m-seq-01')
       expect(a2.memberId).toBe('m-seq-02')

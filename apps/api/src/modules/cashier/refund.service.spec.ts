@@ -13,7 +13,8 @@ import { BadRequestException, NotFoundException } from '@nestjs/common'
 import { RefundService, type CreateRefundOptions } from './refund.service'
 import { OrderService } from './order.service'
 import { PaymentService } from './payment.service'
-import type { BillingWall, BillingWallDecision } from '../foundation/commercial-billing/billing-wall'
+import type { BillingWall } from '../foundation/commercial-billing/billing-wall'
+import type { BillingWallDecision } from '../foundation/commercial-billing/billing.port'
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 

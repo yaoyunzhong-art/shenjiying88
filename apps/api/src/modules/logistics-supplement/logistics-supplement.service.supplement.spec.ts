@@ -214,6 +214,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         tenantId: TENANT, driverId: 'D-DEL', driverName: '待删司机',
         scheduleDate: '2026-08-15', shiftName: '晚班', shiftStart: '18:00',
         shiftEnd: '02:00', transportOrderIds: [], status: 'scheduled' as const,
+        createdBy: 'u-sup',
       })
       await expect(svc.deleteDriverSchedule(s.id)).resolves.toBeUndefined()
     })
@@ -260,12 +261,14 @@ describe('LogisticsSupplementService — Supplement', () => {
         accidentAt: new Date().toISOString(), location: 'G50高速',
         severity: 'minor' as const, responsibility: 'self' as const,
         description: '轻微刮擦', propertyDamageCent: 50000,
+        createdBy: 'u-sup', resolved: false,
       })
       await svc.recordAccident({
         tenantId: TENANT, vehiclePlate: '沪AACC01', driverId: 'D-A1', driverName: '甲',
         accidentAt: new Date().toISOString(), location: '市区',
         severity: 'moderate' as const, responsibility: 'counterparty' as const,
         description: '追尾', propertyDamageCent: 200000,
+        createdBy: 'u-sup', resolved: false,
       })
       const records = await svc.getAccidentRecords('沪AACC01')
       expect(records.length).toBe(2)
@@ -288,7 +291,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         accidentAt: new Date().toISOString(), location: 'G15',
         severity: 'minor' as const, responsibility: 'self' as const,
         description: '小事故', propertyDamageCent: 10000,
-      })
+      } as any)
       const resolved = await svc.resolveAccident(r.id, '保险理赔完成')
       expect(resolved.resolved).toBe(true)
       expect(resolved.resolution).toBe('保险理赔完成')
@@ -300,7 +303,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         accidentAt: new Date().toISOString(), location: 'G2',
         severity: 'minor' as const, responsibility: 'self' as const,
         description: '刮擦', propertyDamageCent: 5000,
-      })
+      } as any)
       await svc.resolveAccident(r.id, '已处理')
       await expect(svc.resolveAccident(r.id, '重复'))
         .rejects.toThrow('already resolved')
@@ -419,7 +422,7 @@ describe('LogisticsSupplementService — Supplement', () => {
         accidentAt: now.toISOString(), location: '高速',
         severity: 'minor' as const, responsibility: 'self' as const,
         description: '小事故', propertyDamageCent: 10000,
-      })
+      } as any)
 
       const metrics = await svc.getMetrics()
       expect(metrics.totalTransportOrders).toBe(2)
