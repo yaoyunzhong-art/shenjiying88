@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { create, ReactTestRenderer } from 'react-test-renderer';
+import { create } from 'react-test-renderer';
 
 // ── Mock react-navigation modules ──
 vi.mock('@react-navigation/native', () => ({

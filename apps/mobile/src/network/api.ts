@@ -58,6 +58,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log(`[api] ${config.method?.toUpperCase()} ${config.url}`);
     }
     return config;
@@ -119,6 +120,7 @@ api.interceptors.response.use(
     }
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.warn(
         `[api] ${original.method?.toUpperCase()} ${original.url} failed:`,
         error.response?.status,

@@ -48,6 +48,7 @@ async function createChannel(): Promise<string> {
 export async function setupNotifications(): Promise<void> {
   const granted = await requestPermission();
   if (!granted) {
+    // eslint-disable-next-line no-console
     console.warn('[push] permission denied');
     return;
   }
@@ -56,17 +57,20 @@ export async function setupNotifications(): Promise<void> {
 
   // 注册 FCM token
   pushToken = await messaging().getToken();
+  // eslint-disable-next-line no-console
   if (__DEV__) console.debug('[push] FCM token:', pushToken);
 
   // 监听 token 刷新
   messaging().onTokenRefresh((newToken) => {
     pushToken = newToken;
     // TODO(PUSH): 上报push token到后端
+    // eslint-disable-next-line no-console
     if (__DEV__) console.debug('[push] token refreshed:', newToken);
   });
 
   // 前台消息 → Notifee 本地展示
   messaging().onMessage(async (remoteMessage) => {
+    // eslint-disable-next-line no-console
     if (__DEV__) console.debug('[push] foreground message:', remoteMessage);
     await notifee.displayNotification({
       title: remoteMessage.notification?.title ?? '神机营',
@@ -85,12 +89,14 @@ export async function setupNotifications(): Promise<void> {
 
   // 后台消息 → 自动展示 (Android) / 静默 (iOS)
   messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+    // eslint-disable-next-line no-console
     if (__DEV__) console.debug('[push] background message:', remoteMessage);
     return Promise.resolve();
   });
 
   // 用户点击通知
   messaging().onNotificationOpenedApp((remoteMessage) => {
+    // eslint-disable-next-line no-console
     if (__DEV__) console.debug('[push] opened from background:', remoteMessage);
     // TODO(PUSH): 导航到对应消息页面
   });
@@ -98,6 +104,7 @@ export async function setupNotifications(): Promise<void> {
   // 杀死状态点击
   const initialNotification = await messaging().getInitialNotification();
   if (initialNotification) {
+    // eslint-disable-next-line no-console
     if (__DEV__) console.debug('[push] opened from quit state:', initialNotification);
   }
 }
