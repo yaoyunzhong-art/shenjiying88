@@ -66,8 +66,9 @@ export class CashierService {
    */
   private async persistOrderAsync(order: CashierOrder): Promise<void> {
     await this.storeInstance.saveOrder(order)
-    this.cache?.set(`cashier:order:${order.orderId}`, order, 3600).catch(() => {
+    this.cache?.set(`cashier:order:${order.orderId}`, order, 3600).catch((err) => {
       // Redis 不可用时静默降级,不影响主流程
+      console.warn(`[Cashier] Redis cache set failed for order ${order.orderId}:`, (err as Error).message)
     })
     await this.persistOrderToDb(order)
   }
@@ -88,7 +89,9 @@ export class CashierService {
    */
   private async persistPaymentAsync(payment: CashierPayment): Promise<void> {
     await this.storeInstance.savePayment(payment)
-    this.cache?.set(`cashier:payment:${payment.paymentId}`, payment, 3600).catch(() => {})
+    this.cache?.set(`cashier:payment:${payment.paymentId}`, payment, 3600).catch((err) => {
+      console.warn(`[Cashier] Redis cache set failed for payment ${payment.paymentId}:`, (err as Error).message)
+    })
     await this.persistPaymentToDb(payment)
   }
 

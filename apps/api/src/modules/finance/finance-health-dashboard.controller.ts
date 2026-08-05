@@ -88,7 +88,10 @@ export class FinanceHealthDashboardController {
       this.storePAndL.getStoreRevenue(storeId, month),
       this.storePAndL.calculateStoreProfit(storeId, month),
       this.brandPAndL.calculateBrandProfit(brandId, month),
-      this.costAnalysis.getCostAnalysis(storeId, month).catch(() => null)
+      this.costAnalysis.getCostAnalysis(storeId, month).catch((err) => {
+        this.logger.warn(`成本分析获取失败: ${(err as Error).message}`)
+        return null
+      })
     ])
 
     const totalRevenueCents = brandProfit.revenue * 100

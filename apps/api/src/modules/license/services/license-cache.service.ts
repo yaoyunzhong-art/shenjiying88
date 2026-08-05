@@ -221,7 +221,9 @@ export class LicenseCacheService {
       const age = (Date.now() - cached.timestamp) / 1000
       if (age > cached.ttl) {
         // 异步删除过期缓存
-        this.cache.del(key).catch(() => {})
+        this.cache.del(key).catch((err) => {
+          this.logger.warn(`Cache del error for ${key}: ${(err as Error).message}`)
+        })
         return undefined
       }
 

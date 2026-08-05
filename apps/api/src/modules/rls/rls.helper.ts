@@ -805,7 +805,9 @@ export class RlsService {
     await this.enableRls(tableName)
 
     // 先删除同名旧策略避免冲突
-    await this.dropPolicy(tableName, pn, sc).catch(() => {})
+    await this.dropPolicy(tableName, pn, sc).catch((err) => {
+      console.warn(`[RLS] dropPolicy failed for ${tableName}.${pn}, continuing:`, (err as Error).message)
+    })
 
     await this.createPolicy(tableName, pn, col, sc)
     await this.forceRls(tableName)

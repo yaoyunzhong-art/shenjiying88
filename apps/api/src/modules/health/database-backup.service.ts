@@ -97,7 +97,9 @@ export class DatabaseBackupService implements OnModuleInit {
         this.logger.warn('pg_dump 未安装，备份降级为 SQL 文件导出 (仅测试环境)')
         // 创建空占位文件标记备份已尝试
         const placeholder = filepath.replace('.sql.gz', '.placeholder')
-        await execAsync(`touch ${placeholder}`).catch(() => {})
+        await execAsync(`touch ${placeholder}`).catch((err) => {
+          this.logger.warn(`创建占位文件失败: ${(err as Error).message}`)
+        })
         return null
       }
 

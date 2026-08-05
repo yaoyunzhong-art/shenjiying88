@@ -1056,7 +1056,9 @@ export class FoundationService {
 
   async getOperationsOverview(tenantContext?: RequestTenantContext) {
     const [trustOverviewRaw, configurationOverviewRaw, resilienceOverviewRaw, runtimeOverviewRaw] = await Promise.all([
-      this.trustGovernanceService.getOperationsOverview().catch(() => ({
+      this.trustGovernanceService.getOperationsOverview().catch((err) => {
+        console.warn(`[Foundation] getOperationsOverview failed, using fallback:`, (err as Error).message)
+        return {
         generatedAt: new Date().toISOString(),
         approvals: {
           groups: [],
@@ -1101,7 +1103,7 @@ export class FoundationService {
             exhausted: 0
           }
         }
-      })),
+      }}),
       this.configurationGovernanceService.getOperationsOverview(),
       this.resilienceOperationsService.getOperationsOverview(),
       this.runtimeGovernanceService.getOperationsOverview(tenantContext?.tenantId)
