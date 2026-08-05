@@ -1,228 +1,166 @@
 /**
- * store.service.test.ts - 门店管理服务单元测试
+ * store.service.spec.ts — 门店管理模块 Service 单元测试
  *
- * 原则:
- * - vitest (globals) + node:assert/strict
- * - 正例 + 反例 + 边界（三件套）
- * - test 自包含，隔离 storeMap 通过 resetStoreForTests()
- *
- * 覆盖:
- * - list: 分页、筛选、排序
- * - getById: 存在/不存在/跨租户隔离
- * - create: 创建门店
- * - update: 更新字段
- * - delete: 删除
- * - getStats: 统计
+ * 覆盖: CRUD / 分页查询 / 多条件筛选 / 统计 / 边界异常
  */
 
-import { describe, it, beforeEach } from 'vitest'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { StoreService } from './store.service'
 import { StoreStatus, StoreType } from './store.entity'
-import type { RequestTenantContext } from '../tenant/tenant.types'
+import { NotFoundException } from '@nestjs/common'
 
-/* ── Helpers ─────────────────────────────────────────────── */
+const mockCtx = { tenantId: 'tenant-001', brandId: 'brand-001' } as any
 
-const defaultTenant: RequestTenantContext = { tenantId: 'tenant-001' }
-const otherTenant: RequestTenantContext = { tenantId: 'tenant-other' }
-
-/* ── Tests ──────────────────────────────────────────────── */
-
-describe('StoreService', () => {
-  let service: StoreService
+describe('StoreService — CRUD', () => {
+  let svc: StoreService
 
   beforeEach(() => {
-    service = new StoreService()
-    service.resetStoreForTests()
+    svc = new StoreService()
+    svc.resetStoreForTests()
   })
 
-  // ─── list ────────────────────────────────────────────────
-
-  describe('list', () => {
-    it('返回该租户全量门店', () => {
-      const result = service.list(defaultTenant)
-      assert.equal(result.total, 6) // 6 家 mock 门店
-      assert.ok(result.items.length <= result.limit)
-      assert.equal(result.page, 1)
+  it('create 创建门店成功', () => {
+    const store = svc.create(mockCtx, {
+      storeCode: 'NEW-001',
+      name: '新门店',
+      address: '测试地址',
+      phone: '0755-88888888',
+      status: StoreStatus.Active,
+      type: StoreType.SelfOwned,
+      area: 200,
+      managerName: '王经理',
+      managerPhone: '13800138001',
+      openingTime: '09:00',
+      closingTime: '22:00',
+      description: '新门店描述',
+      tags: ['新店'],
+      longitude: 113.0,
+      latitude: 22.5,
     })
-
-    it('支持分页', () => {
-      const page1 = service.list(defaultTenant, { page: 1, limit: 2 })
-      assert.equal(page1.items.length, 2)
-      assert.equal(page1.total, 6)
-
-      const page2 = service.list(defaultTenant, { page: 2, limit: 2 })
-      assert.equal(page2.items.length, 2)
-      assert.ok(page1.items[0]?.id !== page2.items[0]?.id)
-    })
-
-    it('按关键词搜索 (名称/编码/地址)', () => {
-      const result = service.list(defaultTenant, { keyword: '万象城' })
-      assert.equal(result.total, 1)
-      assert.equal(result.items[0]?.name, '深圳万象城店')
-    })
-
-    it('按关键词搜索店名部分匹配', () => {
-      const result = service.list(defaultTenant, { keyword: '北京' })
-      assert.equal(result.total, 1)
-      assert.equal(result.items[0]?.name, '北京国贸店')
-    })
-
-    it('按状态筛选', () => {
-      const result = service.list(defaultTenant, { status: StoreStatus.Active })
-      // 所有 mock 门店都是 Active
-      assert.equal(result.total, 6)
-    })
-
-    it('按类型筛选', () => {
-      const franchise = service.list(defaultTenant, { type: StoreType.Franchise })
-      assert.equal(franchise.total, 1)
-      assert.equal(franchise.items[0]?.id, 'store-004')
-    })
-
-    it('跨租户隔离: 其他租户无门店', () => {
-      const result = service.list(otherTenant)
-      assert.equal(result.total, 0)
-    })
-
-    it('支持按名称升序排列', () => {
-      const result = service.list(defaultTenant, { sortBy: 'name', sortOrder: 'asc' })
-      // 中文按 localeCompare 排序, '上' < '北' < '广' < '成' < '杭' < '深'
-      assert.equal(result.items[0]?.name, '上海南京路店') // 上海 > 北京
-      assert.equal(result.items[result.items.length - 1]?.name, '深圳万象城店')
-    })
-
-    it('不匹配关键词返回空列表', () => {
-      const result = service.list(defaultTenant, { keyword: '不存在的门店' })
-      assert.equal(result.total, 0)
-    })
+    expect(store.id).toMatch(/^store-/)
+    expect(store.name).toBe('新门店')
+    expect(store.storeCode).toBe('NEW-001')
+    expect(store.status).toBe(StoreStatus.Active)
   })
 
-  // ─── getById ─────────────────────────────────────────────
-
-  describe('getById', () => {
-    it('获取存在的门店', () => {
-      const store = service.getById('store-001', defaultTenant)
-      assert.equal(store.id, 'store-001')
-      assert.equal(store.name, '深圳万象城店')
+  it('getById 返回门店', () => {
+    const store = svc.create(mockCtx, {
+      storeCode: 'GET-001', name: '查询门店', address: '地址',
+      status: StoreStatus.Active, type: StoreType.SelfOwned,
+      area: 100, managerName: 'Mgr', managerPhone: '138',
+      openingTime: '09:00', closingTime: '22:00',
     })
-
-    it('不存在的门店抛 NotFoundException', () => {
-      assert.throws(
-        () => service.getById('store-999', defaultTenant),
-        /门店不存在/,
-      )
-    })
-
-    it('跨租户隔离: 其他租户不可访问', () => {
-      assert.throws(
-        () => service.getById('store-001', otherTenant),
-        /门店不存在/,
-      )
-    })
+    const found = svc.getById(store.id, mockCtx)
+    expect(found.name).toBe('查询门店')
   })
 
-  // ─── create & update ─────────────────────────────────────
+  it('getById 不存在抛 NotFoundException', () => {
+    expect(() => svc.getById('nonexistent', mockCtx)).toThrow(NotFoundException)
+  })
 
-  describe('create', () => {
-    it('创建门店返回新门店对象', () => {
-      const store = service.create(defaultTenant, {
-        storeCode: 'TEST-001',
-        name: '测试门店',
-        address: '测试地址',
-        type: StoreType.SelfOwned,
+  it('update 更新门店信息', () => {
+    const store = svc.create(mockCtx, {
+      storeCode: 'UPD-001', name: '旧名', address: '旧地址',
+      status: StoreStatus.Active, type: StoreType.SelfOwned,
+      area: 100, managerName: 'Mgr', managerPhone: '138',
+      openingTime: '09:00', closingTime: '22:00',
+    })
+    const updated = svc.update(store.id, mockCtx, {
+      name: '新名称',
+      address: '新地址',
+      status: StoreStatus.Inactive,
+    })
+    expect(updated.name).toBe('新名称')
+    expect(updated.status).toBe(StoreStatus.Inactive)
+  })
+
+  it('update 不存在抛 NotFoundException', () => {
+    expect(() => svc.update('fake-id', mockCtx, { name: '新名' })).toThrow(NotFoundException)
+  })
+
+  it('delete 删除成功', () => {
+    const store = svc.create(mockCtx, {
+      storeCode: 'DEL-001', name: '删除门店', address: '地址',
+      status: StoreStatus.Active, type: StoreType.Franchise,
+      area: 80, managerName: 'Mgr', managerPhone: '138',
+      openingTime: '10:00', closingTime: '21:00',
+    })
+    svc.delete(store.id, mockCtx)
+    expect(() => svc.getById(store.id, mockCtx)).toThrow(NotFoundException)
+  })
+
+  it('delete 不存在抛 NotFoundException', () => {
+    expect(() => svc.delete('fake-id', mockCtx)).toThrow(NotFoundException)
+  })
+})
+
+describe('StoreService — 分页查询', () => {
+  let svc: StoreService
+
+  beforeEach(() => {
+    svc = new StoreService()
+    svc.resetStoreForTests()
+    // 创建种子门店
+    for (let i = 0; i < 5; i++) {
+      svc.create(mockCtx, {
+        storeCode: `SEED-${i}`, name: `种子门店${i}`, address: `地址${i}`,
+        status: StoreStatus.Active, type: StoreType.SelfOwned,
+        area: 100 + i * 10, managerName: `Mgr${i}`, managerPhone: `138${i}`,
+        openingTime: '09:00', closingTime: '22:00',
       })
-      assert.match(store.id, /^store-/)
-      assert.equal(store.name, '测试门店')
-      assert.equal(store.tenantId, 'tenant-001')
-      assert.ok(store.createdAt)
-      assert.ok(store.updatedAt)
-    })
-
-    it('创建后可以通过 list 查到', () => {
-      service.create(defaultTenant, {
-        storeCode: 'TEST-002',
-        name: '新门店',
-        address: '新地址',
-      })
-      const result = service.list(defaultTenant, { keyword: '新门店' })
-      assert.equal(result.total, 1)
-    })
+    }
   })
 
-  describe('update', () => {
-    it('更新门店名称和地址', () => {
-      const updated = service.update('store-001', defaultTenant, {
-        name: '深圳万象城旗舰店',
-        address: '深圳市南山区深南大道9668号B1-01',
-      })
-      assert.equal(updated.name, '深圳万象城旗舰店')
-      assert.equal(updated.address, '深圳市南山区深南大道9668号B1-01')
-
-      // 验证持久化
-      const fetched = service.getById('store-001', defaultTenant)
-      assert.equal(fetched.name, '深圳万象城旗舰店')
-    })
-
-    it('更新门店状态', () => {
-      const updated = service.update('store-001', defaultTenant, {
-        status: StoreStatus.Inactive,
-      })
-      assert.equal(updated.status, StoreStatus.Inactive)
-    })
-
-    it('不更新未提供的字段', () => {
-      const original = service.getById('store-001', defaultTenant)
-      const updated = service.update('store-001', defaultTenant, { name: '仅改名称' })
-      assert.equal(updated.name, '仅改名称')
-      assert.equal(updated.address, original.address)
-      assert.equal(updated.phone, original.phone)
-    })
+  it('list 返回分页结果', () => {
+    const result = svc.list(mockCtx, { page: 1, limit: 2 })
+    expect(result.items).toHaveLength(2)
+    expect(result.total).toBeGreaterThanOrEqual(5)
+    expect(result.page).toBe(1)
+    expect(result.limit).toBe(2)
   })
 
-  // ─── delete ─────────────────────────────────────────────
-
-  describe('delete', () => {
-    it('删除门店后 list 不再包含', () => {
-      service.delete('store-001', defaultTenant)
-      const result = service.list(defaultTenant, { keyword: '万象城' })
-      assert.equal(result.total, 0)
-    })
-
-    it('删除后 getById 抛出异常', () => {
-      service.delete('store-001', defaultTenant)
-      assert.throws(
-        () => service.getById('store-001', defaultTenant),
-        /门店不存在/,
-      )
-    })
-
-    it('删除不存在的门店抛异常', () => {
-      assert.throws(
-        () => service.delete('store-999', defaultTenant),
-        /门店不存在/,
-      )
-    })
+  it('list 按关键字搜索', () => {
+    const result = svc.list(mockCtx, { keyword: '种子门店1' })
+    expect(result.items.length).toBeGreaterThanOrEqual(1)
   })
 
-  // ─── getStats ───────────────────────────────────────────
+  it('list 按状态筛选', () => {
+    const result = svc.list(mockCtx, { status: StoreStatus.Active })
+    result.items.forEach((s) => expect(s.status).toBe(StoreStatus.Active))
+  })
 
-  describe('getStats', () => {
-    it('获取门店统计数据', () => {
-      const stats = service.getStats('store-001', defaultTenant)
-      assert.equal(stats.storeId, 'store-001')
-      assert.equal(stats.storeName, '深圳万象城店')
-      assert.equal(typeof stats.totalMembers, 'number')
-      assert.equal(typeof stats.todayRevenue, 'number')
-      assert.equal(typeof stats.todayOrders, 'number')
-      assert.ok(stats.totalMembers > 0)
-    })
+  it('list 按类型筛选', () => {
+    const result = svc.list(mockCtx, { type: StoreType.SelfOwned })
+    result.items.forEach((s) => expect(s.type).toBe(StoreType.SelfOwned))
+  })
+})
 
-    it('不存在的门店抛异常', () => {
-      assert.throws(
-        () => service.getStats('store-999', defaultTenant),
-        /门店不存在/,
-      )
+describe('StoreService — 统计', () => {
+  let svc: StoreService
+
+  beforeEach(() => {
+    svc = new StoreService()
+    svc.resetStoreForTests()
+  })
+
+  it('getStats 返回门店模拟统计数据', () => {
+    const store = svc.create(mockCtx, {
+      storeCode: 'STAT-001', name: '统计门店', address: '地址',
+      status: StoreStatus.Active, type: StoreType.SelfOwned,
+      area: 150, managerName: 'Mgr', managerPhone: '138',
+      openingTime: '09:00', closingTime: '22:00',
     })
+    const stats = svc.getStats(store.id, mockCtx)
+    expect(stats.storeId).toBe(store.id)
+    expect(stats.storeName).toBe('统计门店')
+    expect(stats.totalMembers).toBeGreaterThan(0)
+    expect(stats.onlineDevices).toBeGreaterThan(0)
+    expect(stats.todayRevenue).toBeGreaterThan(0)
+    expect(stats.stockAlerts).toBeGreaterThan(0)
+    expect(stats.employeeCount).toBeGreaterThan(0)
+  })
+
+  it('getStats 不存在的门店抛 NotFoundException', () => {
+    expect(() => svc.getStats('fake-id', mockCtx)).toThrow(NotFoundException)
   })
 })

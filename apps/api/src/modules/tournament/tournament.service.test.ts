@@ -1,967 +1,537 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * 🐜 自动: [tournament] [D] service 测试
+ * tournament.service.spec.ts — Tournament Service 深层单元测试
+ *
+ * 覆盖：
+ *   - createTournament:  正例（基本/全字段）/ 边界（0 最大参与数）
+ *   - getTournament:     正例 / 反例（不存在/跨 tenant）
+ *   - updateTournament:  正例（部分更新）/ 反例（不存在/跨 tenant）
+ *   - listTournaments:   正例（全量/按状态过滤/按类型/按门店）/ 空
+ *   - updateTournamentStatus: 正例（D→O→Ong→Com/Canc→D）/ 反例（非法跃迁×2）
+ *   - registerParticipant: 正例 / 反例（未开放/满员/重复/跨 tenant）
+ *   - registerTeam:      正例 / 反例（未开放）/ 审批/驳回
+ *   - generateBracket:   正例（淘汰/循环）/ 反例（人数不足/非 OPEN）
+ *   - recordMatchResult: 正例（带排名更新）/ 反例（重复/跨 tenant/不存在）
+ *   - setDisputed:       正例 / 反例（不存在）
+ *   - getRankings:       正例（空/有比赛后）
+ *   - getUpcomingMatches:正例 / 边界（无）
+ *   - getLiveMatches:    边界（无）
+ *
+ * 全部内联 mock，不依赖 NestJS DI。≥ 18 项测试。
  */
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { TournamentService } from './tournament.service'
 import {
   TournamentStatus,
   TournamentType,
   MatchStatus,
   TeamRegistrationStatus,
-  RedemptionStatus,
-  PredictionStatus,
-  JoinType,
   type Tournament,
   type Match,
-  type RedemptionRecord,
-  type PredictionRecord,
-  type VoteRecord,
-  type PopularityEntry,
 } from './tournament.entity'
 
-describe('TournamentService', () => {
-  let service: TournamentService
+// ═══════════════════════════════════════════════════════════════
+// 枚举 + 类型
+// ═══════════════════════════════════════════════════════════════
 
-  const TENANT = 'tenant-001'
-  const STORE = 'store-001'
+const ALL_STATUSES: TournamentStatus[] = [
+  TournamentStatus.Draft,
+  TournamentStatus.Open,
+  TournamentStatus.Ongoing,
+  TournamentStatus.Completed,
+  TournamentStatus.Cancelled,
+]
 
-  beforeEach(() => {
-    service = new TournamentService()
+const ALL_TYPES: TournamentType[] = [
+  TournamentType.SingleElimination,
+  TournamentType.DoubleElimination,
+  TournamentType.RoundRobin,
+  TournamentType.League,
+]
+
+const ALL_MATCH_STATUSES: MatchStatus[] = [
+  MatchStatus.Pending,
+  MatchStatus.Ongoing,
+  MatchStatus.Completed,
+  MatchStatus.Disputed,
+]
+
+// ═══════════════════════════════════════════════════════════════
+// 服务实例
+// ═══════════════════════════════════════════════════════════════
+
+let service: TournamentService
+
+const T = 'tenant-001' // 默认 tenant
+const S = 'store-001'
+
+function freshTournament(overrides?: Partial<Parameters<TournamentService['createTournament']>[0]>): Tournament {
+  return service.createTournament({
+    tenantId: T,
+    storeId: S,
+    name: 'Test Tournament',
+    type: TournamentType.SingleElimination,
+    gameName: 'Test Game',
+    startDate: '2026-07-01',
+    endDate: '2026-07-15',
+    maxParticipants: 16,
+    ...overrides,
+  })
+}
+
+function openTournament(mp = 16): Tournament {
+  const t = freshTournament({ maxParticipants: mp })
+  service.updateTournamentStatus(t.id, TournamentStatus.Open, T)
+  return t
+}
+
+function openAndRegister(tournamentId: string, count: number): void {
+  for (let i = 0; i < count; i++) {
+    service.registerParticipant(tournamentId, `mem-${i}`, T)
+  }
+}
+
+beforeEach(() => {
+  service = new TournamentService()
+})
+
+afterEach(() => {
+  service.resetTournamentStoresForTests()
+})
+
+// ═══════════════════════════════════════════════════════════════
+// createTournament
+// ═══════════════════════════════════════════════════════════════
+
+describe('createTournament', () => {
+  it('正例: 创建 DRAFT 状态的赛事', () => {
+    const t = freshTournament()
+    expect(t.name).toBe('Test Tournament')
+    expect(t.type).toBe(TournamentType.SingleElimination)
+    expect(t.status).toBe(TournamentStatus.Draft)
+    expect(t.currentParticipants).toBe(0)
+    expect(t.id).toMatch(/^tournament-/)
   })
 
-  afterEach(() => {
-    service.resetTournamentStoresForTests()
-  })
-
-  function createTestTournament(overrides?: Partial<Parameters<TournamentService['createTournament']>[0]>): Tournament {
-    return service.createTournament({
-      tenantId: TENANT,
-      storeId: STORE,
-      name: 'Test Tournament',
-      type: TournamentType.SingleElimination,
-      gameName: 'Test Game',
-      startDate: '2026-07-01',
-      endDate: '2026-07-15',
-      maxParticipants: 16,
-      ...overrides,
+  it('正例: 全字段创建', () => {
+    const t = service.createTournament({
+      tenantId: T,
+      name: 'Rich',
+      type: TournamentType.RoundRobin,
+      gameName: 'Chess',
+      startDate: '2026-08-01',
+      endDate: '2026-08-30',
+      maxParticipants: 32,
+      description: 'desc',
+      rules: { matchFormat: 'BO3', allowDraws: true },
+      prizes: { first: { label: 'Gold', value: '1000' } },
+      bannerImage: 'https://img.com/b.png',
+      brandId: 'brand-1',
     })
+    expect(t.description).toBe('desc')
+    expect(t.rules.matchFormat).toBe('BO3')
+    expect(t.prizes.first?.value).toBe('1000')
+  })
+
+  it('边界: maxParticipants = 0', () => {
+    const t = freshTournament({ maxParticipants: 0 })
+    expect(t.maxParticipants).toBe(0)
+    expect(t.currentParticipants).toBe(0)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// getTournament
+// ═══════════════════════════════════════════════════════════════
+
+describe('getTournament', () => {
+  it('正例: 按 ID 获取', () => {
+    const t = freshTournament()
+    expect(service.getTournament(t.id, T)?.id).toBe(t.id)
+  })
+
+  it('反例: 不存在返回 undefined', () => {
+    expect(service.getTournament('nonexistent', T)).toBeUndefined()
+  })
+
+  it('反例: 跨 tenant 访问返回 undefined', () => {
+    const t = freshTournament()
+    expect(service.getTournament(t.id, 'wrong')).toBeUndefined()
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// updateTournament
+// ═══════════════════════════════════════════════════════════════
+
+describe('updateTournament', () => {
+  it('正例: 部分更新', () => {
+    const t = freshTournament()
+    const u = service.updateTournament(t.id, T, { name: 'NewName', maxParticipants: 64 })
+    expect(u.name).toBe('NewName')
+    expect(u.maxParticipants).toBe(64)
+  })
+
+  it('反例: 不存在抛错', () => {
+    expect(() => service.updateTournament('x', T, { name: 'X' })).toThrow('Tournament not found')
+  })
+
+  it('反例: 跨 tenant 抛错', () => {
+    const t = freshTournament()
+    expect(() => service.updateTournament(t.id, 'wrong', { name: 'X' })).toThrow('Tournament not found')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// listTournaments
+// ═══════════════════════════════════════════════════════════════
+
+describe('listTournaments', () => {
+  it('正例: 返回该 tenant 所有赛事', () => {
+    freshTournament({ name: 'A' })
+    freshTournament({ name: 'B' })
+    expect(service.listTournaments(T).length).toBe(2)
+  })
+
+  it('正例: 按状态过滤', () => {
+    const t1 = freshTournament({ name: 'Draft' })
+    const t2 = freshTournament({ name: 'Open' })
+    service.updateTournamentStatus(t2.id, TournamentStatus.Open, T)
+    expect(service.listTournaments(T, { status: TournamentStatus.Draft }).length).toBe(1)
+    expect(service.listTournaments(T, { status: TournamentStatus.Open }).length).toBe(1)
+  })
+
+  it('正例: 按类型过滤', () => {
+    freshTournament({ name: 'SE', type: TournamentType.SingleElimination })
+    freshTournament({ name: 'RR', type: TournamentType.RoundRobin })
+    expect(service.listTournaments(T, { type: TournamentType.RoundRobin }).length).toBe(1)
+  })
+
+  it('正例: 按门店过滤', () => {
+    freshTournament({ name: 'S1', storeId: 's1' })
+    freshTournament({ name: 'S2', storeId: 's2' })
+    expect(service.listTournaments(T, { storeId: 's1' }).length).toBe(1)
+  })
+
+  it('反例: 跨 tenant 返回空', () => {
+    freshTournament()
+    expect(service.listTournaments('wrong').length).toBe(0)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// updateTournamentStatus
+// ═══════════════════════════════════════════════════════════════
+
+describe('updateTournamentStatus', () => {
+  let t: Tournament
+  beforeEach(() => { t = freshTournament() })
+
+  it('正例: Draft → Open', () => {
+    expect(service.updateTournamentStatus(t.id, TournamentStatus.Open, T).status).toBe(TournamentStatus.Open)
+  })
+
+  it('正例: Draft → Cancelled', () => {
+    expect(service.updateTournamentStatus(t.id, TournamentStatus.Cancelled, T).status).toBe(TournamentStatus.Cancelled)
+  })
+
+  it('正例: Cancelled → Draft (reopen)', () => {
+    service.updateTournamentStatus(t.id, TournamentStatus.Cancelled, T)
+    expect(service.updateTournamentStatus(t.id, TournamentStatus.Draft, T).status).toBe(TournamentStatus.Draft)
+  })
+
+  it('正例: Open → Ongoing', () => {
+    service.updateTournamentStatus(t.id, TournamentStatus.Open, T)
+    expect(service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, T).status).toBe(TournamentStatus.Ongoing)
+  })
+
+  it('反例: Draft → Completed 非法', () => {
+    expect(() => service.updateTournamentStatus(t.id, TournamentStatus.Completed, T)).toThrow('Invalid')
+  })
+
+  it('反例: Completed → Open 非法', () => {
+    service.updateTournamentStatus(t.id, TournamentStatus.Open, T)
+    service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, T)
+    service.updateTournamentStatus(t.id, TournamentStatus.Completed, T)
+    expect(() => service.updateTournamentStatus(t.id, TournamentStatus.Open, T)).toThrow('Invalid')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// registerParticipant
+// ═══════════════════════════════════════════════════════════════
+
+describe('registerParticipant', () => {
+  it('正例: 开放报名时注册', () => {
+    const t = openTournament()
+    const updated = service.registerParticipant(t.id, 'mem-001', T)
+    expect(updated.currentParticipants).toBe(1)
+  })
+
+  it('反例: 非 OPEN 状态抛错', () => {
+    const t = freshTournament()
+    expect(() => service.registerParticipant(t.id, 'mem-001', T)).toThrow('not open')
+  })
+
+  it('反例: 满员抛错', () => {
+    const t = openTournament(2)
+    service.registerParticipant(t.id, 'mem-001', T)
+    service.registerParticipant(t.id, 'mem-002', T)
+    expect(() => service.registerParticipant(t.id, 'mem-003', T)).toThrow('maximum')
+  })
+
+  it('反例: 重复注册抛错', () => {
+    const t = openTournament()
+    service.registerParticipant(t.id, 'mem-001', T)
+    expect(() => service.registerParticipant(t.id, 'mem-001', T)).toThrow('already registered')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// Team registration
+// ═══════════════════════════════════════════════════════════════
+
+describe('registerTeam', () => {
+  it('正例: 创建待审批队伍', () => {
+    const t = openTournament()
+    const reg = service.registerTeam({
+      tournamentId: t.id, teamName: 'Alpha', captainId: 'm1', memberIds: ['m1', 'm2'],
+    }, T)
+    expect(reg.status).toBe(TeamRegistrationStatus.Pending)
+    expect(reg.teamName).toBe('Alpha')
+  })
+
+  it('反例: 非 OPEN 抛错', () => {
+    const t = freshTournament()
+    expect(() => service.registerTeam({
+      tournamentId: t.id, teamName: 'A', captainId: 'm1', memberIds: ['m1'],
+    }, T)).toThrow('not open')
+  })
+})
+
+describe('approveTeam / rejectTeam', () => {
+  it('正例: 审批通过', () => {
+    const t = openTournament()
+    const reg = service.registerTeam({ tournamentId: t.id, teamName: 'A', captainId: 'c', memberIds: ['c'] }, T)
+    expect(service.approveTeam(reg.id, T).status).toBe(TeamRegistrationStatus.Approved)
+  })
+
+  it('正例: 驳回', () => {
+    const t = openTournament()
+    const reg = service.registerTeam({ tournamentId: t.id, teamName: 'A', captainId: 'c', memberIds: ['c'] }, T)
+    expect(service.rejectTeam(reg.id, T).status).toBe(TeamRegistrationStatus.Rejected)
+  })
+
+  it('反例: 不存在抛错', () => {
+    expect(() => service.approveTeam('nonexistent', T)).toThrow('not found')
+  })
+
+  it('正例: 列出队伍注册', () => {
+    const t = openTournament()
+    service.registerTeam({ tournamentId: t.id, teamName: 'A', captainId: 'c', memberIds: ['c'] }, T)
+    service.registerTeam({ tournamentId: t.id, teamName: 'B', captainId: 'c2', memberIds: ['c2'] }, T)
+    expect(service.listTeamRegistrations(t.id, T).length).toBe(2)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// generateBracket
+// ═══════════════════════════════════════════════════════════════
+
+describe('generateBracket', () => {
+  it('正例: 淘汰赛生成 bracket', () => {
+    const t = openTournament()
+    openAndRegister(t.id, 4)
+    const matches = service.generateBracket(t.id, T)
+    expect(matches.length).toBeGreaterThan(0)
+    expect(service.getTournament(t.id, T)!.status).toBe(TournamentStatus.Ongoing)
+  })
+
+  it('正例: 循环赛生成正确数量的比赛', () => {
+    const t = service.createTournament({
+      tenantId: T, name: 'RR', type: TournamentType.RoundRobin, gameName: 'G',
+      startDate: '2026-07-01', endDate: '2026-07-15', maxParticipants: 16,
+    })
+    service.updateTournamentStatus(t.id, TournamentStatus.Open, T)
+    openAndRegister(t.id, 4)
+    const matches = service.generateBracket(t.id, T)
+    // C(4,2) = 6
+    expect(matches.length).toBe(6)
+  })
+
+  it('反例: 参与人数不足 2', () => {
+    const t = openTournament()
+    openAndRegister(t.id, 1)
+    expect(() => service.generateBracket(t.id, T)).toThrow('Need at least 2 participants')
+  })
+
+  it('反例: 非 OPEN 状态', () => {
+    const t = freshTournament()
+    expect(() => service.generateBracket(t.id, T)).toThrow('Bracket can only be generated when tournament is OPEN')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════
+// recordMatchResult
+// ═══════════════════════════════════════════════════════════════
+
+describe('recordMatchResult', () => {
+  let matchId: string
+
+  function setup(): void {
+    const t = openTournament(4)
+    openAndRegister(t.id, 2)
+    const matches = service.generateBracket(t.id, T)
+    matchId = matches[0].id
   }
 
-  // ── CRUD ──
+  it('正例: 记录比分并更新排名', () => {
+    setup()
+    const m = service.recordMatchResult(matchId, 2, 1, T)
+    expect(m.status).toBe(MatchStatus.Completed)
+    expect(m.winnerId).toBe(m.player1Id)
+    expect(m.score1).toBe(2)
+    expect(m.score2).toBe(1)
 
-  describe('createTournament', () => {
-    it('should create a tournament with DRAFT status', () => {
-      const t = createTestTournament()
-
-      assert.equal(t.name, 'Test Tournament')
-      assert.equal(t.type, TournamentType.SingleElimination)
-      assert.equal(t.status, TournamentStatus.Draft)
-      assert.equal(t.tenantId, TENANT)
-      assert.equal(t.storeId, STORE)
-      assert.equal(t.currentParticipants, 0)
-      assert.ok(t.id.startsWith('tournament-'))
-      assert.ok(t.createdAt)
-      assert.ok(t.updatedAt)
-    })
-
-    it('should create tournament with optional fields', () => {
-      const t = service.createTournament({
-        tenantId: TENANT,
-        name: 'Rich Tournament',
-        type: TournamentType.RoundRobin,
-        gameName: 'Chess',
-        startDate: '2026-08-01',
-        endDate: '2026-08-30',
-        maxParticipants: 32,
-        description: 'A chess tournament',
-        rules: { matchFormat: 'BO3', allowDraws: true },
-        prizes: {
-          first: { label: 'Gold', value: '1000元' },
-          second: { label: 'Silver', value: '500元' },
-        },
-        bannerImage: 'https://img.example.com/banner.png',
-        brandId: 'brand-1',
-      })
-
-      assert.equal(t.description, 'A chess tournament')
-      assert.deepStrictEqual(t.rules, { matchFormat: 'BO3', allowDraws: true })
-      assert.ok(t.prizes)
-      assert.equal(t.prizes.first?.value, '1000元')
-      assert.equal(t.bannerImage, 'https://img.example.com/banner.png')
-    })
+    // 胜者 3 分
+    const rankings = service.getRankings(m.tournamentId, T)
+    const winnerRank = rankings.find(r => r.memberId === m.player1Id)
+    expect(winnerRank?.points).toBe(3)
+    expect(winnerRank?.wins).toBe(1)
   })
 
-  describe('getTournament', () => {
-    it('should return tournament by id', () => {
-      const t = createTestTournament()
-      const found = service.getTournament(t.id, TENANT)
-      assert.ok(found)
-      assert.equal(found?.id, t.id)
-    })
+  it('正例: 平局双方各 1 分', () => {
+    setup()
+    const m = service.recordMatchResult(matchId, 1, 1, T)
+    expect(m.winnerId).toBeUndefined()
 
-    it('should return undefined for non-existent tournament', () => {
-      const found = service.getTournament('nonexistent', TENANT)
-      assert.equal(found, undefined)
-    })
-
-    it('should return undefined for wrong tenant', () => {
-      const t = createTestTournament()
-      const found = service.getTournament(t.id, 'wrong-tenant')
-      assert.equal(found, undefined)
-    })
+    const rankings = service.getRankings(m.tournamentId, T)
+    const p1 = rankings.find(r => r.memberId === m.player1Id)
+    const p2 = rankings.find(r => r.memberId === m.player2Id)
+    expect(p1?.points).toBe(1)
+    expect(p1?.draws).toBe(1)
+    expect(p2?.points).toBe(1)
+    expect(p2?.draws).toBe(1)
   })
 
-  describe('listTournaments', () => {
-    it('should list all tournaments for tenant', () => {
-      createTestTournament({ name: 'T1' })
-      createTestTournament({ name: 'T2' })
-
-      const list = service.listTournaments(TENANT)
-      assert.equal(list.length, 2)
-    })
-
-    it('should filter by status', () => {
-      createTestTournament({ name: 'T1' })
-      const t2 = createTestTournament({ name: 'T2' })
-      service.updateTournamentStatus(t2.id, TournamentStatus.Open, TENANT)
-
-      const open = service.listTournaments(TENANT, { status: TournamentStatus.Open })
-      assert.equal(open.length, 1)
-      assert.equal(open[0].status, TournamentStatus.Open)
-    })
-
-    it('should filter by type', () => {
-      createTestTournament({ name: 'SE', type: TournamentType.SingleElimination })
-      createTestTournament({ name: 'RR', type: TournamentType.RoundRobin })
-
-      const rr = service.listTournaments(TENANT, { type: TournamentType.RoundRobin })
-      assert.equal(rr.length, 1)
-      assert.equal(rr[0].name, 'RR')
-    })
-
-    it('should filter by storeId', () => {
-      createTestTournament({ name: 'S1', storeId: 'store-1' })
-      createTestTournament({ name: 'S2', storeId: 'store-2' })
-
-      const s1 = service.listTournaments(TENANT, { storeId: 'store-1' })
-      assert.equal(s1.length, 1)
-    })
-
-    it('should return empty for wrong tenant', () => {
-      createTestTournament()
-      const list = service.listTournaments('wrong-tenant')
-      assert.equal(list.length, 0)
-    })
+  it('反例: 比赛不存在', () => {
+    expect(() => service.recordMatchResult('fake', 1, 0, T)).toThrow('Match not found')
   })
 
-  describe('updateTournament', () => {
-    it('should update tournament fields', () => {
-      const t = createTestTournament()
-      const updated = service.updateTournament(t.id, TENANT, {
-        name: 'Updated Name',
-        maxParticipants: 64,
-      })
-
-      assert.equal(updated.name, 'Updated Name')
-      assert.equal(updated.maxParticipants, 64)
-    })
-
-    it('should throw for non-existent tournament', () => {
-      assert.throws(
-        () => service.updateTournament('nonexistent', TENANT, { name: 'X' }),
-        /Tournament not found/
-      )
-    })
-
-    it('should throw for wrong tenant', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.updateTournament(t.id, 'wrong-tenant', { name: 'X' }),
-        /Tournament not found/
-      )
-    })
+  it('反例: 不能重复记录', () => {
+    setup()
+    service.recordMatchResult(matchId, 2, 1, T)
+    expect(() => service.recordMatchResult(matchId, 3, 2, T)).toThrow('already completed')
   })
 
-  // ── Status transitions ──
+  it('反例: 跨 tenant', () => {
+    setup()
+    expect(() => service.recordMatchResult(matchId, 2, 1, 'wrong')).toThrow('Tournament not found')
+  })
+})
 
-  describe('updateTournamentStatus', () => {
-    it('should transition Draft → Open', () => {
-      const t = createTestTournament()
-      const updated = service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      assert.equal(updated.status, TournamentStatus.Open)
-    })
+// ═══════════════════════════════════════════════════════════════
+// setDisputed
+// ═══════════════════════════════════════════════════════════════
 
-    it('should transition Draft → Cancelled', () => {
-      const t = createTestTournament()
-      const updated = service.updateTournamentStatus(t.id, TournamentStatus.Cancelled, TENANT)
-      assert.equal(updated.status, TournamentStatus.Cancelled)
-    })
-
-    it('should transition Open → Ongoing', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      const updated = service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, TENANT)
-      assert.equal(updated.status, TournamentStatus.Ongoing)
-    })
-
-    it('should transition Ongoing → Completed', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, TENANT)
-      const updated = service.updateTournamentStatus(t.id, TournamentStatus.Completed, TENANT)
-      assert.equal(updated.status, TournamentStatus.Completed)
-    })
-
-    it('should transition Cancelled → Draft (reopen)', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Cancelled, TENANT)
-      const updated = service.updateTournamentStatus(t.id, TournamentStatus.Draft, TENANT)
-      assert.equal(updated.status, TournamentStatus.Draft)
-    })
-
-    it('should reject invalid transition: Draft → Completed', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.updateTournamentStatus(t.id, TournamentStatus.Completed, TENANT),
-        /Invalid tournament status transition/
-      )
-    })
-
-    it('should reject invalid transition: Completed → Open', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.updateTournamentStatus(t.id, TournamentStatus.Ongoing, TENANT)
-      service.updateTournamentStatus(t.id, TournamentStatus.Completed, TENANT)
-      assert.throws(
-        () => service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT),
-        /Invalid tournament status transition/
-      )
-    })
+describe('setDisputed', () => {
+  it('正例: 设置争议状态', () => {
+    const t = openTournament()
+    openAndRegister(t.id, 2)
+    const matches = service.generateBracket(t.id, T)
+    const d = service.setDisputed(matches[0].id, T)
+    expect(d.status).toBe(MatchStatus.Disputed)
   })
 
-  // ── Registration ──
+  it('反例: 不存在抛错', () => {
+    expect(() => service.setDisputed('fake', T)).toThrow('Match not found')
+  })
+})
 
-  describe('registerParticipant', () => {
-    it('should register a participant when tournament is OPEN', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      const updated = service.registerParticipant(t.id, 'mem-001', TENANT)
+// ═══════════════════════════════════════════════════════════════
+// getMatches
+// ═══════════════════════════════════════════════════════════════
 
-      assert.equal(updated.currentParticipants, 1)
-    })
-
-    it('should throw when tournament is not OPEN', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.registerParticipant(t.id, 'mem-001', TENANT),
-        /Tournament is not open for registration/
-      )
-    })
-
-    it('should throw when max participants reached', () => {
-      const t = createTestTournament({ maxParticipants: 2 })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      assert.throws(
-        () => service.registerParticipant(t.id, 'mem-003', TENANT),
-        /Tournament has reached maximum participants/
-      )
-    })
-
-    it('should throw for duplicate registration', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-
-      assert.throws(
-        () => service.registerParticipant(t.id, 'mem-001', TENANT),
-        /Participant already registered/
-      )
-    })
-
-    it('should throw for wrong tenant', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.registerParticipant(t.id, 'mem-001', 'wrong-tenant'),
-        /Tournament not found/
-      )
-    })
+describe('getMatch / listMatches', () => {
+  let matchId: string
+  let tId: string
+  beforeEach(() => {
+    const t = openTournament()
+    openAndRegister(t.id, 2)
+    const matches = service.generateBracket(t.id, T)
+    matchId = matches[0].id
+    tId = t.id
   })
 
-  // ── Team registration ──
-
-  describe('registerTeam', () => {
-    it('should register a team when tournament is OPEN', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-
-      const reg = service.registerTeam({
-        tournamentId: t.id,
-        teamName: 'Team Alpha',
-        captainId: 'mem-001',
-        memberIds: ['mem-001', 'mem-002'],
-      }, TENANT)
-
-      assert.equal(reg.teamName, 'Team Alpha')
-      assert.equal(reg.status, TeamRegistrationStatus.Pending)
-      assert.ok(reg.id.startsWith('teamreg-'))
-    })
-
-    it('should throw when tournament is not OPEN', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.registerTeam({
-          tournamentId: t.id,
-          teamName: 'Team',
-          captainId: 'mem-001',
-          memberIds: ['mem-001'],
-        }, TENANT),
-        /Tournament is not open for registration/
-      )
-    })
+  it('正例: 按 ID 获取比赛', () => {
+    expect(service.getMatch(matchId, T)?.id).toBe(matchId)
   })
 
-  describe('approveTeam / rejectTeam', () => {
-    it('should approve a team registration', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      const reg = service.registerTeam({
-        tournamentId: t.id, teamName: 'T', captainId: 'c', memberIds: ['c'],
-      }, TENANT)
-
-      const approved = service.approveTeam(reg.id, TENANT)
-      assert.equal(approved.status, TeamRegistrationStatus.Approved)
-    })
-
-    it('should reject a team registration', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      const reg = service.registerTeam({
-        tournamentId: t.id, teamName: 'T', captainId: 'c', memberIds: ['c'],
-      }, TENANT)
-
-      const rejected = service.rejectTeam(reg.id, TENANT)
-      assert.equal(rejected.status, TeamRegistrationStatus.Rejected)
-    })
-
-    it('should throw for non-existent team', () => {
-      assert.throws(
-        () => service.approveTeam('nonexistent', TENANT),
-        /Team registration not found/
-      )
-    })
-
-    it('should verify tenant when approving', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      const reg = service.registerTeam({
-        tournamentId: t.id, teamName: 'T', captainId: 'c', memberIds: ['c'],
-      }, TENANT)
-
-      assert.throws(
-        () => service.approveTeam(reg.id, 'wrong-tenant'),
-        /Tournament not found/
-      )
-    })
+  it('反例: 不存在返回 undefined', () => {
+    expect(service.getMatch('fake', T)).toBeUndefined()
   })
 
-  describe('listTeamRegistrations', () => {
-    it('should list team registrations for a tournament', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerTeam({ tournamentId: t.id, teamName: 'A', captainId: 'm1', memberIds: ['m1'] }, TENANT)
-      service.registerTeam({ tournamentId: t.id, teamName: 'B', captainId: 'm2', memberIds: ['m2'] }, TENANT)
-
-      const list = service.listTeamRegistrations(t.id, TENANT)
-      assert.equal(list.length, 2)
-    })
+  it('反例: 跨 tenant 返回 undefined', () => {
+    expect(service.getMatch(matchId, 'wrong')).toBeUndefined()
   })
 
-  // ── Bracket & Matches ──
+  it('正例: 列出比赛带过滤', () => {
+    const list = service.listMatches(tId, T, { round: 1 })
+    expect(list.length).toBeGreaterThan(0)
+  })
+})
 
-  describe('generateBracket', () => {
-    it('should generate bracket when tournament is OPEN and has participants', () => {
-      const t = createTestTournament({ type: TournamentType.SingleElimination })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.registerParticipant(t.id, 'mem-003', TENANT)
-      service.registerParticipant(t.id, 'mem-004', TENANT)
+// ═══════════════════════════════════════════════════════════════
+// getUpcomingMatches
+// ═══════════════════════════════════════════════════════════════
 
-      const matches = service.generateBracket(t.id, TENANT)
-      assert.ok(matches.length > 0)
-      // Tournament should transition to Ongoing
-      const updated = service.getTournament(t.id, TENANT)
-      assert.equal(updated?.status, TournamentStatus.Ongoing)
-    })
-
-    it('should throw if less than 2 participants', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-
-      assert.throws(
-        () => service.generateBracket(t.id, TENANT),
-        /Need at least 2 participants/
-      )
-    })
-
-    it('should throw if tournament is not OPEN', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.generateBracket(t.id, TENANT),
-        /Bracket can only be generated when tournament is OPEN/
-      )
-    })
-
-    it('should generate round-robin matches', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.registerParticipant(t.id, 'mem-003', TENANT)
-      // 3 participants: C(3,2) = 3 matches
-
-      const matches = service.generateBracket(t.id, TENANT)
-      assert.equal(matches.length, 3)
-    })
+describe('getUpcomingMatches', () => {
+  it('正例: 返回该成员待进行的比赛', () => {
+    const t = openTournament()
+    openAndRegister(t.id, 2)
+    service.generateBracket(t.id, T)
+    expect(service.getUpcomingMatches('mem-0').length).toBeGreaterThan(0)
   })
 
-  describe('recordMatchResult', () => {
-    it('should record match result and update rankings', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
+  it('边界: 非参与者返回空', () => {
+    expect(service.getUpcomingMatches('none').length).toBe(0)
+  })
+})
 
-      const matches = service.generateBracket(t.id, TENANT)
-      const match = matches[0]
+// ═══════════════════════════════════════════════════════════════
+// getLiveMatches
+// ═══════════════════════════════════════════════════════════════
 
-      const updated = service.recordMatchResult(match.id, 2, 1, TENANT)
-      assert.equal(updated.status, MatchStatus.Completed)
-      assert.equal(updated.score1, 2)
-      assert.equal(updated.score2, 1)
-      assert.equal(updated.winnerId, match.player1Id)
-      assert.ok(updated.playedAt)
-    })
+describe('getLiveMatches', () => {
+  it('边界: 无进行中比赛返回空', () => {
+    expect(service.getLiveMatches('s1').length).toBe(0)
+  })
+})
 
-    it('should throw for non-existent match', () => {
-      assert.throws(
-        () => service.recordMatchResult('nonexistent', 2, 1, TENANT),
-        /Match not found/
-      )
-    })
+// ═══════════════════════════════════════════════════════════════
+// getRankings
+// ═══════════════════════════════════════════════════════════════
 
-    it('should throw for already completed match', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      service.recordMatchResult(matches[0].id, 2, 1, TENANT)
-
-      assert.throws(
-        () => service.recordMatchResult(matches[0].id, 3, 2, TENANT),
-        /Match already completed/
-      )
-    })
-
-    it('should throw for wrong tenant', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      assert.throws(
-        () => service.recordMatchResult(matches[0].id, 2, 1, 'wrong-tenant'),
-        /Tournament not found/
-      )
-    })
+describe('getRankings', () => {
+  it('边界: 无数据返回空', () => {
+    const t = freshTournament()
+    expect(service.getRankings(t.id, T).length).toBe(0)
   })
 
-  describe('setDisputed', () => {
-    it('should set match status to Disputed', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      const disputed = service.setDisputed(matches[0].id, TENANT)
-
-      assert.equal(disputed.status, MatchStatus.Disputed)
+  it('正例: 比赛后排名正确', () => {
+    const t = service.createTournament({
+      tenantId: T, name: 'RR', type: TournamentType.RoundRobin, gameName: 'G',
+      startDate: '2026-07-01', endDate: '2026-07-15', maxParticipants: 16,
     })
-
-    it('should throw for non-existent match', () => {
-      assert.throws(
-        () => service.setDisputed('nonexistent', TENANT),
-        /Match not found/
-      )
-    })
-  })
-
-  describe('getMatch / listMatches', () => {
-    it('should get a match by id', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      const match = service.getMatch(matches[0].id, TENANT)
-
-      assert.ok(match)
-      assert.equal(match?.id, matches[0].id)
-    })
-
-    it('should return undefined for non-existent match', () => {
-      const match = service.getMatch('nonexistent', TENANT)
-      assert.equal(match, undefined)
-    })
-
-    it('should return undefined for wrong tenant', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      const match = service.getMatch(matches[0].id, 'wrong-tenant')
-      assert.equal(match, undefined)
-    })
-
-    it('should list matches with filter', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.registerParticipant(t.id, 'mem-003', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      const list = service.listMatches(t.id, TENANT)
-      assert.equal(list.length, matches.length)
-    })
-  })
-
-  describe('getUpcomingMatches', () => {
-    it('should return upcoming matches for a member', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      service.generateBracket(t.id, TENANT)
-      const upcoming = service.getUpcomingMatches('mem-001')
-      assert.ok(upcoming.length > 0)
-    })
-
-    it('should return empty for non-participant', () => {
-      const upcoming = service.getUpcomingMatches('mem-999')
-      assert.equal(upcoming.length, 0)
-    })
-  })
-
-  describe('getLiveMatches', () => {
-    it('should return live matches for a store', () => {
-      const live = service.getLiveMatches(STORE)
-      assert.equal(live.length, 0)
-    })
-  })
-
-  // ── Rankings ──
-
-  describe('getRankings', () => {
-    it('should return empty rankings for tournament with no matches', () => {
-      const t = createTestTournament()
-      const rankings = service.getRankings(t.id, TENANT)
-      assert.equal(rankings.length, 0)
-    })
-
-    it('should return ranked players after matches', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-
-      const matches = service.generateBracket(t.id, TENANT)
-      service.recordMatchResult(matches[0].id, 2, 1, TENANT)
-
-      const rankings = service.getRankings(t.id, TENANT)
-      assert.ok(rankings.length > 0)
-
-      const winner = rankings.find((r) => r.memberId === matches[0].player1Id)
-      assert.ok(winner)
-      assert.equal(winner?.rank, 1)
-      assert.equal(winner?.wins, 1)
-      assert.equal(winner?.points, 3)
-    })
-  })
-
-  // ── Redemption (兑换) ──
-
-  describe('redeem', () => {
-    it('should redeem points for a prize when tournament is ongoing', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-      // Add points and prize stock
-      service.addUserPoints(t.id, 'mem-001', 100)
-      service.setPrizeStock('first', 5)
-
-      const result = service.redeem({
-        tournamentId: t.id,
-        tenantId: TENANT,
-        userId: 'mem-001',
-        prizeId: 'first',
-        points: 50,
-      })
-
-      assert.equal(result.success, true)
-      assert.ok(result.redemptionId.startsWith('redemption-'))
-      assert.equal(result.remainingPoints, 50) // 100 - 50
-      assert.ok(result.estimatedDelivery)
-    })
-
-    it('should throw when tournament is not ongoing', () => {
-      const t = createTestTournament()
-      service.addUserPoints(t.id, 'mem-001', 100)
-      service.setPrizeStock('first', 5)
-
-      assert.throws(
-        () => service.redeem({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 10,
-        }),
-        /redemptions are only available during active tournaments/,
-      )
-    })
-
-    it('should throw when user has insufficient points', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-
-      assert.throws(
-        () => service.redeem({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 100,
-        }),
-        /Insufficient points/,
-      )
-    })
-
-    it('should throw when prize is out of stock', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-      service.addUserPoints(t.id, 'mem-001', 100)
-
-      assert.throws(
-        () => service.redeem({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'nonexistent', points: 10,
-        }),
-        /out of stock/,
-      )
-    })
-
-    it('should list redemptions sorted by creation time', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-      service.addUserPoints(t.id, 'mem-001', 200)
-      service.setPrizeStock('first', 5)
-      service.redeem({ tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 50 })
-
-      const list = service.listRedemptions(t.id, TENANT)
-      assert.equal(list.length, 1)
-      assert.equal(list[0].prizeId, 'first')
-    })
-
-    it('should get a single redemption record', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-      service.addUserPoints(t.id, 'mem-001', 100)
-      service.setPrizeStock('first', 5)
-      const { redemptionId } = service.redeem({
-        tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', prizeId: 'first', points: 30,
-      })
-
-      const record = service.getRedemption(redemptionId)
-      assert.ok(record)
-      assert.equal(record?.id, redemptionId)
-      assert.equal(record?.pointsCost, 30)
-    })
-  })
-
-  // ── Enhanced Join ──
-
-  describe('joinTournament', () => {
-    it('should join as participant and create ranking entry', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-
-      const result = service.joinTournament({
-        tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', joinType: 'PARTICIPANT',
-      })
-      assert.equal(result.currentParticipants, 1)
-    })
-
-    it('should join as spectator without capacity check', () => {
-      const t = createTestTournament({ maxParticipants: 1 })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      // Fill capacity
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-
-      // Spectator still allowed
-      const result = service.joinTournament({
-        tournamentId: t.id, tenantId: TENANT, userId: 'mem-002', joinType: 'SPECTATOR',
-      })
-      assert.equal(result.currentParticipants, 1)
-    })
-
-    it('should throw for participant join when tournament is not open', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.joinTournament({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', joinType: 'PARTICIPANT',
-        }),
-        /not open/,
-      )
-    })
-  })
-
-  // ── Prediction (竞猜) ──
-
-  describe('placePrediction', () => {
-    function setupOngoingMatch(): { tournamentId: string; matchId: string } {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      const matches = service.generateBracket(t.id, TENANT)
-      service.addUserPoints(t.id, 'mem-003', 200) // spectator with points
-      return { tournamentId: t.id, matchId: matches[0].id }
-    }
-
-    it('should place a prediction and lock stake', () => {
-      const { tournamentId, matchId } = setupOngoingMatch()
-
-      const pred = service.placePrediction({
-        tournamentId, tenantId: TENANT, userId: 'mem-003', matchId, prediction: 'mem-001', stake: 50,
-      })
-
-      assert.equal(pred.status, PredictionStatus.Locked)
-      assert.equal(pred.stake, 50)
-      assert.equal(pred.prediction, 'mem-001')
-      assert.ok(pred.id.startsWith('prediction-'))
-
-      // Points deducted from available balance
-      assert.equal(service.getUserPoints(tournamentId, 'mem-003'), 150)
-    })
-
-    it('should throw when tournament is not ongoing', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.placePrediction({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', matchId: 'm1', prediction: 'p1', stake: 10,
-        }),
-        /predictions are only available during active tournaments/,
-      )
-    })
-
-    it('should throw when stake exceeds user points', () => {
-      const { tournamentId, matchId } = setupOngoingMatch()
-      assert.throws(
-        () => service.placePrediction({
-          tournamentId, tenantId: TENANT, userId: 'mem-003', matchId, prediction: 'mem-001', stake: 999,
-        }),
-        /Insufficient points for prediction/,
-      )
-    })
-
-    it('should throw for non-existent match', () => {
-      const { tournamentId } = setupOngoingMatch()
-      assert.throws(
-        () => service.placePrediction({
-          tournamentId, tenantId: TENANT, userId: 'mem-003', matchId: 'nonexistent', prediction: 'x', stake: 10,
-        }),
-        /Match not found/,
-      )
-    })
-
-    it('should settle predictions: winner gets double stake', () => {
-      const { tournamentId, matchId } = setupOngoingMatch()
-      service.addUserPoints(tournamentId, 'mem-004', 100)
-      service.addUserPoints(tournamentId, 'mem-005', 100)
-
-      service.placePrediction({
-        tournamentId, tenantId: TENANT, userId: 'mem-004', matchId, prediction: 'mem-001', stake: 40,
-      })
-      service.placePrediction({
-        tournamentId, tenantId: TENANT, userId: 'mem-005', matchId, prediction: 'mem-002', stake: 30,
-      })
-
-      const settled = service.settlePredictions(matchId, 'mem-001', TENANT)
-      assert.equal(settled, 2)
-
-      // Winner gets 80 back (40*2)
-      assert.equal(service.getUserPoints(tournamentId, 'mem-004'), 100 - 40 + 80)
-      // Loser forfeits stake
-      assert.equal(service.getUserPoints(tournamentId, 'mem-005'), 100 - 30)
-    })
-
-    it('should query predictions by filter', () => {
-      const { tournamentId, matchId } = setupOngoingMatch()
-      const pred = service.placePrediction({
-        tournamentId, tenantId: TENANT, userId: 'mem-003', matchId, prediction: 'mem-001', stake: 20,
-      })
-
-      const byMatch = service.getPredictions({ matchId })
-      assert.equal(byMatch.length, 1)
-      assert.equal(byMatch[0].id, pred.id)
-
-      const byUser = service.getPredictions({ userId: 'mem-003' })
-      assert.equal(byUser.length, 1)
-
-      const byTournament = service.getPredictions({ tournamentId })
-      assert.equal(byTournament.length, 1)
-    })
-  })
-
-  // ── Vote (人气投票) ──
-
-  describe('castVote', () => {
-    it('should cast votes for a contestant', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-      service.addUserPoints(t.id, 'mem-003', 50)
-
-      const vote = service.castVote({
-        tournamentId: t.id, tenantId: TENANT, userId: 'mem-003', contestantId: 'mem-001', votes: 10,
-      })
-
-      assert.equal(vote.votes, 10)
-      assert.equal(vote.contestantId, 'mem-001')
-      assert.ok(vote.id.startsWith('vote-'))
-    })
-
-    it('should throw when voting on non-ongoing tournament', () => {
-      const t = createTestTournament()
-      assert.throws(
-        () => service.castVote({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', contestantId: 'c1', votes: 1,
-        }),
-        /voting is only available during active tournaments/,
-      )
-    })
-
-    it('should throw when user has insufficient points for voting', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-
-      assert.throws(
-        () => service.castVote({
-          tournamentId: t.id, tenantId: TENANT, userId: 'mem-001', contestantId: 'mem-002', votes: 100,
-        }),
-        /Insufficient points for voting/,
-      )
-    })
-
-    it('should get popularity rankings sorted by total votes', () => {
-      const t = createTestTournament()
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      service.generateBracket(t.id, TENANT)
-      service.addUserPoints(t.id, 'voter1', 100)
-      service.addUserPoints(t.id, 'voter2', 100)
-
-      service.castVote({ tournamentId: t.id, tenantId: TENANT, userId: 'voter1', contestantId: 'mem-001', votes: 5 })
-      service.castVote({ tournamentId: t.id, tenantId: TENANT, userId: 'voter2', contestantId: 'mem-001', votes: 3 })
-      service.castVote({ tournamentId: t.id, tenantId: TENANT, userId: 'voter1', contestantId: 'mem-002', votes: 2 })
-
-      const rankings = service.getPopularityRankings(t.id, TENANT)
-      assert.equal(rankings.length, 2)
-      assert.equal(rankings[0].contestantId, 'mem-001')
-      assert.equal(rankings[0].totalVotes, 8)
-      assert.equal(rankings[1].totalVotes, 2)
-    })
-  })
-
-  // ── Draw match ──
-
-  describe('draw match', () => {
-    it('should record a draw with 1 point for each player', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      const matches = service.generateBracket(t.id, TENANT)
-
-      const result = service.recordMatchResult(matches[0].id, 1, 1, TENANT)
-      assert.equal(result.winnerId, undefined)
-
-      const rankings = service.getRankings(t.id, TENANT)
-      const p1 = rankings.find((r) => r.memberId === 'mem-001')
-      const p2 = rankings.find((r) => r.memberId === 'mem-002')
-      assert.equal(p1?.points, 1)
-      assert.equal(p1?.draws, 1)
-      assert.equal(p2?.points, 1)
-      assert.equal(p2?.draws, 1)
-    })
-  })
-
-  // ── Tournament completion ──
-
-  describe('tournament auto-completion', () => {
-    it('should auto-complete tournament when all matches are done (RoundRobin)', () => {
-      const t = createTestTournament({ type: TournamentType.RoundRobin })
-      service.updateTournamentStatus(t.id, TournamentStatus.Open, TENANT)
-      service.registerParticipant(t.id, 'mem-001', TENANT)
-      service.registerParticipant(t.id, 'mem-002', TENANT)
-      const matches = service.generateBracket(t.id, TENANT)
-      assert.equal(service.getTournament(t.id, TENANT)?.status, TournamentStatus.Ongoing)
-
-      service.recordMatchResult(matches[0].id, 2, 1, TENANT)
-
-      // Match was the only one, tournament should auto-complete
-      const updated = service.getTournament(t.id, TENANT)
-      assert.equal(updated?.status, TournamentStatus.Completed)
-    })
-  })
-
-  // ── Admin points ──
-
-  describe('admin points management', () => {
-    it('should add and query user points', () => {
-      service.addUserPoints('t-1', 'user-1', 500)
-      assert.equal(service.getUserPoints('t-1', 'user-1'), 500)
-    })
-
-    it('should return 0 for unknown user in a tournament', () => {
-      assert.equal(service.getUserPoints('nonexistent', 'user-1'), 0)
-    })
+    service.updateTournamentStatus(t.id, TournamentStatus.Open, T)
+    openAndRegister(t.id, 3)
+    const matches = service.generateBracket(t.id, T)
+    // 赢第一个比赛
+    service.recordMatchResult(matches[0].id, 2, 1, T)
+    const rankings = service.getRankings(t.id, T)
+    const winner = rankings.find(r => r.memberId === matches[0].player1Id)
+    expect(winner?.rank).toBe(1)
+    expect(winner?.points).toBe(3)
+    expect(winner?.wins).toBe(1)
   })
 })

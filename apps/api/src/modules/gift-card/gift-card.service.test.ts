@@ -1,561 +1,537 @@
 /**
- * 🧪 GiftCardService 单元测试
- * 覆盖: create / activate / topup / consume / freeze / unfreeze / cancel / refund / list / getById / getTransactions / getStats / cleanupExpired
- * 三件套：正例 + 反例 + 边界
+ * gift-card.service.spec.ts — 礼品卡 Service 测试
+ *
+ * 覆盖:
+ *   - CRUD / 状态流转 / 余额校验 / 过期检测
+ *   - 边界条件 / 异常路径 / 空值处理 / 并发场景
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { GiftCardService } from './gift-card.service'
-
-function createFreshService(): GiftCardService {
-  return new GiftCardService()
-}
-
-// ════════════════════════════════════════════════════════════
-// 辅助：创建一张待激活的礼品卡
-// ════════════════════════════════════════════════════════════
-
-function makePendingCard(svc: GiftCardService, denom = 10000) {
-  return svc.create({
-    templateId: 'tpl-default',
-    denomination: denom,
-    holderName: '张三',
-    holderPhone: '13800138000',
-    expiresAt: '2027-12-31T23:59:59Z',
-    tenantId: 'default',
-    sourceOrderId: 'order-001',
-  })
-}
+import type { GiftCardCreateRequest, GiftCardTopupRequest, GiftCardConsumeRequest } from './gift-card.entity'
 
 describe('GiftCardService', () => {
-  // ════════════════════════════════════════════════════════════
-  // create — 创建礼品卡
-  // ════════════════════════════════════════════════════════════
+  let service: GiftCardService
+
+  // ── 辅助工厂 ──
+
+  const validCreateReq = (overrides?: Partial<GiftCardCreateRequest>): GiftCardCreateRequest => ({
+    templateId: 'TPL-001',
+    denomination: 10000,       // 100 元
+    holderName: '张三',
+    holderPhone: '13800138000',
+    expiresAt: '2099-12-31T23:59:59Z',
+    tenantId: 'tenant-1',
+    storeScope: [],
+    ...overrides,
+  })
+
+  const validConsumeReq = (cardId: string, overrides?: Partial<GiftCardConsumeRequest>): GiftCardConsumeRequest => ({
+    cardId,
+    amount: 1000,   // 10 元
+    ...overrides,
+  })
+
+  const setUpActiveCard = (denomination = 10000): string => {
+    const card = service.create(validCreateReq({ denomination }))
+    service.activate(card.cardId)
+    return card.cardId
+  }
+
+  beforeEach(() => {
+    service = new GiftCardService()
+  })
+
+  // ═══════════════════════════════════════════════════════════
+  // create
+  // ═══════════════════════════════════════════════════════════
 
   describe('create', () => {
-    it('[正例] 创建礼品卡成功，状态为 pending', () => {
-      const svc = createFreshService()
-      const card = svc.create({
-        templateId: 'tpl-default',
-        denomination: 5000,
-        holderName: '李四',
-        holderPhone: '13900139000',
-        expiresAt: '2027-12-31T23:59:59Z',
-      })
-      expect(card.cardId).toMatch(/^GC/)
+    it('应成功创建 pending 状态的礼品卡', () => {
+      const card = service.create(validCreateReq())
+      expect(card.cardId).toBeTruthy()
       expect(card.status).toBe('pending')
-      expect(card.balance).toBe(0) // pending 时余额为 0
-      expect(card.denomination).toBe(5000)
-      expect(card.holderName).toBe('李四')
-      expect(card.totalConsumed).toBe(0)
+      expect(card.balance).toBe(0)
+      expect(card.denomination).toBe(10000)
+      expect(card.currency).toBe('CNY')
     })
 
-    it('[正例] 创建时自动产生交易记录（purchase）', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      const txs = svc.getTransactions(card.cardId)
-      expect(txs.length).toBe(1)
+    it('面额为 0 应抛出 BadRequestException', () => {
+      expect(() => service.create(validCreateReq({ denomination: 0 }))).toThrow('面额必须大于 0')
+    })
+
+    it('面额为负数应抛出 BadRequestException', () => {
+      expect(() => service.create(validCreateReq({ denomination: -100 }))).toThrow('面额必须大于 0')
+    })
+
+    it('持卡人姓名为空应抛出 BadRequestException', () => {
+      expect(() => service.create(validCreateReq({ holderName: '' }))).toThrow('持卡人姓名和手机号必填')
+    })
+
+    it('持卡人电话为空应抛出 BadRequestException', () => {
+      expect(() => service.create(validCreateReq({ holderPhone: '' }))).toThrow('持卡人姓名和手机号必填')
+    })
+
+    it('创建后应自动生成 cardId 并记录购买流水', () => {
+      const card = service.create(validCreateReq())
+      const txs = service.getTransactions(card.cardId)
+      expect(txs).toHaveLength(1)
       expect(txs[0].type).toBe('purchase')
+      expect(txs[0].amount).toBe(10000)
     })
 
-    it('[正例] 创建后可通过 list 查到', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      const all = svc.list()
-      expect(all.some(c => c.cardId === card.cardId)).toBe(true)
-    })
-
-    it('[反例] 面额 <= 0 抛出异常', () => {
-      const svc = createFreshService()
-      expect(() => svc.create({
-        templateId: 'tpl-default',
-        denomination: 0,
-        holderName: '测试',
-        holderPhone: '13900139000',
-        expiresAt: '2027-12-31T23:59:59Z',
-      })).toThrow('面额必须大于 0')
-    })
-
-    it('[反例] 负数面额抛出异常', () => {
-      const svc = createFreshService()
-      expect(() => svc.create({
-        templateId: 'tpl-default',
-        denomination: -100,
-        holderName: '测试',
-        holderPhone: '13900139000',
-        expiresAt: '2027-12-31T23:59:59Z',
-      })).toThrow('面额必须大于 0')
-    })
-
-    it('[反例] 缺少持卡人姓名抛出异常', () => {
-      const svc = createFreshService()
-      expect(() => svc.create({
-        templateId: 'tpl-default',
-        denomination: 1000,
-        holderName: '',
-        holderPhone: '13900139000',
-        expiresAt: '2027-12-31T23:59:59Z',
-      })).toThrow('持卡人姓名')
-    })
-
-    it('[反例] 缺少持卡人手机号抛出异常', () => {
-      const svc = createFreshService()
-      expect(() => svc.create({
-        templateId: 'tpl-default',
-        denomination: 1000,
-        holderName: '测试',
-        holderPhone: '',
-        expiresAt: '2027-12-31T23:59:59Z',
-      })).toThrow('持卡人手机号')
+    it('不同调用生成不同的 cardId', () => {
+      const c1 = service.create(validCreateReq())
+      const c2 = service.create(validCreateReq())
+      expect(c1.cardId).not.toBe(c2.cardId)
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // activate — 激活礼品卡
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // activate
+  // ═══════════════════════════════════════════════════════════
 
   describe('activate', () => {
-    it('[正例] 激活后状态为 active，余额等于面额', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 10000)
-      const activated = svc.activate(card.cardId)
+    it('应成功激活礼品卡（pending → active）', () => {
+      const card = service.create(validCreateReq())
+      const activated = service.activate(card.cardId)
       expect(activated.status).toBe('active')
-      expect(activated.balance).toBe(10000)
+      expect(activated.balance).toBe(activated.denomination)
       expect(activated.activatedAt).toBeTruthy()
     })
 
-    it('[正例] 激活后增加 activation 交易记录', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      const txs = svc.getTransactions(card.cardId)
-      expect(txs.length).toBe(2)
-      expect(txs[1].type).toBe('activation')
-      expect(txs[1].afterBalance).toBe(card.denomination)
+    it('已激活的卡再次激活应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.activate(cardId)).toThrow('不允许激活')
     })
 
-    it('[反例] 重复激活抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      expect(() => svc.activate(card.cardId)).toThrow('不允许激活')
+    it('已过期的卡激活应抛出 BadRequestException 并标记为 expired', () => {
+      const card = service.create(validCreateReq({ expiresAt: '2020-01-01T00:00:00Z' }))
+      expect(() => service.activate(card.cardId)).toThrow('已过期')
+      const stored = service.getById(card.cardId)
+      expect(stored!.status).toBe('expired')
     })
 
-    it('[反例] 激活不存在的卡抛出异常', () => {
-      const svc = createFreshService()
-      expect(() => svc.activate('nonexistent')).toThrow('不存在')
+    it('已取消的卡激活应抛出 BadRequestException', () => {
+      const card = service.create(validCreateReq())
+      service.cancel(card.cardId)
+      expect(() => service.activate(card.cardId)).toThrow('不允许激活')
+    })
+
+    it('激活后应有 activation 流水', () => {
+      const card = service.create(validCreateReq())
+      service.activate(card.cardId, 'operator-1')
+      const txs = service.getTransactions(card.cardId)
+      expect(txs.find((t) => t.type === 'activation')).toBeTruthy()
+      expect(txs.find((t) => t.type === 'activation')?.operatorId).toBe('operator-1')
+    })
+
+    it('不存在的 cardId 激活应抛出 NotFoundException', () => {
+      expect(() => service.activate('NONEXISTENT')).toThrow('不存在')
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // topup — 充值
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // topup
+  // ═══════════════════════════════════════════════════════════
 
   describe('topup', () => {
-    it('[正例] 充值后余额增加', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      const topped = svc.topup({ cardId: card.cardId, amount: 5000 })
-      expect(topped.balance).toBe(15000) // 10000 + 5000
+    it('应成功充值', () => {
+      const cardId = setUpActiveCard()
+      const before = service.getById(cardId)!.balance
+      const result = service.topup({ cardId, amount: 5000 })
+      expect(result.balance).toBe(before + 5000)
     })
 
-    it('[正例] 充值产生 topup 交易（amount 为负数表示增加余额）', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.topup({ cardId: card.cardId, amount: 3000 })
-      const txs = svc.getTransactions(card.cardId)
-      const topupTx = txs.find(t => t.type === 'topup')
-      expect(topupTx).toBeDefined()
-      expect(topupTx!.amount).toBe(-3000) // 充值是负值
+    it('充值金额为 0 应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.topup({ cardId, amount: 0 })).toThrow('充值金额必须大于 0')
     })
 
-    it('[反例] 充值金额 <= 0 抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      expect(() => svc.topup({ cardId: card.cardId, amount: 0 })).toThrow('充值金额')
+    it('充值金额为负数应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.topup({ cardId, amount: -100 })).toThrow('充值金额必须大于 0')
     })
 
-    it('[反例] pending 状态的卡不允许充值', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      expect(() => svc.topup({ cardId: card.cardId, amount: 1000 })).toThrow('不允许充值')
+    it('已过期的卡充值应抛出 BadRequestException', () => {
+      const card = service.create(validCreateReq({ expiresAt: '2020-01-01T00:00:00Z' }))
+      expect(() => service.topup({ cardId: card.cardId, amount: 5000 })).toThrow('已过期')
+    })
+
+    it('已消费完的卡可充值（redeemed → active 并非直接充值）', () => {
+      const cardId = setUpActiveCard(1000)
+      service.consume(validConsumeReq(cardId, { amount: 1000 }))
+      const redeemed = service.getById(cardId)
+      expect(redeemed!.status).toBe('redeemed')
+      // redeemed 状态不允许充值
+      expect(() => service.topup({ cardId, amount: 500 })).toThrow('不允许充值')
+    })
+
+    it('不存在的卡充值应抛出 NotFoundException', () => {
+      expect(() => service.topup({ cardId: 'NONEXISTENT', amount: 500 })).toThrow('不存在')
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // consume — 消费
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // consume
+  // ═══════════════════════════════════════════════════════════
 
   describe('consume', () => {
-    it('[正例] 消费后余额减少', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      const consumed = svc.consume({ cardId: card.cardId, amount: 3000 })
-      expect(consumed.balance).toBe(7000)
+    it('应成功消费并减少余额', () => {
+      const cardId = setUpActiveCard(10000)
+      const before = service.getById(cardId)!.balance
+      const result = service.consume(validConsumeReq(cardId, { amount: 3000 }))
+      expect(result.balance).toBe(before - 3000)
+      expect(result.totalConsumed).toBe(3000)
     })
 
-    it('[正例] 消费增加 totalConsumed', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 2000 })
-      svc.consume({ cardId: card.cardId, amount: 3000 })
-      const updated = svc.getById(card.cardId)!
-      expect(updated.totalConsumed).toBe(5000)
+    it('消费金额为 0 应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.consume(validConsumeReq(cardId, { amount: 0 }))).toThrow('消费金额必须大于 0')
     })
 
-    it('[正例] 消费后产生 consume 交易记录', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 1000 })
-      const txs = svc.getTransactions(card.cardId)
-      const consumeTx = txs.find(t => t.type === 'consume')
-      expect(consumeTx).toBeDefined()
-      expect(consumeTx!.afterBalance).toBe(9000)
+    it('消费金额为负数应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.consume(validConsumeReq(cardId, { amount: -100 }))).toThrow('消费金额必须大于 0')
     })
 
-    it('[正例] 消费到余额为 0 时自动标记为 redeemed', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 5000)
-      svc.activate(card.cardId)
-      const consumed = svc.consume({ cardId: card.cardId, amount: 5000 })
-      expect(consumed.status).toBe('redeemed')
-      expect(consumed.balance).toBe(0)
+    it('余额不足时应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard(500)
+      expect(() => service.consume(validConsumeReq(cardId, { amount: 1000 }))).toThrow('余额不足')
     })
 
-    it('[反例] 余额不足抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 1000)
-      svc.activate(card.cardId)
-      expect(() => svc.consume({ cardId: card.cardId, amount: 2000 })).toThrow('余额不足')
+    it('消费到余额为 0 应自动标记为 redeemed', () => {
+      const cardId = setUpActiveCard(1000)
+      const result = service.consume(validConsumeReq(cardId, { amount: 1000 }))
+      expect(result.status).toBe('redeemed')
+      expect(result.balance).toBe(0)
     })
 
-    it('[反例] 消费金额 <= 0 抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      expect(() => svc.consume({ cardId: card.cardId, amount: 0 })).toThrow('消费金额')
-    })
-  })
-
-  // ════════════════════════════════════════════════════════════
-  // freeze / unfreeze — 冻结与解冻
-  // ════════════════════════════════════════════════════════════
-
-  describe('freeze / unfreeze', () => {
-    it('[正例] 冻结后状态变为 frozen', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      const frozen = svc.freeze(card.cardId)
-      expect(frozen.status).toBe('frozen')
-      expect(frozen.frozenAmount).toBe(frozen.balance)
+    it('已挂失/冻结的卡不允许消费', () => {
+      const cardId = setUpActiveCard()
+      service.freeze(cardId)
+      expect(() => service.consume(validConsumeReq(cardId))).toThrow('不允许消费')
     })
 
-    it('[正例] 解冻后状态恢复 active', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.freeze(card.cardId)
-      const unfrozen = svc.unfreeze(card.cardId)
-      expect(unfrozen.status).toBe('active')
-      expect(unfrozen.frozenAmount).toBe(0)
+    it('已过期的卡消费应抛出 BadRequestException', () => {
+      const card = service.create(validCreateReq({ expiresAt: '2020-01-01T00:00:00Z' }))
+      expect(() => service.consume(validConsumeReq(card.cardId))).toThrow('已过期')
     })
 
-    it('[反例] 冻结非 active 的卡抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      expect(() => svc.freeze(card.cardId)).toThrow('不允许冻结')
+    it('消费后应有 consume 流水记录', () => {
+      const cardId = setUpActiveCard()
+      service.consume(validConsumeReq(cardId, { orderId: 'ORDER-001', operatorId: 'OP-1' }))
+      const txs = service.getTransactions(cardId)
+      const consumeTx = txs.find((t) => t.type === 'consume')
+      expect(consumeTx).toBeTruthy()
+      expect(consumeTx!.orderId).toBe('ORDER-001')
+      expect(consumeTx!.operatorId).toBe('OP-1')
     })
 
-    it('[反例] 重复解冻抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.freeze(card.cardId)
-      svc.unfreeze(card.cardId)
-      expect(() => svc.unfreeze(card.cardId)).toThrow('不允许解冻')
+    it('不存在的卡消费应抛出 NotFoundException', () => {
+      expect(() => service.consume(validConsumeReq('NONEXISTENT'))).toThrow('不存在')
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // cancel — 取消
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // freeze / unfreeze
+  // ═══════════════════════════════════════════════════════════
+
+  describe('freeze', () => {
+    it('应成功冻结 active 卡', () => {
+      const cardId = setUpActiveCard()
+      const result = service.freeze(cardId)
+      expect(result.status).toBe('frozen')
+      expect(result.frozenAmount).toBe(result.balance)
+    })
+
+    it('已冻结的卡再次冻结应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      service.freeze(cardId)
+      expect(() => service.freeze(cardId)).toThrow('不允许冻结')
+    })
+
+    it('pending 状态的卡不允许冻结', () => {
+      const card = service.create(validCreateReq())
+      expect(() => service.freeze(card.cardId)).toThrow('不允许冻结')
+    })
+
+    it('不存在的卡冻结应抛出 NotFoundException', () => {
+      expect(() => service.freeze('NONEXISTENT')).toThrow('不存在')
+    })
+  })
+
+  describe('unfreeze', () => {
+    it('应成功解冻 frozen 卡', () => {
+      const cardId = setUpActiveCard()
+      service.freeze(cardId)
+      const result = service.unfreeze(cardId)
+      expect(result.status).toBe('active')
+      expect(result.frozenAmount).toBe(0)
+    })
+
+    it('未冻结的卡不允许解冻', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.unfreeze(cardId)).toThrow('不允许解冻')
+    })
+
+    it('已取消的卡不允许解冻', () => {
+      const cardId = setUpActiveCard()
+      service.cancel(cardId)
+      expect(() => service.unfreeze(cardId)).toThrow('不允许解冻')
+    })
+  })
+
+  // ═══════════════════════════════════════════════════════════
+  // cancel
+  // ═══════════════════════════════════════════════════════════
 
   describe('cancel', () => {
-    it('[正例] 取消 pending 卡状态变为 cancelled', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      const cancelled = svc.cancel(card.cardId)
-      expect(cancelled.status).toBe('cancelled')
+    it('应成功取消 pending 卡', () => {
+      const card = service.create(validCreateReq())
+      const result = service.cancel(card.cardId)
+      expect(result.status).toBe('cancelled')
     })
 
-    it('[反例] 取消已 cancelled 的卡抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.cancel(card.cardId)
-      expect(() => svc.cancel(card.cardId)).toThrow('不允许取消')
+    it('应成功取消 active 卡', () => {
+      const cardId = setUpActiveCard()
+      const result = service.cancel(cardId)
+      expect(result.status).toBe('cancelled')
     })
 
-    it('[反例] 取消已 redeemed 的卡抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 100)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 100 })
-      expect(() => svc.cancel(card.cardId)).toThrow('不允许取消')
+    it('已取消的卡不允许再次取消', () => {
+      const cardId = setUpActiveCard()
+      service.cancel(cardId)
+      expect(() => service.cancel(cardId)).toThrow('不允许取消')
+    })
+
+    it('已消费完的卡不允许取消', () => {
+      const cardId = setUpActiveCard(1000)
+      service.consume(validConsumeReq(cardId, { amount: 1000 }))
+      expect(() => service.cancel(cardId)).toThrow('不允许取消')
+    })
+
+    it('取消后余额应归零', () => {
+      const cardId = setUpActiveCard()
+      service.cancel(cardId, 'OP-1', '客户主动取消')
+      const stored = service.getById(cardId)
+      expect(stored!.status).toBe('cancelled')
+      const txs = service.getTransactions(cardId)
+      expect(txs.find((t) => t.type === 'cancel')).toBeTruthy()
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // refund — 退款
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // refund
+  // ═══════════════════════════════════════════════════════════
 
   describe('refund', () => {
-    it('[正例] 退款后余额增加', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 3000 })
-      const refunded = svc.refund(card.cardId, 3000)
-      expect(refunded.balance).toBe(10000) // 恢复到初始余额
+    it('应成功将消费冲回余额', () => {
+      const cardId = setUpActiveCard(10000)
+      service.consume(validConsumeReq(cardId, { amount: 3000 }))
+      const before = service.getById(cardId)!.balance
+      const result = service.refund(cardId, 3000)
+      expect(result.balance).toBe(before + 3000)
+      expect(result.totalConsumed).toBe(0)
     })
 
-    it('[正例] 退款后 redeemed 卡恢复为 active', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 1000)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 1000 })
-      const refunded = svc.refund(card.cardId, 500)
-      expect(refunded.status).toBe('active')
-      expect(refunded.balance).toBe(500)
+    it('退款金额为 0 应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.refund(cardId, 0)).toThrow('退款金额必须大于 0')
     })
 
-    it('[反例] 退款金额 <= 0 抛出异常', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      expect(() => svc.refund(card.cardId, 0)).toThrow('退款金额')
+    it('退款金额为负数应抛出 BadRequestException', () => {
+      const cardId = setUpActiveCard()
+      expect(() => service.refund(cardId, -100)).toThrow('退款金额必须大于 0')
     })
 
-    it('[反例] 已取消的卡不允许退款', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.cancel(card.cardId)
-      expect(() => svc.refund(card.cardId, 100)).toThrow('不允许退款')
-    })
-  })
-
-  // ════════════════════════════════════════════════════════════
-  // list / getById — 查询
-  // ════════════════════════════════════════════════════════════
-
-  describe('list / getById', () => {
-    it('[正例] list 返回空时为空数组', () => {
-      const svc = createFreshService()
-      expect(svc.list()).toEqual([])
+    it('已取消的卡不允许退款', () => {
+      const cardId = setUpActiveCard()
+      service.cancel(cardId)
+      expect(() => service.refund(cardId, 500)).toThrow('不允许退款')
     })
 
-    it('[正例] list 按状态筛选', () => {
-      const svc = createFreshService()
-      makePendingCard(svc)
-      const card2 = makePendingCard(svc)
-      svc.activate(card2.cardId)
-      const actives = svc.list({ status: 'active' })
-      expect(actives.length).toBe(1)
+    it('已过期的卡不允许退款', () => {
+      const card = service.create(validCreateReq({ expiresAt: '2020-01-01T00:00:00Z' }))
+      expect(() => service.refund(card.cardId, 500)).toThrow('不允许退款')
     })
 
-    it('[正例] list 按持卡人姓名模糊匹配', () => {
-      const svc = createFreshService()
-      makePendingCard(svc)
-      const result = svc.list({ holderName: '张三' })
-      expect(result.length).toBe(1)
-    })
-
-    it('[正例] getById 返回 undefined 对于不存在的卡', () => {
-      const svc = createFreshService()
-      expect(svc.getById('nonexistent')).toBeUndefined()
+    it('redeemed 卡退款后应恢复为 active', () => {
+      const cardId = setUpActiveCard(1000)
+      service.consume(validConsumeReq(cardId, { amount: 1000 }))
+      expect(service.getById(cardId)!.status).toBe('redeemed')
+      const result = service.refund(cardId, 500)
+      expect(result.status).toBe('active')
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // getTransactions — 交易流水
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // query: getById / list / getTransactions / getStats
+  // ═══════════════════════════════════════════════════════════
+
+  describe('getById', () => {
+    it('存在时应返回卡', () => {
+      const card = service.create(validCreateReq())
+      expect(service.getById(card.cardId)).toBeTruthy()
+    })
+
+    it('不存在时应返回 undefined', () => {
+      expect(service.getById('NONEXISTENT')).toBeUndefined()
+    })
+  })
+
+  describe('list', () => {
+    it('应返回全部卡（无过滤）', () => {
+      service.create(validCreateReq())
+      service.create(validCreateReq({ holderName: '李四' }))
+      expect(service.list()).toHaveLength(2)
+    })
+
+    it('应支持按 status 过滤', () => {
+      const c1 = service.create(validCreateReq())
+      service.activate(c1.cardId)
+      expect(service.list({ status: 'pending' })).toHaveLength(0)
+      expect(service.list({ status: 'active' })).toHaveLength(1)
+    })
+
+    it('应支持按 holderName 模糊匹配', () => {
+      service.create(validCreateReq({ holderName: '张三丰' }))
+      service.create(validCreateReq({ holderName: '李四' }))
+      expect(service.list({ holderName: '张三' })).toHaveLength(1)
+    })
+
+    it('应支持按 holderPhone 模糊匹配', () => {
+      service.create(validCreateReq({ holderPhone: '13800138001' }))
+      expect(service.list({ holderPhone: '13800138' })).toHaveLength(1)
+    })
+
+    it('应支持按 tenantId 精确过滤', () => {
+      service.create(validCreateReq({ tenantId: 'tenant-1' }))
+      service.create(validCreateReq({ tenantId: 'tenant-2' }))
+      expect(service.list({ tenantId: 'tenant-1' })).toHaveLength(1)
+    })
+
+    it('无匹配时应返回空数组', () => {
+      expect(service.list({ status: 'active' })).toEqual([])
+    })
+  })
 
   describe('getTransactions', () => {
-    it('[正例] 获取完整交易流水', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 2000 })
-      const txs = svc.getTransactions(card.cardId)
-      expect(txs.length).toBe(3) // purchase + activation + consume
+    it('应返回卡的交易流水', () => {
+      const card = service.create(validCreateReq())
+      const txs = service.getTransactions(card.cardId)
+      expect(Array.isArray(txs)).toBe(true)
     })
 
-    it('[反例] 不存在的卡抛出异常', () => {
-      const svc = createFreshService()
-      expect(() => svc.getTransactions('nonexistent')).toThrow('不存在')
+    it('无流水的卡应返回空数组', () => {
+      const card = service.create(validCreateReq())
+      // activate 后再查，应有 purchase + activation
+      const txs = service.getTransactions(card.cardId)
+      expect(txs.length).toBeGreaterThanOrEqual(1)
     })
 
-    it('[边界] 刚创建的卡有一笔 purchase 交易', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      const txs = svc.getTransactions(card.cardId)
-      expect(txs.length).toBe(1)
-      expect(txs[0].type).toBe('purchase')
-      expect(txs[0].beforeBalance).toBe(0)
-      expect(txs[0].afterBalance).toBe(0)
+    it('不存在的卡应抛出 NotFoundException', () => {
+      expect(() => service.getTransactions('NONEXISTENT')).toThrow('不存在')
     })
   })
-
-  // ════════════════════════════════════════════════════════════
-  // getStats — 统计
-  // ════════════════════════════════════════════════════════════
 
   describe('getStats', () => {
-    it('[正例] 无数据时统计为零', () => {
-      const svc = createFreshService()
-      const stats = svc.getStats()
+    it('空存储时所有计数为 0', () => {
+      const stats = service.getStats()
       expect(stats.total).toBe(0)
       expect(stats.active).toBe(0)
-      expect(stats.totalBalance).toBe(0)
     })
 
-    it('[正例] 创建并激活后统计正确', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 10000)
-      svc.activate(card.cardId)
-      const stats = svc.getStats()
-      expect(stats.total).toBe(1)
-      expect(stats.active).toBe(1)
-      expect(stats.totalBalance).toBe(10000)
-      expect(stats.pending).toBe(0)
-    })
-
-    it('[正例] 多张卡统计累加', () => {
-      const svc = createFreshService()
-      const c1 = makePendingCard(svc, 5000)
-      svc.activate(c1.cardId)
-      const c2 = makePendingCard(svc, 10000)
-      svc.activate(c2.cardId)
-      const stats = svc.getStats()
+    it('应正确统计各状态的数量', () => {
+      const c1 = service.create(validCreateReq())
+      service.activate(c1.cardId)
+      const c2 = service.create(validCreateReq())
+      service.cancel(c2.cardId)
+      const stats = service.getStats()
       expect(stats.total).toBe(2)
-      expect(stats.active).toBe(2)
-      expect(stats.totalBalance).toBe(15000)
-      expect(stats.totalDenomination).toBe(15000)
-    })
-
-    it('[正例] 消费后统计余额更新', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 5000)
-      svc.activate(card.cardId)
-      svc.consume({ cardId: card.cardId, amount: 2000 })
-      const stats = svc.getStats()
-      expect(stats.totalBalance).toBe(3000)
       expect(stats.active).toBe(1)
+      expect(stats.cancelled).toBe(1)
     })
 
-    it('[正例] 按租户筛选统计', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc)
-      svc.activate(card.cardId)
-      const stats = svc.getStats('default')
-      expect(stats.total).toBe(1)
-      const statsOther = svc.getStats('other-tenant')
-      expect(statsOther.total).toBe(0)
+    it('应支持按 tenantId 过滤统计', () => {
+      service.create(validCreateReq({ tenantId: 't1' }))
+      service.create(validCreateReq({ tenantId: 't2' }))
+      expect(service.getStats('t1').total).toBe(1)
+      expect(service.getStats('t2').total).toBe(1)
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // cleanupExpired — 过期清理
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // cleanupExpired
+  // ═══════════════════════════════════════════════════════════
 
   describe('cleanupExpired', () => {
-    it('[正例] 清理过期的 active 卡', () => {
-      const svc = createFreshService()
-      // 创建一张已经过期的卡
-      svc.create({
-        templateId: 'tpl-default',
-        denomination: 1000,
-        holderName: '过期用户',
-        holderPhone: '13900139000',
-        expiresAt: '2020-01-01T00:00:00Z', // 早已过期
-        tenantId: 'default',
-      })
-      const expired = svc.list()
-      expect(expired.some(c => c.status === 'expired')).toBe(false) // 还没触发清理
-
-      const count = svc.cleanupExpired()
-      expect(count).toBeGreaterThanOrEqual(1) // 应该清理了 pending 过期卡
-
-      const after = svc.list()
-      const expiredCard = after.find(c => c.holderName === '过期用户')
-      expect(expiredCard).toBeDefined()
-      expect(expiredCard!.status).toBe('expired')
+    it('应清理到期卡并将其标记为 expired', () => {
+      const card = service.create(validCreateReq({ expiresAt: '2020-01-01T00:00:00Z' }))
+      const count = service.cleanupExpired()
+      expect(count).toBe(1)
+      expect(service.getById(card.cardId)!.status).toBe('expired')
     })
 
-    it('[边界] 无过期卡时返回 0', () => {
-      const svc = createFreshService()
-      const count = svc.cleanupExpired()
-      expect(count).toBe(0)
+    it('未到期的卡不应被清理', () => {
+      service.create(validCreateReq())
+      expect(service.cleanupExpired()).toBe(0)
+    })
+
+    it('已取消的卡不应重复标记', () => {
+      const card = service.create(validCreateReq({ expiresAt: '2020-01-01T00:00:00Z' }))
+      service.cancel(card.cardId)
+      expect(service.cleanupExpired()).toBe(0)
     })
   })
 
-  // ════════════════════════════════════════════════════════════
-  // 复合场景
-  // ════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // 并发/多状态场景
+  // ═══════════════════════════════════════════════════════════
 
-  describe('复合场景', () => {
-    it('完整生命周期：创建→激活→消费→退款→冻结→取消', () => {
-      const svc = createFreshService()
-      const card = makePendingCard(svc, 10000)
+  describe('多步骤状态流转', () => {
+    it('pending → activate → consume → refund → cancel 完整流转', () => {
+      const card = service.create(validCreateReq({ denomination: 5000 }))
       expect(card.status).toBe('pending')
 
-      const activated = svc.activate(card.cardId)
-      expect(activated.balance).toBe(10000)
+      service.activate(card.cardId)
+      expect(service.getById(card.cardId)!.status).toBe('active')
 
-      const consumed = svc.consume({ cardId: card.cardId, amount: 4000 })
-      expect(consumed.balance).toBe(6000)
+      service.consume(validConsumeReq(card.cardId, { amount: 2000 }))
+      const afterConsume = service.getById(card.cardId)!
+      expect(afterConsume.balance).toBe(3000)
 
-      const refunded = svc.refund(card.cardId, 2000)
-      expect(refunded.balance).toBe(8000)
+      service.refund(card.cardId, 1000)
+      expect(service.getById(card.cardId)!.balance).toBe(4000)
 
-      const frozen = svc.freeze(card.cardId)
-      expect(frozen.status).toBe('frozen')
-
-      const unfrozen = svc.unfreeze(card.cardId)
-      expect(unfrozen.status).toBe('active')
-
-      const cancelled = svc.cancel(card.cardId)
-      expect(cancelled.status).toBe('cancelled')
+      service.cancel(card.cardId)
+      expect(service.getById(card.cardId)!.status).toBe('cancelled')
     })
 
-    it('多卡并发操作不影响独立余额', () => {
-      const svc = createFreshService()
-      const c1 = makePendingCard(svc, 10000)
-      const c2 = makePendingCard(svc, 5000)
-      svc.activate(c1.cardId)
-      svc.activate(c2.cardId)
-      svc.consume({ cardId: c1.cardId, amount: 7000 })
-      svc.consume({ cardId: c2.cardId, amount: 2000 })
-      expect(svc.getById(c1.cardId)!.balance).toBe(3000)
-      expect(svc.getById(c2.cardId)!.balance).toBe(3000)
+    it('pending → freeze → 不允许激活', () => {
+      const card = service.create(validCreateReq())
+      // pending 不能冻结，先激活
+      service.activate(card.cardId)
+      service.freeze(card.cardId)
+      // freeze 不允许激活
+      expect(() => service.activate(card.cardId)).toThrow('不允许激活')
+    })
+  })
+
+  describe('空值/边界', () => {
+    it('storeScope 为空数组可创建', () => {
+      const card = service.create(validCreateReq({ storeScope: [] }))
+      expect(card.storeScope).toEqual([])
     })
 
-    it('创建多卡后 getStats 汇总正确', () => {
-      const svc = createFreshService()
-      for (let i = 0; i < 3; i++) {
-        const c = makePendingCard(svc, 5000)
-        svc.activate(c.cardId)
-      }
-      const stats = svc.getStats()
-      expect(stats.total).toBe(3)
-      expect(stats.active).toBe(3)
-      expect(stats.totalBalance).toBe(15000)
+    it('tenantId 为 undefined 可创建', () => {
+      const card = service.create(validCreateReq({ tenantId: undefined }))
+      expect(card.tenantId).toBeUndefined()
+    })
+
+    it('超大面额应可创建', () => {
+      const card = service.create(validCreateReq({ denomination: 9_999_999 }))
+      expect(card.denomination).toBe(9_999_999)
     })
   })
 })

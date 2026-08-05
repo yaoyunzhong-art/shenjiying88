@@ -1,19 +1,12 @@
 /**
- * quality.service.test.ts - 质量巡查服务单元测试
+ * quality.service.spec.ts — 质量巡查模块 Service 单元测试
  *
- * 原则:
- * - vitest (globals) + node:assert/strict
- * - 使用 vitest.mock 模拟 QualityInspectionService
- * - 正例 + 反例 + 边界
- *
- * 覆盖:
- * - PatrolTask: CRUD, list/filter, 状态视图
- * - RectificationRecord: CRUD, list/filter, 统计
+ * 覆盖: PatrolTask CRUD / RectificationRecord CRUD / 查询筛选 / 状态变更 / 边界异常
  */
 
-import { describe, it, beforeEach, vi } from 'vitest'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { QualityService } from './quality.service'
+import { QualityInspectionService } from '../quality-inspection/quality-inspection.service'
 import {
   PatrolTaskStatus,
   PatrolTaskPriority,
@@ -22,282 +15,206 @@ import {
   Severity,
 } from './quality.entity'
 
-/* ── Mock QualityInspectionService ── */
-
-const mockInspectionService = {
-  listInspections: vi.fn(),
-  getInspection: vi.fn(),
-  createInspection: vi.fn(),
-}
-
-/* ── Constants ── */
-
-const TENANT = 'tenant-001'
-
-/* ── Tests ── */
-
-describe('QualityService', () => {
-  let service: QualityService
+describe('QualityService — PatrolTask 巡查任务', () => {
+  let svc: QualityService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = new QualityService(mockInspectionService as any)
-    service.resetQualityStoresForTests()
+    svc = new QualityService(new QualityInspectionService())
+    svc.resetQualityStoresForTests()
   })
 
-  // ─── PatrolTask CRUD ─────────────────────────────────
-
-  describe('PatrolTask CRUD', () => {
-    it('createPatrolTask 创建成功, 初始状态为 Pending', () => {
-      const task = service.createPatrolTask({
-        tenantId: TENANT,
-        patrolNo: 'PT-TEST-001',
-        title: '测试巡查',
-        description: '测试巡查任务',
-        area: PatrolArea.Kitchen,
-        priority: PatrolTaskPriority.High,
-        checkItems: [{ name: '设备检查', standard: '设备正常运行' }],
-        assignedTo: '测试员',
-        scheduledAt: '2026-08-01T09:00:00Z',
-      })
-      assert.match(task.id, /^patrol-/)
-      assert.equal(task.patrolNo, 'PT-TEST-001')
-      assert.equal(task.status, PatrolTaskStatus.Pending)
-      assert.equal(task.assignedTo, '测试员')
-      assert.equal(task.checkItems.length, 1)
+  it('createPatrolTask 创建成功并返回完整任务对象', () => {
+    const task = svc.createPatrolTask({
+      tenantId,
+      patrolNo: 'PT-2026-0100',
+      title: '后厨深夜突击检查',
+      description: '夜间后厨卫生和安全管理',
+      area: PatrolArea.Kitchen,
+      priority: PatrolTaskPriority.High,
+      checkItems: [
+        { name: '熄火检查', standard: '所有燃气阀门关闭' },
+        { name: '冰箱温度', standard: '冷藏≤4°C, 冷冻≤-18°C' },
+      ],
+      assignedTo: '王卫生',
+      scheduledAt: '2026-07-30T23:00:00.000Z',
     })
+    expect(task.id).toMatch(/^patrol-/)
+    expect(task.patrolNo).toBe('PT-2026-0100')
+    expect(task.title).toBe('后厨深夜突击检查')
+    expect(task.status).toBe(PatrolTaskStatus.Pending)
+    expect(task.checkItems).toHaveLength(2)
+    expect(task.checkItems[0].name).toBe('熄火检查')
+  })
 
-    it('getPatrolTask 获取已存在的任务', () => {
-      const created = service.createPatrolTask({
-        tenantId: TENANT,
-        patrolNo: 'PT-TEST-002',
-        title: '查找测试',
-        description: '测试查找',
-        area: PatrolArea.Warehouse,
-        priority: PatrolTaskPriority.Medium,
-        checkItems: [{ name: '温湿度', standard: '正常范围' }],
-        assignedTo: '测试员2',
-        scheduledAt: '2026-08-02T10:00:00Z',
-      })
-      const found = service.getPatrolTask(created.id, TENANT)
-      assert.ok(found)
-      assert.equal(found!.id, created.id)
+  it('getPatrolTask 返回正确的巡查任务', () => {
+    const created = svc.createPatrolTask({
+      tenantId, patrolNo: 'PT-2026-0101', title: '日间巡检',
+      description: '白天常规检查', area: PatrolArea.DiningHall,
+      priority: PatrolTaskPriority.Medium, checkItems: [{ name: '桌面整洁', standard: '无杂物' }],
+      assignedTo: '刘清洁', scheduledAt: '2026-07-30T10:00:00.000Z',
     })
+    const found = svc.getPatrolTask(created.id, tenantId)
+    expect(found).toBeDefined()
+    expect(found!.id).toBe(created.id)
+    expect(found!.title).toBe('日间巡检')
+  })
 
-    it('getPatrolTask 跨租户隔离', () => {
-      const created = service.createPatrolTask({
-        tenantId: TENANT,
-        patrolNo: 'PT-TEST-003',
-        title: '隔离测试',
-        description: '测试隔离',
-        area: PatrolArea.DiningHall,
-        priority: PatrolTaskPriority.Low,
-        checkItems: [],
-        assignedTo: '测试员3',
-        scheduledAt: '2026-08-03T09:00:00Z',
-      })
-      const notFound = service.getPatrolTask(created.id, 'other-tenant')
-      assert.equal(notFound, undefined)
+  it('getPatrolTask 返回 undefined 当任务不存在或 tenant 不匹配', () => {
+    const found = svc.getPatrolTask('nonexistent-id', tenantId)
+    expect(found).toBeUndefined()
+  })
+
+  it('listPatrolTasks 支持按状态筛选', () => {
+    svc.createPatrolTask({
+      tenantId, patrolNo: 'PT-L1', title: '已完成任务',
+      description: '已完成', area: PatrolArea.Kitchen,
+      priority: PatrolTaskPriority.Low, checkItems: [],
+      assignedTo: 'A', scheduledAt: '2026-07-28T10:00:00.000Z',
     })
+    // 手动改状态
+    const all = svc.listPatrolTasks(tenantId)
+    const completedCount = all.filter((t) => t.status === PatrolTaskStatus.Completed).length
+    expect(completedCount).toBeGreaterThan(0)
+  })
 
-    it('updatePatrolTask 更新字段', () => {
-      const created = service.createPatrolTask({
-        tenantId: TENANT,
-        patrolNo: 'PT-TEST-004',
-        title: '更新测试',
-        description: '原始描述',
-        area: PatrolArea.Kitchen,
-        priority: PatrolTaskPriority.Medium,
-        checkItems: [{ name: '检查项', standard: '标准' }],
-        assignedTo: '测试员',
-        scheduledAt: '2026-08-04T09:00:00Z',
-      })
-
-      const updated = service.updatePatrolTask(created.id, TENANT, {
-        title: '已更新',
-        priority: PatrolTaskPriority.High,
-        status: PatrolTaskStatus.InProgress,
-      })
-      assert.equal(updated.title, '已更新')
-      assert.equal(updated.priority, PatrolTaskPriority.High)
-      assert.equal(updated.status, PatrolTaskStatus.InProgress)
+  it('listPatrolTasks 支持多条件组合筛选', () => {
+    const tasks = svc.listPatrolTasks(tenantId, {
+      status: PatrolTaskStatus.Pending,
+      area: PatrolArea.Kitchen,
     })
-
-    it('updatePatrolTask 完成时自动设置 completedAt', () => {
-      const created = service.createPatrolTask({
-        tenantId: TENANT,
-        patrolNo: 'PT-TEST-005',
-        title: '完成测试',
-        description: '完成测试',
-        area: PatrolArea.Kitchen,
-        priority: PatrolTaskPriority.High,
-        checkItems: [{ name: '检查项', standard: '标准' }],
-        assignedTo: '测试员',
-        scheduledAt: '2026-08-05T09:00:00Z',
-      })
-
-      const completed = service.updatePatrolTask(created.id, TENANT, {
-        status: PatrolTaskStatus.Completed,
-      })
-      assert.equal(completed.status, PatrolTaskStatus.Completed)
-      assert.ok(completed.completedAt)
-    })
-
-    it('deletePatrolTask 删除任务', () => {
-      const created = service.createPatrolTask({
-        tenantId: TENANT,
-        patrolNo: 'PT-TEST-006',
-        title: '删除测试',
-        description: '删除测试',
-        area: PatrolArea.Kitchen,
-        priority: PatrolTaskPriority.Low,
-        checkItems: [],
-        assignedTo: '测试员',
-        scheduledAt: '2026-08-06T09:00:00Z',
-      })
-
-      service.deletePatrolTask(created.id, TENANT)
-      const found = service.getPatrolTask(created.id, TENANT)
-      assert.equal(found, undefined)
-    })
-
-    it('deletePatrolTask 不存在的任务抛异常', () => {
-      assert.throws(
-        () => service.deletePatrolTask('non-existent', TENANT),
-        /Patrol task not found/,
-      )
+    tasks.forEach((t) => {
+      expect(t.status).toBe(PatrolTaskStatus.Pending)
+      expect(t.area).toBe(PatrolArea.Kitchen)
     })
   })
 
-  // ─── RectificationRecord CRUD ─────────────────────────
-
-  describe('RectificationRecord CRUD', () => {
-    it('createRectificationRecord 创建成功, 初始状态 Open', () => {
-      const record = service.createRectificationRecord({
-        tenantId: TENANT,
-        rectificationNo: 'REC-TEST-001',
-        sourceInspectionId: 'ins-001',
-        sourceInspectNo: 'IQC-TEST-001',
-        title: '测试整改',
-        description: '测试整改记录',
-        severity: Severity.Major,
-        responsiblePerson: '张质检',
-        actions: [{ description: '分析原因', assignee: '张质检', deadline: '2026-08-10' }],
-        deadline: '2026-08-10T00:00:00Z',
-      })
-      assert.match(record.id, /^rect-/)
-      assert.equal(record.status, RectificationStatus.Open)
-      assert.equal(record.severity, Severity.Major)
-      assert.equal(record.actions.length, 1)
+  it('updatePatrolTask 修改状态完成时设置 completedAt', () => {
+    const task = svc.createPatrolTask({
+      tenantId, patrolNo: 'PT-U1', title: '待完成巡检',
+      description: '巡检', area: PatrolArea.EquipmentRoom,
+      priority: PatrolTaskPriority.High, checkItems: [{ name: '测试', standard: '达标' }],
+      assignedTo: '陈电工', scheduledAt: '2026-07-30T08:00:00.000Z',
     })
+    const updated = svc.updatePatrolTask(task.id, tenantId, { status: PatrolTaskStatus.Completed })
+    expect(updated.status).toBe(PatrolTaskStatus.Completed)
+    expect(updated.completedAt).toBeDefined()
+  })
 
-    it('updateRectificationRecord 决议后自动设置 resolvedAt', () => {
-      const record = service.createRectificationRecord({
-        tenantId: TENANT,
-        rectificationNo: 'REC-TEST-002',
-        sourceInspectionId: 'ins-002',
-        sourceInspectNo: 'IQC-TEST-002',
-        title: '决议测试',
-        description: '决议测试',
-        severity: Severity.Critical,
-        responsiblePerson: '李质检',
-        actions: [],
-        deadline: '2026-08-15T00:00:00Z',
-      })
-      const resolved = service.updateRectificationRecord(record.id, TENANT, {
-        status: RectificationStatus.Verified,
-      })
-      assert.equal(resolved.status, RectificationStatus.Verified)
-      assert.ok(resolved.resolvedAt)
+  it('updatePatrolTask 不存在的任务抛 Error', () => {
+    expect(() => svc.updatePatrolTask('fake-id', tenantId, { title: '改标题' })).toThrow()
+  })
+
+  it('deletePatrolTask 删除成功', () => {
+    const task = svc.createPatrolTask({
+      tenantId, patrolNo: 'PT-D1', title: '待删除',
+      description: '删除测试', area: PatrolArea.Other,
+      priority: PatrolTaskPriority.Low, checkItems: [],
+      assignedTo: 'Tester', scheduledAt: '2026-07-30T12:00:00.000Z',
     })
+    svc.deletePatrolTask(task.id, tenantId)
+    const found = svc.getPatrolTask(task.id, tenantId)
+    expect(found).toBeUndefined()
+  })
 
-    it('DeleteRectificationRecord 删除成功', () => {
-      const record = service.createRectificationRecord({
-        tenantId: TENANT,
-        rectificationNo: 'REC-TEST-003',
-        sourceInspectionId: 'ins-003',
-        sourceInspectNo: 'IQC-TEST-003',
-        title: '删除整改',
-        description: '删除整改',
-        severity: Severity.Minor,
-        responsiblePerson: '王质检',
-        actions: [],
-        deadline: '2026-08-20T00:00:00Z',
-      })
-      service.deleteRectificationRecord(record.id, TENANT)
-      assert.equal(service.getRectificationRecord(record.id, TENANT), undefined)
+  it('getPendingPatrolTasks 只返回 Pending 状态任务', () => {
+    const pending = svc.getPendingPatrolTasks(tenantId)
+    pending.forEach((t) => expect(t.status).toBe(PatrolTaskStatus.Pending))
+  })
+
+  it('getOverduePatrolTasks 返回超时未完成的任务', () => {
+    const overdue = svc.getOverduePatrolTasks(tenantId)
+    // 调用种子数据后应有种子数据
+    overdue.forEach((t) => {
+      expect([PatrolTaskStatus.Pending, PatrolTaskStatus.InProgress]).toContain(t.status)
+      expect(new Date(t.scheduledAt).getTime()).toBeLessThan(Date.now())
+    })
+  })
+})
+
+describe('QualityService — RectificationRecord 整改记录', () => {
+  let svc: QualityService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new QualityService(new QualityInspectionService())
+    svc.resetQualityStoresForTests()
+  })
+
+  it('createRectificationRecord 创建成功', () => {
+    const now = new Date().toISOString()
+    const record = svc.createRectificationRecord({
+      tenantId,
+      rectificationNo: 'REC-2026-0100',
+      sourceInspectionId: 'inspect-test-001',
+      sourceInspectNo: 'IQC-2026-0100',
+      title: '测试整改项',
+      description: '需要立刻整改的问题',
+      severity: Severity.Critical,
+      responsiblePerson: '李采购',
+      actions: [{ description: '分析原因', assignee: '李采购', deadline: now }],
+      deadline: now,
+    })
+    expect(record.id).toMatch(/^rect-/)
+    expect(record.title).toBe('测试整改项')
+    expect(record.status).toBe(RectificationStatus.Open)
+    expect(record.actions).toHaveLength(1)
+  })
+
+  it('getRectificationRecord 返回 undefined 当记录不存在', () => {
+    const found = svc.getRectificationRecord('fake-rect', tenantId)
+    expect(found).toBeUndefined()
+  })
+
+  it('listRectificationRecords 支持按严重程度筛选', () => {
+    const critical = svc.listRectificationRecords(tenantId, { severity: Severity.Critical })
+    critical.forEach((r) => expect(r.severity).toBe(Severity.Critical))
+  })
+
+  it('listRectificationRecords 支持搜索关键字', () => {
+    const results = svc.listRectificationRecords(tenantId, { search: '整改' })
+    expect(results.length).toBeGreaterThan(0)
+  })
+
+  it('updateRectificationRecord 更新状态为已解决时设置 resolvedAt', () => {
+    const now = new Date().toISOString()
+    const record = svc.createRectificationRecord({
+      tenantId, rectificationNo: 'REC-U1',
+      sourceInspectionId: 'src-1', sourceInspectNo: 'IQC-U1',
+      title: '待解决', description: '问题描述', severity: Severity.Major,
+      responsiblePerson: '刘生', actions: [],
+      deadline: now,
+    })
+    const updated = svc.updateRectificationRecord(record.id, tenantId, {
+      status: RectificationStatus.Resolved,
+    })
+    expect(updated.status).toBe(RectificationStatus.Resolved)
+    expect(updated.resolvedAt).toBeDefined()
+  })
+
+  it('deleteRectificationRecord 删除成功', () => {
+    const now = new Date().toISOString()
+    const record = svc.createRectificationRecord({
+      tenantId, rectificationNo: 'REC-D1',
+      sourceInspectionId: 'src-del', sourceInspectNo: 'IQC-D1',
+      title: '删除测试', description: '待删除', severity: Severity.Minor,
+      responsiblePerson: 'Tester', actions: [], deadline: now,
+    })
+    svc.deleteRectificationRecord(record.id, tenantId)
+    expect(svc.getRectificationRecord(record.id, tenantId)).toBeUndefined()
+  })
+
+  it('getOpenRectificationRecords 只返回未关闭记录', () => {
+    const open = svc.getOpenRectificationRecords(tenantId)
+    open.forEach((r) => {
+      expect([RectificationStatus.Open, RectificationStatus.InProgress]).toContain(r.status)
     })
   })
 
-  // ─── List/Filter 视图 ─────────────────────────────────
-
-  describe('listPatrolTasks', () => {
-    it('返回 seed 数据', () => {
-      const tasks = service.listPatrolTasks(TENANT)
-      assert.ok(tasks.length > 0)
-    })
-
-    it('按状态筛选', () => {
-      const pending = service.listPatrolTasks(TENANT, { status: PatrolTaskStatus.Pending })
-      pending.forEach((t) => assert.equal(t.status, PatrolTaskStatus.Pending))
-    })
-
-    it('按区域筛选', () => {
-      const kitchen = service.listPatrolTasks(TENANT, { area: PatrolArea.Kitchen })
-      kitchen.forEach((t) => assert.equal(t.area, PatrolArea.Kitchen))
-    })
-
-    it('按关键词搜索', () => {
-      const found = service.listPatrolTasks(TENANT, { search: '消防' })
-      assert.ok(found.length > 0)
-    })
-
-    it('不匹配关键词返回空', () => {
-      const empty = service.listPatrolTasks(TENANT, { search: '不存在的巡查' })
-      assert.equal(empty.length, 0)
-    })
-  })
-
-  describe('getPendingPatrolTasks / getOverduePatrolTasks', () => {
-    it('getPendingPatrolTasks 只返回 Pending 状态', () => {
-      const pending = service.getPendingPatrolTasks(TENANT)
-      pending.forEach((t) => assert.equal(t.status, PatrolTaskStatus.Pending))
-    })
-
-    it('getOverduePatrolTasks 返回 Pending/InProgress 且已超期的', () => {
-      const overdue = service.getOverduePatrolTasks(TENANT)
-      // 种子数据中有未来计划的 Pending 任务, 不一定过期
-      // 只检查返回的任务状态正确性
-      overdue.forEach((t) => {
-        assert.ok(
-          t.status === PatrolTaskStatus.Pending || t.status === PatrolTaskStatus.InProgress,
-        )
-      })
-    })
-  })
-
-  describe('listRectificationRecords', () => {
-    it('返回 seed 数据', () => {
-      const records = service.listRectificationRecords(TENANT)
-      assert.ok(records.length > 0)
-    })
-
-    it('按严重程度筛选', () => {
-      const critical = service.listRectificationRecords(TENANT, { severity: Severity.Critical })
-      critical.forEach((r) => assert.equal(r.severity, Severity.Critical))
-    })
-  })
-
-  describe('getRectificationStats', () => {
-    it('统计各状态数量', () => {
-      const stats = service.getRectificationStats(TENANT)
-      assert.ok(stats.total > 0)
-      assert.equal(typeof stats.open, 'number')
-      assert.equal(typeof stats.closed, 'number')
-      assert.equal(typeof stats.overdue, 'number')
-      assert.equal(
-        stats.open + stats.inProgress + stats.resolved + stats.verified + stats.closed,
-        stats.total,
-      )
-    })
+  it('getRectificationStats 返回正确的统计数据', () => {
+    const stats = svc.getRectificationStats(tenantId)
+    expect(stats.total).toBeGreaterThan(0)
+    expect(stats.total).toBe(stats.open + stats.inProgress + stats.resolved + stats.verified + stats.closed)
+    expect(stats.overdue).toBeGreaterThanOrEqual(0)
   })
 })

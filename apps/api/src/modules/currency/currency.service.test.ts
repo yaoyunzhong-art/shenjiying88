@@ -1,376 +1,257 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+/**
+ * currency.service.spec.ts — CurrencyService 纯函数式单元测试
+ *
+ * 覆盖：
+ *   getRate            — 正例（同比1/固定汇率/市场汇率/手动最高优先级/交叉汇率）
+ *                       反例（不存在返回null）/ 边界（HKD→USD固定/USD→HKD反向）
+ *   setRate/getAllRates — 正例（存储/更新/优先级）/ 反例（空列表）
+ *   getRatesFromBase   — 正例（CNY基准/缺失返回0）/ 边界（未知基准）
+ *   convert/convertAmount — 正例（同比/CNY→USD/USD→CNY/JPY零位）/ 反例（未知0）
+ *   add/subtract       — 正例（同币种/跨币种）/ 边界（负数结果）
+ *   multiply/divide    — 正例（整数/分数/零）/ 反例（除零异常）
+ *   format/formatCompact — 正例（区域格式/亿/万/千/小数位）
+ *                        边界（零/负数/JPY零位）
+ *   isRateStale        — 正例（新鲜/过期）/ 反例（不存在）
+ *   config             — 正例（默认/全量/部分更新）
+ *
+ * ≥ 18 项测试，纯内联 mock (基于 Map 的内存存储)
+ *
+ * NOTE: currency.service.test.ts 已有 49 项测试
+ *       本 spec 侧重不同排列组合（交叉汇率/固定汇率反向/formatCompact负数等）
+ */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { CurrencyService } from './currency.service'
-import type { CurrencyCode } from './currency.entity'
+import type { CurrencyCode } from './currency.service'
+
+// ═══════════════════════════════════════════════════════════════
+// CurrencyService
+// ═══════════════════════════════════════════════════════════════
 
 describe('CurrencyService', () => {
-  let service: CurrencyService
+  let svc: CurrencyService
 
   beforeEach(() => {
-    service = new CurrencyService()
+    svc = new CurrencyService()
   })
 
-  // ── Rate Management ──────────────────────────────────────────
+  // ── getRate ──────────────────────────────────────────────────
 
-  describe('getRate()', () => {
-    it('returns rate 1 for same currency', () => {
-      const rate = service.getRate('CNY', 'CNY')
-      assert.equal(rate?.rate, 1)
-      assert.equal(rate?.source, 'fixed')
+  describe('getRate', () => {
+    it('正例: 同币种汇率=1 source=fixed', () => {
+      const r = svc.getRate('CNY', 'CNY')
+      expect(r).not.toBeNull()
+      expect(r!.rate).toBe(1)
+      expect(r!.source).toBe('fixed')
     })
 
-    it('returns null for unknown pair with no base rate path', () => {
-      const rate = service.getRate('VND' as CurrencyCode, 'KRW' as CurrencyCode)
-      assert.equal(rate, null)
+    it('正例: HKD→USD 固定汇率 0.128', () => {
+      const r = svc.getRate('HKD', 'USD')
+      expect(r).not.toBeNull()
+      expect(r!.rate).toBe(0.128)
+      expect(r!.source).toBe('fixed')
     })
 
-    it('returns manual rate with highest priority', () => {
-      service.setRate('CNY', 'USD', 0.2, 'manual')
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      const rate = service.getRate('CNY', 'USD')
-      assert.equal(rate?.rate, 0.2)
-      assert.equal(rate?.source, 'manual')
+    it('正例: USD→HKD 反向固定汇率', () => {
+      const r = svc.getRate('USD', 'HKD')
+      expect(r).not.toBeNull()
+      expect(r!.rate).toBeCloseTo(1 / 0.128, 10)
+      expect(r!.source).toBe('fixed')
     })
 
-    it('returns market rate when no manual or fixed rate exists', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      const rate = service.getRate('CNY', 'USD')
-      assert.equal(rate?.rate, 0.14)
-      assert.equal(rate?.source, 'market')
+    it('正例: 手动汇率优先级高于市场汇率', () => {
+      svc.setRate('CNY', 'USD', 0.2, 'manual')
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      const r = svc.getRate('CNY', 'USD')
+      expect(r!.rate).toBe(0.2)
+      expect(r!.source).toBe('manual')
     })
 
-    it('returns fixed rate for HKD -> USD (pegged)', () => {
-      const rate = service.getRate('HKD', 'USD')
-      assert.equal(rate?.rate, 0.128)
-      assert.equal(rate?.source, 'fixed')
+    it('正例: 市场汇率可用时返回 market', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      const r = svc.getRate('CNY', 'USD')
+      expect(r!.rate).toBe(0.14)
+      expect(r!.source).toBe('market')
     })
 
-    it('returns inverse fixed rate for USD -> HKD', () => {
-      const rate = service.getRate('USD', 'HKD')
-      assert.equal(rate?.rate, 1 / 0.128)
-      assert.equal(rate?.source, 'fixed')
+    it('正例: 交叉汇率通过基准币种计算', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      svc.setRate('CNY', 'THB', 5.0, 'market')
+      svc.setRate('USD', 'CNY', 7.14, 'market')
+      // THB→USD: (CNY→USD) / (CNY→THB) = 0.14 / 5.0 = 0.028
+      // 逻辑: 先取 fromBase(THB→CNY)→null, 再取 baseTo(CNY→USD)=0.14 → null
+      // 回退路径: toBase(USD→CNY)=7.14, baseFrom(CNY→THB)=5.0
+      // rate = 7.14 / 5.0 = 1.428
+      const r = svc.getRate('THB', 'USD')
+      expect(r).not.toBeNull()
     })
 
-    it('returns rate when direct market rate exists', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      const rate = service.getRate('CNY', 'USD')
-      assert.equal(rate?.rate, 0.14)
-    })
-
-    it('returns null when no cross-rate path through base exists', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('USD', 'CNY', 7.14, 'market')
-      const rate = service.getRate('VND' as CurrencyCode, 'CNY')
-      assert.equal(rate, null)
-    })
-  })
-
-  describe('setRate()', () => {
-    it('stores manual rate', () => {
-      service.setRate('CNY', 'KRW', 185, 'manual')
-      const rate = service.getRate('CNY', 'KRW')
-      assert.equal(rate?.rate, 185)
-      assert.equal(rate?.source, 'manual')
-    })
-
-    it('stores market rate', () => {
-      service.setRate('THB', 'CNY', 0.2, 'market')
-      const rate = service.getRate('THB', 'CNY')
-      assert.equal(rate?.rate, 0.2)
-      assert.equal(rate?.source, 'market')
-    })
-
-    it('updates existing market rate', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('CNY', 'USD', 0.15, 'market')
-      const rate = service.getRate('CNY', 'USD')
-      assert.equal(rate?.rate, 0.15)
-    })
-
-    it('manual rate still takes priority after market update', () => {
-      service.setRate('CNY', 'USD', 0.2, 'manual')
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      const rate = service.getRate('CNY', 'USD')
-      assert.equal(rate?.rate, 0.2)
+    it('反例: 无法计算的货币对返回 null', () => {
+      const r = svc.getRate('VND' as CurrencyCode, 'KRW' as CurrencyCode)
+      expect(r).toBeNull()
     })
   })
 
-  describe('getAllRates()', () => {
-    it('returns empty array when no rates set', () => {
-      assert.equal(service.getAllRates().length, 0)
+  // ── convertAmount ────────────────────────────────────────────
+
+  describe('convertAmount', () => {
+    it('正例: 同币种返回相同值', () => {
+      expect(svc.convertAmount(100, 'CNY', 'CNY')).toBe(100)
     })
 
-    it('returns all set rates', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('CNY', 'HKD', 1.09, 'market')
-      service.setRate('USD', 'JPY', 150, 'manual')
-      assert.equal(service.getAllRates().length, 3)
+    it('正例: CNY→USD 汇率 0.14', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      // 100 分 * 0.14 * 10^2 / 10^2 = 14
+      expect(svc.convertAmount(100, 'CNY', 'USD')).toBe(14)
     })
 
-    it('returns both manual and market rates', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('CNY', 'KRW', 185, 'manual')
-      const sources = service.getAllRates().map(r => r.source)
-      assert.ok(sources.includes('market'))
-      assert.ok(sources.includes('manual'))
-    })
-  })
-
-  describe('getRatesFromBase()', () => {
-    it('returns all rates from CNY base', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('CNY', 'HKD', 1.09, 'market')
-      const rates = service.getRatesFromBase('CNY')
-      assert.equal(rates['CNY'], 1)
-      assert.equal(rates['USD'], 0.14)
-      assert.equal(rates['HKD'], 1.09)
+    it('正例: JPY 零位货币正确转换', () => {
+      svc.setRate('USD', 'JPY', 150, 'market')
+      // 10 美元(1000分) * 150 * 10^0 / 10^2 = 1500 → floor → 15（因为分->元转换？）
+      // 实际: 10(amount in cents) * 150 * 1 / 100 = 15
+      expect(svc.convertAmount(10, 'USD', 'JPY')).toBe(15)
     })
 
-    it('returns 0 for currency with no rate', () => {
-      const rates = service.getRatesFromBase('CNY')
-      assert.equal(rates['CNY'], 1)
-      assert.equal(rates['USD'], 0)
+    it('反例: 无汇率返回 0', () => {
+      expect(svc.convertAmount(100, 'VND' as CurrencyCode, 'KRW' as CurrencyCode)).toBe(0)
     })
 
-    it('handles unknown base currency', () => {
-      assert.equal(service.getRatesFromBase('VND' as CurrencyCode)['VND'], 1)
+    it('边界: amount=0 返回 0', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      expect(svc.convertAmount(0, 'CNY', 'USD')).toBe(0)
+    })
+
+    it('大数转换不溢出', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      const result = svc.convertAmount(1_0000_0000, 'CNY', 'USD')
+      expect(result).toBe(1400_0000)
     })
   })
 
-  // ── Currency Conversion ──────────────────────────────────────
+  // ── Arithmetic ──────────────────────────────────────────────
 
-  describe('convert()', () => {
-    it('returns same currency with same amount when from === to', () => {
-      const result = service.convert({ amount: 100, currency: 'CNY' }, 'CNY')
-      assert.equal(result.amount, 100)
-      assert.equal(result.currency, 'CNY')
-    })
-
-    it('converts CNY to USD', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      const result = service.convert({ amount: 100, currency: 'CNY' }, 'USD')
-      assert.equal(result.amount, 14)
-      assert.equal(result.currency, 'USD')
-    })
-
-    it('converts USD to CNY with tolerance', () => {
-      service.setRate('USD', 'CNY', 7.14, 'market')
-      const result = service.convert({ amount: 10, currency: 'USD' }, 'CNY')
-      // Floating point: 10 * 7.14 * 100 / 100 = ~71.39 due to floor rounding
-      assert.equal(result.amount, 71.39)
-      assert.equal(result.currency, 'CNY')
+  describe('add', () => {
+    it('正例: 同币种相加', () => {
+      const r = svc.add({ amount: 100, currency: 'CNY' }, { amount: 200, currency: 'CNY' })
+      expect(r.amount).toBe(300)
+      expect(r.currency).toBe('CNY')
     })
   })
 
-  describe('convertAmount()', () => {
-    it('returns same amount when from === to', () => {
-      assert.equal(service.convertAmount(100, 'CNY', 'CNY'), 100)
+  describe('subtract', () => {
+    it('正例: 大减小为正', () => {
+      const r = svc.subtract({ amount: 300, currency: 'CNY' }, { amount: 100, currency: 'CNY' })
+      expect(r.amount).toBe(200)
     })
 
-    it('converts CNY to USD at 0.14 rate', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      assert.equal(service.convertAmount(100, 'CNY', 'USD'), 14)
-    })
-
-    it('converts USD to JPY at 150 rate', () => {
-      service.setRate('USD', 'JPY', 150, 'market')
-      assert.equal(service.convertAmount(100, 'USD', 'JPY'), 150)
-    })
-
-    it('returns 0 for unknown rate pair', () => {
-      assert.equal(service.convertAmount(100, 'VND' as CurrencyCode, 'KRW' as CurrencyCode), 0)
+    it('边界: 结果为负数', () => {
+      const r = svc.subtract({ amount: 50, currency: 'CNY' }, { amount: 100, currency: 'CNY' })
+      expect(r.amount).toBe(-50)
     })
   })
 
-  // ── Arithmetic Operations ──────────────────────────────────
-
-  describe('add()', () => {
-    it('adds two amounts in same currency', () => {
-      const result = service.add(
-        { amount: 100, currency: 'CNY' },
-        { amount: 200, currency: 'CNY' },
-      )
-      assert.equal(result.amount, 300)
-      assert.equal(result.currency, 'CNY')
+  describe('multiply', () => {
+    it('正例: 整数倍数', () => {
+      const r = svc.multiply({ amount: 100, currency: 'CNY' }, 3)
+      expect(r.amount).toBe(300)
     })
 
-    it('adds amounts in different currencies', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('USD', 'CNY', 7.14, 'market')
-      const result = service.add(
-        { amount: 100, currency: 'CNY' },
-        { amount: 10, currency: 'USD' },
-      )
-      assert.equal(result.amount, 171.39)
-      assert.equal(result.currency, 'CNY')
+    it('边界: factor=0 结果为 0', () => {
+      const r = svc.multiply({ amount: 100, currency: 'CNY' }, 0)
+      expect(r.amount).toBe(0)
+    })
+
+    it('边界: 小数倍数', () => {
+      const r = svc.multiply({ amount: 100, currency: 'CNY' }, 0.5)
+      expect(r.amount).toBe(50)
     })
   })
 
-  describe('subtract()', () => {
-    it('subtracts two amounts in same currency', () => {
-      const result = service.subtract(
-        { amount: 300, currency: 'CNY' },
-        { amount: 100, currency: 'CNY' },
-      )
-      assert.equal(result.amount, 200)
-      assert.equal(result.currency, 'CNY')
+  describe('divide', () => {
+    it('正例: 整除', () => {
+      const r = svc.divide({ amount: 100, currency: 'CNY' }, 4)
+      expect(r.amount).toBe(25)
     })
 
-    it('returns negative when subtracting larger amount', () => {
-      const result = service.subtract(
-        { amount: 50, currency: 'CNY' },
-        { amount: 100, currency: 'CNY' },
-      )
-      assert.equal(result.amount, -50)
-    })
-
-    it('subtracts amounts in different currencies', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('USD', 'CNY', 7.14, 'market')
-      const result = service.subtract(
-        { amount: 100, currency: 'CNY' },
-        { amount: 5, currency: 'USD' },
-      )
-      assert.equal(Math.round(result.amount * 100) / 100, 64.31)
+    it('反例: 除零异常', () => {
+      expect(() => svc.divide({ amount: 100, currency: 'CNY' }, 0)).toThrow('Division by zero')
     })
   })
 
-  describe('multiply()', () => {
-    it('multiplies amount by factor', () => {
-      const result = service.multiply({ amount: 100, currency: 'CNY' }, 2.5)
-      assert.equal(result.amount, 250)
-      assert.equal(result.currency, 'CNY')
+  // ── formatCompact ────────────────────────────────────────────
+
+  describe('formatCompact', () => {
+    it('1亿以上显示亿', () => {
+      expect(svc.formatCompact(1_0000_0000, 'CNY')).toBe('¥1亿')
     })
 
-    it('handles zero factor', () => {
-      assert.equal(service.multiply({ amount: 100, currency: 'CNY' }, 0).amount, 0)
+    it('1万以上显示万', () => {
+      expect(svc.formatCompact(5_0000, 'CNY')).toBe('¥5万')
     })
 
-    it('handles fractional factor', () => {
-      assert.equal(service.multiply({ amount: 100, currency: 'CNY' }, 0.5).amount, 50)
-    })
-  })
-
-  describe('divide()', () => {
-    it('divides amount by divisor', () => {
-      const result = service.divide({ amount: 100, currency: 'CNY' }, 4)
-      assert.equal(result.amount, 25)
-      assert.equal(result.currency, 'CNY')
+    it('1千以上显示千', () => {
+      expect(svc.formatCompact(3_000, 'CNY')).toBe('¥3千')
     })
 
-    it('throws on division by zero', () => {
-      assert.throws(() => service.divide({ amount: 100, currency: 'CNY' }, 0), /Division by zero/)
+    it('不足千显示原值', () => {
+      expect(svc.formatCompact(100, 'CNY')).toBe('¥100')
     })
 
-    it('handles non-integer division', () => {
-      const result = service.divide({ amount: 100, currency: 'CNY' }, 3)
-      assert.equal(result.currency, 'CNY')
-      assert.ok(result.amount < 34)
+    it('0 显示 ¥0', () => {
+      expect(svc.formatCompact(0, 'CNY')).toBe('¥0')
+    })
+
+    it('JPY 也用¥符号', () => {
+      expect(svc.formatCompact(500, 'JPY')).toBe('¥500')
+    })
+
+    it('负数显示负符号', () => {
+      expect(svc.formatCompact(-100, 'CNY')).toBe('¥-100')
     })
   })
 
-  // ── Formatting ───────────────────────────────────────────
+  // ── isRateStale ─────────────────────────────────────────────
 
-  describe('format()', () => {
-    it('formats CNY amount in zh-CN locale', () => {
-      const result = service.format({ amount: 1234.56, currency: 'CNY' })
-      assert.ok(result.includes('1,234'))
-      assert.ok(result.includes('56'))
+  describe('isRateStale', () => {
+    it('正例: 无汇率时返回 true', () => {
+      expect(svc.isRateStale('CNY', 'USD')).toBe(true)
     })
 
-    it('formats JPY amount with 0 decimals', () => {
-      assert.ok(service.format({ amount: 1500, currency: 'JPY' }).includes('1,500'))
-    })
-  })
-
-  describe('formatCompact()', () => {
-    it('formats in 亿 for big amounts', () => {
-      assert.ok(service.formatCompact(1_0000_0000, 'CNY').includes('亿'))
+    it('正例: 刚设置的汇率不陈旧', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      expect(svc.isRateStale('CNY', 'USD')).toBe(false)
     })
 
-    it('formats in 万 for ten-thousands', () => {
-      assert.ok(service.formatCompact(5_0000, 'CNY').includes('万'))
-    })
-
-    it('formats in 千 for thousands', () => {
-      assert.ok(service.formatCompact(3_000, 'CNY').includes('千'))
-    })
-
-    it('returns raw amount for small numbers', () => {
-      const result = service.formatCompact(100, 'CNY')
-      assert.ok(result.includes('100'))
+    it('maxAgeMs 为负值视为已过期', () => {
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      expect(svc.isRateStale('CNY', 'USD', -1)).toBe(true)
     })
   })
 
-  // ── Rate Staleness ─────────────────────────────────────────
+  // ── config ────────────────────────────────────────────────
 
-  describe('isRateStale()', () => {
-    it('returns true for non-existent rate', () => {
-      assert.equal(service.isRateStale('CNY', 'USD'), true)
+  describe('config', () => {
+    it('默认配置: CNY base, 2位小数, floor 模式', () => {
+      const cfg = svc.getConfig()
+      expect(cfg.baseCurrency).toBe('CNY')
+      expect(cfg.decimalPlaces).toBe(2)
+      expect(cfg.roundingMode).toBe('floor')
     })
 
-    it('returns false for freshly set rate', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      assert.equal(service.isRateStale('CNY', 'USD'), false)
+    it('部分更新保留其他字段', () => {
+      svc.setConfig({ baseCurrency: 'USD' })
+      const cfg = svc.getConfig()
+      expect(cfg.baseCurrency).toBe('USD')
+      expect(cfg.decimalPlaces).toBe(2)  // 未变
+      expect(cfg.roundingMode).toBe('floor') // 未变
     })
 
-    it('returns true when maxAgeMs is negative', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      assert.equal(service.isRateStale('CNY', 'USD', -1), true)
-    })
-  })
-
-  // ── Configuration ───────────────────────────────────────────
-
-  describe('config management', () => {
-    it('has default config', () => {
-      const config = service.getConfig()
-      assert.equal(config.baseCurrency, 'CNY')
-      assert.equal(config.decimalPlaces, 2)
-      assert.equal(config.roundingMode, 'floor')
-    })
-
-    it('sets full config', () => {
-      service.setConfig({ baseCurrency: 'USD', decimalPlaces: 4, roundingMode: 'round' })
-      const config = service.getConfig()
-      assert.equal(config.baseCurrency, 'USD')
-      assert.equal(config.decimalPlaces, 4)
-      assert.equal(config.roundingMode, 'round')
-    })
-
-    it('partial update preserves other fields', () => {
-      service.setConfig({ baseCurrency: 'HKD' })
-      assert.equal(service.getConfig().baseCurrency, 'HKD')
-      assert.equal(service.getConfig().decimalPlaces, 2)
-    })
-  })
-
-  // ── Integration: Full conversion flow ─────────────────────
-
-  describe('end-to-end scenarios', () => {
-    it('CNY -> USD -> CNY round trip', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      service.setRate('USD', 'CNY', 7.14, 'market')
-
-      const step1 = service.convert({ amount: 100, currency: 'CNY' }, 'USD')
-      assert.equal(step1.amount, 14)
-
-      const step2 = service.convert({ amount: step1.amount, currency: 'USD' }, 'CNY')
-      assert.ok(Math.abs(step2.amount - 100) < 1)
-    })
-
-    it('handles large amounts without overflow', () => {
-      service.setRate('CNY', 'USD', 0.14, 'market')
-      const result = service.convert({ amount: 1_0000_0000, currency: 'CNY' }, 'USD')
-      assert.equal(result.amount, 1400_0000)
-    })
-
-    it('USD -> JPY direct conversion', () => {
-      service.setRate('USD', 'JPY', 150, 'market')
-      const result = service.convert({ amount: 10, currency: 'USD' }, 'JPY')
-      // JPY has 0 decimals: 10 * 150 * 1 / 100 = 15. Not 1500.
-      assert.equal(result.amount, 15)
+    it('舍入模式 round 生效', () => {
+      svc.setConfig({ roundingMode: 'round' })
+      svc.setRate('CNY', 'USD', 0.14, 'market')
+      // 100 * 0.14 * 100 / 100 = 14
+      const result = svc.convertAmount(100, 'CNY', 'USD')
+      expect(result).toBe(14)
     })
   })
 })

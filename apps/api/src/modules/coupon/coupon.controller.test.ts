@@ -1,304 +1,591 @@
 import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 /**
- * coupon.controller.test.ts · Coupon Controller 快速单测 (Phase-17)
+ * coupon.controller.spec.ts · Coupon Controller 集成测试 (Phase-17)
  *
- * 纯单元测试,不依赖 Nest TestingModule,直接实例化 controller。
- * 正向流程 + 异常路径 + 边界覆盖。
+ * Phase-19 TXX: 8 角色视角全路由测试扩展
+ * 覆盖: POST/GET/PATCH /coupons, POST /coupons/redeem, POST /coupons/batch-redeem
+ * 角色: 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
  *
- * Pulse-Bot: 实现 create / list / get / updateStatus 控制器方法及测试
+ * 策略: Nest TestingModule + mock CouponService
+ * 正例 / 反例 / 边界全覆盖
  */
 
+import { Test, type TestingModule } from '@nestjs/testing'
 import { CouponController } from './coupon.controller'
 import { CouponService } from './coupon.service'
-import { CouponV2 } from './coupon.entity'
-import type { RedemptionResult } from './coupon.types'
-import { DataSource } from 'typeorm'
+import type { RedemptionRequest, RedemptionResult, CrossStoreEligibility } from './coupon.types'
+import type { CouponV2 } from './coupon.entity'
 
-// ─── 工厂: 创建 mock 仓库 ──────────────────────────────────────────────
+// ─── Mock 工厂 ──────────────────────────────────────────────────────────
 
-function createMockRepo(overrides: Record<string, any> = {}) {
-  const defaultMock = {
-    create: vi.fn((d: any) => d),
-    save: vi.fn((d: any) => ({ ...d, id: 'mock-id', createdAt: new Date(), updatedAt: new Date() })),
-    findOne: vi.fn(),
-    findAndCount: vi.fn(),
-    find: vi.fn(),
-    update: vi.fn(),
+function makeMockCoupon(overrides: Partial<CouponV2> = {}): CouponV2 {
+  const base = {
+    id: 'coupon-1',
+    tenantId: 'tenant-default',
+    code: 'PROMO-2026',
+    scope: { type: 'tenant-wide' as const, storeIds: ['store-1', 'store-2'], includeSubordinates: false },
+    redemptionRules: { minAmount: 50, userSegments: ['vip', 'new'] },
+    value: 20,
+    valueType: 'fixed' as const,
+    expiresAt: new Date('2027-12-31'),
+    status: 'active' as const,
+    redemptionCount: 0,
+    maxRedemptions: 100,
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-06-01'),
   }
-  return { ...defaultMock, ...overrides }
+  return { ...base, ...overrides } as CouponV2
 }
 
-function createMockDataSource() {
-  return {
-    transaction: async (cb: any) => cb({
-      getRepository: () => createMockRepo(),
-    }),
-  } as unknown as DataSource
+const SUCCESS_REDEEM: RedemptionResult = {
+  success: true,
+  couponId: 'coupon-1',
+  amount: 20,
+  redemptionId: 'redemption-1',
 }
 
-describe('CouponController (unit)', () => {
+const FAIL_COUPON_NOT_FOUND: RedemptionResult = {
+  success: false,
+  error: { code: 'COUPON_NOT_FOUND', message: 'coupon not found' },
+}
+
+const FAIL_EXPIRED: RedemptionResult = {
+  success: false,
+  error: { code: 'COUPON_EXPIRED', message: 'coupon expired' },
+}
+
+const FAIL_EXHAUSTED: RedemptionResult = {
+  success: false,
+  error: { code: 'COUPON_EXHAUSTED', message: 'coupon exhausted' },
+}
+
+const FAIL_STORE_NOT_IN_SCOPE: RedemptionResult = {
+  success: false,
+  error: { code: 'STORE_NOT_IN_SCOPE', message: 'store not in scope' },
+}
+
+const FAIL_MIN_AMOUNT: RedemptionResult = {
+  success: false,
+  error: { code: 'MIN_AMOUNT_NOT_MET', message: 'below min amount' },
+}
+
+const FAIL_QUOTA: RedemptionResult = {
+  success: false,
+  error: { code: 'QUOTA_EXCEEDED', message: 'quota exceeded' },
+}
+
+// ─── 测试套件 ───────────────────────────────────────────────────────────
+
+describe('CouponController', () => {
   let controller: CouponController
   let service: CouponService
-  let couponRepo: ReturnType<typeof createMockRepo>
 
-  beforeEach(() => {
-    couponRepo = createMockRepo()
-    const redemptionRepo = createMockRepo()
-    const dataSource = createMockDataSource()
+  function setupService(mocks: Partial<Record<keyof CouponService, any>>) {
+    return {
+      provide: CouponService,
+      useValue: {
+        redeemCrossStore: vi.fn().mockResolvedValue(SUCCESS_REDEEM),
+        batchRedeem: vi.fn().mockResolvedValue([SUCCESS_REDEEM, SUCCESS_REDEEM]),
+        checkCrossStoreEligibility: vi.fn().mockReturnValue({
+          eligible: true,
+          matchedScope: 'tenant-wide',
+          matchedStoreIds: ['store-1'],
+        } as CrossStoreEligibility),
+        create: vi.fn().mockImplementation((params: any) => Promise.resolve(makeMockCoupon({ code: params.code }))),
+        list: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+        findById: vi.fn().mockResolvedValue(null),
+        updateStatus: vi.fn().mockImplementation((id: string, status: string) => Promise.resolve(makeMockCoupon({ status: status as any }))),
+        ...mocks,
+      },
+    }
+  }
 
-    service = new CouponService(
-      couponRepo as any,
-      redemptionRepo as any,
-      dataSource,
-      undefined,
-      undefined,
-    )
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [CouponController],
+      providers: [setupService({})],
+    }).compile()
 
-    // Mock redeemCrossStore for controlled tests
-    vi.spyOn(service, 'redeemCrossStore').mockResolvedValue({
-      success: true,
-      couponId: 'c-1',
-      amount: 50,
-      redemptionId: 'r-1',
-    })
-    vi.spyOn(service, 'batchRedeem').mockResolvedValue([])
-
-    controller = new CouponController(service)
+    controller = module.get<CouponController>(CouponController)
+    service = module.get<CouponService>(CouponService)
   })
 
-  // ─── 正向流程 ─────────────────────────────────────────────────────────
-
-  it('T1: redeem 成功返回核销结果', async () => {
-    const result = await controller.redeem({
-      userId: 'u1',
-      couponCode: 'CODE-1',
-      storeId: 's1',
-      orderAmount: 200,
-      orderId: 'o1',
-      idempotencyKey: 'o1:CODE-1',
+  // =============================================================
+  // (A) 路由存在性验证
+  // =============================================================
+  describe('(A) 路由方法存在性', () => {
+    it('AC-0: 控制器定义所有预期路由方法', () => {
+      expect(controller).toBeDefined()
+      expect(controller.create).toBeDefined()
+      expect(controller.list).toBeDefined()
+      expect(controller.get).toBeDefined()
+      expect(controller.updateStatus).toBeDefined()
+      expect(controller.redeem).toBeDefined()
+      expect(controller.batchRedeem).toBeDefined()
     })
-
-    expect(result.success).toBe(true)
-    expect(result.couponId).toBe('c-1')
-    expect(result.amount).toBe(50)
   })
 
-  it('T2: batchRedeem 成功返回统计', async () => {
-    vi.mocked(service.batchRedeem).mockResolvedValue([
-      { success: true, couponId: 'c1', amount: 10, redemptionId: 'r1' },
-      { success: false, error: { code: 'MIN_AMOUNT_NOT_MET', message: 'min 100' } },
-    ] as RedemptionResult[])
-
-    const result = await controller.batchRedeem({
-      redemptions: [
-        {
-          userId: 'u1', couponCode: 'C1', storeId: 's1',
-          orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1',
-        },
-        {
-          userId: 'u2', couponCode: 'C2', storeId: 's2',
-          orderAmount: 50, orderId: 'o2', idempotencyKey: 'o2:C2',
-        },
-      ],
-    })
-
-    expect(result.succeeded).toBe(1)
-    expect(result.failed).toBe(1)
-    expect(result.results).toHaveLength(2)
-  })
-
-  // ─── 异常路径 ─────────────────────────────────────────────────────────
-
-  it('T3: redeem 失败返回错误信息', async () => {
-    vi.mocked(service.redeemCrossStore).mockResolvedValue({
-      success: false,
-      error: { code: 'STORE_NOT_IN_SCOPE', message: 'store not allowed' },
+  // =============================================================
+  // 👔 店长: 优惠券创建、查看、状态管理
+  // =============================================================
+  describe('👔 店长 Store Manager', () => {
+    it('AC-1 [店长]: 创建优惠券 — 参数正确传递给 service', async () => {
+      const createDto = {
+        code: 'NEW-YEAR-2027',
+        tenantId: 'store-bj-001',
+        scope: { type: 'tenant-wide' as const, storeIds: ['store-bj-001'], includeSubordinates: true },
+        redemptionRules: { minAmount: 100, userSegments: ['vip'] },
+        value: 50,
+        valueType: 'fixed' as const,
+        expiresAt: '2027-01-01T00:00:00.000Z',
+        maxRedemptions: 500,
+      }
+      const result = await controller.create(createDto)
+      expect(result.code).toBe('NEW-YEAR-2027')
+      expect(service.create).toHaveBeenCalled()
     })
 
-    const result = await controller.redeem({
-      userId: 'u1', couponCode: 'C1', storeId: 'invalid-store',
-      orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1',
+    it('AC-2 [店长]: 查询优惠券列表 — 分页参数正常', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
+      const result = await controller.list({ page: 2, pageSize: 10 })
+      expect(result.page).toBe(2)
+      expect(result.pageSize).toBe(10)
+      expect(result.coupons).toHaveLength(0)
+      expect(result.total).toBe(0)
     })
 
-    expect(result.success).toBe(false)
-    expect(result.error?.code).toBe('STORE_NOT_IN_SCOPE')
-  })
-
-  // ─── 空/边界 ──────────────────────────────────────────────────────────
-
-  it('T4: batchRedeem 全部失败时 succeeded = 0', async () => {
-    vi.mocked(service.batchRedeem).mockResolvedValue([
-      { success: false, error: { code: 'COUPON_NOT_FOUND', message: 'not found' } },
-      { success: false, error: { code: 'COUPON_EXPIRED', message: 'expired' } },
-    ] as RedemptionResult[])
-
-    const result = await controller.batchRedeem({
-      redemptions: [
-        {
-          userId: 'u1', couponCode: 'C1', storeId: 's1',
-          orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1',
-        },
-        {
-          userId: 'u2', couponCode: 'C2', storeId: 's2',
-          orderAmount: 100, orderId: 'o2', idempotencyKey: 'o2:C2',
-        },
-      ],
+    it('AC-3 [店长]: 按状态过滤优惠券列表', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
+      const result = await controller.list({ status: 'active' })
+      expect(result.page).toBe(1)
+      expect(result.coupons).toHaveLength(0)
     })
 
-    expect(result.succeeded).toBe(0)
-    expect(result.failed).toBe(2)
-  })
-
-  // ─── CRUD 实现测试 ──────────────────────────────────────────────────
-
-  it('T5: list 调用 service.list 并正确分页', async () => {
-    const mockCoupon = new CouponV2()
-    Object.assign(mockCoupon, {
-      id: 'c-1',
-      tenantId: 't-1',
-      code: 'TEST-50',
-      scope: { type: 'single-store' as const, storeIds: ['s1'], includeSubordinates: false },
-      redemptionRules: {},
-      value: 50,
-      valueType: 'fixed' as const,
-      expiresAt: new Date('2027-01-01'),
-      status: 'active' as const,
-      redemptionCount: 0,
-      maxRedemptions: 100,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    it('AC-4 [店长]: 查看单个优惠券 — 不存在返回 null', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(null)
+      const result = await controller.get('non-existent')
+      expect(result).toBeNull()
     })
 
-    couponRepo.findAndCount.mockResolvedValue([[mockCoupon], 1])
-
-    const result = await controller.list({ page: 1, pageSize: 10 })
-
-    expect(result.total).toBe(1)
-    expect(result.page).toBe(1)
-    expect(result.pageSize).toBe(10)
-    expect(result.coupons).toHaveLength(1)
-    expect(result.coupons[0].code).toBe('TEST-50')
-    expect(result.coupons[0].value).toBe(50)
-  })
-
-  it('T6: get 返回优惠券详情', async () => {
-    const mockCoupon = new CouponV2()
-    Object.assign(mockCoupon, {
-      id: 'c-1',
-      tenantId: 't-1',
-      code: 'DETAIL-01',
-      scope: { type: 'tenant-wide' as const, storeIds: ['s1', 's2'], includeSubordinates: true },
-      redemptionRules: { minAmount: 100 },
-      value: 30,
-      valueType: 'percentage' as const,
-      expiresAt: new Date('2027-06-01'),
-      status: 'active' as const,
-      redemptionCount: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    it('AC-5 [店长]: 暂停优惠券 — PATCH status active→paused', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
+      vi.mocked(service.updateStatus).mockResolvedValueOnce(makeMockCoupon({ status: 'paused' }))
+      const result = await controller.updateStatus('coupon-1', { status: 'paused' })
+      expect(result.status).toBe('paused')
+      expect(service.updateStatus).toHaveBeenCalledWith('coupon-1', 'paused')
     })
 
-    couponRepo.findOne.mockResolvedValue(mockCoupon)
-
-    const result = await controller.get('c-1')
-    expect(result).not.toBeNull()
-    expect(result!.id).toBe('c-1')
-    expect(result!.code).toBe('DETAIL-01')
-    expect(result!.scope.type).toBe('tenant-wide')
-  })
-
-  it('T6b: get 不存在的 ID 返回 null', async () => {
-    couponRepo.findOne.mockResolvedValue(null)
-    const result = await controller.get('nonexistent')
-    expect(result).toBeNull()
-  })
-
-  it('T7: create 调用 service.create 并返回契约', async () => {
-    const expiresAt = '2027-12-31T00:00:00.000Z'
-    couponRepo.save.mockImplementation((d: any) => Promise.resolve({
-      ...d,
-      id: 'new-coupon-id',
-      redemptionCount: 0,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }))
-
-    const result = await controller.create({
-      code: 'NEW-CODE',
-      tenantId: 't-1',
-      scope: { type: 'multi-store', storeIds: ['s1', 's2'], includeSubordinates: false },
-      redemptionRules: { minAmount: 50, applicableCategories: ['dining'] },
-      value: 20,
-      valueType: 'fixed',
-      expiresAt,
-      maxRedemptions: 500,
+    it('AC-6 [店长][边界]: 分页参数 page=1 默认返回第一页', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
+      const result = await controller.list({})
+      expect(result.page).toBe(1)
     })
 
-    expect(result.id).toBe('new-coupon-id')
-    expect(result.code).toBe('NEW-CODE')
-    expect(result.value).toBe(20)
-    expect(result.status).toBe('active')
-    expect(result.redemptionCount).toBe(0)
+    it('AC-7 [店长][边界]: 空列表时 pageSize 使用默认值 20', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
+      const result = await controller.list({})
+      expect(result.pageSize).toBe(20)
+    })
   })
 
-  it('T8: updateStatus 更新优惠券状态', async () => {
-    const mockCoupon = new CouponV2()
-    Object.assign(mockCoupon, {
-      id: 'c-1',
-      tenantId: 't-1',
-      code: 'PAUSE-TEST',
-      scope: { type: 'single-store', storeIds: ['s1'], includeSubordinates: false },
-      redemptionRules: {},
-      value: 10,
-      valueType: 'fixed',
-      expiresAt: new Date('2027-01-01'),
-      status: 'active',
-      redemptionCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  // =============================================================
+  // 🛒 前台: 核销流程、用户核销体验
+  // =============================================================
+  describe('🛒 前台 Front Desk', () => {
+    it('AC-8 [前台]: 正常核销 — 返回 success=true + couponId', async () => {
+      const result = await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-1',
+        orderAmount: 200,
+        orderId: 'order-123',
+        idempotencyKey: 'order-123:PROMO-2026',
+      })
+      expect(result.success).toBe(true)
+      expect(result.couponId).toBe('coupon-1')
+      expect(result.redemptionId).toBe('redemption-1')
     })
 
-    couponRepo.findOne.mockResolvedValue(mockCoupon)
-    couponRepo.save.mockImplementation((d: any) => Promise.resolve({ ...d, updatedAt: new Date() }))
+    it('AC-9 [前台]: 核销时携带 category', async () => {
+      await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-1',
+        orderAmount: 100,
+        orderId: 'order-456',
+        idempotencyKey: 'order-456:PROMO-2026',
+        category: 'dining',
+      })
+      expect(service.redeemCrossStore).toHaveBeenCalledWith(
+        expect.objectContaining({ category: 'dining' }),
+      )
+    })
 
-    const result = await controller.updateStatus('c-1', { status: 'paused' })
+    it('AC-10 [前台][边界]: 优惠券不存在 — 返回 success=false', async () => {
+      vi.mocked(service.redeemCrossStore).mockResolvedValueOnce(FAIL_COUPON_NOT_FOUND)
+      const result = await controller.redeem({
+        userId: 'user-x',
+        couponCode: 'FAKE-CODE',
+        storeId: 'store-1',
+        orderAmount: 100,
+        orderId: 'order-fake',
+        idempotencyKey: 'order-fake:FAKE-CODE',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('COUPON_NOT_FOUND')
+    })
 
-    expect(result.status).toBe('paused')
-    expect(result.id).toBe('c-1')
+    it('AC-11 [前台][边界]: 已过期优惠券', async () => {
+      vi.mocked(service.redeemCrossStore).mockResolvedValueOnce(FAIL_EXPIRED)
+      const result = await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'EXPIRED-2025',
+        storeId: 'store-1',
+        orderAmount: 100,
+        orderId: 'order-exp',
+        idempotencyKey: 'order-exp:EXPIRED-2025',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('COUPON_EXPIRED')
+    })
+
+    it('AC-12 [前台][边界]: 库存已耗尽优惠券', async () => {
+      vi.mocked(service.redeemCrossStore).mockResolvedValueOnce(FAIL_EXHAUSTED)
+      const result = await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'EXHAUSTED',
+        storeId: 'store-1',
+        orderAmount: 100,
+        orderId: 'order-exh',
+        idempotencyKey: 'order-exh:EXHAUSTED',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('COUPON_EXHAUSTED')
+    })
   })
 
-  it('T8b: updateStatus 不存在的优惠券抛出错误', async () => {
-    couponRepo.findOne.mockResolvedValue(null)
+  // =============================================================
+  // 👥 HR: 优惠券用户分层、会员权益校验
+  // =============================================================
+  describe('👥 HR Human Resources', () => {
+    it('AC-13 [HR]: 优惠券有 userSegments 配置 — 核销时传入 userSegment', async () => {
+      await controller.redeem({
+        userId: 'vip-user-1',
+        couponCode: 'VIP-ONLY',
+        storeId: 'store-1',
+        orderAmount: 200,
+        orderId: 'order-vip',
+        idempotencyKey: 'order-vip:VIP-ONLY',
+        category: undefined,
+      })
+      expect(service.redeemCrossStore).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'vip-user-1' }),
+      )
+    })
 
-    await expect(controller.updateStatus('nonexistent', { status: 'paused' })).rejects.toThrow('not found')
+    it('AC-14 [HR][边界]: 门店不在范围导致核销失败', async () => {
+      vi.mocked(service.redeemCrossStore).mockResolvedValueOnce(FAIL_STORE_NOT_IN_SCOPE)
+      const result = await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-not-in-scope',
+        orderAmount: 100,
+        orderId: 'order-wrong-store',
+        idempotencyKey: 'order-wrong:PROMO-2026',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('STORE_NOT_IN_SCOPE')
+    })
+
+    it('AC-15 [HR][边界]: 未满足最低消费门槛', async () => {
+      vi.mocked(service.redeemCrossStore).mockResolvedValueOnce(FAIL_MIN_AMOUNT)
+      const result = await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-1',
+        orderAmount: 20,
+        orderId: 'order-low',
+        idempotencyKey: 'order-low:PROMO-2026',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('MIN_AMOUNT_NOT_MET')
+    })
   })
 
-  // ─── list 边界测试 ──────────────────────────────────────────────────
+  // =============================================================
+  // 🔧 安监: 幂等性、配额控制、安全性校验
+  // =============================================================
+  describe('🔧 安监 Security & Compliance', () => {
+    it('AC-16 [安监]: 相同 idempotencyKey 幂等处理 — service 收到正确参数', async () => {
+      const dto = {
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-1',
+        orderAmount: 200,
+        orderId: 'order-123',
+        idempotencyKey: 'order-123:PROMO-2026',
+      }
+      await controller.redeem(dto)
+      expect(service.redeemCrossStore).toHaveBeenCalledWith(
+        expect.objectContaining({ idempotencyKey: 'order-123:PROMO-2026' }),
+      )
+    })
 
-  it('T9: list 空数据库返回空列表', async () => {
-    couponRepo.findAndCount.mockResolvedValue([[], 0])
+    it('AC-17 [安监]: 配额超出返回 QUOTA_EXCEEDED', async () => {
+      vi.mocked(service.redeemCrossStore).mockResolvedValueOnce(FAIL_QUOTA)
+      const result = await controller.redeem({
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-1',
+        orderAmount: 100,
+        orderId: 'order-quota',
+        idempotencyKey: 'order-quota:PROMO-2026',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('QUOTA_EXCEEDED')
+    })
 
-    const result = await controller.list({})
-
-    expect(result.total).toBe(0)
-    expect(result.coupons).toEqual([])
-    expect(result.page).toBe(1)
-    expect(result.pageSize).toBe(20)
+    it('AC-18 [安监][边界]: 核销参数合法性 — orderAmount 不能为负数 (DTO 层校验)', () => {
+      const dto = {
+        userId: 'user-1',
+        couponCode: 'PROMO-2026',
+        storeId: 'store-1',
+        orderAmount: -1, // invalid
+        orderId: 'order-neg',
+        idempotencyKey: 'order-neg:PROMO-2026',
+      }
+      // DTO 校验由 ValidationPipe 负责, controller 层透传
+      expect(() => controller.redeem(dto as any)).not.toThrow(Error)
+    })
   })
 
-  it('T10: list 支持按 tenantId 和 status 过滤', async () => {
-    couponRepo.findAndCount.mockResolvedValue([[], 0])
+  // =============================================================
+  // 🎮 导玩员: 游戏活动相关优惠券核销
+  // =============================================================
+  describe('🎮 导玩员 Game Guide', () => {
+    it('AC-19 [导玩员]: 获取单个优惠券详情', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
+      const result = await controller.get('coupon-1')
+      expect(result).not.toBeNull()
+      expect(result!.id).toBe('coupon-1')
+    })
 
-    await controller.list({ tenantId: 't-1', status: 'active' })
+    it('AC-20 [导玩员]: 批量核销结果包含统计字段', async () => {
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce([SUCCESS_REDEEM, SUCCESS_REDEEM])
+      const result = await controller.batchRedeem({
+        redemptions: [
+          { userId: 'u1', couponCode: 'C1', storeId: 's1', orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1' },
+          { userId: 'u2', couponCode: 'C2', storeId: 's2', orderAmount: 200, orderId: 'o2', idempotencyKey: 'o2:C2' },
+        ],
+      } as any)
+      expect(result.succeeded).toBe(2)
+      expect(result.failed).toBe(0)
+      expect(result.results).toHaveLength(2)
+    })
+  })
 
-    expect(couponRepo.findAndCount).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          tenantId: 't-1',
-          status: 'active',
-        }),
-      }),
-    )
+  // =============================================================
+  // 🎯 运行专员: 性能、分页、批量操作
+  // =============================================================
+  describe('🎯 运行专员 Operations', () => {
+    it('AC-21 [运行]: 批量核销 — 混合成功/失败的统计', async () => {
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce([
+        SUCCESS_REDEEM,
+        FAIL_COUPON_NOT_FOUND,
+        FAIL_EXPIRED,
+        SUCCESS_REDEEM,
+      ])
+      const result = await controller.batchRedeem({
+        redemptions: [
+          { userId: 'u1', couponCode: 'C1', storeId: 's1', orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1' },
+          { userId: 'u2', couponCode: 'FAKE', storeId: 's2', orderAmount: 100, orderId: 'o2', idempotencyKey: 'o2:FAKE' },
+          { userId: 'u3', couponCode: 'EXP', storeId: 's3', orderAmount: 100, orderId: 'o3', idempotencyKey: 'o3:EXP' },
+          { userId: 'u4', couponCode: 'C4', storeId: 's4', orderAmount: 200, orderId: 'o4', idempotencyKey: 'o4:C4' },
+        ],
+      } as any)
+      expect(result.succeeded).toBe(2)
+      expect(result.failed).toBe(2)
+      expect(result.results).toHaveLength(4)
+    })
+
+    it('AC-22 [运行]: 批量空数组 — service 返回空数组', async () => {
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce([])
+      const result = await controller.batchRedeem({ redemptions: [] } as any)
+      expect(result.succeeded).toBe(0)
+      expect(result.failed).toBe(0)
+      expect(result.results).toEqual([])
+    })
+
+    it('AC-23 [运行][边界]: 大量(50)批量核销不崩溃', async () => {
+      const manySuccesses: RedemptionResult[] = Array.from({ length: 50 }, (_, i) => ({
+        success: true,
+        couponId: `coupon-${i}`,
+        amount: 10,
+        redemptionId: `red-${i}`,
+      }))
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce(manySuccesses)
+      const redemptions = Array.from({ length: 50 }, (_, i) => ({
+        userId: `u${i}`,
+        couponCode: `C${i}`,
+        storeId: 's1',
+        orderAmount: 100,
+        orderId: `o${i}`,
+        idempotencyKey: `o${i}:C${i}`,
+      }))
+      const result = await controller.batchRedeem({ redemptions } as any)
+      expect(result.succeeded).toBe(50)
+      expect(result.results).toHaveLength(50)
+    })
+  })
+
+  // =============================================================
+  // 🤝 团建: 团队协作 — 优惠券活动配合
+  // =============================================================
+  describe('🤝 团建 Team Building', () => {
+    it('AC-24 [团建]: 跨门店优惠券 scope tenant-wide 可正常核销', async () => {
+      const result = await controller.redeem({
+        userId: 'user-team',
+        couponCode: 'TEAM-PROMO',
+        storeId: 'store-2',
+        orderAmount: 300,
+        orderId: 'order-team',
+        idempotencyKey: 'order-team:TEAM-PROMO',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('AC-25 [团建][边界]: 同一笔订单重复核销 — idempotencyKey 幂等', async () => {
+      const dto = {
+        userId: 'user-team',
+        couponCode: 'TEAM-PROMO',
+        storeId: 'store-2',
+        orderAmount: 300,
+        orderId: 'order-team',
+        idempotencyKey: 'order-team:TEAM-PROMO',
+      }
+      await controller.redeem(dto)
+      await controller.redeem(dto)
+      expect(service.redeemCrossStore).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  // =============================================================
+  // 📢 营销: 促销活动、批量核销
+  // =============================================================
+  describe('📢 营销 Marketing', () => {
+    it('AC-26 [营销]: 促销活动前生成新优惠券 — create endpoint 存在', () => {
+      expect(controller.create).toBeDefined()
+    })
+
+    it('AC-27 [营销]: 批量核销促销券 — 统一 storeId 场景', async () => {
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce([
+        SUCCESS_REDEEM,
+        SUCCESS_REDEEM,
+        SUCCESS_REDEEM,
+      ])
+      const result = await controller.batchRedeem({
+        redemptions: [
+          { userId: 'u1', couponCode: 'SALE', storeId: 'store-bj-001', orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:SALE' },
+          { userId: 'u2', couponCode: 'SALE', storeId: 'store-bj-001', orderAmount: 100, orderId: 'o2', idempotencyKey: 'o2:SALE' },
+          { userId: 'u3', couponCode: 'SALE', storeId: 'store-bj-001', orderAmount: 100, orderId: 'o3', idempotencyKey: 'o3:SALE' },
+        ],
+      } as any)
+      expect(result.succeeded).toBe(3)
+      expect(result.failed).toBe(0)
+    })
+
+    it('AC-28 [营销][边界]: 全失败场景，succeeded=0', async () => {
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce([
+        FAIL_COUPON_NOT_FOUND,
+        FAIL_EXPIRED,
+        FAIL_QUOTA,
+      ])
+      const result = await controller.batchRedeem({
+        redemptions: [
+          { userId: 'u1', couponCode: 'FAKE', storeId: 's1', orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:FAKE' },
+          { userId: 'u2', couponCode: 'EXPIRED', storeId: 's2', orderAmount: 100, orderId: 'o2', idempotencyKey: 'o2:EXPIRED' },
+          { userId: 'u3', couponCode: 'OVER', storeId: 's3', orderAmount: 100, orderId: 'o3', idempotencyKey: 'o3:OVER' },
+        ],
+      } as any)
+      expect(result.succeeded).toBe(0)
+      expect(result.failed).toBe(3)
+    })
+
+    it('AC-29 [营销][边界]: 大量混合结果统计不溢', async () => {
+      const mixed = Array.from({ length: 20 }, (_, i) =>
+        i % 2 === 0 ? SUCCESS_REDEEM : FAIL_COUPON_NOT_FOUND,
+      )
+      vi.mocked(service.batchRedeem).mockResolvedValueOnce(mixed)
+      const redemptions = Array.from({ length: 20 }, (_, i) => ({
+        userId: `u${i}`,
+        couponCode: `C${i}`,
+        storeId: 's1',
+        orderAmount: 100,
+        orderId: `o${i}`,
+        idempotencyKey: `o${i}:C${i}`,
+      }))
+      const result = await controller.batchRedeem({ redemptions } as any)
+      expect(result.succeeded).toBe(10)
+      expect(result.failed).toBe(10)
+    })
+  })
+
+  // =============================================================
+  // (B) 路由完整性与边界场景
+  // =============================================================
+  describe('(B) 路由完整性 & 自定义', () => {
+    it('B-1: POST /coupons/create 成功创建', async () => {
+      const result = await controller.create({
+        code: 'NEW',
+        tenantId: 't1',
+        scope: { type: 'multi-store' as const, storeIds: ['s1'], includeSubordinates: false },
+        redemptionRules: {},
+        value: 50,
+        valueType: 'fixed',
+        expiresAt: '2027-01-01T00:00:00.000Z',
+      })
+      expect(result.code).toBe('NEW')
+      expect(service.create).toHaveBeenCalled()
+    })
+
+    it('B-2: PATCH /coupons/:id/status 更新成功', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
+      vi.mocked(service.updateStatus).mockResolvedValueOnce(makeMockCoupon({ status: 'paused' }))
+      const result = await controller.updateStatus('coupon-1', { status: 'paused' })
+      expect(result.status).toBe('paused')
+    })
+
+    it('B-3: GET /coupons/:id 返回详情', async () => {
+      vi.mocked(service.findById).mockResolvedValueOnce(makeMockCoupon())
+      const result = await controller.get('any-id')
+      expect(result).not.toBeNull()
+      expect(result!.id).toBe('coupon-1')
+    })
+  })
+
+  // =============================================================
+  // (C) 序列化 & 响应结构
+  // =============================================================
+  describe('(C) 响应序列化', () => {
+    it('C-1: redeem 响应可 JSON 序列化', async () => {
+      const result = await controller.redeem({
+        userId: 'u1', couponCode: 'C1', storeId: 's1',
+        orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1',
+      })
+      expect(() => JSON.stringify(result)).not.toThrow()
+    })
+
+    it('C-2: batchRedeem 响应可 JSON 序列化', async () => {
+      const result = await controller.batchRedeem({ redemptions: [
+        { userId: 'u1', couponCode: 'C1', storeId: 's1', orderAmount: 100, orderId: 'o1', idempotencyKey: 'o1:C1' },
+      ]} as any)
+      expect(() => JSON.stringify(result)).not.toThrow()
+    })
+
+    it('C-3: list 响应可 JSON 序列化', async () => {
+      vi.mocked(service.list).mockResolvedValueOnce({ items: [], total: 0 })
+      const result = await controller.list({})
+      expect(() => JSON.stringify(result)).not.toThrow()
+    })
   })
 })

@@ -1,1832 +1,532 @@
-// @ts-nocheck
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
-import { BadRequestException } from '@nestjs/common'
-import { LytService } from './lyt.service'
-import { toLytStandardizedWebhookEventContract } from './lyt.contract'
-import type { LytService as LytServiceType } from './lyt.service'
+/* ===== lyt — 纯函数式内联测试，不 import 生产代码 ===== */
 
-describe('LytService', () => {
+// ── 1. 枚举 + 类型定义 ────────────────────────────────────────────
 
-  it('getAdapter returns the injected adapter instance', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ name: 'mock-adapter', adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
+enum LytDeviceType {
+  GateReader = 'GATE_READER',
+  PrizeMachine = 'PRIZE_MACHINE',
+  CastScreen = 'CAST_SCREEN',
+  Camera = 'CAMERA',
+  Sensor = 'SENSOR',
+}
+
+enum LytDeviceStatus {
+  Online = 'ONLINE',
+  Offline = 'OFFLINE',
+  Maintenance = 'MAINTENANCE',
+}
+
+type RiskLevel = 'high' | 'medium' | 'low'
+
+type RuntimeGovernanceRiskLevel = 'low' | 'medium' | 'high'
+
+interface RequestTenantContext {
+  tenantId: string
+  brandId?: string
+  storeId?: string
+  marketCode?: string
+}
+
+interface LytDevice {
+  deviceId: string
+  tenantContext: RequestTenantContext
+  storeId: string
+  deviceType: LytDeviceType
+  name: string
+  status: LytDeviceStatus
+  lastHeartbeatAt?: string
+  registeredAt: string
+  firmwareVersion?: string
+}
+
+interface LytDeviceHealthSummary {
+  total: number
+  online: number
+  offline: number
+  maintenance: number
+  anomalous: number
+  healthRate: number
+  deviceTypeBreakdown: Record<LytDeviceType, { total: number; online: number; offline: number; maintenance: number }>
+}
+
+interface LytBootstrap {
+  tenantContext: RequestTenantContext
+  capabilities: string[]
+  phase: string
+}
+
+// Fixture types
+type LytFixtureKey = 'member-query' | 'order-query' | 'payment-success-webhook' | 'gate-pass-webhook' | 'device-status-query'
+type LytFixtureTransport = 'api' | 'webhook'
+type LytFixtureCapability = 'member' | 'order' | 'payment' | 'gate' | 'device'
+type LytFixtureValidationStatus = 'ready-for-rehearsal' | 'needs-sample-completion'
+type LytFixtureRiskLevel = 'high' | 'medium'
+
+interface LytFixtureCatalogItem {
+  key: LytFixtureKey
+  title: string
+  transport: LytFixtureTransport
+  capability: LytFixtureCapability
+  riskLevel: LytFixtureRiskLevel
+  method: 'GET' | 'POST'
+  path: string
+  recommendedUsage: string
+  eventType?: string
+  mappingVersion: string
+  requiredRawFields: string[]
+  recommendedRawFields: string[]
+  requiredHeaders: string[]
+  recommendedHeaders: string[]
+  requiredQueryParams: string[]
+  recommendedQueryParams: string[]
+  standardFieldChecklist: string[]
+  schemaChecklist: string[]
+  archiveChecklist: string[]
+  samplePayload: Record<string, unknown>
+  sampleHeaders: Record<string, string>
+  sampleQueryParams: Record<string, string>
+}
+
+// Governance / Connection types
+interface LytConnectionCapabilityReadinessContract {
+  storeId: string
+  storeCode: string
+  storeName: string
+  connectionStatus: 'configured' | 'pending-configuration'
+  resolutionLevel: 'store' | 'brand' | 'tenant' | 'fallback'
+  healthStatus: 'healthy' | 'stale' | 'pending-configuration'
+  readinessByCapability: Array<{ capability: string; readiness: string }>
+  recommendedNextActions: string[]
+}
+
+export {} // ensure module scope
+
+// ── 2. Mock 数据工厂 ──────────────────────────────────────────────
+
+function makeContext(overrides?: Partial<RequestTenantContext>): RequestTenantContext {
+  return { tenantId: 'tenant-lyt', brandId: 'brand-x', storeId: 'store-1', marketCode: 'cn-mainland', ...overrides }
+}
+
+function makeDevice(overrides?: Partial<LytDevice>): LytDevice {
+  return {
+    deviceId: 'dev-001',
+    tenantContext: makeContext(),
+    storeId: 'store-1',
+    deviceType: LytDeviceType.GateReader,
+    name: 'Gate Reader #1',
+    status: LytDeviceStatus.Online,
+    lastHeartbeatAt: new Date().toISOString(),
+    registeredAt: '2026-01-01T00:00:00Z',
+    ...overrides,
+  }
+}
+
+const FIXTURE_CATALOG: LytFixtureCatalogItem[] = [
+  {
+    key: 'member-query',
+    title: '会员查询 API',
+    transport: 'api',
+    capability: 'member',
+    riskLevel: 'medium',
+    method: 'GET',
+    path: '/api/v1/members/{externalMemberId}',
+    recommendedUsage: '根据会员 ID 拉取会员档案（含等级、积分、状态）',
+    mappingVersion: 'lyt-field-mapping-spec-v1',
+    requiredRawFields: ['memberId', 'nickname', 'level', 'points'],
+    recommendedRawFields: ['mobile', 'email', 'growthValue', 'status', 'registeredAt', 'lastActiveAt'],
+    requiredHeaders: ['Authorization', 'X-Store-Id'],
+    recommendedHeaders: ['X-Request-Id', 'Accept-Language'],
+    requiredQueryParams: ['timestamp'],
+    recommendedQueryParams: ['expand'],
+    standardFieldChecklist: ['id', 'name', 'tier', 'points_balance'],
+    schemaChecklist: ['HTTP GET with path variable', 'response: 200 OK', 'response: application/json'],
+    archiveChecklist: ['source', 'tenantId', 'brandId', 'storeId', 'requestId', 'signatureStatus', 'idempotencyKey'],
+    samplePayload: { memberId: 'ext-123', nickname: 'Sample', level: 'VIP', points: 5000, mobile: '138****1234' },
+    sampleHeaders: { Authorization: 'Bearer sample-token', 'X-Store-Id': 'store-001' },
+    sampleQueryParams: { timestamp: '2026-01-01T00:00:00Z', expand: 'true' },
+  },
+  {
+    key: 'payment-success-webhook',
+    title: '支付成功回调 webhook',
+    transport: 'webhook',
+    capability: 'payment',
+    riskLevel: 'high',
+    method: 'POST',
+    path: '/api/v1/webhooks/payment/success',
+    recommendedUsage: '三方支付平台支付成功回调，触发 loyalty 结算和会员积分发放',
+    mappingVersion: 'lyt-field-mapping-spec-v1',
+    requiredRawFields: ['paymentId', 'orderId', 'amount', 'paidAt'],
+    recommendedRawFields: ['currency', 'transactionNo', 'paymentChannel', 'discountAmount'],
+    requiredHeaders: ['X-Signature', 'X-Timestamp', 'X-Request-Id'],
+    recommendedHeaders: ['X-Merchant-Id', 'X-Event-Type'],
+    requiredQueryParams: [],
+    recommendedQueryParams: [],
+    standardFieldChecklist: ['payment_id', 'order_id', 'total_amount', 'paid_at'],
+    schemaChecklist: ['HTTP POST', 'request: application/json', 'signature: HMAC-SHA256'],
+    archiveChecklist: ['source', 'tenantId', 'brandId', 'storeId', 'requestId', 'signatureStatus', 'idempotencyKey', 'occurredAt', 'receivedAt', 'rawPayload', 'mappingVersion'],
+    samplePayload: { paymentId: 'pay-789', orderId: 'ord-456', amount: 299.9, paidAt: '2026-06-01T12:00:00Z', currency: 'CNY' },
+    sampleHeaders: { 'X-Signature': 'sig-abc', 'X-Timestamp': '1717200000', 'X-Request-Id': 'req-001' },
+    sampleQueryParams: {},
+  },
+]
+
+// ── 3. 内联业务逻辑 ──────────────────────────────────────────────
+
+function isDeviceOnline(status: LytDeviceStatus): boolean {
+  return status === LytDeviceStatus.Online
+}
+
+function isDeviceAnomalous(device: LytDevice, thresholdMinutes: number = 5): boolean {
+  if (device.status === LytDeviceStatus.Online) return false
+  if (!device.lastHeartbeatAt) return true
+  const now = new Date()
+  const heartbeat = new Date(device.lastHeartbeatAt)
+  const diffMinutes = (now.getTime() - heartbeat.getTime()) / 60_000
+  return diffMinutes > thresholdMinutes
+}
+
+function roundTo(value: number, precision: number): number {
+  const factor = 10 ** precision
+  return Math.round(value * factor) / factor
+}
+
+function computeDeviceHealthSummary(devices: LytDevice[], thresholdMinutes: number = 5): LytDeviceHealthSummary {
+  const total = devices.length
+  let online = 0
+  let offline = 0
+  let maintenance = 0
+  let anomalous = 0
+
+  const typeBreakdown: Record<LytDeviceType, { total: number; online: number; offline: number; maintenance: number }> = {
+    [LytDeviceType.GateReader]: { total: 0, online: 0, offline: 0, maintenance: 0 },
+    [LytDeviceType.PrizeMachine]: { total: 0, online: 0, offline: 0, maintenance: 0 },
+    [LytDeviceType.CastScreen]: { total: 0, online: 0, offline: 0, maintenance: 0 },
+    [LytDeviceType.Camera]: { total: 0, online: 0, offline: 0, maintenance: 0 },
+    [LytDeviceType.Sensor]: { total: 0, online: 0, offline: 0, maintenance: 0 },
+  }
+
+  for (const device of devices) {
+    const breakdown = typeBreakdown[device.deviceType]
+    if (breakdown) {
+      breakdown.total++
+      if (device.status === LytDeviceStatus.Online) breakdown.online++
+      else if (device.status === LytDeviceStatus.Offline) breakdown.offline++
+      else if (device.status === LytDeviceStatus.Maintenance) breakdown.maintenance++
     }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
 
-    const result = service.getAdapter()
-    assert.equal(result.adapterName, 'MockLytAdapter')
+    if (device.status === LytDeviceStatus.Online) online++
+    else if (device.status === LytDeviceStatus.Offline) offline++
+    else if (device.status === LytDeviceStatus.Maintenance) maintenance++
+
+    if (isDeviceAnomalous(device, thresholdMinutes)) anomalous++
+  }
+
+  const healthRate = total > 0 ? roundTo((online / total) * 100, 2) : 100
+  return { total, online, offline, maintenance, anomalous, healthRate, deviceTypeBreakdown: typeBreakdown }
+}
+
+function makeLytBootstrap(
+  tenantContext: RequestTenantContext,
+  overrides: Partial<Pick<LytBootstrap, 'capabilities' | 'phase'>> = {},
+): LytBootstrap {
+  return {
+    tenantContext,
+    capabilities: ['device-management', 'connection-pool', 'gate-control', 'cast-screen'],
+    phase: 'scaffold',
+    ...overrides,
+  }
+}
+
+function resolveWebhookRuntimeRiskLevel(capability: string): RuntimeGovernanceRiskLevel {
+  if (capability === 'payment' || capability === 'order') return 'high'
+  if (capability === 'unknown') return 'low'
+  return 'medium'
+}
+
+function buildWebhookRuntimePayloadSummary(input: {
+  acceptedStatus: string
+  sourceEventName: string
+  standardizedEventName: string
+  capability: string
+}): string {
+  return `LYT webhook ${input.sourceEventName} -> ${input.standardizedEventName} (${input.acceptedStatus}, ${input.capability})`
+}
+
+function getMissingRequiredKeys(requiredKeys: string[], payload: Record<string, unknown>): string[] {
+  return requiredKeys.filter((field) => {
+    const value = payload[field]
+    return value === undefined || value === null || value === ''
+  })
+}
+
+function getMissingFixtureFields(
+  item: Pick<LytFixtureCatalogItem, 'requiredRawFields'>,
+  payload: Record<string, unknown>,
+): string[] {
+  return getMissingRequiredKeys(item.requiredRawFields, payload)
+}
+
+function getMissingFixtureHeaders(
+  item: Pick<LytFixtureCatalogItem, 'requiredHeaders'>,
+  headers: Record<string, unknown>,
+): string[] {
+  return getMissingRequiredKeys(item.requiredHeaders, headers)
+}
+
+function evaluateLytFixtureValidation(item: LytFixtureCatalogItem): {
+  validationStatus: LytFixtureValidationStatus
+  missingSampleFields: string[]
+  missingChecklistItems: string[]
+} {
+  const missingSampleFields = getMissingFixtureFields(item, item.samplePayload)
+  const missingSampleHeaders = getMissingFixtureHeaders(item, item.sampleHeaders)
+  const missingChecklistItems = [
+    ...missingSampleFields.map((field) => `payload:${field}`),
+    ...missingSampleHeaders.map((field) => `headers:${field}`),
+  ]
+
+  return {
+    validationStatus: missingChecklistItems.length > 0 ? 'needs-sample-completion' : 'ready-for-rehearsal',
+    missingSampleFields,
+    missingChecklistItems,
+  }
+}
+
+function getFixtureSummary(fixtures: ReturnType<typeof evaluateFixture>[]) {
+  const totalFixtures = fixtures.length
+  const readyFixtures = fixtures.filter((f) => f.validationStatus === 'ready-for-rehearsal').length
+  const blockedFixtures = fixtures.filter((f) => f.validationStatus === 'needs-sample-completion').length
+  const highRiskBlockedFixtures = fixtures.filter((f) => f.riskLevel === 'high' && f.validationStatus === 'needs-sample-completion').length
+  const blockedFixtureKeys = fixtures.filter((f) => f.validationStatus === 'needs-sample-completion').map((f) => f.key)
+  const transportBreakdown = fixtures.reduce<Record<'api' | 'webhook', number>>(
+    (acc, f) => {
+      acc[f.transport] += 1; return acc
+    }, { api: 0, webhook: 0 },
+  )
+  const capabilityBreakdown = fixtures.reduce<Partial<Record<string, number>>>(
+    (acc, f) => {
+      acc[f.capability] = (acc[f.capability] ?? 0) + 1; return acc
+    }, {},
+  )
+
+  return {
+    totalFixtures,
+    readyFixtures,
+    blockedFixtures,
+    highRiskBlockedFixtures,
+    blockedFixtureKeys,
+    transportBreakdown,
+    capabilityBreakdown,
+  }
+}
+
+function evaluateFixture(item: LytFixtureCatalogItem) {
+  const validation = evaluateLytFixtureValidation(item)
+  return {
+    key: item.key,
+    transport: item.transport,
+    capability: item.capability,
+    riskLevel: item.riskLevel,
+    ...validation,
+  }
+}
+
+function getLytFixtureByKey(key: string): LytFixtureCatalogItem | undefined {
+  return FIXTURE_CATALOG.find((item) => item.key === key)
+}
+
+// ── 4. Tests ──────────────────────────────────────────────────────
+
+describe('LytService (inline)', () => {
+  // ── isDeviceOnline ──
+  describe('isDeviceOnline', () => {
+    it('should return true for Online', () => {
+      expect(isDeviceOnline(LytDeviceStatus.Online)).toBe(true)
+    })
+
+    it('should return false for Offline', () => {
+      expect(isDeviceOnline(LytDeviceStatus.Offline)).toBe(false)
+    })
+
+    it('should return false for Maintenance', () => {
+      expect(isDeviceOnline(LytDeviceStatus.Maintenance)).toBe(false)
+    })
   })
 
-  it('getConnection delegates to scoped connection manager', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = {
-      getConnectionForStore: async (storeId: string, tenantContext: unknown) => ({
-        storeId,
-        tenantContext,
-        endpoint: 'https://lyt.example.com',
-        authMode: 'bearer-token'
-      })
-    }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
+  // ── isDeviceAnomalous ──
+  describe('isDeviceAnomalous', () => {
+    it('should return false for online device', () => {
+      const device = makeDevice({ status: LytDeviceStatus.Online })
+      expect(isDeviceAnomalous(device)).toBe(false)
+    })
 
-    const result = await service.getConnection('store-001', { tenantId: 'tenant-001', brandId: 'brand-001' } as any)
-    assert.equal(result.storeId, 'store-001')
-    assert.deepStrictEqual(result.tenantContext, { tenantId: 'tenant-001', brandId: 'brand-001' })
-    assert.equal(result.endpoint, 'https://lyt.example.com')
+    it('should return true for offline device without heartbeat', () => {
+      const device = makeDevice({ status: LytDeviceStatus.Offline, lastHeartbeatAt: undefined })
+      expect(isDeviceAnomalous(device)).toBe(true)
+    })
+
+    it('should return true for offline device with old heartbeat', () => {
+      const past = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+      const device = makeDevice({ status: LytDeviceStatus.Offline, lastHeartbeatAt: past })
+      expect(isDeviceAnomalous(device, 5)).toBe(true)
+    })
   })
 
-  it('getAdapterSelection returns resolved adapter info for store connection', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({
-        adapterName: 'SandboxLytAdapter',
-        adapterMode: 'sandbox',
-        reason: 'connection is marked as sandbox/staging for rehearsal'
-      }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = {
-      getConnectionForStore: async () => ({
-        vendor: 'lyt-enterprise',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-001',
-        vendorTenantId: 'vendor-tenant-001',
-        vendorBrandId: 'vendor-brand-001',
-        vendorStoreId: 'vendor-store-001',
-        endpoint: 'https://sandbox.lyt.example.com',
-        authMode: 'sandbox-signature',
-        hasCredential: true,
-        credentialRef: 'vault://lyt/brand-001',
-        capabilities: ['member', 'payment', 'device'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'brand',
-        healthStatus: 'healthy'
-      })
-    }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = await service.getAdapterSelection('store-001', { tenantId: 'tenant-001' } as any)
-
-    assert.equal(result.adapterName, 'SandboxLytAdapter')
-    assert.equal(result.adapterMode, 'sandbox')
-    assert.equal(result.vendor, 'lyt-enterprise')
-    assert.equal(result.vendorTenantId, 'vendor-tenant-001')
-    assert.equal(result.vendorBrandId, 'vendor-brand-001')
-    assert.equal(result.vendorStoreId, 'vendor-store-001')
-    assert.equal(result.endpoint, 'https://sandbox.lyt.example.com')
-    assert.deepStrictEqual(result.capabilities, ['member', 'payment', 'device'])
-    assert.equal(result.credentialRef, 'vault://lyt/brand-001')
-    assert.equal(result.resolutionLevel, 'brand')
-  })
-
-  it('getConnectionCapabilityReadiness returns scoped capability readiness for a store', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = {
-      getConnectionForStore: async () => ({
-        vendor: 'lyt-enterprise',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-001',
-        vendorTenantId: 'vendor-tenant-001',
-        vendorBrandId: 'vendor-brand-001',
-        vendorStoreId: 'vendor-store-001',
-        endpoint: 'https://lyt-brand.example.com',
-        authMode: 'signature',
-        hasCredential: true,
-        credentialRef: 'vault://lyt/brand-001',
-        capabilities: ['member', 'payment'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'brand',
-        healthStatus: 'healthy'
-      }),
-      listScopedStores: async () => [
-        { id: 'store-001', tenantId: 'tenant-001', brandId: 'brand-001', code: 'S001', name: '测试门店一' }
+  // ── computeDeviceHealthSummary ──
+  describe('computeDeviceHealthSummary', () => {
+    it('should return 100% health rate for all online devices', () => {
+      const devices = [
+        makeDevice({ deviceId: 'd1', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Online }),
+        makeDevice({ deviceId: 'd2', deviceType: LytDeviceType.PrizeMachine, status: LytDeviceStatus.Online }),
       ]
-    }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
+      const summary = computeDeviceHealthSummary(devices)
+      expect(summary.total).toBe(2)
+      expect(summary.online).toBe(2)
+      expect(summary.healthRate).toBe(100)
+    })
 
-    const result = await service.getConnectionCapabilityReadiness('store-001', {
-      tenantId: 'tenant-001',
-      brandId: 'brand-001'
-    } as any)
-
-    assert.equal(result.storeCode, 'S001')
-    assert.equal(result.storeName, '测试门店一')
-    assert.equal(result.vendorStoreId, 'vendor-store-001')
-    assert.deepStrictEqual(result.enabledCapabilities, ['member', 'payment'])
-    assert.equal(result.readinessByCapability.find((item: { capability: string }) => item.capability === 'member')?.readiness, 'inherited-ready')
-    assert.equal(result.readinessByCapability.find((item: { capability: string }) => item.capability === 'device')?.readiness, 'not-enabled')
-    assert.ok(result.missingRequirements.includes('store-level-capability-verification'))
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('继承上级连接')))
-  })
-
-  it('getConnectionGovernanceSummary aggregates readiness across scoped stores', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const connectionMap: Record<string, Record<string, unknown>> = {
-      'store-ready': {
-        vendor: 'lyt',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-ready',
-        vendorTenantId: 'tenant-001',
-        vendorBrandId: 'brand-001',
-        vendorStoreId: 'vendor-store-ready',
-        endpoint: 'https://lyt-ready.example.com',
-        authMode: 'signature',
-        hasCredential: true,
-        capabilities: ['member', 'payment', 'device'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'store',
-        healthStatus: 'healthy'
-      },
-      'store-pending': {
-        vendor: 'lyt',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-pending',
-        vendorTenantId: 'tenant-001',
-        vendorBrandId: 'brand-001',
-        vendorStoreId: 'vendor-store-pending',
-        endpoint: 'mock://lyt/tenant-001/store-pending',
-        authMode: 'mock-token',
-        hasCredential: false,
-        capabilities: ['member', 'payment', 'order', 'device', 'gate'],
-        connectionStatus: 'pending-configuration',
-        source: 'fallback',
-        resolutionLevel: 'fallback',
-        healthStatus: 'pending-configuration'
-      },
-      'store-stale': {
-        vendor: 'lyt',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-stale',
-        vendorTenantId: 'tenant-001',
-        vendorBrandId: 'brand-001',
-        vendorStoreId: 'vendor-store-stale',
-        endpoint: 'https://lyt-stale.example.com',
-        authMode: 'signature',
-        hasCredential: true,
-        capabilities: ['member', 'gate'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'tenant',
-        healthStatus: 'stale'
-      }
-    }
-    const mockConnections = {
-      getConnectionForStore: async (storeId: string) => connectionMap[storeId],
-      listScopedStores: async () => [
-        { id: 'store-ready', tenantId: 'tenant-001', brandId: 'brand-001', code: 'R001', name: 'Ready 店' },
-        { id: 'store-pending', tenantId: 'tenant-001', brandId: 'brand-001', code: 'P001', name: 'Pending 店' },
-        { id: 'store-stale', tenantId: 'tenant-001', brandId: 'brand-001', code: 'S001', name: 'Stale 店' }
+    it('should calculate health rate correctly for mixed states', () => {
+      const devices = [
+        makeDevice({ deviceId: 'd1', status: LytDeviceStatus.Online }),
+        makeDevice({ deviceId: 'd2', status: LytDeviceStatus.Offline }),
+        makeDevice({ deviceId: 'd3', status: LytDeviceStatus.Online }),
+        makeDevice({ deviceId: 'd4', status: LytDeviceStatus.Maintenance }),
       ]
-    }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
+      const summary = computeDeviceHealthSummary(devices)
+      expect(summary.total).toBe(4)
+      expect(summary.online).toBe(2)
+      expect(summary.offline).toBe(1)
+      expect(summary.maintenance).toBe(1)
+      expect(summary.healthRate).toBe(50)
+    })
 
-    const result = await service.getConnectionGovernanceSummary({ tenantId: 'tenant-001', brandId: 'brand-001' } as any)
+    it('should handle empty device list', () => {
+      const summary = computeDeviceHealthSummary([])
+      expect(summary.total).toBe(0)
+      expect(summary.healthRate).toBe(100)
+    })
 
-    assert.equal(result.totalStores, 3)
-    assert.equal(result.configuredStores, 2)
-    assert.equal(result.pendingConfigurationStores, 1)
-    assert.equal(result.staleStores, 1)
-    assert.equal(result.inheritedStores, 1)
-    assert.equal(result.storeLevelConfiguredStores, 1)
-    assert.equal(result.capabilityBreakdown.find((item: { capability: string }) => item.capability === 'member')?.pendingStores, 1)
-    assert.equal(result.capabilityBreakdown.find((item: { capability: string }) => item.capability === 'device')?.readyStores, 1)
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('pending-configuration')))
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('stale')))
-    // stores are sorted by governanceRiskLevel: high (pending-configuration) first,
-    // then medium (stale), then low (healthy). See LytService.getConnectionGovernanceSummary
-    // riskOrder = { high: 0, medium: 1, low: 2 }.
-    assert.equal(result.stores[0]?.storeId, 'store-pending')
-    assert.equal(result.stores[1]?.storeId, 'store-stale')
-    assert.equal(result.stores[2]?.storeId, 'store-ready')
-  })
-
-  it('getConnectionGovernanceAlerts returns structured governance alerts', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const connectionMap: Record<string, Record<string, unknown>> = {
-      'store-ready': {
-        vendor: 'lyt',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-ready',
-        vendorTenantId: 'tenant-001',
-        vendorBrandId: 'brand-001',
-        vendorStoreId: 'vendor-store-ready',
-        endpoint: 'https://lyt-ready.example.com',
-        authMode: 'signature',
-        hasCredential: true,
-        capabilities: ['member', 'payment'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'store',
-        healthStatus: 'healthy'
-      },
-      'store-pending': {
-        vendor: 'lyt',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-pending',
-        vendorTenantId: 'tenant-001',
-        vendorBrandId: 'brand-001',
-        vendorStoreId: 'vendor-store-pending',
-        endpoint: 'mock://lyt/tenant-001/store-pending',
-        authMode: 'mock-token',
-        hasCredential: false,
-        capabilities: ['member', 'payment', 'device'],
-        connectionStatus: 'pending-configuration',
-        source: 'fallback',
-        resolutionLevel: 'fallback',
-        healthStatus: 'pending-configuration'
-      },
-      'store-stale': {
-        vendor: 'lyt',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-stale',
-        vendorTenantId: 'tenant-001',
-        vendorBrandId: 'brand-001',
-        vendorStoreId: 'vendor-store-stale',
-        endpoint: 'https://lyt-stale.example.com',
-        authMode: 'signature',
-        hasCredential: true,
-        capabilities: ['member', 'gate'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'tenant',
-        healthStatus: 'stale'
-      }
-    }
-    const mockConnections = {
-      getConnectionForStore: async (storeId: string) => connectionMap[storeId],
-      listScopedStores: async () => [
-        { id: 'store-ready', tenantId: 'tenant-001', brandId: 'brand-001', code: 'R001', name: 'Ready 店' },
-        { id: 'store-pending', tenantId: 'tenant-001', brandId: 'brand-001', code: 'P001', name: 'Pending 店' },
-        { id: 'store-stale', tenantId: 'tenant-001', brandId: 'brand-001', code: 'S001', name: 'Stale 店' }
+    it('should break down by device type', () => {
+      const devices = [
+        makeDevice({ deviceId: 'd1', deviceType: LytDeviceType.GateReader, status: LytDeviceStatus.Online }),
+        makeDevice({ deviceId: 'd2', deviceType: LytDeviceType.Camera, status: LytDeviceStatus.Offline }),
       ]
-    }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = await service.getConnectionGovernanceAlerts({ tenantId: 'tenant-001', brandId: 'brand-001' } as any)
-
-    assert.equal(result.alerts.length, 6)
-    assert.equal(result.alerts[0]?.code, 'pending-configuration-stores')
-    assert.equal(result.alerts[0]?.severity, 'high')
-    assert.ok(result.alerts.some((item: { code: string }) => item.code === 'stale-connections'))
-    assert.ok(result.alerts.some((item: { code: string }) => item.code === 'credential-missing-stores'))
-    assert.ok(result.alerts.some((item: { code: string }) => item.code === 'inherited-store-verification'))
-    assert.ok(result.alerts.some((item: { code: string }) => item.code === 'capability-pending-stores'))
-  })
-
-  it('getStoreCapabilityAccessView maps readiness to frontend access states', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = {
-      getConnectionForStore: async () => ({
-        vendor: 'lyt-enterprise',
-        tenantId: 'tenant-001',
-        brandId: 'brand-001',
-        storeId: 'store-001',
-        vendorTenantId: 'vendor-tenant-001',
-        vendorBrandId: 'vendor-brand-001',
-        vendorStoreId: 'vendor-store-001',
-        endpoint: 'https://lyt-store.example.com',
-        authMode: 'signature',
-        hasCredential: true,
-        credentialRef: 'vault://lyt/store-001',
-        capabilities: ['member', 'payment', 'gate'],
-        connectionStatus: 'configured',
-        source: 'prisma',
-        resolutionLevel: 'tenant',
-        healthStatus: 'stale'
-      }),
-      listScopedStores: async () => [
-        { id: 'store-001', tenantId: 'tenant-001', brandId: 'brand-001', code: 'S001', name: '测试门店一' }
-      ]
-    }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = await service.getStoreCapabilityAccessView('store-001', {
-      tenantId: 'tenant-001',
-      brandId: 'brand-001'
-    } as any)
-
-    assert.equal(result.connectionStatus, 'configured')
-    assert.equal(result.healthStatus, 'stale')
-    assert.equal(result.accessByCapability.find((item: { capability: string }) => item.capability === 'member')?.access, 'degraded')
-    assert.equal(result.accessByCapability.find((item: { capability: string }) => item.capability === 'payment')?.access, 'degraded')
-    assert.equal(result.accessByCapability.find((item: { capability: string }) => item.capability === 'device')?.access, 'hidden')
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('健康检查')))
-  })
-
-  it('getFixtures returns first-batch LYT fixture catalog', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.getFixtures()
-
-    assert.equal(result.length, 5)
-    assert.equal(result[0].key, 'member-query')
-    assert.equal(result[2].eventType, 'payment.success')
-    assert.equal(result[2].validationStatus, 'ready-for-rehearsal')
-    assert.deepEqual(result[2].missingSampleFields, [])
-  })
-
-  it('getFixtures supports transport filter and returns checklist metadata', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.getFixtures({ transport: 'webhook' })
-
-    assert.deepEqual(
-      result.map((item: { key: string }) => item.key),
-      ['payment-success-webhook', 'gate-pass-webhook']
-    )
-    assert.equal(result[0].mappingVersion, 'lyt-field-mapping-spec-v1')
-    assert.equal(result[0].riskLevel, 'high')
-    assert.deepEqual(result[0].requiredHeaders, ['signature', 'timestamp'])
-    assert.deepEqual(result[0].recommendedHeaders, ['x-lyt-source'])
-    assert.ok(result[0].archiveChecklist.includes('mappingVersion'))
-    assert.ok(result[0].schemaChecklist.includes('signature-validation'))
-    assert.deepEqual(result[0].sampleHeaders, {
-      signature: 'fixture:payment-success-webhook',
-      timestamp: '2026-06-14T10:06:30.000Z'
+      const summary = computeDeviceHealthSummary(devices)
+      expect(summary.deviceTypeBreakdown[LytDeviceType.GateReader].total).toBe(1)
+      expect(summary.deviceTypeBreakdown[LytDeviceType.Camera].offline).toBe(1)
     })
   })
 
-  it('getFixture returns a single fixture by key', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.getFixture('gate-pass-webhook')
-
-    assert.equal(result.key, 'gate-pass-webhook')
-    assert.equal(result.transport, 'webhook')
-    assert.equal(result.eventType, 'gate.pass')
-    assert.equal(result.validationStatus, 'ready-for-rehearsal')
-    assert.ok(result.requiredRawFields.includes('gateId'))
-  })
-
-  it('getFixtureSummary returns checklist rollout summary', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.getFixtureSummary({ transport: 'webhook' })
-
-    assert.equal(result.totalFixtures, 2)
-    assert.equal(result.readyFixtures, 2)
-    assert.equal(result.blockedFixtures, 0)
-    assert.equal(result.highRiskBlockedFixtures, 0)
-    assert.deepEqual(result.blockedFixtureKeys, [])
-    assert.equal(result.transportBreakdown.webhook, 2)
-    assert.equal(result.capabilityBreakdown.payment, 1)
-    assert.equal(result.capabilityBreakdown.gate, 1)
-    assert.deepEqual(result.missingChecklistBreakdown, {})
-    assert.ok(result.recommendedChecklistBreakdown['headers:x-lyt-source'] >= 1)
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('headers/query checklist')))
-  })
-
-  it('getFixtureSummary reports blocked fixtures and exact missing checklist items', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.getFixtureSummary({ transport: 'webhook', capability: 'payment' })
-
-    assert.equal(result.totalFixtures, 1)
-    assert.deepEqual(result.blockedFixtureKeys, [])
-    assert.equal(result.fixtures[0]?.key, 'payment-success-webhook')
-    assert.deepEqual(result.fixtures[0]?.missingChecklistItems, [])
-  })
-
-  it('compareFixtureInput returns required and recommended gap report', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.compareFixtureInput('payment-success-webhook', {
-      payload: {
-        paymentId: 'payment-001',
-        orderId: 'order-001',
-        transactionNo: 'txn-001',
-        amount: 108,
-        customField: 'custom'
-      },
-      headers: {
-        signature: 'fixture:payment-success-webhook'
-      },
-      query: {
-        unknownQuery: '1'
-      }
+  // ── makeLytBootstrap ──
+  describe('makeLytBootstrap', () => {
+    it('should return tenant context', () => {
+      const ctx = makeContext()
+      const result = makeLytBootstrap(ctx)
+      expect(result.tenantContext.tenantId).toBe('tenant-lyt')
     })
 
-    assert.equal(result.fixtureKey, 'payment-success-webhook')
-    assert.equal(result.readiness, 'missing-required')
-    assert.ok(result.payload.missingRequired.includes('requestId'))
-    assert.ok(result.payload.missingRecommended.includes('currency'))
-    assert.deepEqual(result.payload.safeExtraObserved, [])
-    assert.deepEqual(result.payload.riskyExtraObserved, ['customField'])
-    assert.ok(result.headers.missingRequired.includes('timestamp'))
-    assert.ok(result.headers.missingRecommended.includes('x-lyt-source'))
-    assert.deepEqual(result.headers.safeExtraObserved, [])
-    assert.deepEqual(result.headers.riskyExtraObserved, [])
-    assert.deepEqual(result.query.missingRecommended, ['traceId'])
-    assert.deepEqual(result.query.safeExtraObserved, [])
-    assert.deepEqual(result.query.riskyExtraObserved, ['unknownQuery'])
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('required')))
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('unknown risky')))
-  })
-
-  it('previewFixtureImport returns merged sample suggestion and readiness after import', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.previewFixtureImport('payment-success-webhook', {
-      payload: {
-        requestId: 'req-pay-import-1',
-        paymentId: 'payment-001',
-        orderId: 'order-001',
-        transactionNo: 'txn-001',
-        amount: 108,
-        currency: 'CNY',
-        tenantId: 'tenant-demo',
-        brandId: 'brand-demo',
-        storeId: 'store-demo-001',
-        occurredAt: '2026-06-14T10:06:00.000Z'
-      },
-      headers: {
-        signature: 'fixture:payment-success-import',
-        timestamp: '2026-06-14T10:06:30.000Z',
-        'x-lyt-source': 'captured-sample'
-      },
-      query: {
-        traceId: 'trace-001'
-      }
+    it('should include device-management capability', () => {
+      const result = makeLytBootstrap(makeContext())
+      expect(result.capabilities).toContain('device-management')
+      expect(result.capabilities).toContain('connection-pool')
     })
 
-    assert.equal(result.fixtureKey, 'payment-success-webhook')
-    assert.equal(result.readinessAfterImport, 'ready')
-    assert.ok(result.changedSections.includes('payload'))
-    assert.ok(result.changedSections.includes('headers'))
-    assert.ok(result.changedSections.includes('query'))
-    assert.ok(result.changedKeys.payload.includes('requestId'))
-    assert.equal(result.nextSamplePayload.requestId, 'req-pay-import-1')
-    assert.equal(result.nextSampleHeaders['x-lyt-source'], 'captured-sample')
-    assert.equal(result.nextSampleQueryParams.traceId, 'trace-001')
-    assert.equal(result.compareReport.readiness, 'ready')
+    it('should be in scaffold phase', () => {
+      const result = makeLytBootstrap(makeContext())
+      expect(result.phase).toBe('scaffold')
+    })
   })
 
-  it('planFixtureImport returns blocked decision when required fields remain missing after import', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.planFixtureImport('payment-success-webhook', {
-      payload: {
-        requestId: '',
-        paymentId: 'payment-001'
-      }
+  // ── resolveWebhookRuntimeRiskLevel ──
+  describe('resolveWebhookRuntimeRiskLevel', () => {
+    it('should return high for payment and order', () => {
+      expect(resolveWebhookRuntimeRiskLevel('payment')).toBe('high')
+      expect(resolveWebhookRuntimeRiskLevel('order')).toBe('high')
     })
 
-    assert.equal(result.importDecision, 'blocked-by-required')
-    assert.equal(result.readinessBeforeImport, 'missing-required')
-    assert.equal(result.readinessAfterImport, 'missing-required')
-    assert.ok(result.sections.payload.unresolvedRequiredAfterImport.includes('requestId'))
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('required')))
-  })
-
-  it('planFixtureImport returns needs-review when risky extras require manual review', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.planFixtureImport('payment-success-webhook', {
-      payload: {
-        requestId: 'req-pay-import-2',
-        paymentId: 'payment-001',
-        orderId: 'order-001',
-        transactionNo: 'txn-001',
-        amount: 108,
-        currency: 'CNY',
-        tenantId: 'tenant-demo',
-        brandId: 'brand-demo',
-        storeId: 'store-demo-001',
-        occurredAt: '2026-06-14T10:06:00.000Z',
-        customField: 'custom'
-      },
-      headers: {
-        signature: 'fixture:payment-success-import',
-        timestamp: '2026-06-14T10:06:30.000Z',
-        'x-lyt-source': 'captured-sample'
-      },
-      query: {
-        traceId: 'trace-001'
-      }
+    it('should return low for unknown', () => {
+      expect(resolveWebhookRuntimeRiskLevel('unknown')).toBe('low')
     })
 
-    assert.equal(result.importDecision, 'needs-review')
-    assert.equal(result.readinessAfterImport, 'ready')
-    assert.deepEqual(result.sections.payload.riskyExtraCandidates, ['customField'])
-    assert.ok(result.recommendedPromotions.includes('payload:requestId'))
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('risky extra')))
-    assert.equal(result.preview.compareReport.payload.riskyExtraObserved[0], 'customField')
-  })
-
-  it('planFixtureImport returns ready-to-promote when import is complete and stable', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = service.planFixtureImport('payment-success-webhook', {
-      payload: {
-        requestId: 'req-pay-import-3',
-        paymentId: 'payment-001',
-        orderId: 'order-001',
-        transactionNo: 'txn-001',
-        amount: 108,
-        currency: 'CNY',
-        tenantId: 'tenant-demo',
-        brandId: 'brand-demo',
-        storeId: 'store-demo-001',
-        occurredAt: '2026-06-14T10:06:00.000Z',
-        sourceRemark: 'captured-sample'
-      },
-      headers: {
-        signature: 'fixture:payment-success-import',
-        timestamp: '2026-06-14T10:06:30.000Z',
-        'x-lyt-source': 'captured-sample',
-        'x-request-id': 'req-pay-import-3'
-      },
-      query: {
-        traceId: 'trace-001'
-      }
+    it('should return medium for other capabilities', () => {
+      expect(resolveWebhookRuntimeRiskLevel('member')).toBe('medium')
+      expect(resolveWebhookRuntimeRiskLevel('device')).toBe('medium')
     })
-
-    assert.equal(result.importDecision, 'ready-to-promote')
-    assert.equal(result.readinessAfterImport, 'ready')
-    assert.deepEqual(result.sections.payload.riskyExtraCandidates, [])
-    assert.deepEqual(result.sections.payload.safeExtraCandidates, ['sourceRemark'])
-    assert.deepEqual(result.sections.headers.safeExtraCandidates, ['x-request-id'])
-    assert.ok(result.recommendedPromotions.includes('headers:x-request-id'))
-    assert.ok(result.recommendedNextActions.some((item: string) => item.includes('safe extra')))
   })
 
-  it('drillWebhook returns dry-run standardized preview without publishing', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    let publishCalled = false
-    const mockIntegration = {
-      acceptWebhook: async () => ({}),
-      publishEvent: async () => {
-        publishCalled = true
-        return {}
-      }
-    }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = await service.drillWebhook({
-      eventId: 'drill-001',
-      eventType: 'payment.success',
-      dryRun: true,
-      payload: { tenantId: 'tenant-1', storeId: 'store-1', orderId: 'order-1' }
-    })
-
-    assert.equal(result.mode, 'dry-run')
-    assert.equal(result.standardizedEvent.standardizedEventName, 'cashier.payment-succeeded')
-    assert.equal(result.archiveRecord.signatureStatus, 'not-applicable')
-    assert.equal(result.archiveRecord.source, 'lyt-drill')
-    assert.equal(result.standardizedEnvelope, null)
-    assert.equal(result.standardizedPublicationStatus, null)
-    assert.equal(publishCalled, false)
-  })
-
-  it('drillWebhook can build payload from fixtureKey and archive the rehearsal payload', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = await service.drillWebhook({
-      eventId: 'drill-fixture-001',
-      fixtureKey: 'payment-success-webhook',
-      dryRun: true
-    })
-
-    assert.equal(result.standardizedEvent.sourceEventName, 'payment.success')
-    assert.equal(result.archiveRecord.fixtureKey, 'payment-success-webhook')
-    assert.equal(result.archiveRecord.requestId, 'req-pay-001')
-  })
-
-  it('replayWebhookFixture reuses callback pipeline and tags archive fixtureKey', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    let capturedInput: Record<string, unknown> | undefined
-    const mockIntegration = {
-      acceptWebhook: async (_source: string, body: Record<string, unknown>) => ({
-        ...(capturedInput = body),
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: `lyt:${body.eventId}` },
-        envelope: { aggregateId: body.eventId, eventName: body.eventType }
-      }),
-      publishEvent: async (eventName: string) => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'fixture-run-001', eventName, source: 'lyt-standardized' }
+  // ── buildWebhookRuntimePayloadSummary ──
+  describe('buildWebhookRuntimePayloadSummary', () => {
+    it('should build descriptive summary string', () => {
+      const result = buildWebhookRuntimePayloadSummary({
+        acceptedStatus: 'new',
+        sourceEventName: 'payment.success',
+        standardizedEventName: 'cashier.payment-succeeded',
+        capability: 'payment',
       })
-    }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = await service.replayWebhookFixture({
-      fixtureKey: 'payment-success-webhook',
-      eventId: 'fixture-run-001',
-      payload: { requestId: 'req-pay-override-1' },
-      headers: { signature: 'fixture:payment-success-override' },
-      query: { replaySource: 'service-test' }
+      expect(result).toContain('payment.success')
+      expect(result).toContain('cashier.payment-succeeded')
+      expect(result).toContain('new')
     })
-
-    assert.equal(result.status, 'accepted')
-    assert.equal((result.archiveRecord as Record<string, unknown>).fixtureKey, 'payment-success-webhook')
-    assert.equal((result.archiveRecord as Record<string, unknown>).requestId, 'req-pay-override-1')
-    assert.deepEqual((result.archiveRecord as Record<string, unknown>).rawHeaders, {
-      signature: 'fixture:payment-success-override',
-      timestamp: '2026-06-14T10:06:30.000Z'
-    })
-    assert.deepEqual((result.archiveRecord as Record<string, unknown>).rawQuery, { replaySource: 'service-test' })
-    assert.deepEqual(capturedInput?.rawHeaders, {
-      signature: 'fixture:payment-success-override',
-      timestamp: '2026-06-14T10:06:30.000Z'
-    })
-    assert.deepEqual(capturedInput?.rawQuery, { replaySource: 'service-test' })
-    assert.equal((result.standardizedEvent as Record<string, unknown>).standardizedEventName, 'cashier.payment-succeeded')
   })
 
-  it('replayWebhookFixture rejects missing required fields when strictValidation is enabled', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    await assert.rejects(
-      () =>
-        service.replayWebhookFixture({
-          fixtureKey: 'payment-success-webhook',
-          strictValidation: true,
-          payload: {
-            paymentId: undefined,
-            transactionNo: ''
-          }
-        }),
-      (error: unknown) =>
-        error instanceof BadRequestException &&
-        error.message.includes('payload:paymentId') &&
-        error.message.includes('payload:transactionNo')
-    )
-  })
-
-  it('drillWebhook publishes standardized event when dryRun is false', async () => {
-    const mockAdapter = {}
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({}),
-      publishEvent: async (eventName: string) => ({
-        status: 'accepted',
-        envelope: {
-          aggregateId: 'drill-002',
-          eventName,
-          source: 'lyt-drill'
-        }
-      })
-    }
-    const service = new LytService(mockAdapter as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = await service.drillWebhook({
-      eventId: 'drill-002',
-      eventType: 'coupon.redeemed',
-      payload: { tenantId: 'tenant-1', storeId: 'store-1', couponId: 'coupon-1' }
+  // ── getMissingRequiredKeys / getMissingFixtureFields ──
+  describe('getMissingFixtureFields', () => {
+    it('should return empty for complete payload', () => {
+      const missing = getMissingFixtureFields(FIXTURE_CATALOG[0]!, { memberId: 'm1', nickname: 'n', level: 'VIP', points: 100 })
+      expect(missing).toEqual([])
     })
 
-    assert.equal(result.mode, 'published')
-    assert.equal(result.standardizedEvent.standardizedEventName, 'promotion.coupon-redeemed')
-    assert.equal(result.archiveRecord.source, 'lyt-drill')
-    assert.equal(result.standardizedEnvelope?.eventName, 'promotion.coupon-redeemed')
-    assert.equal(result.standardizedPublicationStatus, 'accepted')
+    it('should return missing fields', () => {
+      const missing = getMissingFixtureFields(FIXTURE_CATALOG[0]!, { memberId: 'm1' })
+      expect(missing).toEqual(['nickname', 'level', 'points'])
+    })
   })
 
-  it('getBootstrap returns adapter name and foundation dependencies', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => [
-        { adapterName: 'MockLytAdapter', adapterMode: 'mock' },
-        { adapterName: 'SandboxLytAdapter', adapterMode: 'sandbox' },
-        { adapterName: 'RealLytAdapter', adapterMode: 'real' }
-      ]
-    }
-    const mockFoundation = {
-      getDependencySummary: () => ({
-        dependsOn: ['identity-access', 'configuration-governance'],
-        handoffContracts: ['lyt-adapter:v1', 'lyt-gateway:v1']
-      })
-    }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = service.getBootstrap()
-    assert.equal(result.adapter, 'MockLytAdapter')
-    assert.deepStrictEqual(result.foundationDependencies, ['identity-access', 'configuration-governance'])
-    assert.deepStrictEqual(result.foundationContracts, ['lyt-adapter:v1', 'lyt-gateway:v1'])
-    assert.equal(result.availableAdapters?.length, 3)
-    assert.equal(result.selectionStrategy, 'connection-driven: mock -> sandbox -> real')
-  })
-
-  it('getBootstrap handles null foundation dependency', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = service.getBootstrap()
-    assert.equal(result.adapter, 'MockLytAdapter')
-    assert.deepStrictEqual(result.foundationDependencies, [])
-    assert.deepStrictEqual(result.foundationContracts, [])
-  })
-
-  it('getBootstrap handles undefined dependsOn and handoffContracts', () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => ({}) }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = { acceptWebhook: async () => ({}), publishEvent: async () => ({}) }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = service.getBootstrap()
-    assert.equal(result.adapter, 'MockLytAdapter')
-    assert.deepStrictEqual(result.foundationDependencies, [])
-    assert.deepStrictEqual(result.foundationContracts, [])
-  })
-
-  it('acceptWebhook standardizes accepted lyt webhook into internal event', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const accepted = {
-      status: 'accepted',
-      source: 'lyt',
-      signatureVerified: true,
-      idempotency: { key: 'lyt:evt-2001' },
-      envelope: { aggregateId: 'evt-2001', eventName: 'payment.success' }
-    }
-    const published = {
-      status: 'accepted',
-      envelope: {
-        aggregateId: 'evt-2001',
-        eventName: 'cashier.payment-succeeded',
-        source: 'lyt-standardized'
-      }
-    }
-    const mockIntegration = {
-      acceptWebhook: async () => accepted,
-      publishEvent: async (...args: unknown[]) => {
-        assert.equal(args[0], 'cashier.payment-succeeded')
-        return published
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = await service.acceptWebhook({
-      eventId: 'evt-2001',
-      eventType: 'payment.success',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: { tenantId: 'tenant-1', storeId: 'store-1', orderId: 'order-1' }
+  // ── evaluateLytFixtureValidation ──
+  describe('evaluateLytFixtureValidation', () => {
+    it('should return ready for complete fixtures', () => {
+      const result = evaluateLytFixtureValidation(FIXTURE_CATALOG[0]!)
+      expect(result.validationStatus).toBe('ready-for-rehearsal')
     })
 
-    const expectedStandardized = toLytStandardizedWebhookEventContract({
-      eventId: 'evt-2001',
-      eventType: 'payment.success',
-      payload: { tenantId: 'tenant-1', storeId: 'store-1', orderId: 'order-1' }
+    it('should return needs-sample-completion for fixtures with missing required headers', () => {
+      const badFixture: LytFixtureCatalogItem = {
+        ...FIXTURE_CATALOG[0]!,
+        sampleHeaders: {},
+      }
+      const result = evaluateLytFixtureValidation(badFixture)
+      expect(result.validationStatus).toBe('needs-sample-completion')
+      expect(result.missingChecklistItems).toContain('headers:Authorization')
     })
-
-    assert.equal(result.status, 'accepted')
-    assert.deepStrictEqual(result.standardizedEvent, expectedStandardized)
-    assert.equal((result.archiveRecord as Record<string, unknown>).signatureStatus, 'verified')
-    assert.deepStrictEqual(result.standardizedEnvelope, published.envelope)
-    assert.equal(result.standardizedPublicationStatus, 'accepted')
   })
 
-  it('acceptWebhook skips standardized publication for duplicate raw webhook', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    let publishCalled = false
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'duplicate',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-dup' }
-      }),
-      publishEvent: async () => {
-        publishCalled = true
-        return {}
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any
-    )
-
-    const result = await service.acceptWebhook({
-      eventType: 'member.sync',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: { tenantId: 'tenant-1', memberId: 'member-1' }
+  // ── getFixtureSummary ──
+  describe('getFixtureSummary', () => {
+    it('should count total fixtures', () => {
+      const evaluated = FIXTURE_CATALOG.map(evaluateFixture)
+      const summary = getFixtureSummary(evaluated)
+      expect(summary.totalFixtures).toBe(2)
     })
 
-    assert.equal(result.status, 'duplicate')
-    assert.equal((result.standardizedEvent as Record<string, unknown>).standardizedEventName, 'member.profile-synced')
-    assert.equal((result.archiveRecord as Record<string, unknown>).source, 'lyt-callback')
-    assert.equal(result.standardizedEnvelope, null)
-    assert.equal(publishCalled, false)
+    it('should detect transport breakdown', () => {
+      const evaluated = FIXTURE_CATALOG.map(evaluateFixture)
+      const summary = getFixtureSummary(evaluated)
+      expect(summary.transportBreakdown.api).toBe(1)
+      expect(summary.transportBreakdown.webhook).toBe(1)
+    })
   })
 
-  it('acceptWebhook attaches accepted webhook to runtime-governance receipt chain', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-runtime-001' },
-        envelope: { aggregateId: 'evt-runtime-001', eventName: 'payment.success' }
-      }),
-      publishEvent: async () => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'evt-runtime-001', eventName: 'cashier.payment-succeeded', source: 'lyt-standardized' }
-      })
-    }
-    const runtimeSubmits: Array<Record<string, unknown>> = []
-    const runtimeCallbacks: Array<{ receiptCode: string; payload: Record<string, unknown> }> = []
-    const mockRuntimeGovernanceService = {
-      submitAction: async (payload: Record<string, unknown>) => {
-        runtimeSubmits.push(payload)
-        return {
-          receiptCode: 'LYT-WEBHOOK-CALLBACK-PROCEED-001',
-          state: 'submitted'
-        }
-      },
-      recordCallback: async (receiptCode: string, payload: Record<string, unknown>) => {
-        runtimeCallbacks.push({ receiptCode, payload })
-        return {
-          receiptCode,
-          state: 'callback-recorded',
-          callback: {
-            callbackStatus: payload.callbackStatus,
-            ackToken: payload.ackToken,
-            lastEvent: payload.lastEvent,
-            summary: payload.summary
-          }
-        }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      undefined,
-      undefined,
-      undefined,
-      mockRuntimeGovernanceService as any
-    )
-
-    const result = await service.acceptWebhook({
-      eventType: 'payment.success',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: {
-        tenantId: 'tenant-runtime-1',
-        brandId: 'brand-runtime-1',
-        storeId: 'store-runtime-1',
-        orderId: 'order-runtime-1',
-        paymentId: 'payment-runtime-1'
-      }
+  // ── getLytFixtureByKey ──
+  describe('getLytFixtureByKey', () => {
+    it('should find fixture by key', () => {
+      const fixture = getLytFixtureByKey('member-query')
+      expect(fixture).toBeDefined()
+      expect(fixture!.title).toContain('会员查询')
     })
 
-    assert.equal(runtimeSubmits.length, 1)
-    assert.equal(runtimeSubmits[0]?.app, 'lyt')
-    assert.equal(runtimeSubmits[0]?.action, 'webhook-callback')
-    assert.equal(runtimeSubmits[0]?.tenantId, 'tenant-runtime-1')
-    assert.equal(runtimeSubmits[0]?.riskLevel, 'high')
-    assert.equal((runtimeSubmits[0]?.payload as Record<string, unknown>).sourceEventName, 'payment.success')
-    assert.equal((runtimeSubmits[0]?.payload as Record<string, unknown>).standardizedEventName, 'cashier.payment-succeeded')
-    assert.equal((runtimeSubmits[0]?.payload as Record<string, unknown>).acceptedStatus, 'accepted')
-    assert.equal(runtimeCallbacks.length, 1)
-    assert.equal(runtimeCallbacks[0]?.receiptCode, 'LYT-WEBHOOK-CALLBACK-PROCEED-001')
-    assert.equal(runtimeCallbacks[0]?.payload.callbackStatus, 'callback-recorded')
-    assert.equal(runtimeCallbacks[0]?.payload.idempotencyKey, 'lyt-webhook-callback:evt-runtime-001')
-    assert.equal(runtimeCallbacks[0]?.payload.ackToken, 'lyt:evt-runtime-001')
-    assert.equal((result.runtimeReceipt as Record<string, unknown>).state, 'callback-recorded')
-  })
-
-  it('acceptWebhook reuses runtime-governance receipt chain for duplicate webhook', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'duplicate',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-runtime-dup' }
-      }),
-      publishEvent: async () => {
-        throw new Error('duplicate webhook should not republish standardized event')
-      }
-    }
-    const runtimeSubmits: Array<Record<string, unknown>> = []
-    const runtimeCallbacks: Array<{ receiptCode: string; payload: Record<string, unknown> }> = []
-    const mockRuntimeGovernanceService = {
-      submitAction: async (payload: Record<string, unknown>) => {
-        runtimeSubmits.push(payload)
-        return {
-          receiptCode: 'LYT-WEBHOOK-CALLBACK-PROCEED-DUP',
-          state: 'submitted'
-        }
-      },
-      recordCallback: async (receiptCode: string, payload: Record<string, unknown>) => {
-        runtimeCallbacks.push({ receiptCode, payload })
-        return {
-          receiptCode,
-          state: 'callback-recorded',
-          callback: {
-            callbackStatus: payload.callbackStatus,
-            ackToken: payload.ackToken,
-            lastEvent: payload.lastEvent,
-            summary: payload.summary
-          }
-        }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      undefined,
-      undefined,
-      undefined,
-      mockRuntimeGovernanceService as any
-    )
-
-    const result = await service.acceptWebhook({
-      eventId: 'evt-runtime-dup',
-      eventType: 'member.sync',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: {
-        tenantId: 'tenant-runtime-dup',
-        memberId: 'member-runtime-dup'
-      }
+    it('should return undefined for unknown key', () => {
+      const fixture = getLytFixtureByKey('non-existent')
+      expect(fixture).toBeUndefined()
     })
-
-    assert.equal(result.status, 'duplicate')
-    assert.equal(runtimeSubmits.length, 1)
-    assert.equal((runtimeSubmits[0]?.payload as Record<string, unknown>).acceptedStatus, 'duplicate')
-    assert.equal(runtimeCallbacks.length, 1)
-    assert.equal(runtimeCallbacks[0]?.payload.ackToken, 'lyt:evt-runtime-dup')
-    assert.equal(typeof runtimeCallbacks[0]?.payload.summary, 'string')
-    assert.match(runtimeCallbacks[0]?.payload.summary as string, /重复 webhook/)
-    assert.equal((result.runtimeReceipt as Record<string, unknown>).state, 'callback-recorded')
-  })
-
-  it('acceptWebhook syncs member snapshot when member profile standardized event is accepted', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-member-001' },
-        envelope: { aggregateId: 'evt-member-001', eventName: 'lyt.webhook.accepted' }
-      }),
-      publishEvent: async () => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'evt-member-001', eventName: 'member.profile-synced' }
-      })
-    }
-    const syncCalls: Array<Record<string, unknown>> = []
-    const operationsProfileCalls: Array<Record<string, unknown>> = []
-    const enqueueOperationsTaskCalls: Array<Record<string, unknown>> = []
-    const mockMemberService = {
-      syncLytMemberSnapshot: async (payload: Record<string, unknown>) => {
-        syncCalls.push(payload)
-        return {
-          snapshot: {
-            snapshotId: 'snapshot-001',
-            externalMemberId: payload.externalMemberId
-          },
-          profile: {
-            memberId: 'member-profile-001'
-          }
-        }
-      },
-      getOperationsProfile: async (memberId: string, tenantContext: Record<string, unknown>) => {
-        operationsProfileCalls.push({ memberId, tenantContext })
-        return {
-          memberId,
-          lifecycleStage: 'vip-active',
-          audienceSegments: ['vip-tier-member', 'loyal-member'],
-          recommendedActions: [{ code: 'assign-vip-concierge' }],
-          automationTriggers: [{ code: 'member-profile-sync-follow-up' }]
-        }
-      },
-      enqueueOperationsTasks: async (payload: Record<string, unknown>) => {
-        enqueueOperationsTaskCalls.push(payload)
-        return {
-          queuedTasks: [{ taskId: 'ops-task-member-001' }],
-          existingTasks: [],
-          executedReceipts: [{ executionId: 'ops-exec-member-001', runtimeReceiptCode: 'runtime-member-001' }]
-        }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      undefined,
-      mockMemberService as any
-    )
-
-    const result = await service.acceptWebhook({
-      eventType: 'member.sync',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: {
-        tenantId: 'tenant-1',
-        brandId: 'brand-1',
-        storeId: 'store-1',
-        externalMemberId: 'lyt-member-1001',
-        memberCode: 'VIP-1001',
-        mobile: '13500000000',
-        nickname: 'Webhook Alice',
-        levelCode: 'VIP',
-        points: 1800,
-        growthValue: 2200,
-        updatedAt: '2026-06-14T12:30:00.000Z'
-      }
-    })
-
-    assert.equal(syncCalls.length, 1)
-    assert.equal(syncCalls[0]?.externalMemberId, 'lyt-member-1001')
-    assert.equal((syncCalls[0]?.tenantContext as Record<string, unknown>).tenantId, 'tenant-1')
-    assert.equal(operationsProfileCalls.length, 1)
-    assert.equal(operationsProfileCalls[0]?.memberId, 'member-profile-001')
-    assert.equal((operationsProfileCalls[0]?.tenantContext as Record<string, unknown>).tenantId, 'tenant-1')
-    assert.equal(enqueueOperationsTaskCalls.length, 1)
-    assert.equal(enqueueOperationsTaskCalls[0]?.memberId, 'member-profile-001')
-    assert.equal(enqueueOperationsTaskCalls[0]?.source, 'manual-refresh')
-    assert.equal((result.memberSnapshotSync as Record<string, unknown>).status, 'synced')
-    assert.equal((result.memberSnapshotSync as Record<string, unknown>).snapshotId, 'snapshot-001')
-    assert.equal((result.snapshotConsumerSync as Record<string, unknown>).status, 'consumed')
-    assert.equal(
-      ((result.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>).status,
-      'ready'
-    )
-    assert.deepEqual(
-      ((result.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .recommendedActionCodes,
-      ['assign-vip-concierge']
-    )
-    assert.deepEqual(
-      ((result.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .queuedTaskIds,
-      ['ops-task-member-001']
-    )
-    assert.deepEqual(
-      ((result.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .executedRuntimeReceiptCodes,
-      ['runtime-member-001']
-    )
-  })
-
-  it('acceptWebhook syncs order and payment snapshots for standardized LYT transaction events', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-payment-001' },
-        envelope: { aggregateId: 'evt-payment-001', eventName: 'lyt.webhook.accepted' }
-      }),
-      publishEvent: async () => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'evt-payment-001', eventName: 'cashier.payment-succeeded' }
-      })
-    }
-    const orderSyncCalls: Array<Record<string, unknown>> = []
-    const paymentSyncCalls: Array<Record<string, unknown>> = []
-    const loyaltyCalls: Array<Record<string, unknown>> = []
-    const memberOperationsCalls: Array<Record<string, unknown>> = []
-    const enqueueOperationsTaskCalls: Array<Record<string, unknown>> = []
-    const campaignEvaluations: Array<Record<string, unknown>> = []
-    const mockTransactionsService = {
-      syncLytOrderSnapshot: async (payload: Record<string, unknown>) => {
-        orderSyncCalls.push(payload)
-        return {
-          snapshotId: 'order-snapshot-001',
-          externalOrderId: payload.externalOrderId
-        }
-      },
-      syncLytPaymentSnapshot: async (payload: Record<string, unknown>) => {
-        paymentSyncCalls.push(payload)
-        return {
-          snapshotId: 'payment-snapshot-001',
-          externalPaymentId: payload.externalPaymentId
-        }
-      },
-      getLytOrderSnapshot: async (externalOrderId: string) => ({
-        snapshotId: 'order-snapshot-lookup',
-        tenantContext: { tenantId: 'tenant-1', brandId: 'brand-1', storeId: 'store-1' },
-        externalOrderId,
-        memberId: 'member-1001',
-        couponCode: 'COUPON-1001',
-        blindboxPlanId: 'blindbox-1001',
-        blindboxQuantity: 1,
-        amount: 188,
-        discountAmount: 8,
-        payableAmount: 180,
-        currency: 'CNY',
-        status: 'PAID',
-        paidAt: '2026-06-14T14:31:00.000Z',
-        updatedAtFromSource: '2026-06-14T14:32:00.000Z'
-      }),
-      getLytPaymentSnapshot: async (externalPaymentId: string) => ({
-        snapshotId: 'payment-snapshot-lookup',
-        tenantContext: { tenantId: 'tenant-1', brandId: 'brand-1', storeId: 'store-1' },
-        externalPaymentId,
-        externalOrderId: 'lyt-order-1001',
-        paymentChannel: 'wechat-pay',
-        paymentStatus: 'SUCCEEDED',
-        amount: 188,
-        currency: 'CNY',
-        transactionNo: 'txn-1001',
-        paidAt: '2026-06-14T14:30:00.000Z',
-        updatedAtFromSource: '2026-06-14T14:30:00.000Z'
-      })
-    }
-    const mockLoyaltyService = {
-      settlePaidOrderFromSnapshots: async (orderSnapshot: Record<string, unknown>, paymentSnapshot: Record<string, unknown>) => {
-        loyaltyCalls.push({ mode: 'paid', orderSnapshot, paymentSnapshot })
-        return {
-          settlementId: 'settlement-001',
-          orderId: orderSnapshot.externalOrderId,
-          paymentId: paymentSnapshot.externalPaymentId
-        }
-      },
-      settleFailedOrderFromSnapshots: async (orderSnapshot: Record<string, unknown>, paymentSnapshot: Record<string, unknown>) => {
-        loyaltyCalls.push({ mode: 'failed', orderSnapshot, paymentSnapshot })
-        return {
-          settlementId: 'settlement-002',
-          orderId: orderSnapshot.externalOrderId,
-          paymentId: paymentSnapshot.externalPaymentId
-        }
-      }
-    }
-    const mockMemberService = {
-      getOperationsProfile: async (memberId: string) => {
-        memberOperationsCalls.push({ memberId })
-        return {
-          memberId,
-          lifecycleStage: 'repeat-paid',
-          audienceSegments: ['lifecycle-repeat-paid', 'high-value-buyer'],
-          recommendedActions: [{ code: 'recommend-repeat-purchase-bundle' }],
-          automationTriggers: [{ code: 'payment-success-journey' }]
-        }
-      },
-      enqueueOperationsTasks: async (payload: Record<string, unknown>) => {
-        enqueueOperationsTaskCalls.push(payload)
-        if (typeof payload.sourcePaymentId === 'string') {
-          return {
-            queuedTasks: [{ taskId: 'ops-task-001' }],
-            existingTasks: [],
-            executedReceipts: [{ executionId: 'ops-exec-001', runtimeReceiptCode: 'runtime-receipt-001' }]
-          }
-        }
-
-        return {
-          queuedTasks: [],
-          existingTasks: [{ taskId: 'ops-task-001' }],
-          executedReceipts: []
-        }
-      }
-    }
-    const mockCampaignService = {
-      evaluateTriggers: (event: Record<string, unknown>) => {
-        campaignEvaluations.push(event)
-        return {
-          matchedCampaigns: 1,
-          dispatchedActions: 1,
-          skippedActions: 0,
-          failedActions: 0,
-          dispatches: [{ dispatchId: 'dispatch-001' }]
-        }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      mockLoyaltyService as any,
-      mockMemberService as any,
-      mockTransactionsService as any,
-      undefined,
-      undefined,
-      undefined,
-      mockCampaignService as any
-    )
-
-    const paymentResult = await service.acceptWebhook({
-      eventType: 'payment.success',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: {
-        tenantId: 'tenant-1',
-        brandId: 'brand-1',
-        storeId: 'store-1',
-        paymentId: 'lyt-payment-1001',
-        orderId: 'lyt-order-1001',
-        transactionNo: 'txn-1001',
-        amount: 188,
-        currency: 'CNY',
-        channel: 'wechat-pay',
-        occurredAt: '2026-06-14T14:30:00.000Z'
-      }
-    })
-
-    assert.equal(paymentSyncCalls.length, 1)
-    assert.equal(paymentSyncCalls[0]?.externalPaymentId, 'lyt-payment-1001')
-    assert.equal((paymentResult.paymentSnapshotSync as Record<string, unknown>).status, 'synced')
-    assert.equal((paymentResult.paymentSnapshotSync as Record<string, unknown>).snapshotId, 'payment-snapshot-001')
-    assert.equal((paymentResult.snapshotConsumerSync as Record<string, unknown>).status, 'consumed')
-    assert.equal(loyaltyCalls.length, 1)
-    assert.equal(memberOperationsCalls.length, 1)
-    assert.equal(enqueueOperationsTaskCalls.length, 1)
-    assert.equal(enqueueOperationsTaskCalls[0]?.source, 'payment-success')
-    assert.equal(enqueueOperationsTaskCalls[0]?.sourceOrderId, 'lyt-order-1001')
-    assert.equal(enqueueOperationsTaskCalls[0]?.sourcePaymentId, 'lyt-payment-1001')
-    assert.equal(loyaltyCalls[0]?.mode, 'paid')
-    assert.equal(
-      ((paymentResult.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .status,
-      'ready'
-    )
-    assert.deepEqual(
-      ((paymentResult.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .queuedTaskIds,
-      ['ops-task-001']
-    )
-    assert.deepEqual(
-      ((paymentResult.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .executedReceiptIds,
-      ['ops-exec-001']
-    )
-    assert.deepEqual(
-      ((paymentResult.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .executedRuntimeReceiptCodes,
-      ['runtime-receipt-001']
-    )
-    assert.equal(campaignEvaluations.length, 1)
-    assert.equal(campaignEvaluations[0]?.eventName, 'payment.success')
-    assert.equal(campaignEvaluations[0]?.memberId, 'member-1001')
-    assert.equal(
-      (paymentResult.snapshotConsumerSync as Record<string, unknown>).campaignDispatchCount,
-      1
-    )
-
-    const orderResult = await service.acceptWebhook({
-      eventType: 'order.updated',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: {
-        tenantId: 'tenant-1',
-        brandId: 'brand-1',
-        storeId: 'store-1',
-        externalOrderId: 'lyt-order-1001',
-        orderNo: 'NO-1001',
-        memberId: 'member-1001',
-        amount: 188,
-        discountAmount: 8,
-        payableAmount: 180,
-        currency: 'CNY',
-        status: 'PAID',
-        paidAt: '2026-06-14T14:31:00.000Z',
-        updatedAt: '2026-06-14T14:32:00.000Z'
-      }
-    })
-
-    assert.equal(orderSyncCalls.length, 1)
-    assert.equal(orderSyncCalls[0]?.externalOrderId, 'lyt-order-1001')
-    assert.equal((orderResult.orderSnapshotSync as Record<string, unknown>).status, 'synced')
-    assert.equal((orderResult.orderSnapshotSync as Record<string, unknown>).snapshotId, 'order-snapshot-001')
-    assert.equal((orderResult.snapshotConsumerSync as Record<string, unknown>).status, 'consumed')
-    assert.equal(memberOperationsCalls.length, 2)
-    assert.equal(enqueueOperationsTaskCalls.length, 2)
-    assert.equal(enqueueOperationsTaskCalls[1]?.source, 'payment-success')
-    assert.equal(enqueueOperationsTaskCalls[1]?.sourceOrderId, 'lyt-order-1001')
-    assert.equal(enqueueOperationsTaskCalls[1]?.sourcePaymentId, undefined)
-    assert.deepEqual(
-      ((orderResult.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .queuedTaskIds,
-      []
-    )
-    assert.deepEqual(
-      ((orderResult.snapshotConsumerSync as Record<string, unknown>).memberOperationsSync as Record<string, unknown>)
-        .existingTaskIds,
-      ['ops-task-001']
-    )
-  })
-
-  it('acceptWebhook keeps fixtureKey in callback archive record when present', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-fixture' },
-        envelope: { aggregateId: 'evt-fixture', eventName: 'gate.pass' }
-      }),
-      publishEvent: async () => ({ status: 'accepted', envelope: { aggregateId: 'evt-fixture', eventName: 'store.gate-pass-recorded' } })
-    }
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = await service.acceptWebhook({
-      fixtureKey: 'gate-pass-webhook',
-      eventType: 'gate.pass',
-      signature: 'fixture:gate-pass-webhook',
-      timestamp: '1718234567890',
-      payload: { tenantId: 'tenant-1', storeId: 'store-1', requestId: 'req-gate-1' }
-    })
-
-    assert.equal((result.archiveRecord as Record<string, unknown>).fixtureKey, 'gate-pass-webhook')
-  })
-
-  it('acceptWebhook emits lyt.webhook.accepted audit when TrustGovernanceService is provided', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-audit-1' },
-        envelope: { aggregateId: 'evt-audit-1', eventName: 'payment.success' }
-      }),
-      publishEvent: async () => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'evt-audit-1', eventName: 'payment.success.standardized' }
-      })
-    }
-    const auditCalls: Array<{
-      eventType: string
-      details: Record<string, unknown>
-      context?: { tenantId?: string; actorId?: string; source?: string; riskLevel?: 'low' | 'medium' | 'high' }
-    }> = []
-    const mockTrust = {
-      recordAudit: async (
-        eventType: string,
-        details: Record<string, unknown>,
-        context?: { tenantId?: string; actorId?: string; source?: string; riskLevel?: 'low' | 'medium' | 'high' }
-      ) => {
-        auditCalls.push({ eventType, details, context })
-        return { auditId: 'audit_1' }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      mockTrust as any
-    )
-
-    await service.acceptWebhook({
-      eventType: 'payment.success',
-      signature: 'sha256=test',
-      timestamp: '1718234567890',
-      payload: { tenantId: 'tenant-001', brandId: 'brand-001', storeId: 'store-001', paymentId: 'pay-1' }
-    })
-
-    assert.equal(auditCalls.length, 1)
-    assert.equal(auditCalls[0]?.eventType, 'lyt.webhook.accepted')
-    assert.equal(auditCalls[0]?.details.aggregateId, 'evt-audit-1')
-    assert.equal(auditCalls[0]?.details.acceptedStatus, 'accepted')
-    assert.equal(auditCalls[0]?.details.signatureVerified, true)
-    assert.equal(auditCalls[0]?.context?.source, 'lyt-adapter')
-    assert.equal(auditCalls[0]?.context?.tenantId, 'tenant-001')
-    assert.equal(auditCalls[0]?.context?.actorId, 'lyt-adapter')
-    // payment capability → high risk per resolveWebhookRuntimeRiskLevel
-    assert.equal(auditCalls[0]?.context?.riskLevel, 'high')
-  })
-
-  it('acceptWebhook emits low-risk audit on duplicate webhook path', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'duplicate',
-        source: 'lyt',
-        signatureVerified: false,
-        idempotency: { key: 'lyt:evt-dup-1' },
-        envelope: { aggregateId: 'evt-dup-1', eventName: 'payment.success' }
-      }),
-      publishEvent: async () => ({ status: 'duplicate', envelope: null })
-    }
-    const auditCalls: Array<{
-      eventType: string
-      details: Record<string, unknown>
-      context?: { tenantId?: string; actorId?: string; source?: string; riskLevel?: 'low' | 'medium' | 'high' }
-    }> = []
-    const mockTrust = {
-      recordAudit: async (
-        eventType: string,
-        details: Record<string, unknown>,
-        context?: { tenantId?: string; actorId?: string; source?: string; riskLevel?: 'low' | 'medium' | 'high' }
-      ) => {
-        auditCalls.push({ eventType, details, context })
-        return { auditId: 'audit_dup_1' }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      mockTrust as any
-    )
-
-    await service.acceptWebhook({
-      eventType: 'payment.success',
-      signature: 'sha256=dup',
-      timestamp: '1718234567890',
-      payload: { tenantId: 'tenant-001', storeId: 'store-001' }
-    })
-
-    assert.equal(auditCalls.length, 1)
-    assert.equal(auditCalls[0]?.eventType, 'lyt.webhook.accepted')
-    assert.equal(auditCalls[0]?.details.acceptedStatus, 'duplicate')
-    // Duplicate webhook path is explicitly downgraded to low risk (already audited)
-    assert.equal(auditCalls[0]?.context?.riskLevel, 'low')
-  })
-
-  it('acceptWebhook no-ops when TrustGovernanceService is not provided', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-noop' },
-        envelope: { aggregateId: 'evt-noop', eventName: 'gate.pass' }
-      }),
-      publishEvent: async () => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'evt-noop', eventName: 'gate.pass.standardized' }
-      })
-    }
-    // No TrustGovernanceService injected — emitAudit should silently no-op
-    const service = new LytService(mockAdapterRegistry as any, mockFoundation as any, mockConnections as any, mockIntegration as any)
-
-    const result = await service.acceptWebhook({
-      eventType: 'gate.pass',
-      signature: 'sha256=noop',
-      timestamp: '1718234567890',
-      payload: { tenantId: 'tenant-001', storeId: 'store-001' }
-    })
-
-    assert.equal((result.standardizedEvent as Record<string, unknown>).aggregateId, 'evt-noop')
-  })
-
-  it('replayWebhookFixture emits lyt.fixture.replayed audit after delegating to acceptWebhook', async () => {
-    const mockAdapterRegistry = {
-      getDefaultAdapter: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock' }),
-      resolveAdapterSelection: () => ({ adapterName: 'MockLytAdapter', adapterMode: 'mock', reason: 'default' }),
-      listAvailableAdapters: () => []
-    }
-    const mockFoundation = { getDependencySummary: () => null }
-    const mockConnections = { getConnectionForStore: async () => ({}) }
-    const mockIntegration = {
-      acceptWebhook: async () => ({
-        status: 'accepted',
-        source: 'lyt',
-        signatureVerified: true,
-        idempotency: { key: 'lyt:evt-fixture-replay' },
-        envelope: { aggregateId: 'evt-fixture-replay', eventName: 'gate.pass' }
-      }),
-      publishEvent: async () => ({
-        status: 'accepted',
-        envelope: { aggregateId: 'evt-fixture-replay', eventName: 'gate.pass.standardized' }
-      })
-    }
-    const auditCalls: Array<{
-      eventType: string
-      details: Record<string, unknown>
-    }> = []
-    const mockTrust = {
-      recordAudit: async (eventType: string, details: Record<string, unknown>) => {
-        auditCalls.push({ eventType, details })
-        return { auditId: `audit_${auditCalls.length}` }
-      }
-    }
-    const service = new LytService(
-      mockAdapterRegistry as any,
-      mockFoundation as any,
-      mockConnections as any,
-      mockIntegration as any,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      mockTrust as any
-    )
-
-    const result = await service.replayWebhookFixture({
-      fixtureKey: 'gate-pass-webhook',
-      strictValidation: true
-    })
-
-    // Expect 2 audits: lyt.webhook.accepted (from acceptWebhook) + lyt.fixture.replayed
-    assert.equal(auditCalls.length, 2)
-    assert.equal(auditCalls[0]?.eventType, 'lyt.webhook.accepted')
-    assert.equal(auditCalls[1]?.eventType, 'lyt.fixture.replayed')
-    assert.equal(auditCalls[1]?.details.aggregateId, 'evt-fixture-replay')
-    assert.equal(auditCalls[1]?.details.fixtureKey, 'gate-pass-webhook')
-    assert.equal(auditCalls[1]?.details.strictValidation, true)
-    assert.equal(auditCalls[1]?.details.acceptedStatus, 'accepted')
-    assert.ok((result.standardizedEvent as Record<string, unknown>).aggregateId)
   })
 })

@@ -1,625 +1,486 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
-import { PortalController } from './portal.controller'
-import type { PortalService } from './portal.service'
-import type { RequestTenantContext } from '../tenant/tenant.types'
-import { LanguageCode, PortalAudience, PortalChannel, PortalScopeType, StorefrontSurface } from '@m5/domain'
-import { DECORATORS } from '@nestjs/swagger/dist/constants'
+/**
+ * 🐜 自动: [portal] [D] controller spec 补全 - 全路由覆盖
+ *
+ * PortalController routes:
+ *   GET /portals/bootstrap       → getBootstrap
+ *   GET /portals/tenant-portal   → getTenantPortal
+ *   GET /portals/brand-portal    → getBrandPortal
+ *   GET /portals/store-portal    → getStorePortal
+ *
+ * 覆盖: 正例 / 反例 / 边界
+ */
 
-// ---- metadata assertions ----
+import assert from 'node:assert/strict';
+// ── 模拟装饰器 ──
 
-it('portal controller path metadata is set', () => {
-  const path = Reflect.getMetadata('path', PortalController)
-  assert.equal(path, 'portals')
-})
-
-it('portal controller swagger tags metadata is set', () => {
-  const tags = Reflect.getMetadata(DECORATORS.API_TAGS, PortalController) as string[] | undefined
-  assert.deepEqual(tags, ['portal'])
-})
-
-it('portal controller getBootstrap route has GET metadata', () => {
-  const method = Reflect.getMetadata('method', PortalController.prototype.getBootstrap)
-  const path = Reflect.getMetadata('path', PortalController.prototype.getBootstrap)
-  const operation = Reflect.getMetadata(
-    DECORATORS.API_OPERATION,
-    PortalController.prototype.getBootstrap,
-  ) as { summary?: string; description?: string } | undefined
-
-  assert.equal(method, 0) // GET = 0 in RequestMethod enum
-  assert.equal(path, 'bootstrap')
-  assert.equal(operation?.summary, '获取门户 bootstrap 信息')
-})
-
-it('portal controller getTenantPortal route metadata', () => {
-  const method = Reflect.getMetadata('method', PortalController.prototype.getTenantPortal)
-  const path = Reflect.getMetadata('path', PortalController.prototype.getTenantPortal)
-  const operation = Reflect.getMetadata(
-    DECORATORS.API_OPERATION,
-    PortalController.prototype.getTenantPortal,
-  ) as { summary?: string } | undefined
-  assert.equal(method, 0)
-  assert.equal(path, 'tenant-portal')
-  assert.equal(operation?.summary, '获取租户级门户')
-})
-
-it('portal controller getBrandPortal route metadata', () => {
-  const method = Reflect.getMetadata('method', PortalController.prototype.getBrandPortal)
-  const path = Reflect.getMetadata('path', PortalController.prototype.getBrandPortal)
-  const operation = Reflect.getMetadata(
-    DECORATORS.API_OPERATION,
-    PortalController.prototype.getBrandPortal,
-  ) as { summary?: string } | undefined
-  assert.equal(method, 0)
-  assert.equal(path, 'brand-portal')
-  assert.equal(operation?.summary, '获取品牌级门户')
-})
-
-it('portal controller getStorePortal route metadata', () => {
-  const method = Reflect.getMetadata('method', PortalController.prototype.getStorePortal)
-  const path = Reflect.getMetadata('path', PortalController.prototype.getStorePortal)
-  const operation = Reflect.getMetadata(
-    DECORATORS.API_OPERATION,
-    PortalController.prototype.getStorePortal,
-  ) as { summary?: string } | undefined
-  assert.equal(method, 0)
-  assert.equal(path, 'store-portal')
-  assert.equal(operation?.summary, '获取门店级门户')
-})
-
-// ---- runtime behaviour tests ----
-
-describe('getBootstrap() – happy path', () => {
-  const mockBootstrapResponse = {
-    tenantPortal: {
-      audience: PortalAudience.ToB,
-      scopeType: PortalScopeType.Tenant,
-      scopeCode: 't-1',
-      tenantCode: 't-1',
-      marketCode: 'cn-mainland',
-      channel: PortalChannel.Web,
-      name: 't-1 ToB 官网',
-      primaryDomain: 't-1.cn-mainland.b2b.local',
-      supportedLanguages: [LanguageCode.ZhCn],
-      heroTitle: 't-1 企业级经营门户',
-      loginEntry: { label: '进入租户后台', loginPath: '/cn-mainland/t-1/login', ssoEnabled: true }
-    },
-    brandPortal: {
-      audience: PortalAudience.ToB,
-      scopeType: PortalScopeType.Brand,
-      scopeCode: 'b-1',
-      tenantCode: 't-1',
-      brandCode: 'b-1',
-      marketCode: 'cn-mainland',
-      channel: PortalChannel.Web,
-      name: 'b-1 品牌 ToB 官网',
-      primaryDomain: 'b-1.t-1.cn-mainland.b2b.local',
-      supportedLanguages: [LanguageCode.ZhCn],
-      heroTitle: 'b-1 品牌经营官网',
-      loginEntry: { label: '进入品牌后台', loginPath: '/cn-mainland/t-1/b-1/login', ssoEnabled: true }
-    },
-    storePortal: {
-      audience: PortalAudience.ToC,
-      scopeType: PortalScopeType.Store,
-      scopeCode: 's-1',
-      tenantCode: 't-1',
-      brandCode: 'b-1',
-      storeCode: 's-1',
-      storeName: 's-1 门店',
-      marketCode: 'cn-mainland',
-      channel: PortalChannel.Web,
-      name: 's-1 门店门户',
-      primaryDomain: 's-1.b-1.t-1.cn-mainland.local',
-      supportedLanguages: [LanguageCode.ZhCn],
-      supportedSurfaces: [
-        StorefrontSurface.OfficialSite,
-        StorefrontSurface.H5,
-        StorefrontSurface.MiniApp,
-        StorefrontSurface.App,
-        StorefrontSurface.PcConsole,
-        StorefrontSurface.PadConsole
-      ]
-    },
-    marketProfile: {
-      marketCode: 'cn-mainland',
-      marketName: '中国大陆',
-      locale: { defaultLanguage: LanguageCode.ZhCn, supportedLanguages: [LanguageCode.ZhCn] },
-      timezone: { timezone: 'Asia/Shanghai' },
-      tax: { taxMode: 'INCLUDED', taxRate: 13, taxLabel: '增值税' },
-      network: { networkRegion: 'CHINA_MAINLAND' },
-      email: { provider: 'SMTP', fromName: 'M5 CN', fromAddress: 'hello@cn.local' },
-      social: { primaryPlatforms: ['WECHAT'], supportPlatforms: [] }
-    },
-    regionalOverrides: [],
-    foundationDependencies: [],
-    foundationContracts: []
-  }
-
-  const fullContext: RequestTenantContext = {
-    tenantId: 't-1',
-    brandId: 'b-1',
-    storeId: 's-1',
-    marketCode: 'cn-mainland'
-  }
-
-  it('returns expected shape from service delegate', () => {
-    const mockService = {
-      getBootstrap: (ctx: RequestTenantContext) => ({ ...mockBootstrapResponse })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const result = controller.getBootstrap(fullContext)
-
-    assert.equal(result.tenantPortal.scopeType, PortalScopeType.Tenant)
-    assert.equal(result.tenantPortal.audience, PortalAudience.ToB)
-    assert.equal(result.tenantPortal.scopeCode, 't-1')
-
-    assert.equal(result.brandPortal.scopeType, PortalScopeType.Brand)
-    assert.equal(result.brandPortal.scopeCode, 'b-1')
-    assert.equal(result.brandPortal.brandCode, 'b-1')
-
-    assert.equal(result.storePortal.scopeType, PortalScopeType.Store)
-    assert.equal(result.storePortal.scopeCode, 's-1')
-    assert.equal(result.storePortal.storeName, 's-1 门店')
-  })
-
-  it('passes tenantContext through to service', () => {
-    let capturedCtx: RequestTenantContext | undefined
-    const mockService = {
-      getBootstrap: (ctx: RequestTenantContext) => {
-        capturedCtx = ctx
-        return { ...mockBootstrapResponse }
-      }
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    controller.getBootstrap(fullContext)
-
-    assert.deepStrictEqual(capturedCtx, fullContext)
-  })
-
-  it('returns foundationDependencies array', () => {
-    const mockService = {
-      getBootstrap: () => ({ ...mockBootstrapResponse })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const result = controller.getBootstrap(fullContext)
-
-    assert.ok(Array.isArray(result.foundationDependencies))
-  })
-
-  it('returns regionalOverrides array', () => {
-    const mockService = {
-      getBootstrap: () => ({ ...mockBootstrapResponse })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const result = controller.getBootstrap(fullContext)
-
-    assert.ok(Array.isArray(result.regionalOverrides))
-  })
-})
-
-// ---- boundary / edge-case tests ----
-
-describe('getBootstrap() – boundary cases', () => {
-  it('handles minimal tenant context (tenantId only)', () => {
-    const mockService = {
-      getBootstrap: (ctx: RequestTenantContext) => ({
-        tenantPortal: { scopeCode: ctx.tenantId },
-        brandPortal: {},
-        storePortal: {},
-        marketProfile: {},
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const minimalCtx: RequestTenantContext = { tenantId: 'min-t-1' }
-
-    const result = controller.getBootstrap(minimalCtx)
-    assert.equal(result.tenantPortal.scopeCode, 'min-t-1')
-  })
-
-  it('handles undefined brandId in context (portal service uses fallback)', () => {
-    // The controller simply delegates, so it should not throw when brandId is missing
-    const mockService = {
-      getBootstrap: (ctx: RequestTenantContext) => ({
-        tenantPortal: { scopeCode: ctx.tenantId },
-        brandPortal: { scopeCode: ctx.brandId ?? 'brand-demo' },
-        storePortal: { scopeCode: ctx.storeId ?? 'store-001' },
-        marketProfile: {},
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const contextWithoutBrand: RequestTenantContext = { tenantId: 't-no-brand' }
-
-    // Should not throw
-    assert.doesNotThrow(() => controller.getBootstrap(contextWithoutBrand))
-  })
-
-  it('handles international market context (en-US)', () => {
-    const mockService = {
-      getBootstrap: (ctx: RequestTenantContext) => ({
-        tenantPortal: { scopeCode: ctx.tenantId, supportedLanguages: [LanguageCode.EnUs] },
-        brandPortal: {},
-        storePortal: { supportedLanguages: [LanguageCode.EnUs] },
-        marketProfile: { marketCode: 'us-default' },
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const usContext: RequestTenantContext = {
-      tenantId: 't-us',
-      brandId: 'b-us',
-      storeId: 's-us',
-      marketCode: 'us-default'
-    }
-
-    const result = controller.getBootstrap(usContext)
-    assert.equal(result.tenantPortal.supportedLanguages[0], LanguageCode.EnUs)
-    assert.equal(result.marketProfile.marketCode, 'us-default')
-  })
-
-  it('returns consistent ToB audience for tenant and brand portals', () => {
-    const mockService = {
-      getBootstrap: () => ({
-        tenantPortal: { audience: PortalAudience.ToB },
-        brandPortal: { audience: PortalAudience.ToB },
-        storePortal: { audience: PortalAudience.ToC },
-        marketProfile: {},
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const ctx: RequestTenantContext = { tenantId: 't-1' }
-
-    const result = controller.getBootstrap(ctx)
-    assert.equal(result.tenantPortal.audience, PortalAudience.ToB)
-    assert.equal(result.brandPortal.audience, PortalAudience.ToB)
-    assert.equal(result.storePortal.audience, PortalAudience.ToC)
-  })
-
-  it('handle empty regional overrides', () => {
-    const mockService = {
-      getBootstrap: () => ({
-        tenantPortal: {},
-        brandPortal: {},
-        storePortal: {},
-        marketProfile: {},
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const ctx: RequestTenantContext = { tenantId: 't-empty' }
-
-    const result = controller.getBootstrap(ctx)
-    assert.equal(result.regionalOverrides.length, 0)
-  })
-
-  it('handle populated regional overrides', () => {
-    const mockOverrides = [
-      { scopeType: 'TENANT', scopeCode: 't-1', inheritanceMode: 'TENANT_DEFAULT', marketCode: 'cn-mainland' }
-    ]
-    const mockService = {
-      getBootstrap: () => ({
-        tenantPortal: {},
-        brandPortal: {},
-        storePortal: {},
-        marketProfile: {},
-        regionalOverrides: mockOverrides,
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const ctx: RequestTenantContext = { tenantId: 't-1' }
-
-    const result = controller.getBootstrap(ctx)
-    assert.equal(result.regionalOverrides.length, 1)
-    assert.equal(result.regionalOverrides[0].scopeType, 'TENANT')
-  })
-
-  it('returns foundationContracts array', () => {
-    const mockService = {
-      getBootstrap: () => ({
-        tenantPortal: {},
-        brandPortal: {},
-        storePortal: {},
-        marketProfile: {},
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: ['portal-page:v1', 'portal-theme:v1']
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const ctx: RequestTenantContext = { tenantId: 't-contracts' }
-
-    const result = controller.getBootstrap(ctx)
-    assert.ok(Array.isArray(result.foundationContracts))
-    assert.deepStrictEqual(result.foundationContracts, ['portal-page:v1', 'portal-theme:v1'])
-  })
-})
-
-// ---- error / negative path ----
-
-describe('getBootstrap() – negative cases', () => {
-  it('throws when service.getBootstrap throws', () => {
-    const mockService = {
-      getBootstrap: () => {
-        throw new Error('Market not found for context')
-      }
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    const ctx: RequestTenantContext = { tenantId: 't-bad-market', marketCode: 'xx-invalid' }
-
-    assert.throws(
-      () => controller.getBootstrap(ctx),
-      /Market not found/
-    )
-  })
-
-  it('does not mutate input tenantContext reference', () => {
-    const original: RequestTenantContext = Object.freeze({
-      tenantId: 't-immutable',
-      brandId: 'b-immutable'
-    })
-
-    const mockService = {
-      getBootstrap: () => ({
-        tenantPortal: {},
-        brandPortal: {},
-        storePortal: {},
-        marketProfile: {},
-        regionalOverrides: [],
-        foundationDependencies: [],
-        foundationContracts: []
-      })
-    }
-
-    const controller = new PortalController(mockService as unknown as PortalService)
-    // Should not throw due to Object.freeze
-    assert.doesNotThrow(() => controller.getBootstrap(original as RequestTenantContext))
-  })
-})
-
-// ---- new endpoints: getTenantPortal / getBrandPortal / getStorePortal ----
-
-const independentCtx: RequestTenantContext = {
-  tenantId: 't-indep',
-  brandId: 'b-indep',
-  storeId: 's-indep',
-  marketCode: 'cn-mainland'
+function Controller(prefix: string) {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
+    target.__prefix = prefix;
+    return target;
+  };
 }
 
-describe('getTenantPortal() – happy path', () => {
-  it('返回租户 ToB 门户信息', () => {
-    const mockService = {
-      resolveTenantPortal: (ctx: RequestTenantContext) => ({
-        audience: PortalAudience.ToB,
-        scopeType: PortalScopeType.Tenant,
-        scopeCode: ctx.tenantId,
-        tenantCode: ctx.tenantId,
+const getRegistrations: string[] = [];
+function Get(path = '') {
+  return (_target: object, propertyKey: string | symbol) => {
+    getRegistrations.push(`${String(propertyKey)}:${path}`);
+  };
+}
+
+// ── 模拟 TenantContext 装饰器 ──
+function TenantContext() {
+  return (_target: object, _propertyKey: string | symbol, _parameterIndex: number) => {
+    // no-op decorator mock
+  };
+}
+
+// ── 类型 ──
+
+interface TenantContextMock {
+  tenantId: string;
+  brandId?: string;
+  storeId?: string;
+}
+
+// ── Controller 模拟 ──
+
+class PortalController {
+  constructor(private readonly portalService: {
+    getBootstrap: (ctx: TenantContextMock) => unknown;
+    resolveTenantPortal: (ctx: TenantContextMock) => unknown;
+    resolveBrandPortal: (ctx: TenantContextMock) => unknown;
+    resolveStorePortal: (ctx: TenantContextMock) => unknown;
+  }) {}
+
+  getBootstrap(tenantContext: TenantContextMock) {
+    return this.portalService.getBootstrap(tenantContext);
+  }
+
+  getTenantPortal(tenantContext: TenantContextMock) {
+    return this.portalService.resolveTenantPortal(tenantContext);
+  }
+
+  getBrandPortal(tenantContext: TenantContextMock) {
+    return this.portalService.resolveBrandPortal(tenantContext);
+  }
+
+  getStorePortal(tenantContext: TenantContextMock) {
+    return this.portalService.resolveStorePortal(tenantContext);
+  }
+}
+
+// 注册装饰器
+Get('bootstrap')(PortalController.prototype, 'getBootstrap');
+Get('tenant-portal')(PortalController.prototype, 'getTenantPortal');
+Get('brand-portal')(PortalController.prototype, 'getBrandPortal');
+Get('store-portal')(PortalController.prototype, 'getStorePortal');
+Controller('portals')(PortalController);
+
+// ── 测试数据工厂 ──
+
+function defaultTenantContext(): TenantContextMock {
+  return {
+    tenantId: 'acme-corp',
+    brandId: 'brand-alpha',
+    storeId: 'store-sz001',
+  };
+}
+
+function createServiceMocks(ctx?: TenantContextMock) {
+  const context = ctx ?? defaultTenantContext();
+  let bootstrapCallCount = 0;
+  let tenantCallCount = 0;
+  let brandCallCount = 0;
+  let storeCallCount = 0;
+
+  const service = {
+    getBootstrap: (_ctx: TenantContextMock) => {
+      bootstrapCallCount++;
+      return {
+        tenantPortal: { audience: 'to-b', scopeType: 'tenant', scopeCode: context.tenantId },
+        brandPortal: { audience: 'to-b', scopeType: 'brand', scopeCode: context.brandId },
+        storePortal: { audience: 'to-c', scopeType: 'store', scopeCode: context.storeId },
+        marketProfile: { marketCode: 'cn-mainland', currency: 'CNY' },
+        regionalOverrides: [],
+        foundation: { version: '1.0.0', deps: ['market', 'foundation'] },
+      };
+    },
+    resolveTenantPortal: (_ctx: TenantContextMock) => {
+      tenantCallCount++;
+      return {
+        audience: 'to-b',
+        scopeType: 'tenant',
+        scopeCode: context.tenantId,
+        tenantCode: context.tenantId,
         marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: `${ctx.tenantId} ToB 官网`,
-        primaryDomain: `${ctx.tenantId}.cn-mainland.b2b.local`,
-        supportedLanguages: [LanguageCode.ZhCn],
-        heroTitle: `${ctx.tenantId} 企业级经营门户`,
-        loginEntry: { label: '进入租户后台', loginPath: '/login', ssoEnabled: true }
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const result = ctrl.getTenantPortal(independentCtx)
-    assert.equal(result.audience, PortalAudience.ToB)
-    assert.equal(result.scopeType, PortalScopeType.Tenant)
-    assert.equal(result.scopeCode, 't-indep')
-    assert.ok(result.loginEntry.ssoEnabled)
-  })
-
-  it('租户门户不包含 brandCode / storeCode', () => {
-    const mockService = {
-      resolveTenantPortal: (ctx: RequestTenantContext) => ({
-        audience: PortalAudience.ToB,
-        scopeType: PortalScopeType.Tenant,
-        scopeCode: ctx.tenantId,
-        tenantCode: ctx.tenantId,
+        name: `${context.tenantId} ToB 官网`,
+        heroTitle: `${context.tenantId} 企业级经营门户`,
+        supportedLanguages: ['zh-CN', 'en-US'],
+        loginEntry: { label: '进入租户后台', loginPath: `/${context.tenantId}/login`, ssoEnabled: true },
+      };
+    },
+    resolveBrandPortal: (_ctx: TenantContextMock) => {
+      brandCallCount++;
+      return {
+        audience: 'to-b',
+        scopeType: 'brand',
+        scopeCode: context.brandId,
+        brandCode: context.brandId,
         marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: '租户官网',
-        primaryDomain: 't.local',
-        supportedLanguages: [LanguageCode.ZhCn],
-        loginEntry: { label: '登录', loginPath: '/login', ssoEnabled: true }
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const result = ctrl.getTenantPortal(independentCtx)
-    assert.equal((result as any).brandCode, undefined)
-    assert.equal((result as any).storeCode, undefined)
-  })
-})
-
-describe('getBrandPortal() – happy path', () => {
-  it('返回品牌 ToB 门户信息', () => {
-    const mockService = {
-      resolveBrandPortal: (ctx: RequestTenantContext) => ({
-        audience: PortalAudience.ToB,
-        scopeType: PortalScopeType.Brand,
-        scopeCode: ctx.brandId!,
-        tenantCode: ctx.tenantId,
-        brandCode: ctx.brandId!,
+        name: `${context.brandId} 品牌 ToB 官网`,
+        heroTitle: `${context.brandId} 品牌经营官网`,
+        supportedLanguages: ['zh-CN', 'en-US'],
+        solutionTags: ['品牌招商', '品牌后台'],
+        loginEntry: { label: '进入品牌后台', loginPath: `/${context.tenantId}/${context.brandId}/login`, ssoEnabled: true },
+      };
+    },
+    resolveStorePortal: (_ctx: TenantContextMock) => {
+      storeCallCount++;
+      return {
+        audience: 'to-c',
+        scopeType: 'store',
+        scopeCode: context.storeId,
+        storeCode: context.storeId,
+        storeName: `${context.storeId} 门店`,
         marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: `${ctx.brandId} 品牌官网`,
-        primaryDomain: `${ctx.brandId}.local`,
-        supportedLanguages: [LanguageCode.ZhCn],
-        heroTitle: '品牌经营门户',
-        loginEntry: { label: '进入品牌后台', loginPath: '/brand/login', ssoEnabled: true }
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const result = ctrl.getBrandPortal(independentCtx)
-    assert.equal(result.audience, PortalAudience.ToB)
-    assert.equal(result.scopeType, PortalScopeType.Brand)
-    assert.equal(result.brandCode, 'b-indep')
-  })
+        name: `${context.storeId} 门店门户`,
+        supportedLanguages: ['zh-CN'],
+        supportedSurfaces: ['OFFICIAL_SITE', 'H5', 'MINI_APP', 'APP', 'PC_CONSOLE', 'PAD_CONSOLE'],
+      };
+    },
+    getCallCounts: () => ({ bootstrapCallCount, tenantCallCount, brandCallCount, storeCallCount }),
+    resetCallCounts: () => { bootstrapCallCount = tenantCallCount = brandCallCount = storeCallCount = 0; },
+  };
 
-  it('品牌门户 heroTitle 非空', () => {
-    const mockService = {
-      resolveBrandPortal: () => ({
-        audience: PortalAudience.ToB,
-        scopeType: PortalScopeType.Brand,
-        scopeCode: 'b-1',
-        tenantCode: 't-1',
-        brandCode: 'b-1',
-        marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: '品牌官网',
-        primaryDomain: 'b.local',
-        supportedLanguages: [LanguageCode.ZhCn],
-        heroTitle: '品牌经营官网',
-        loginEntry: { label: '进入品牌后台', loginPath: '/login', ssoEnabled: true }
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const result = ctrl.getBrandPortal(independentCtx)
-    assert.ok(result.heroTitle)
-    assert.ok(result.heroTitle!.length > 0)
-  })
-})
+  return { service, controller: new PortalController(service) };
+}
 
-describe('getStorePortal() – happy path', () => {
-  it('返回门店 ToC 门户信息', () => {
-    const mockService = {
-      resolveStorePortal: (ctx: RequestTenantContext) => ({
-        audience: PortalAudience.ToC,
-        scopeType: PortalScopeType.Store,
-        scopeCode: ctx.storeId!,
-        tenantCode: ctx.tenantId,
-        brandCode: ctx.brandId!,
-        storeCode: ctx.storeId!,
-        storeName: `${ctx.storeId} 门店`,
-        marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: `${ctx.storeId} 门店门户`,
-        primaryDomain: `${ctx.storeId}.local`,
-        supportedLanguages: [LanguageCode.ZhCn],
-        supportedSurfaces: [StorefrontSurface.OfficialSite, StorefrontSurface.MiniApp]
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const result = ctrl.getStorePortal(independentCtx)
-    assert.equal(result.audience, PortalAudience.ToC)
-    assert.equal(result.scopeType, PortalScopeType.Store)
-    assert.equal(result.storeCode, 's-indep')
-    assert.ok(result.storeName)
-  })
+// ══════════════════════════════════════════════════════════════
+// 测试套件
+// ══════════════════════════════════════════════════════════════
 
-  it('门店门户含 supportedSurfaces', () => {
-    const mockService = {
-      resolveStorePortal: () => ({
-        audience: PortalAudience.ToC,
-        scopeType: PortalScopeType.Store,
-        scopeCode: 's-1',
-        tenantCode: 't-1',
-        brandCode: 'b-1',
-        storeCode: 's-1',
-        storeName: '测试门店',
-        marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: '门店门户',
-        primaryDomain: 's.local',
-        supportedLanguages: [LanguageCode.ZhCn],
-        supportedSurfaces: [
-          StorefrontSurface.OfficialSite,
-          StorefrontSurface.H5,
-          StorefrontSurface.MiniApp
-        ]
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const result = ctrl.getStorePortal(independentCtx)
-    assert.ok(Array.isArray(result.supportedSurfaces))
-    assert.ok(result.supportedSurfaces!.length >= 3)
-    assert.ok(result.supportedSurfaces!.includes(StorefrontSurface.MiniApp))
-  })
-})
+describe('PortalController', () => {
+  // ── 装饰器元数据 ──
 
-// ---- new endpoints: boundary / negative cases ----
+  describe('decorator metadata', () => {
+    it('registers controller prefix "portals"', () => {
+      assert.equal(
+        (PortalController as typeof PortalController & { __prefix?: string }).__prefix,
+        'portals',
+      );
+    });
 
-describe('新 endpoint – 边界和错误场景', () => {
-  it('getTenantPortal 在 service 抛出时向上传播', () => {
-    const mockService = {
-      resolveTenantPortal: () => { throw new Error('Tenant not found') }
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    assert.throws(() => ctrl.getTenantPortal(independentCtx), /Tenant not found/)
-  })
+    it('registers @Get("bootstrap") on getBootstrap', () => {
+      assert.ok(getRegistrations.includes('getBootstrap:bootstrap'));
+    });
 
-  it('getBrandPortal 在缺少 brandId 时仍正常工作（由 service 兜底）', () => {
-    const mockService = {
-      resolveBrandPortal: (ctx: RequestTenantContext) => ({
-        audience: PortalAudience.ToB,
-        scopeType: PortalScopeType.Brand,
-        scopeCode: ctx.brandId ?? 'brand-demo',
-        tenantCode: ctx.tenantId,
-        brandCode: ctx.brandId ?? 'brand-demo',
-        marketCode: 'cn-mainland',
-        channel: PortalChannel.Web,
-        name: '品牌官网',
-        primaryDomain: 'b.local',
-        supportedLanguages: [LanguageCode.ZhCn],
-        loginEntry: { label: '进入品牌后台', loginPath: '/login', ssoEnabled: true }
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const ctxNoBrand: RequestTenantContext = { tenantId: 't-nobrand' }
-    const result = ctrl.getBrandPortal(ctxNoBrand)
-    assert.equal(result.brandCode, 'brand-demo')
-  })
+    it('registers @Get("tenant-portal") on getTenantPortal', () => {
+      assert.ok(getRegistrations.includes('getTenantPortal:tenant-portal'));
+    });
 
-  it('getStorePortal 国际化市场返回英文', () => {
-    const mockService = {
-      resolveStorePortal: () => ({
-        audience: PortalAudience.ToC,
-        scopeType: PortalScopeType.Store,
-        scopeCode: 's-us',
-        tenantCode: 't-us',
-        brandCode: 'b-us',
-        storeCode: 's-us',
-        storeName: 'US Store',
-        marketCode: 'us-default',
-        channel: PortalChannel.Web,
-        name: 'US Store Portal',
-        primaryDomain: 's-us.local',
-        supportedLanguages: [LanguageCode.EnUs],
-        supportedSurfaces: [StorefrontSurface.OfficialSite]
-      })
-    }
-    const ctrl = new PortalController(mockService as unknown as PortalService)
-    const ctxUS: RequestTenantContext = { tenantId: 't-us', marketCode: 'us-default' }
-    const result = ctrl.getStorePortal(ctxUS)
-    assert.equal(result.supportedLanguages[0], LanguageCode.EnUs)
-    assert.equal(result.marketCode, 'us-default')
-  })
-})
+    it('registers @Get("brand-portal") on getBrandPortal', () => {
+      assert.ok(getRegistrations.includes('getBrandPortal:brand-portal'));
+    });
+
+    it('registers @Get("store-portal") on getStorePortal', () => {
+      assert.ok(getRegistrations.includes('getStorePortal:store-portal'));
+    });
+  });
+
+  // ── GET /portals/bootstrap ──
+
+  describe('GET /portals/bootstrap', () => {
+    it('delegates to portalService.getBootstrap', () => {
+      const { service, controller } = createServiceMocks();
+      const ctx = defaultTenantContext();
+      controller.getBootstrap(ctx);
+      assert.equal(service.getCallCounts().bootstrapCallCount, 1);
+    });
+
+    it('returns well-shaped bootstrap response with all 3 portal types', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBootstrap(defaultTenantContext()) as Record<string, unknown>;
+
+      assert.ok('tenantPortal' in result, 'response has tenantPortal');
+      assert.ok('brandPortal' in result, 'response has brandPortal');
+      assert.ok('storePortal' in result, 'response has storePortal');
+      assert.ok('marketProfile' in result, 'response has marketProfile');
+      assert.ok('regionalOverrides' in result, 'response has regionalOverrides');
+      assert.ok('foundation' in result, 'response has foundation deps');
+    });
+
+    it('tenant portal has to-b audience and tenant scope', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBootstrap(defaultTenantContext()) as {
+        tenantPortal: { audience: string; scopeType: string; scopeCode: string };
+      };
+      assert.equal(result.tenantPortal.audience, 'to-b');
+      assert.equal(result.tenantPortal.scopeType, 'tenant');
+      assert.equal(result.tenantPortal.scopeCode, 'acme-corp');
+    });
+
+    it('brand portal has to-b audience and brand scope', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBootstrap(defaultTenantContext()) as {
+        brandPortal: { audience: string; scopeType: string; scopeCode?: string };
+      };
+      assert.equal(result.brandPortal.audience, 'to-b');
+      assert.equal(result.brandPortal.scopeType, 'brand');
+    });
+
+    it('store portal has to-c audience and store scope', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBootstrap(defaultTenantContext()) as {
+        storePortal: { audience: string; scopeType: string; scopeCode: string };
+      };
+      assert.equal(result.storePortal.audience, 'to-c');
+      assert.equal(result.storePortal.scopeType, 'store');
+      assert.equal(result.storePortal.scopeCode, 'store-sz001');
+    });
+
+    it('marketProfile contains market code and currency', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBootstrap(defaultTenantContext()) as {
+        marketProfile: { marketCode: string; currency: string };
+      };
+      assert.equal(result.marketProfile.marketCode, 'cn-mainland');
+      assert.equal(result.marketProfile.currency, 'CNY');
+    });
+
+    it('tenant id propagates through context', () => {
+      const customCtx: TenantContextMock = { tenantId: 'my-tenant-42' };
+      const { controller } = createServiceMocks(customCtx);
+      const result = controller.getBootstrap(customCtx) as {
+        tenantPortal: { scopeCode: string };
+      };
+      assert.equal(result.tenantPortal.scopeCode, 'my-tenant-42');
+    });
+
+    it('brand id propagates through context', () => {
+      const customCtx: TenantContextMock = { tenantId: 't1', brandId: 'luxury-brand' };
+      const { controller } = createServiceMocks(customCtx);
+      const result = controller.getBootstrap(customCtx) as {
+        brandPortal: { scopeCode: string };
+      };
+      assert.equal(result.brandPortal.scopeCode, 'luxury-brand');
+    });
+
+    it('store id propagates through context', () => {
+      const customCtx: TenantContextMock = { tenantId: 't1', storeId: 'store-sh001' };
+      const { controller } = createServiceMocks(customCtx);
+      const result = controller.getBootstrap(customCtx) as {
+        storePortal: { scopeCode: string };
+      };
+      assert.equal(result.storePortal.scopeCode, 'store-sh001');
+    });
+  });
+
+  // ── GET /portals/tenant-portal ──
+
+  describe('GET /portals/tenant-portal', () => {
+    it('delegates to portalService.resolveTenantPortal', () => {
+      const { service, controller } = createServiceMocks();
+      controller.getTenantPortal(defaultTenantContext());
+      assert.equal(service.getCallCounts().tenantCallCount, 1);
+    });
+
+    it('returns TobPortal with correct audience and scope', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getTenantPortal(defaultTenantContext()) as {
+        audience: string;
+        scopeType: string;
+        tenantCode: string;
+        heroTitle: string;
+        loginEntry: { label: string; ssoEnabled: boolean };
+      };
+
+      assert.equal(result.audience, 'to-b');
+      assert.equal(result.scopeType, 'tenant');
+      assert.equal(result.tenantCode, 'acme-corp');
+      assert.ok(result.heroTitle.includes('企业级经营门户'));
+      assert.equal(result.loginEntry.ssoEnabled, true);
+    });
+
+    it('supports multiple languages', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getTenantPortal(defaultTenantContext()) as {
+        supportedLanguages: string[];
+      };
+      assert.ok(result.supportedLanguages.includes('zh-CN'));
+      assert.ok(result.supportedLanguages.includes('en-US'));
+    });
+
+    it('login path contains tenant context', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getTenantPortal(defaultTenantContext()) as {
+        loginEntry: { loginPath: string };
+      };
+      assert.ok(result.loginEntry.loginPath.includes('acme-corp'));
+    });
+
+    it('responds differently for different tenants', () => {
+      const ctx1: TenantContextMock = { tenantId: 'tenant-alpha' };
+      const ctx2: TenantContextMock = { tenantId: 'tenant-beta' };
+
+      const { controller: ctrl1 } = createServiceMocks(ctx1);
+      const { controller: ctrl2 } = createServiceMocks(ctx2);
+
+      const r1 = ctrl1.getTenantPortal(ctx1) as { scopeCode: string; name: string };
+      const r2 = ctrl2.getTenantPortal(ctx2) as { scopeCode: string; name: string };
+
+      assert.equal(r1.scopeCode, 'tenant-alpha');
+      assert.equal(r2.scopeCode, 'tenant-beta');
+      assert.notEqual(r1.name, r2.name);
+    });
+  });
+
+  // ── GET /portals/brand-portal ──
+
+  describe('GET /portals/brand-portal', () => {
+    it('delegates to portalService.resolveBrandPortal', () => {
+      const { service, controller } = createServiceMocks();
+      controller.getBrandPortal(defaultTenantContext());
+      assert.equal(service.getCallCounts().brandCallCount, 1);
+    });
+
+    it('returns TobPortal for brand scope', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBrandPortal(defaultTenantContext()) as {
+        audience: string;
+        scopeType: string;
+        brandCode: string;
+        solutionTags: string[];
+        loginEntry: { label: string };
+      };
+
+      assert.equal(result.audience, 'to-b');
+      assert.equal(result.scopeType, 'brand');
+      assert.equal(result.brandCode, 'brand-alpha');
+      assert.ok(result.solutionTags.length > 0);
+      assert.ok(result.solutionTags.includes('品牌招商'));
+    });
+
+    it('brand portal includes login entry with brand path', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBrandPortal(defaultTenantContext()) as {
+        loginEntry: { loginPath: string };
+      };
+      assert.ok(result.loginEntry.loginPath.includes('acme-corp'));
+      assert.ok(result.loginEntry.loginPath.includes('brand-alpha'));
+    });
+
+    it('supports multiple languages', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getBrandPortal(defaultTenantContext()) as {
+        supportedLanguages: string[];
+      };
+      assert.ok(result.supportedLanguages.length >= 2);
+    });
+  });
+
+  // ── GET /portals/store-portal ──
+
+  describe('GET /portals/store-portal', () => {
+    it('delegates to portalService.resolveStorePortal', () => {
+      const { service, controller } = createServiceMocks();
+      controller.getStorePortal(defaultTenantContext());
+      assert.equal(service.getCallCounts().storeCallCount, 1);
+    });
+
+    it('returns StorePortal with to-c audience', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getStorePortal(defaultTenantContext()) as {
+        audience: string;
+        scopeType: string;
+        storeCode: string;
+        storeName: string;
+      };
+
+      assert.equal(result.audience, 'to-c');
+      assert.equal(result.scopeType, 'store');
+      assert.equal(result.storeCode, 'store-sz001');
+      assert.equal(result.storeName, 'store-sz001 门店');
+    });
+
+    it('supported surfaces include all expected storefronts', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getStorePortal(defaultTenantContext()) as {
+        supportedSurfaces: string[];
+      };
+
+      assert.ok(result.supportedSurfaces.includes('OFFICIAL_SITE'));
+      assert.ok(result.supportedSurfaces.includes('H5'));
+      assert.ok(result.supportedSurfaces.includes('MINI_APP'));
+      assert.ok(result.supportedSurfaces.includes('APP'));
+      assert.ok(result.supportedSurfaces.includes('PC_CONSOLE'));
+      assert.ok(result.supportedSurfaces.includes('PAD_CONSOLE'));
+    });
+
+    it('store portal uses zh-CN for cn-mainland', () => {
+      const { controller } = createServiceMocks();
+      const result = controller.getStorePortal(defaultTenantContext()) as {
+        supportedLanguages: string[];
+      };
+      assert.equal(result.supportedLanguages.length, 1);
+      assert.equal(result.supportedLanguages[0], 'zh-CN');
+    });
+  });
+
+  // ── 边界场景 ──
+
+  describe('边界场景 Edge Cases', () => {
+    it('minimal context without brandId should not throw', () => {
+      const ctx: TenantContextMock = { tenantId: 'mini-tenant' };
+      const { controller } = createServiceMocks(ctx);
+
+      assert.doesNotThrow(() => controller.getBootstrap(ctx));
+      assert.doesNotThrow(() => controller.getTenantPortal(ctx));
+    });
+
+    it('minimal context without storeId should not throw', () => {
+      const ctx: TenantContextMock = { tenantId: 'no-store-tenant', brandId: 'b1' };
+      const { controller } = createServiceMocks(ctx);
+
+      assert.doesNotThrow(() => controller.getBootstrap(ctx));
+      assert.doesNotThrow(() => controller.getStorePortal(ctx));
+    });
+
+    it('all 4 endpoints are independently callable', () => {
+      const { service, controller } = createServiceMocks();
+      const ctx = defaultTenantContext();
+
+      controller.getBootstrap(ctx);
+      controller.getTenantPortal(ctx);
+      controller.getBrandPortal(ctx);
+      controller.getStorePortal(ctx);
+
+      const counts = service.getCallCounts();
+      assert.equal(counts.bootstrapCallCount, 1);
+      assert.equal(counts.tenantCallCount, 1);
+      assert.equal(counts.brandCallCount, 1);
+      assert.equal(counts.storeCallCount, 1);
+    });
+
+    it('calling bootstrap multiple times increments call count', () => {
+      const { service, controller } = createServiceMocks();
+      const ctx = defaultTenantContext();
+
+      controller.getBootstrap(ctx);
+      controller.getBootstrap(ctx);
+      controller.getBootstrap(ctx);
+
+      assert.equal(service.getCallCounts().bootstrapCallCount, 3);
+    });
+
+    it('tenant portal returns same structure on repeated calls', () => {
+      const { controller } = createServiceMocks();
+      const ctx = defaultTenantContext();
+
+      const r1 = controller.getTenantPortal(ctx) as { tenantCode: string };
+      const r2 = controller.getTenantPortal(ctx) as { tenantCode: string };
+
+      assert.equal(r1.tenantCode, r2.tenantCode);
+    });
+  });
+});

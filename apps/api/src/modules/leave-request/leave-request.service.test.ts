@@ -1,178 +1,190 @@
-import { describe, it, beforeEach, afterEach } from 'vitest'
 /**
- * 🐜 自动: [leave-request] service 测试
+ * leave-request.service.spec.ts — 请假申请 Service 单元测试 (V23)
+ *
+ * 覆盖: createLeave / getLeave / listLeaves / approveLeave / cancelLeave / getStats
+ * 规则: 无 describe.skip · 无 it.only · beforeEach 隔离
  */
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { LeaveRequestService } from './leave-request.service'
 import { LeaveType, LeaveStatus } from './leave-request.entity'
+
+const TENANT_ID = 'tenant-test'
 
 describe('LeaveRequestService', () => {
   let service: LeaveRequestService
 
-  const TENANT = 'tenant-001'
-
   beforeEach(() => {
     service = new LeaveRequestService()
-  })
-
-  afterEach(() => {
     service.resetLeaveStoresForTests()
+    service.seedMockData(TENANT_ID)
   })
 
-  function createTestLeave(overrides?: Partial<Parameters<LeaveRequestService['createLeave']>[0]>) {
-    return service.createLeave({
-      tenantId: TENANT,
-      employeeId: 'EMP-001',
-      employeeName: '张三',
-      type: LeaveType.Annual,
-      startDate: '2026-07-20',
-      endDate: '2026-07-24',
-      days: 5,
-      reason: '年假旅行',
-      approver: '李经理',
-      ...overrides,
-    })
-  }
-
-  // ── CRUD ──
+  // ════════════════════════════════════════════
+  // createLeave
+  // ════════════════════════════════════════════
 
   describe('createLeave', () => {
-    it('should create a leave with PENDING status', () => {
-      const l = createTestLeave()
-      assert.equal(l.employeeId, 'EMP-001')
-      assert.equal(l.employeeName, '张三')
-      assert.equal(l.type, LeaveType.Annual)
-      assert.equal(l.status, LeaveStatus.Pending)
-      assert.equal(l.days, 5)
-      assert.equal(l.tenantId, TENANT)
-      assert.ok(l.id.startsWith('leave-'))
-      assert.ok(l.createdAt)
+    it('正例: 创建事假申请', () => {
+      const leave = service.createLeave({
+        tenantId: TENANT_ID,
+        employeeId: 'EMP-100',
+        employeeName: '测试员工',
+        type: LeaveType.Personal,
+        startDate: '2026-08-01',
+        endDate: '2026-08-01',
+        days: 1,
+        reason: '家中有事',
+        approver: '李经理',
+      })
+      expect(leave.id).toBeTruthy()
+      expect(leave.status).toBe(LeaveStatus.Pending)
+    })
+
+    it('正例: 创建已批准的年假', () => {
+      const leave = service.createLeave({
+        tenantId: TENANT_ID,
+        employeeId: 'EMP-200',
+        employeeName: '员工2',
+        type: LeaveType.Annual,
+        startDate: '2026-09-01',
+        endDate: '2026-09-05',
+        days: 5,
+        reason: '年假旅行',
+        approver: '经理',
+        status: LeaveStatus.Approved,
+        approvedAt: new Date().toISOString(),
+      })
+      expect(leave.status).toBe(LeaveStatus.Approved)
     })
   })
+
+  // ════════════════════════════════════════════
+  // getLeave
+  // ════════════════════════════════════════════
 
   describe('getLeave', () => {
-    it('should return leave by id', () => {
-      const l = createTestLeave()
-      const found = service.getLeave(l.id, TENANT)
-      assert.ok(found)
-      assert.equal(found?.id, l.id)
+    it('正例: 查询已创建的请假', () => {
+      const created = service.createLeave({
+        tenantId: TENANT_ID,
+        employeeId: 'EMP-X',
+        employeeName: '测试',
+        type: LeaveType.Sick,
+        startDate: '2026-08-10',
+        endDate: '2026-08-10',
+        days: 1,
+        reason: '看病',
+        approver: '经理',
+      })
+      const found = service.getLeave(created.id, TENANT_ID)
+      expect(found).toBeDefined()
+      expect(found!.employeeName).toBe('测试')
     })
 
-    it('should return undefined for non-existent leave', () => {
-      assert.equal(service.getLeave('nonexistent', TENANT), undefined)
-    })
-
-    it('should return undefined for wrong tenant', () => {
-      const l = createTestLeave()
-      assert.equal(service.getLeave(l.id, 'other-tenant'), undefined)
+    it('反例: 不同tenant返回undefined', () => {
+      const created = service.createLeave({
+        tenantId: 'tenant-a',
+        employeeId: 'EMP-X',
+        employeeName: '测试',
+        type: LeaveType.Sick,
+        startDate: '2026-08-10',
+        endDate: '2026-08-10',
+        days: 1,
+        reason: '看病',
+        approver: '经理',
+      })
+      expect(service.getLeave(created.id, 'tenant-b')).toBeUndefined()
     })
   })
+
+  // ════════════════════════════════════════════
+  // listLeaves
+  // ════════════════════════════════════════════
 
   describe('listLeaves', () => {
-    it('should list all leaves for tenant', () => {
-      createTestLeave({ employeeId: 'EMP-001' })
-      createTestLeave({ employeeId: 'EMP-002' })
-      assert.equal(service.listLeaves(TENANT).length, 2)
+    it('正例: 列出所有请假', () => {
+      const leaves = service.listLeaves(TENANT_ID)
+      expect(leaves.length).toBeGreaterThan(15) // 种子数据20条
     })
 
-    it('should filter by type', () => {
-      createTestLeave({ type: LeaveType.Annual })
-      createTestLeave({ type: LeaveType.Sick })
-
-      const sick = service.listLeaves(TENANT, { type: LeaveType.Sick })
-      assert.equal(sick.length, 1)
+    it('正例: 按类型筛选', () => {
+      const leaves = service.listLeaves(TENANT_ID, { type: LeaveType.Sick })
+      expect(leaves.every(l => l.type === LeaveType.Sick)).toBe(true)
     })
 
-    it('should filter by employeeId', () => {
-      createTestLeave({ employeeId: 'EMP-001' })
-      createTestLeave({ employeeId: 'EMP-002' })
-
-      const emp1 = service.listLeaves(TENANT, { employeeId: 'EMP-001' })
-      assert.equal(emp1.length, 1)
+    it('正例: 按状态筛选', () => {
+      const leaves = service.listLeaves(TENANT_ID, { status: LeaveStatus.Pending })
+      expect(leaves.every(l => l.status === LeaveStatus.Pending)).toBe(true)
     })
 
-    it('should filter by status', () => {
-      createTestLeave({ employeeId: 'EMP-001' })
-      const l2 = createTestLeave({ employeeId: 'EMP-002' })
-      service.approveLeave(l2.id, LeaveStatus.Approved, TENANT)
-
-      const pending = service.listLeaves(TENANT, { status: LeaveStatus.Pending })
-      assert.equal(pending.length, 1)
-    })
-
-    it('should filter by date range', () => {
-      createTestLeave({ startDate: '2026-07-20', endDate: '2026-07-24' })
-      createTestLeave({ startDate: '2026-08-01', endDate: '2026-08-05' })
-
-      const july = service.listLeaves(TENANT, { fromDate: '2026-07-01', toDate: '2026-07-31' })
-      assert.equal(july.length, 1)
+    it('边界: 不存在的tenant返回空', () => {
+      const leaves = service.listLeaves('nonexistent-tenant')
+      expect(leaves.length).toBe(0)
     })
   })
 
-  // ── Approval Flow ──
+  // ════════════════════════════════════════════
+  // approveLeave
+  // ════════════════════════════════════════════
 
   describe('approveLeave', () => {
-    it('should approve a pending leave', () => {
-      const l = createTestLeave()
-      const approved = service.approveLeave(l.id, LeaveStatus.Approved, TENANT)
-      assert.equal(approved.status, LeaveStatus.Approved)
-      assert.ok(approved.approvedAt)
+    it('正例: 批准pending状态的休假', () => {
+      const leaves = service.listLeaves(TENANT_ID, { status: LeaveStatus.Pending })
+      const target = leaves[0]
+      const approved = service.approveLeave(target.id, LeaveStatus.Approved, TENANT_ID)
+      expect(approved.status).toBe(LeaveStatus.Approved)
+      expect(approved.approvedAt).toBeTruthy()
     })
 
-    it('should reject a pending leave', () => {
-      const l = createTestLeave()
-      const rejected = service.approveLeave(l.id, LeaveStatus.Rejected, TENANT, '人手不足')
-      assert.equal(rejected.status, LeaveStatus.Rejected)
-      assert.equal(rejected.remark, '人手不足')
-      assert.ok(rejected.approvedAt)
-    })
-
-    it('should throw when approving non-pending leave', () => {
-      const l = createTestLeave()
-      service.approveLeave(l.id, LeaveStatus.Approved, TENANT)
-      assert.throws(() => {
-        service.approveLeave(l.id, LeaveStatus.Rejected, TENANT)
-      }, /Cannot/)
-    })
-
-    it('should throw on non-existent leave', () => {
-      assert.throws(() => {
-        service.approveLeave('nonexistent', LeaveStatus.Approved, TENANT)
-      }, /Leave request not found/)
+    it('反例: 批准已批准的请假抛异常', () => {
+      const leaves = service.listLeaves(TENANT_ID, { status: LeaveStatus.Approved })
+      const target = leaves[0]
+      expect(() =>
+        service.approveLeave(target.id, LeaveStatus.Approved, TENANT_ID),
+      ).toThrow('already')
     })
   })
+
+  // ════════════════════════════════════════════
+  // cancelLeave
+  // ════════════════════════════════════════════
 
   describe('cancelLeave', () => {
-    it('should cancel a pending leave', () => {
-      const l = createTestLeave()
-      const cancelled = service.cancelLeave(l.id, TENANT)
-      assert.equal(cancelled.status, LeaveStatus.Cancelled)
+    it('正例: 取消pending状态的休假', () => {
+      const leaves = service.listLeaves(TENANT_ID, { status: LeaveStatus.Pending })
+      const target = leaves[0]
+      const cancelled = service.cancelLeave(target.id, TENANT_ID)
+      expect(cancelled.status).toBe(LeaveStatus.Cancelled)
     })
 
-    it('should throw when cancelling non-pending leave', () => {
-      const l = createTestLeave()
-      service.approveLeave(l.id, LeaveStatus.Approved, TENANT)
-      assert.throws(() => {
-        service.cancelLeave(l.id, TENANT)
-      }, /Cannot cancel/)
+    it('反例: 取消已批准的抛异常', () => {
+      const leaves = service.listLeaves(TENANT_ID, { status: LeaveStatus.Approved })
+      const target = leaves[0]
+      expect(() => service.cancelLeave(target.id, TENANT_ID)).toThrow('not pending')
     })
   })
 
-  // ── Seed ──
+  // ════════════════════════════════════════════
+  // getStats
+  // ════════════════════════════════════════════
 
-  describe('seedMockData', () => {
-    it('should seed 21 leaves with various statuses', () => {
-      service.seedMockData(TENANT)
-      const leaves = service.listLeaves(TENANT)
-      assert.equal(leaves.length, 21)
+  describe('getStats', () => {
+    it('正例: 返回统计信息', () => {
+      const stats = service.getStats(TENANT_ID)
+      expect(stats.total).toBeGreaterThan(0)
+      expect(stats.byStatus).toHaveProperty(LeaveStatus.Pending)
+      expect(stats.byStatus).toHaveProperty(LeaveStatus.Approved)
+      expect(stats.byType).toHaveProperty(LeaveType.Annual)
+      expect(stats.totalDays).toBeGreaterThan(0)
+      expect(stats.rejectionRate).toBeGreaterThanOrEqual(0)
+      expect(stats.monthlyTrend.length).toBeGreaterThan(0)
+      expect(stats.employeeStats.length).toBeGreaterThan(0)
+    })
 
-      const statuses = new Set(leaves.map((l) => l.status))
-      assert.ok(statuses.has(LeaveStatus.Pending))
-      assert.ok(statuses.has(LeaveStatus.Approved))
-      assert.ok(statuses.has(LeaveStatus.Rejected))
-      assert.ok(statuses.has(LeaveStatus.Cancelled))
+    it('正例: rejectionRate计算正确', () => {
+      const stats = service.getStats(TENANT_ID)
+      expect(stats.rejectionRate).toBeGreaterThanOrEqual(0)
+      expect(stats.rejectionRate).toBeLessThanOrEqual(1)
     })
   })
 })

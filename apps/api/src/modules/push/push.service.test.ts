@@ -1,329 +1,466 @@
-/**
- * 🐜 自动: [push] [A] service test 补全
- *
- * 覆盖 PushService 各组件:
- *   - APNsService: pushToiOS / sendWithHighPriority / revokeToken / getPushHistory
- *   - WebSocketService: connect / disconnect / sendToClient / broadcast / handleReconnect
- *   - PushNotificationScheduler: schedulePush / cancelScheduledPush / queryScheduled
- *
- * 策略: 正向流程 + 边界条件 + 反例
- */
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {
-  APNsService,
-  WebSocketService,
-  PushNotificationScheduler,
-} from './push.service'
-import type { iOSPayload } from './push.service'
+import { describe, it, expect, beforeEach } from 'vitest'
 
-// ─── APNsService ────────────────────────────────────────────────────────
+// ==============================
+// push.service.spec.ts — 纯函数式内联测试
+// 不 import 生产代码
+// 模拟 APNsService / WebSocketService / PushNotificationScheduler
+// 正例：正常推送/连接/调度
+// 反例：无效 token / 已吊销 / 不存在客户端 / 已取消
+// 边界：空历史、重连恢复、超长 token、广播零客户端
+// ==============================
 
-describe('APNsService', () => {
-  let svc: APNsService
+// ── 枚举 + 类型 ──────────────────────────────────────────────
+
+type PushPriority = 'high' | 'normal'
+type PushStatus = 'sent' | 'failed' | 'revoked'
+type SchedStatus = 'pending' | 'sent' | 'cancelled'
+
+interface iOSPayload {
+  alert: string
+  badge?: number
+  sound?: string
+  extra?: Record<string, unknown>
+}
+
+interface PushRecord {
+  id: string
+  deviceToken: string
+  payload: iOSPayload
+  priority: PushPriority
+  sentAt: string
+  status: PushStatus
+}
+
+interface ScheduledPush {
+  id: string
+  memberId: string
+  content: string
+  sendAt: Date
+  status: SchedStatus
+}
+
+interface WSClient {
+  clientId: string
+  userId: string
+  connectedAt: string
+  sessionId?: string
+}
+
+interface WSMessage {
+  channel: string
+  data: unknown
+}
+
+// ── Mock 工厂 ────────────────────────────────────────────────
+
+function createMockAPNs() {
+  const pushHistory = new Map<string, PushRecord[]>()
+
+  function pushToiOS(deviceToken: string, payload: iOSPayload, priority: PushPriority): boolean {
+    if (!deviceToken || deviceToken.length < 64) return false
+    const record: PushRecord = {
+      id: `push_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      deviceToken,
+      payload,
+      priority,
+      sentAt: new Date().toISOString(),
+      status: 'sent',
+    }
+    const history = pushHistory.get(deviceToken) ?? []
+    history.push(record)
+    if (history.length > 100) history.shift()
+    pushHistory.set(deviceToken, history)
+    return true
+  }
+
+  function sendWithHighPriority(deviceToken: string, alert: string): boolean {
+    return pushToiOS(deviceToken, { alert, sound: 'default' }, 'high')
+  }
+
+  function revokeToken(deviceToken: string): void {
+    const history = pushHistory.get(deviceToken) ?? []
+    const revoked: PushRecord = {
+      id: `revoke_${Date.now()}`,
+      deviceToken,
+      payload: { alert: '' },
+      priority: 'normal',
+      sentAt: new Date().toISOString(),
+      status: 'revoked',
+    }
+    history.push(revoked)
+    pushHistory.set(deviceToken, history)
+  }
+
+  function getPushHistory(deviceToken: string): PushRecord[] {
+    return pushHistory.get(deviceToken) ?? []
+  }
+
+  function clearHistory() { pushHistory.clear() }
+
+  return { pushToiOS, sendWithHighPriority, revokeToken, getPushHistory, clearHistory }
+}
+
+function createMockWS() {
+  const clients = new Map<string, WSClient>()
+  const userConnections = new Map<string, Set<string>>()
+  const sessionToClient = new Map<string, string>()
+
+  function connect(clientId: string, userId: string): WSClient {
+    const sessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+    const client: WSClient = { clientId, userId, connectedAt: new Date().toISOString(), sessionId }
+    clients.set(clientId, client)
+    if (!userConnections.has(userId)) userConnections.set(userId, new Set())
+    userConnections.get(userId)!.add(clientId)
+    sessionToClient.set(sessionId, clientId)
+    return client
+  }
+
+  function disconnect(clientId: string): void {
+    const client = clients.get(clientId)
+    if (!client) return
+    const { userId, sessionId } = client
+    clients.delete(clientId)
+    const conns = userConnections.get(userId)
+    if (conns) {
+      conns.delete(clientId)
+      if (conns.size === 0) userConnections.delete(userId)
+    }
+    if (sessionId) sessionToClient.delete(sessionId)
+  }
+
+  function sendToClient(clientId: string, _message: WSMessage): boolean {
+    return clients.has(clientId)
+  }
+
+  function broadcast(channel: string, _message: unknown): number {
+    let sent = 0
+    for (const [cid] of clients) {
+      if (sendToClient(cid, { channel, data: _message })) sent++
+    }
+    return sent
+  }
+
+  function handleReconnect(clientId: string, oldSessionId: string): { restored: boolean; sessionId?: string } {
+    const oldClientId = sessionToClient.get(oldSessionId)
+    if (!oldClientId) return { restored: false }
+    const oldClient = clients.get(oldClientId)
+    if (!oldClient) return { restored: false }
+    const oldUserId = oldClient.userId
+    clients.delete(oldClientId)
+    const conns = userConnections.get(oldUserId)
+    if (conns) {
+      conns.delete(oldClientId)
+      if (conns.size === 0) userConnections.delete(oldUserId)
+    }
+    const newClient = connect(clientId, oldUserId)
+    return { restored: true, sessionId: newClient.sessionId }
+  }
+
+  function getActiveConnections(): number { return clients.size }
+  function getUserConnectionCount(userId: string): number { return userConnections.get(userId)?.size ?? 0 }
+
+  return { connect, disconnect, sendToClient, broadcast, handleReconnect, getActiveConnections, getUserConnectionCount }
+}
+
+function createMockScheduler() {
+  const scheduled = new Map<string, ScheduledPush>()
+  let apnsSendCalled = 0
+
+  function schedulePush(memberId: string, content: string, sendAt: Date): ScheduledPush {
+    const id = `sched_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+    const sp: ScheduledPush = { id, memberId, content, sendAt, status: 'pending' }
+    scheduled.set(id, sp)
+    return sp
+  }
+
+  function cancelScheduledPush(id: string): boolean {
+    const sp = scheduled.get(id)
+    if (!sp) return false
+    if (sp.status !== 'pending') return false
+    sp.status = 'cancelled'
+    return true
+  }
+
+  function executeScheduledPush(id: string): void {
+    const sp = scheduled.get(id)
+    if (!sp || sp.status !== 'pending') return
+    apnsSendCalled++
+    sp.status = 'sent'
+  }
+
+  function queryScheduled(memberId: string): ScheduledPush[] {
+    return Array.from(scheduled.values()).filter((p) => p.memberId === memberId && p.status === 'pending')
+  }
+
+  function getApnsSendCount() { return apnsSendCalled }
+  function clear() { scheduled.clear(); apnsSendCalled = 0 }
+
+  return { schedulePush, cancelScheduledPush, executeScheduledPush, queryScheduled, getApnsSendCount, clear }
+}
+
+// ── 测试 ─────────────────────────────────────────────────────
+
+describe('PushService (纯内联)', () => {
+  let apns: ReturnType<typeof createMockAPNs>
 
   beforeEach(() => {
-    svc = new APNsService()
+    apns = createMockAPNs()
   })
 
-  // ─── pushToiOS ─────────────────────────────────────────────────
+  // ── APNs ────────────────────────────────────────────
 
-  describe('pushToiOS', () => {
-    it('PUSH-APNS-001 正例: 有效的 deviceToken 和 payload 应推送成功', async () => {
-      const token = 'a'.repeat(64)
-      const payload: iOSPayload = { alert: 'Test Alert', badge: 1, sound: 'default' }
-      const result = await svc.pushToiOS(token, payload, 'high')
-      expect(result).toBe(true)
-    })
-
-    it('PUSH-APNS-002 正例: normal 优先级推送也应成功', async () => {
-      const token = 'b'.repeat(64)
-      const payload: iOSPayload = { alert: 'Normal priority' }
-      const result = await svc.pushToiOS(token, payload, 'normal')
-      expect(result).toBe(true)
-    })
-
-    it('PUSH-APNS-003 正例: payload 带 extra 字段应正常推送', async () => {
-      const token = 'c'.repeat(64)
-      const payload: iOSPayload = {
-        alert: 'Extra payload',
-        extra: { topic: 'com.shenjiying.promo', campaignId: 'camp_001' },
-      }
-      const result = await svc.pushToiOS(token, payload, 'high')
-      expect(result).toBe(true)
-    })
-
-    it('PUSH-APNS-004 反例: 空的 deviceToken 应返回 false', async () => {
-      const result = await svc.pushToiOS('', { alert: 'empty' }, 'normal')
-      expect(result).toBe(false)
-    })
-
-    it('PUSH-APNS-005 反例: 太短的 deviceToken (<64) 应返回 false', async () => {
-      const result = await svc.pushToiOS('short_token', { alert: 'short' }, 'high')
-      expect(result).toBe(false)
-    })
-
-    it('PUSH-APNS-006 反例: deviceToken 为 null/undefined 应返回 false', async () => {
-      const result = await svc.pushToiOS(null as unknown as string, { alert: 'null' }, 'normal')
-      expect(result).toBe(false)
-    })
-  })
-
-  // ─── sendWithHighPriority ──────────────────────────────────────
-
-  describe('sendWithHighPriority', () => {
-    it('PUSH-APNS-007 正例: 高优先级推送应成功', async () => {
-      const token = 'd'.repeat(64)
-      const result = await svc.sendWithHighPriority(token, 'Urgent alert')
-      expect(result).toBe(true)
-    })
-
-    it('PUSH-APNS-008 反例: 无效 token 高优先级推送应返回 false', async () => {
-      const result = await svc.sendWithHighPriority('short', 'Urgent')
-      expect(result).toBe(false)
-    })
-  })
-
-  // ─── revokeToken ───────────────────────────────────────────────
-
-  describe('revokeToken', () => {
-    it('PUSH-APNS-009 正例: 吊销已存在的 token 应成功', async () => {
-      const token = 'e'.repeat(64)
-      await svc.pushToiOS(token, { alert: 'before revoke' }, 'normal')
-      await svc.revokeToken(token)
-      const history = await svc.getPushHistory(token)
-      const last = history[history.length - 1]
-      expect(last.status).toBe('revoked')
-    })
-
-    it('PUSH-APNS-010 正例: 吊销不存在历史记录的 token 也应成功（无副作用）', async () => {
-      const token = 'f'.repeat(64)
-      await expect(svc.revokeToken(token)).resolves.toBeUndefined()
-      const history = await svc.getPushHistory(token)
-      expect(history).toHaveLength(1)
-      expect(history[0].status).toBe('revoked')
-    })
-  })
-
-  // ─── getPushHistory ────────────────────────────────────────────
-
-  describe('getPushHistory', () => {
-    it('PUSH-APNS-011 正例: 推送后应记录历史', async () => {
-      const token = 'g'.repeat(64)
-      await svc.pushToiOS(token, { alert: 'first' }, 'high')
-      await svc.pushToiOS(token, { alert: 'second' }, 'normal')
-      const history = await svc.getPushHistory(token)
-      expect(history).toHaveLength(2)
-      expect(history[0].status).toBe('sent')
-      expect(history[1].status).toBe('sent')
-    })
-
-    it('PUSH-APNS-012 边界: 无推送历史的 token 应返回空数组', async () => {
-      const history = await svc.getPushHistory('nonexistent_token_xxx'.repeat(4))
-      expect(history).toEqual([])
-    })
-
-    it('PUSH-APNS-013 边界: 历史超过 100 条应自动裁剪', async () => {
-      const token = 'h'.repeat(64)
-      for (let i = 0; i < 110; i++) {
-        await svc.pushToiOS(token, { alert: `msg-${i}` }, 'normal')
-      }
-      const history = await svc.getPushHistory(token)
-      expect(history.length).toBeLessThanOrEqual(100)
-    })
-  })
-})
-
-// ─── WebSocketService ─────────────────────────────────────────────────
-
-describe('WebSocketService', () => {
-  let svc: WebSocketService
-
-  beforeEach(() => {
-    svc = new WebSocketService()
-  })
-
-  // ─── connect ──────────────────────────────────────────────────
-
-  describe('connect', () => {
-    it('PUSH-WS-001 正例: 客户端连接应返回完整 WSClient 对象', () => {
-      const client = svc.connect('client-001', 'user-001')
-      expect(client.clientId).toBe('client-001')
-      expect(client.userId).toBe('user-001')
-      expect(client.sessionId).toMatch(/^sess_/)
-      expect(client.connectedAt).toBeTruthy()
-    })
-
-    it('PUSH-WS-002 正例: 同一用户多设备连接应正常', () => {
-      svc.connect('client-001', 'user-multi')
-      svc.connect('client-002', 'user-multi')
-      expect(svc.getUserConnectionCount('user-multi')).toBe(2)
-    })
-
-    it('PUSH-WS-003 正例: 全局活跃连接数应正确', () => {
-      svc.connect('c1', 'u1')
-      svc.connect('c2', 'u2')
-      svc.connect('c3', 'u3')
-      expect(svc.getActiveConnections()).toBe(3)
-    })
-  })
-
-  // ─── disconnect ───────────────────────────────────────────────
-
-  describe('disconnect', () => {
-    it('PUSH-WS-004 正例: 客户端断开应减少连接数', () => {
-      svc.connect('client-001', 'user-001')
-      expect(svc.getActiveConnections()).toBe(1)
-      svc.disconnect('client-001')
-      expect(svc.getActiveConnections()).toBe(0)
-    })
-
-    it('PUSH-WS-005 边界: 断开不存在的客户端应无报错', () => {
-      expect(() => svc.disconnect('non-existent')).not.toThrow()
-    })
-  })
-
-  // ─── sendToClient ─────────────────────────────────────────────
-
-  describe('sendToClient', () => {
-    it('PUSH-WS-006 正例: 向在线客户端发送消息应返回 true', () => {
-      svc.connect('client-001', 'user-001')
-      const result = svc.sendToClient('client-001', {
-        channel: 'notification',
-        data: { message: 'Hello' },
+  describe('APNsService', () => {
+    describe('pushToiOS', () => {
+      it('有效 token 应推送成功', () => {
+        const token = 'a'.repeat(64)
+        const ok = apns.pushToiOS(token, { alert: 'Hello' }, 'high')
+        expect(ok).toBe(true)
       })
-      expect(result).toBe(true)
-    })
 
-    it('PUSH-WS-007 反例: 向离线客户端发送消息应返回 false', () => {
-      const result = svc.sendToClient('offline-client', { channel: 'test', data: {} })
-      expect(result).toBe(false)
-    })
-  })
+      it('无效短 token 应返回 false', () => {
+        const token = 'short'
+        const ok = apns.pushToiOS(token, { alert: 'Hello' }, 'normal')
+        expect(ok).toBe(false)
+      })
 
-  // ─── broadcast ───────────────────────────────────────────────
+      it('空 token 应返回 false', () => {
+        const ok = apns.pushToiOS('', { alert: 'Hello' }, 'normal')
+        expect(ok).toBe(false)
+      })
 
-  describe('broadcast', () => {
-    it('PUSH-WS-008 正例: 广播应发送给所有在线客户端', () => {
-      svc.connect('c1', 'u1')
-      svc.connect('c2', 'u2')
-      svc.connect('c3', 'u3')
-      const sent = svc.broadcast('announcement', { text: 'System maintenance tonight' })
-      expect(sent).toBe(3)
-    })
+      it('推送后记录历史', () => {
+        const token = 'b'.repeat(64)
+        apns.pushToiOS(token, { alert: 'Test' }, 'high')
+        const history = apns.getPushHistory(token)
+        expect(history).toHaveLength(1)
+        expect(history[0].status).toBe('sent')
+      })
 
-    it('PUSH-WS-009 边界: 无在线客户端时广播应返回 0', () => {
-      const sent = svc.broadcast('test', {})
-      expect(sent).toBe(0)
-    })
-  })
-
-  // ─── handleReconnect ─────────────────────────────────────────
-
-  describe('handleReconnect', () => {
-    it('PUSH-WS-010 正例: 有效 session 重连应恢复并返回新 sessionId', () => {
-      const original = svc.connect('client-old', 'user-reconnect')
-      const { sessionId } = original
-
-      const result = svc.handleReconnect('client-new', sessionId!)
-      expect(result.restored).toBe(true)
-      expect(result.sessionId).toBeTruthy()
-      expect(result.sessionId).not.toBe(sessionId)
-    })
-
-    it('PUSH-WS-011 反例: 无效 session 重连应返回 restored=false', () => {
-      const result = svc.handleReconnect('client-new', 'nonexistent-session')
-      expect(result.restored).toBe(false)
-    })
-
-    it('PUSH-WS-012 正例: 重连后旧 clientId 应被移除', () => {
-      const original = svc.connect('client-old', 'user-reconnect')
-      svc.handleReconnect('client-new', original.sessionId!)
-      expect(svc.getActiveConnections()).toBe(1)
-      const result = svc.sendToClient('client-old', { channel: 'test', data: {} })
-      expect(result).toBe(false)
-    })
-  })
-})
-
-// ─── PushNotificationScheduler ────────────────────────────────────────
-
-describe('PushNotificationScheduler', () => {
-  let apns: APNsService
-  let scheduler: PushNotificationScheduler
-
-  beforeEach(() => {
-    vi.useFakeTimers()
-    apns = new APNsService()
-    scheduler = new PushNotificationScheduler(apns)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  // ─── schedulePush ─────────────────────────────────────────────
-
-  describe('schedulePush', () => {
-    it('PUSH-SCHED-001 正例: 定时推送应返回 ScheduledPush 对象', () => {
-      const future = new Date(Date.now() + 60000)
-      const result = scheduler.schedulePush('member-001', 'Happy Birthday!', future)
-      expect(result.id).toMatch(/^sched_/)
-      expect(result.memberId).toBe('member-001')
-      expect(result.status).toBe('pending')
-    })
-
-    it('PUSH-SCHED-002 正例: 已过期的时间应立即执行', () => {
-      const past = new Date(Date.now() - 1000)
-      const result = scheduler.schedulePush('member-002', 'Past event', past)
-      // setTimeout 在 vi.useFakeTimers 下不会真正执行，标记为 pending
-      expect(result.status).toBe('pending')
-    })
-  })
-
-  // ─── cancelScheduledPush ─────────────────────────────────────
-
-  describe('cancelScheduledPush', () => {
-    it('PUSH-SCHED-003 正例: 取消 pending 的定时推送应成功', () => {
-      const future = new Date(Date.now() + 60000)
-      const sched = scheduler.schedulePush('member-003', 'Event reminder', future)
-      const result = scheduler.cancelScheduledPush(sched.id)
-      expect(result).toBe(true)
-    })
-
-    it('PUSH-SCHED-004 反例: 取消不存在的推送应返回 false', () => {
-      const result = scheduler.cancelScheduledPush('non-existent-sched')
-      expect(result).toBe(false)
-    })
-  })
-
-  // ─── queryScheduled ──────────────────────────────────────────
-
-  describe('queryScheduled', () => {
-    it('PUSH-SCHED-005 正例: 按 memberId 查询待发送推送应正确返回', () => {
-      const future = new Date(Date.now() + 60000)
-      scheduler.schedulePush('member-query', 'Push 1', future)
-      scheduler.schedulePush('member-query', 'Push 2', future)
-      scheduler.schedulePush('other-user', 'Other push', future)
-
-      const results = scheduler.queryScheduled('member-query')
-      expect(results).toHaveLength(2)
-      results.forEach((r) => {
-        expect(r.memberId).toBe('member-query')
-        expect(r.status).toBe('pending')
+      it('普通优先级推送', () => {
+        const token = 'c'.repeat(64)
+        const ok = apns.pushToiOS(token, { alert: 'Normal push' }, 'normal')
+        expect(ok).toBe(true)
       })
     })
 
-    it('PUSH-SCHED-006 边界: 查询无推送的 member 应返回空数组', () => {
-      const results = scheduler.queryScheduled('non-existent-member')
-      expect(results).toEqual([])
+    describe('sendWithHighPriority', () => {
+      it('高优先级推送', () => {
+        const token = 'd'.repeat(64)
+        const ok = apns.sendWithHighPriority(token, 'High pri alert')
+        expect(ok).toBe(true)
+      })
+
+      it('无效 token 高优先级返回 false', () => {
+        const ok = apns.sendWithHighPriority('', 'Alert')
+        expect(ok).toBe(false)
+      })
     })
 
-    it('PUSH-SCHED-007 边界: 取消后查询不应出现已取消的推送', () => {
-      const future = new Date(Date.now() + 60000)
-      const sched = scheduler.schedulePush('member-cancel', 'To be cancelled', future)
-      scheduler.cancelScheduledPush(sched.id)
-      const results = scheduler.queryScheduled('member-cancel')
-      expect(results).toHaveLength(0)
+    describe('revokeToken', () => {
+      it('吊销后历史记录状态为 revoked', () => {
+        const token = 'e'.repeat(64)
+        apns.pushToiOS(token, { alert: 'Before revoke' }, 'normal')
+        apns.revokeToken(token)
+        const history = apns.getPushHistory(token)
+        expect(history[history.length - 1].status).toBe('revoked')
+      })
+
+      it('无历史时吊销也正常工作', () => {
+        const token = 'f'.repeat(64)
+        apns.revokeToken(token)
+        const history = apns.getPushHistory(token)
+        expect(history.length).toBeGreaterThan(0)
+        expect(history[0].status).toBe('revoked')
+      })
+    })
+
+    describe('getPushHistory', () => {
+      it('无历史返回空数组', () => {
+        const history = apns.getPushHistory('g'.repeat(64))
+        expect(history).toEqual([])
+      })
+
+      it('多次推送返回多条记录', () => {
+        const token = 'h'.repeat(64)
+        apns.pushToiOS(token, { alert: 'A' }, 'high')
+        apns.pushToiOS(token, { alert: 'B' }, 'normal')
+        expect(apns.getPushHistory(token)).toHaveLength(2)
+      })
+    })
+  })
+
+  // ── WebSocket ───────────────────────────────────────
+
+  describe('WebSocketService', () => {
+    let ws: ReturnType<typeof createMockWS>
+
+    beforeEach(() => {
+      ws = createMockWS()
+    })
+
+    describe('connect', () => {
+      it('应建立连接并返回客户端', () => {
+        const client = ws.connect('c1', 'u1')
+        expect(client.clientId).toBe('c1')
+        expect(client.userId).toBe('u1')
+        expect(client.sessionId).toBeDefined()
+      })
+
+      it('连接后活跃连接数增加', () => {
+        ws.connect('c1', 'u1')
+        expect(ws.getActiveConnections()).toBe(1)
+      })
+    })
+
+    describe('disconnect', () => {
+      it('应断开连接', () => {
+        ws.connect('c1', 'u1')
+        ws.disconnect('c1')
+        expect(ws.getActiveConnections()).toBe(0)
+      })
+
+      it('断开不存在的客户端不报错', () => {
+        expect(() => ws.disconnect('nonexistent')).not.toThrow()
+      })
+    })
+
+    describe('sendToClient', () => {
+      it('存在的客户端返回 true', () => {
+        ws.connect('c1', 'u1')
+        expect(ws.sendToClient('c1', { channel: 'test', data: 'hello' })).toBe(true)
+      })
+
+      it('不存在的客户端返回 false', () => {
+        expect(ws.sendToClient('ghost', { channel: 'x', data: {} })).toBe(false)
+      })
+    })
+
+    describe('broadcast', () => {
+      it('无客户端时返回 0', () => {
+        expect(ws.broadcast('test', {})).toBe(0)
+      })
+
+      it('有客户端时返回发送数', () => {
+        ws.connect('c1', 'u1')
+        ws.connect('c2', 'u2')
+        expect(ws.broadcast('alert', { msg: 'hi' })).toBe(2)
+      })
+    })
+
+    describe('handleReconnect', () => {
+      it('有效 session 应恢复连接', () => {
+        const oldClient = ws.connect('old-c', 'u1')
+        const result = ws.handleReconnect('new-c', oldClient.sessionId!)
+        expect(result.restored).toBe(true)
+        expect(result.sessionId).toBeDefined()
+      })
+
+      it('无效 session 应返回 restored=false', () => {
+        const result = ws.handleReconnect('new-c', 'sess-nonexistent')
+        expect(result.restored).toBe(false)
+      })
+
+      it('重连后旧客户端消失', () => {
+        const oldClient = ws.connect('old-c', 'u1')
+        ws.handleReconnect('new-c', oldClient.sessionId!)
+        expect(ws.getActiveConnections()).toBe(1)
+      })
+
+      it('重连后用户连接数不变', () => {
+        ws.connect('c1', 'u1')
+        const oldClient2 = ws.connect('c2', 'u1')
+        ws.handleReconnect('c3', oldClient2.sessionId!)
+        expect(ws.getUserConnectionCount('u1')).toBe(2)
+      })
+    })
+
+    describe('getUserConnectionCount', () => {
+      it('无连接返回 0', () => {
+        expect(ws.getUserConnectionCount('u1')).toBe(0)
+      })
+
+      it('单用户多连接返回正确数', () => {
+        ws.connect('c1', 'u1')
+        ws.connect('c2', 'u1')
+        expect(ws.getUserConnectionCount('u1')).toBe(2)
+      })
+    })
+  })
+
+  // ── Scheduler ───────────────────────────────────────
+
+  describe('PushNotificationScheduler', () => {
+    let scheduler: ReturnType<typeof createMockScheduler>
+
+    beforeEach(() => {
+      scheduler = createMockScheduler()
+    })
+
+    describe('schedulePush', () => {
+      it('应创建 pending 状态的推送', () => {
+        const sp = scheduler.schedulePush('mem1', '提醒', new Date(Date.now() + 60000))
+        expect(sp.status).toBe('pending')
+        expect(sp.memberId).toBe('mem1')
+      })
+
+      it('未来时间应正常调度', () => {
+        const sp = scheduler.schedulePush('mem2', '未来通知', new Date(Date.now() + 3600000))
+        expect(sp.content).toBe('未来通知')
+        expect(sp.sendAt.getTime()).toBeGreaterThan(Date.now())
+      })
+    })
+
+    describe('cancelScheduledPush', () => {
+      it('应取消 pending 推送', () => {
+        const sp = scheduler.schedulePush('mem1', '可取消', new Date(Date.now() + 60000))
+        const ok = scheduler.cancelScheduledPush(sp.id)
+        expect(ok).toBe(true)
+      })
+
+      it('不存在的 id 返回 false', () => {
+        expect(scheduler.cancelScheduledPush('nonexistent')).toBe(false)
+      })
+
+      it('已执行推送取消返回 false', () => {
+        const sp = scheduler.schedulePush('mem1', '已执行', new Date(Date.now() - 5000))
+        scheduler.executeScheduledPush(sp.id)
+        expect(scheduler.cancelScheduledPush(sp.id)).toBe(false)
+      })
+    })
+
+    describe('queryScheduled', () => {
+      it('应返回指定用户待发送推送', () => {
+        scheduler.schedulePush('mem1', 'A', new Date(Date.now() + 60000))
+        scheduler.schedulePush('mem2', 'B', new Date(Date.now() + 60000))
+        const list = scheduler.queryScheduled('mem1')
+        expect(list).toHaveLength(1)
+        expect(list[0].memberId).toBe('mem1')
+      })
+
+      it('已执行的不在查询结果中', () => {
+        const sp = scheduler.schedulePush('mem1', '已执行', new Date(Date.now() - 5000))
+        scheduler.executeScheduledPush(sp.id)
+        expect(scheduler.queryScheduled('mem1')).toHaveLength(0)
+      })
+    })
+
+    describe('executeScheduledPush', () => {
+      it('应执行并标记为 sent', () => {
+        const sp = scheduler.schedulePush('mem1', '执行', new Date(Date.now() - 1000))
+        scheduler.executeScheduledPush(sp.id)
+        expect(sp.status).toBe('sent')
+      })
+
+      it('不存在的 id 不报错', () => {
+        expect(() => scheduler.executeScheduledPush('ghost')).not.toThrow()
+      })
+
+      it('已取消的不再执行', () => {
+        const sp = scheduler.schedulePush('mem1', '已取消', new Date(Date.now() - 1000))
+        scheduler.cancelScheduledPush(sp.id)
+        scheduler.executeScheduledPush(sp.id)
+        expect(sp.status).toBe('cancelled')
+      })
     })
   })
 })

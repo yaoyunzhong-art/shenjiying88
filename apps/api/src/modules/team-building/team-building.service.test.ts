@@ -1,249 +1,377 @@
 /**
- * 🧪 TeamBuilding Service 单元测试
- * 覆盖: CRUD · 筛选 · 多租户隔离 · 统计 · 边界
- * 三件套：正例 + 反例 + 边界
+ * team-building.service.spec.ts — 团建模块 Service 单元测试
+ *
+ * 覆盖: CRUD / 方案推荐 / 设备校验 / 活动管理 / 报告生成 / CRM同步 / 看板
  */
-import { describe, it, expect, beforeEach } from 'vitest'
-import { TeamBuildingService } from './team-building.service'
 
-describe('TeamBuildingService', () => {
-  let service: TeamBuildingService
+import { describe, it, expect, beforeEach } from 'vitest'
+import { TeamBuildingService, type TeamBuildingPlan } from './team-building.service'
+import { NotFoundException, BadRequestException } from '@nestjs/common'
+
+describe('TeamBuildingService — CRUD', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = new TeamBuildingService()
+    svc = new TeamBuildingService()
   })
 
-  // ════════════════════════════════════════════════════
-  // CRUD
-  // ════════════════════════════════════════════════════
-
-  describe('CRUD', () => {
-    it('[正例] findAll 返回所有团建方案', () => {
-      const result = service.findAll('tenant-001')
-      expect(result.length).toBeGreaterThanOrEqual(7)
-      expect(result[0]).toHaveProperty('id')
-      expect(result[0]).toHaveProperty('name')
-      expect(result[0]).toHaveProperty('type')
-      expect(result[0]).toHaveProperty('tenantId')
+  it('create 创建方案成功', () => {
+    const plan = svc.create({
+      tenantId,
+      name: '测试团建方案',
+      type: 'outdoor',
+      location: '测试地点',
+      budget: 1000000,
+      expectedParticipants: 20,
+      description: '测试描述',
+      recommendedSeason: '秋季',
+      remark: '测试备注',
     })
+    expect(plan.id).toMatch(/^tb-/)
+    expect(plan.name).toBe('测试团建方案')
+    expect(plan.budget).toBe(1000000)
+  })
 
-    it('[正例] findById 返回正确团建方案', () => {
-      const all = service.findAll('tenant-001')
-      const plan = service.findById(all[0].id, 'tenant-001')
-      expect(plan).toBeDefined()
-      expect(plan!.id).toBe(all[0].id)
-      expect(plan!.tenantId).toBe('tenant-001')
+  it('findById 返回指定方案', () => {
+    const plan = svc.create({
+      tenantId, name: '查询方案', type: 'dinner',
+      location: '餐厅', budget: 500000,
+      expectedParticipants: 10, description: '查询测试',
     })
+    const found = svc.findById(plan.id, tenantId)
+    expect(found).toBeDefined()
+    expect(found!.name).toBe('查询方案')
+  })
 
-    it('[正例] create 新增团建方案', () => {
-      const plan = service.create({
-        tenantId: 'tenant-001',
-        name: '测试团建',
-        type: 'outdoor',
-        location: '测试地点',
-        budget: 100000,
-        expectedParticipants: 10,
-        description: '这是一个测试团建方案',
-      })
-      expect(plan).toBeDefined()
-      expect(plan.id).toMatch(/^tb-/)
-      expect(plan.name).toBe('测试团建')
-      expect(plan.type).toBe('outdoor')
-      expect(plan.budget).toBe(100000)
-      expect(plan.tenantId).toBe('tenant-001')
-      expect(plan.createdAt).toBeDefined()
-      expect(plan.updatedAt).toBeDefined()
+  it('findById 返回 undefined 当方案不存在', () => {
+    expect(svc.findById('fake-id', tenantId)).toBeUndefined()
+  })
 
-      // 验证已保存
-      const found = service.findById(plan.id, 'tenant-001')
-      expect(found).toBeDefined()
-      expect(found!.name).toBe('测试团建')
-    })
+  it('findAll 返回所有方案（种子）', () => {
+    const plans = svc.findAll(tenantId)
+    expect(plans.length).toBeGreaterThan(0)
+  })
 
-    it('[正例] update 更新团建方案', () => {
-      const all = service.findAll('tenant-001')
-      const plan = all[0]
-      const originalName = plan.name
-      const updated = service.update(plan.id, 'tenant-001', {
-        name: '更新后的方案',
-        budget: 500000,
-      })
-      expect(updated.name).toBe('更新后的方案')
-      expect(updated.budget).toBe(500000)
-      expect(updated.name).not.toBe(originalName)
-    })
+  it('findAll 支持按类型筛选', () => {
+    const outdoor = svc.findAll(tenantId, { type: 'outdoor' })
+    outdoor.forEach((p) => expect(p.type).toBe('outdoor'))
+  })
 
-    it('[正例] delete 删除团建方案', () => {
-      const all = service.findAll('tenant-001')
-      const plan = all[0]
-      service.delete(plan.id, 'tenant-001')
-      const found = service.findById(plan.id, 'tenant-001')
-      expect(found).toBeUndefined()
-    })
-
-    // ── 反例 ──
-
-    it('[反例] findById 不存在的ID返回undefined', () => {
-      const result = service.findById('tb-nonexistent', 'tenant-001')
-      expect(result).toBeUndefined()
-    })
-
-    it('[反例] update 不存在的方案抛错', () => {
-      expect(() => service.update('tb-nonexistent', 'tenant-001', { name: '新名字' })).toThrow()
-    })
-
-    it('[反例] delete 不存在的方案抛错', () => {
-      expect(() => service.delete('tb-nonexistent', 'tenant-001')).toThrow()
+  it('findAll 支持搜索', () => {
+    const items = svc.findAll(tenantId, { search: '密室' })
+    items.forEach((p) => {
+      const q = '密室'
+      const match = p.name.includes(q) || p.location.includes(q) || p.description.includes(q)
+      expect(match).toBeTruthy()
     })
   })
 
-  // ════════════════════════════════════════════════════
-  // 筛选
-  // ════════════════════════════════════════════════════
-
-  describe('筛选', () => {
-    it('[正例] findAll 支持 type 筛选', () => {
-      const result = service.findAll('tenant-001', { type: 'outdoor' })
-      expect(result.length).toBeGreaterThanOrEqual(1)
-      expect(result.every((p) => p.type === 'outdoor')).toBe(true)
+  it('update 更新方案字段', () => {
+    const plan = svc.create({
+      tenantId, name: '旧方案', type: 'ktv',
+      location: '老地方', budget: 100000,
+      expectedParticipants: 5, description: '旧描述',
     })
-
-    it('[正例] findAll 支持 search 关键词搜索', () => {
-      const result = service.findAll('tenant-001', { search: '密室' })
-      expect(result.length).toBeGreaterThanOrEqual(1)
-      expect(result.some((p) => p.name.includes('密室'))).toBe(true)
+    const updated = svc.update(plan.id, tenantId, {
+      name: '新方案',
+      budget: 200000,
+      description: '新描述',
     })
+    expect(updated.name).toBe('新方案')
+    expect(updated.budget).toBe(200000)
+  })
 
-    it('[正例] findAll 支持 type + search 组合筛选', () => {
-      const result = service.findAll('tenant-001', { type: 'dinner', search: '海底捞' })
-      expect(result.length).toBeGreaterThanOrEqual(1)
-      expect(result.every((p) => p.type === 'dinner')).toBe(true)
-      expect(result[0].name).toContain('海底捞')
+  it('delete 删除成功', () => {
+    const plan = svc.create({
+      tenantId, name: '删除方案', type: 'sports',
+      location: '体育馆', budget: 100000,
+      expectedParticipants: 10, description: '删除',
     })
+    svc.delete(plan.id, tenantId)
+    expect(svc.findById(plan.id, tenantId)).toBeUndefined()
+  })
 
-    it('[边界] search 无匹配返回空数组', () => {
-      const result = service.findAll('tenant-001', { search: '不存在的内容xxxxxxxx' })
-      expect(result).toHaveLength(0)
+  it('delete 不存在的方案抛 NotFoundException', () => {
+    expect(() => svc.delete('fake-id', tenantId)).toThrow(NotFoundException)
+  })
+})
+
+describe('TeamBuildingService — 统计', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new TeamBuildingService()
+  })
+
+  it('getStats 返回统计信息', () => {
+    const stats = svc.getStats(tenantId)
+    expect(stats.totalPlans).toBeGreaterThan(0)
+    expect(stats.avgBudget).toBeGreaterThan(0)
+    expect(stats.minBudget).toBeLessThanOrEqual(stats.maxBudget)
+    expect(stats.byType.outdoor).toBeGreaterThan(0)
+  })
+
+  it('getTypeLabels 返回中文标签', () => {
+    const labels = svc.getTypeLabels()
+    expect(labels.outdoor).toBe('户外拓展')
+    expect(labels['escape-room']).toBe('密室逃脱')
+  })
+})
+
+describe('TeamBuildingService — 方案推荐', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new TeamBuildingService()
+  })
+
+  it('recommendPlans 返回推荐结果', () => {
+    const results = svc.recommendPlans(tenantId, {
+      tenantId,
+      participants: 20,
+      budget: 500000,
+      ageGroup: 'adult',
     })
-
-    it('[边界] type 无匹配返回空数组', () => {
-      const result = service.findAll('tenant-001', { type: 'other' })
-      // 'other' 有数据（TeamLab），所以不会空
-      // 用不存在的类型会TS错误，这里测试 type 不存在于本租户的情况
-      // 已有方案中包含各种类型，所以此处验证组合过滤
-      const noMatch = service.findAll('tenant-001-unknown', { type: 'ktv' })
-      expect(noMatch).toHaveLength(0)
+    expect(results.length).toBeGreaterThan(0)
+    results.forEach((r) => {
+      expect(r.planId).toBeDefined()
+      expect(r.score).toBeGreaterThanOrEqual(0)
+      expect(r.score).toBeLessThanOrEqual(100)
+      expect(typeof r.recommended).toBe('boolean')
+      expect(r.aiSuggestion).toBeDefined()
     })
   })
 
-  // ════════════════════════════════════════════════════
-  // 多租户隔离
-  // ════════════════════════════════════════════════════
+  it('recommendPlans 带类型偏好', () => {
+    const results = svc.recommendPlans(tenantId, {
+      tenantId,
+      participants: 30,
+      budget: 2000000,
+      preferredType: 'outdoor',
+      ageGroup: 'mixed',
+    })
+    const outdoorResults = results.filter((r) => r.type === 'outdoor')
+    expect(outdoorResults.length).toBeGreaterThan(0)
+  })
 
-  describe('多租户隔离', () => {
-    it('[反例] A租户看不到B租户的数据', () => {
-      // 先在 tenant-A 创建一个方案
-      const planA = service.create({
-        tenantId: 'tenant-A',
-        name: 'A租户团建',
-        type: 'outdoor',
-        location: 'A地',
-        budget: 100000,
-        expectedParticipants: 10,
-        description: '仅限A租户',
-      })
+  it('recommendPlans 空方案返回空', () => {
+    const svc2 = new TeamBuildingService()
+    const results = svc2.recommendPlans('nonexistent-tenant', {
+      tenantId: 'nonexistent-tenant',
+      participants: 10, budget: 100000,
+      ageGroup: 'youth',
+    })
+    expect(results).toEqual([])
+  })
+})
 
-      // tenant-001 不应该看到 tenant-A 的数据
-      const result001 = service.findAll('tenant-001')
-      expect(result001.some((p) => p.id === planA.id)).toBe(false)
+describe('TeamBuildingService — 活动管理', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
 
-      // tenant-B 同样看不到
-      const resultB = service.findAll('tenant-B')
-      expect(resultB.some((p) => p.id === planA.id)).toBe(false)
+  beforeEach(() => {
+    svc = new TeamBuildingService()
+  })
 
-      // tenant-A 能看到自己的数据
-      const resultA = service.findAll('tenant-A')
-      expect(resultA.some((p) => p.id === planA.id)).toBe(true)
+  it('createEvent 创建活动成功', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'tb-plan-001', name: '测试活动',
+      eventDate: '2026-08-15', participants: 20,
+      participantMemberIds: ['mem-001', 'mem-002'],
+    })
+    expect(event.id).toMatch(/^evt-/)
+    expect(event.status).toBe('scheduled')
+    expect(event.participantMemberIds).toHaveLength(2)
+  })
+
+  it('getEvents 按日期范围筛选', () => {
+    svc.createEvent({
+      tenantId, planId: 'p1', name: '活动1',
+      eventDate: '2026-08-01', participants: 10,
+    })
+    svc.createEvent({
+      tenantId, planId: 'p2', name: '活动2',
+      eventDate: '2026-09-01', participants: 15,
+    })
+    const events = svc.getEvents(tenantId, { fromDate: '2026-08-01', toDate: '2026-08-31' })
+    events.forEach((e) => {
+      expect(e.eventDate >= '2026-08-01').toBeTruthy()
+      expect(e.eventDate <= '2026-08-31').toBeTruthy()
     })
   })
 
-  // ════════════════════════════════════════════════════
-  // 统计
-  // ════════════════════════════════════════════════════
-
-  describe('统计', () => {
-    it('[正例] getStats 返回完整统计信息', () => {
-      const stats = service.getStats('tenant-001')
-      expect(stats).toHaveProperty('totalPlans')
-      expect(stats).toHaveProperty('byType')
-      expect(stats).toHaveProperty('avgBudget')
-      expect(stats).toHaveProperty('minBudget')
-      expect(stats).toHaveProperty('maxBudget')
-      expect(stats.totalPlans).toBeGreaterThan(0)
-      expect(typeof stats.avgBudget).toBe('number')
-      expect(stats.avgBudget).toBeGreaterThan(0)
+  it('updateEvent 更新活动信息', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '旧名',
+      eventDate: '2026-08-10', participants: 10,
     })
-
-    it('[正例] getStats byType 包含所有类型', () => {
-      const stats = service.getStats('tenant-001')
-      const types = Object.keys(stats.byType)
-      expect(types).toContain('outdoor')
-      expect(types).toContain('dinner')
-      expect(types).toContain('ktv')
-      // 统计总和等于总数
-      const sum = Object.values(stats.byType).reduce((a, b) => a + b, 0)
-      expect(sum).toBe(stats.totalPlans)
+    const updated = svc.updateEvent(event.id, tenantId, {
+      name: '新活动名',
+      participants: 20,
+      status: 'cancelled',
     })
-
-    it('[边界] getStats 空租户返回全零', () => {
-      const stats = service.getStats('empty-tenant')
-      expect(stats.totalPlans).toBe(0)
-      expect(stats.minBudget).toBe(0)
-      expect(stats.maxBudget).toBe(0)
-      expect(stats.avgBudget).toBe(0)
-      Object.values(stats.byType).forEach((v) => expect(v).toBe(0))
-    })
+    expect(updated.name).toBe('新活动名')
+    expect(updated.participants).toBe(20)
+    expect(updated.status).toBe('cancelled')
   })
 
-  // ════════════════════════════════════════════════════
-  // 边缘
-  // ════════════════════════════════════════════════════
-
-  describe('边界与边缘', () => {
-    it('[边界] getTypeLabels 返回所有类型的中文标签', () => {
-      const labels = service.getTypeLabels()
-      expect(labels.outdoor).toBe('户外拓展')
-      expect(labels['escape-room']).toBe('密室逃脱')
-      expect(labels['script-kill']).toBe('剧本杀')
-      expect(labels.dinner).toBe('聚餐')
-      expect(labels.ktv).toBe('KTV')
-      expect(labels.sports).toBe('运动赛事')
-      expect(labels.other).toBe('其他')
+  it('completeEvent 完成活动', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '待完成',
+      eventDate: '2026-08-10', participants: 15,
     })
-
-    it('[边界] create 含可选字段', () => {
-      const plan = service.create({
-        tenantId: 'tenant-001',
-        name: '全字段测试',
-        type: 'sports',
-        location: '体育馆',
-        budget: 200000,
-        expectedParticipants: 20,
-        description: '测试描述',
-        recommendedSeason: '夏季',
-        remark: '测试备注',
-      })
-      expect(plan.recommendedSeason).toBe('夏季')
-      expect(plan.remark).toBe('测试备注')
+    const completed = svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 14,
+      totalSpend: 300000,
+      avgSatisfaction: 4.5,
     })
+    expect(completed.status).toBe('completed')
+    expect(completed.actualParticipants).toBe(14)
+    expect(completed.totalSpend).toBe(300000)
+    expect(completed.avgSatisfaction).toBe(4.5)
+  })
 
-    it('[边界] update 只更新部分字段', () => {
-      const all = service.findAll('tenant-001')
-      const plan = all[0]
-      const originalLocation = plan.location
-      const updated = service.update(plan.id, 'tenant-001', { name: '仅更新名字' })
-      expect(updated.name).toBe('仅更新名字')
-      expect(updated.location).toBe(originalLocation)
+  it('completeEvent 重复完成抛 BadRequestException', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '已完成的',
+      eventDate: '2026-08-10', participants: 10,
     })
+    svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 10, totalSpend: 100000, avgSatisfaction: 4,
+    })
+    expect(() => svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 10, totalSpend: 100000, avgSatisfaction: 4,
+    })).toThrow(BadRequestException)
+  })
+})
+
+describe('TeamBuildingService — 报告生成', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new TeamBuildingService()
+  })
+
+  it('generateReport 成功生成报告', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '团建活动',
+      eventDate: '2026-08-10', participants: 20,
+    })
+    svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 18, totalSpend: 500000, avgSatisfaction: 4.2,
+    })
+    const report = svc.generateReport(event.id, tenantId)
+    expect(report.id).toMatch(/^rpt-/)
+    expect(report.participantCount).toBe(18)
+    expect(report.totalSpend).toBe(500000)
+    expect(report.avgSatisfaction).toBe(4.2)
+    expect(report.avgSpend).toBeGreaterThan(0)
+    expect(report.satisfactionBreakdown).toBeDefined()
+  })
+
+  it('generateReport 未完成的活动抛 BadRequestException', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '未完成',
+      eventDate: '2026-08-10', participants: 10,
+    })
+    expect(() => svc.generateReport(event.id, tenantId)).toThrow(BadRequestException)
+  })
+
+  it('getReport 返回指定报告', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '报告测试',
+      eventDate: '2026-08-10', participants: 10,
+    })
+    svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 10, totalSpend: 200000, avgSatisfaction: 4.0,
+    })
+    const report = svc.generateReport(event.id, tenantId)
+    const found = svc.getReport(report.id, tenantId)
+    expect(found.eventId).toBe(event.id)
+  })
+
+  it('getReport 不存在的报告抛 NotFoundException', () => {
+    expect(() => svc.getReport('fake-id', tenantId)).toThrow(NotFoundException)
+  })
+})
+
+describe('TeamBuildingService — CRM同步', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new TeamBuildingService()
+  })
+
+  it('syncToCrm 同步成功', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: 'CRM同步测试',
+      eventDate: '2026-08-10', participants: 5,
+      participantMemberIds: ['mem-01', 'mem-02'],
+    })
+    svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 5, totalSpend: 50000, avgSatisfaction: 5,
+    })
+    const sync = svc.syncToCrm(event.id, tenantId)
+    expect(sync.syncStatus).toBe('synced')
+    expect(sync.eventId).toBe(event.id)
+  })
+
+  it('syncToCrm 未完成的活动抛 BadRequestException', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '未完成',
+      eventDate: '2026-08-10', participants: 5,
+    })
+    expect(() => svc.syncToCrm(event.id, tenantId)).toThrow(BadRequestException)
+  })
+
+  it('syncToCrm 重复同步抛 BadRequestException', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '重复同步',
+      eventDate: '2026-08-10', participants: 5,
+    })
+    svc.completeEvent(event.id, tenantId, {
+      actualParticipants: 5, totalSpend: 50000, avgSatisfaction: 5,
+    })
+    svc.syncToCrm(event.id, tenantId)
+    expect(() => svc.syncToCrm(event.id, tenantId)).toThrow(/已同步/)
+  })
+
+  it('getSyncStatus 返回同步状态', () => {
+    const event = svc.createEvent({
+      tenantId, planId: 'p1', name: '同步状态',
+      eventDate: '2026-08-10', participants: 5,
+    })
+    const status = svc.getSyncStatus(event.id, tenantId)
+    expect(status).toBeNull()
+  })
+})
+
+describe('TeamBuildingService — 看板', () => {
+  let svc: TeamBuildingService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new TeamBuildingService()
+  })
+
+  it('getDashboard 返回看板数据', () => {
+    const db = svc.getDashboard(tenantId)
+    expect(db.month).toBeDefined()
+    expect(typeof db.totalEvents).toBe('number')
+    expect(typeof db.totalParticipants).toBe('number')
+    expect(typeof db.totalSpend).toBe('number')
+    expect(db.byType).toBeDefined()
+    expect(db.monthlyTrend).toBeDefined()
+    expect(db.topPlans).toBeDefined()
+  })
+
+  it('getDashboard 指定月份', () => {
+    const db = svc.getDashboard(tenantId, '2026-07')
+    expect(db.month).toBe('2026-07')
   })
 })

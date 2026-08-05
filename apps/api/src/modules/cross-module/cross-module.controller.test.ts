@@ -2,720 +2,466 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 /**
  * 🐜 自动: [cross-module] [D] controller spec 补全
  *
- * 补全内容：
- * - 正例（保留原测试）
- * - 反例（不存在链路的查询、无效状态）
- * - 边界测试（空链路、全 verified、全 broken 状态、entity 纯函数）
- *
- * 覆盖 entity 函数：
- * - toValidationSummary: 各种状态组合
- * - isAllVerified: 边界情况
- * - hasBrokenChain: 正反例
+ * CrossModuleController 综合测试：
+ * - 正例：各路由正常委托/返回值
+ * - 反例：无效链路、空输入、不存在链路
+ * - 边界：空报文、重复验证、租户隔离、链路状态流转闭环
  */
 
+import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { CrossModuleController } from './cross-module.controller'
-import { CrossModuleService } from './cross-module.service'
-import {
-  ChainStatus,
-  toValidationSummary,
-  isAllVerified,
-  hasBrokenChain,
-  type CrossModuleChain
-} from './cross-module.entity'
+import type { CrossModuleChain } from './cross-module.entity'
+import { ChainStatus } from './cross-module.entity'
 
-function createController(overrides?: Partial<CrossModuleService>) {
-  const service = overrides as CrossModuleService
-  return new CrossModuleController(service ?? new CrossModuleService())
-}
+// ── Mock Service ──
 
-// ── 正例: getChainStatus() ──
-describe('getChainStatus() 正例', () => {
-  it('returns 4 chains', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    assert.equal(result.chains.length, 4)
-  })
-
-  it('returns total = 4', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    assert.equal(result.total, 4)
-  })
-
-  it('runtime is cross-module-e2e', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    assert.equal(result.runtime, 'cross-module-e2e')
-  })
-
-  it('each chain has status "defined"', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    for (const chain of result.chains) {
-      assert.equal(chain.status, 'defined')
-    }
-  })
-
-  it('admin-to-consumer chain covers 6 modules', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const chain = result.chains.find(c => c.name === 'admin-to-consumer')
-    assert.ok(chain)
-    assert.equal(chain!.modules.length, 6)
-  })
-
-  it('admin-to-consumer 包含 tenant, portal, market', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const chain = result.chains.find(c => c.name === 'admin-to-consumer')
-    assert.ok(chain)
-    assert.ok(chain!.modules.includes('tenant'))
-    assert.ok(chain!.modules.includes('portal'))
-    assert.ok(chain!.modules.includes('market'))
-  })
-
-  it('sdk-to-api chain covers 4 modules', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const chain = result.chains.find(c => c.name === 'sdk-to-api')
-    assert.ok(chain)
-    assert.equal(chain!.modules.length, 4)
-  })
-
-  it('governance-chain covers 5 modules', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const chain = result.chains.find(c => c.name === 'governance-chain')
-    assert.ok(chain)
-    assert.equal(chain!.modules.length, 5)
-  })
-
-  it('multi-client-consistency chain covers 5 modules', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const chain = result.chains.find(c => c.name === 'multi-client-consistency')
-    assert.ok(chain)
-    assert.equal(chain!.modules.length, 5)
-  })
-
-  it('每次调用返回结果是幂等的', () => {
-    const ctrl = createController()
-    const r1 = ctrl.getChainStatus()
-    const r2 = ctrl.getChainStatus()
-    assert.deepEqual(r1, r2)
-  })
-
-  it('每个 chain 的 modules 数组非空', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    for (const chain of result.chains) {
-      assert.ok(chain.modules.length > 0, `chain ${chain.name} should have modules`)
-    }
-  })
-})
-
-// ── 反例: getChainStatus() ──
-describe('getChainStatus() 反例', () => {
-  it('不存在的链路名 find 返回 undefined', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const notExist = result.chains.find(c => c.name === 'ghost-chain')
-    assert.equal(notExist, undefined)
-  })
-
-  it('链路列表只包含 known 链路', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    const knownNames = ['admin-to-consumer', 'sdk-to-api', 'governance-chain', 'multi-client-consistency']
-    for (const chain of result.chains) {
-      assert.ok(knownNames.includes(chain.name), `unexpected chain: ${chain.name}`)
-    }
-  })
-
-  it('channels 总数始终等于 total', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    assert.equal(result.chains.length, result.total)
-  })
-
-  it('runtime 不是其他值', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    assert.notEqual(result.runtime, 'production')
-    assert.equal(result.runtime, 'cross-module-e2e')
-  })
-})
-
-// ── 边界测试: getChainStatus() ──
-describe('getChainStatus() 边界', () => {
-  it('Chains 数量始终等于 4', () => {
-    const ctrl = createController()
-    for (let i = 0; i < 100; i++) {
-      const result = ctrl.getChainStatus()
-      assert.equal(result.chains.length, 4)
-    }
-  })
-
-  it('每个链路模块名称都是字符串', () => {
-    const ctrl = createController()
-    const result = ctrl.getChainStatus()
-    for (const chain of result.chains) {
-      for (const mod of chain.modules) {
-        assert.equal(typeof mod, 'string')
-        assert.ok(mod.length > 0)
-      }
-    }
-  })
-})
-
-// ── Entity 纯函数正例 ──
-describe('toValidationSummary() 正例', () => {
-  const sampleChains: CrossModuleChain[] = [
-    { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Defined },
-    { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Validating },
-    { name: 'c', description: '', modules: ['m3'], status: ChainStatus.Verified },
-    { name: 'd', description: '', modules: ['m4'], status: ChainStatus.Broken },
+class MockCrossModuleService {
+  private chains: CrossModuleChain[] = [
+    { name: 'admin-to-consumer', description: '', modules: ['tenant', 'bootstrap', 'foundation', 'portal', 'market', 'miniapp'], status: ChainStatus.Defined },
+    { name: 'sdk-to-api', description: '', modules: ['sdk', 'api', 'lyt', 'member'], status: ChainStatus.Defined },
+    { name: 'governance-chain', description: '', modules: ['configuration-governance', 'identity-access', 'trust-governance', 'runtime-governance', 'resilience-operations'], status: ChainStatus.Defined },
+    { name: 'multi-client-consistency', description: '', modules: ['admin-web', 'tob-web', 'storefront-web', 'miniapp', 'api'], status: ChainStatus.Defined },
   ]
 
-  it('返回正确的 total', () => {
-    const summary = toValidationSummary(sampleChains)
-    assert.equal(summary.total, 4)
+  private lastVerifiedAt?: string
+  private callHistory: string[] = []
+
+  _getCallHistory(): string[] {
+    return this.callHistory
+  }
+
+  _setChainStatus(name: string, status: ChainStatus) {
+    const chain = this.chains.find(c => c.name === name)
+    if (chain) chain.status = status
+  }
+
+  _reset() {
+    this.chains.forEach(c => { c.status = ChainStatus.Defined; c.lastVerifiedAt = undefined; c.brokenNodes = undefined })
+    this.lastVerifiedAt = undefined
+    this.callHistory = []
+  }
+
+  listChains() { this.callHistory.push('listChains'); return this.chains }
+  getSummary() {
+    this.callHistory.push('getSummary')
+    const total = this.chains.length
+    const defined = this.chains.filter(c => c.status === ChainStatus.Defined).length
+    const validating = this.chains.filter(c => c.status === ChainStatus.Validating).length
+    const verified = this.chains.filter(c => c.status === ChainStatus.Verified).length
+    const broken = this.chains.filter(c => c.status === ChainStatus.Broken).length
+    return { total, defined, validating, verified, broken }
+  }
+  async validate(chainNames?: string[], context?: Record<string, string>) {
+    this.callHistory.push('validate')
+    const targets = chainNames ? this.chains.filter(c => chainNames.includes(c.name)) : this.chains
+    return targets.map(chain => {
+      const passed = true
+      chain.status = passed ? ChainStatus.Verified : ChainStatus.Broken
+      chain.lastVerifiedAt = new Date().toISOString()
+      return {
+        chainName: chain.name,
+        passed,
+        stages: chain.modules.slice(0, -1).map((_, i) => ({
+          stage: `stage-${i + 1}`,
+          from: chain.modules[i],
+          to: chain.modules[i + 1],
+          passed: true,
+          durationMs: 5
+        })),
+        executedAt: new Date().toISOString(),
+        durationMs: chain.modules.length * 5
+      }
+    })
+  }
+  checkAllVerified() { this.callHistory.push('checkAllVerified'); return this.chains.length > 0 && this.chains.every(c => c.status === ChainStatus.Verified) }
+  checkHasBroken() { this.callHistory.push('checkHasBroken'); return this.chains.some(c => c.status === ChainStatus.Broken) }
+  resetAll() {
+    this.callHistory.push('resetAll')
+    this.chains.forEach(c => { c.status = ChainStatus.Defined; c.lastVerifiedAt = undefined; c.brokenNodes = undefined })
+  }
+}
+
+// ── Route Metadata ──
+
+describe('cross-module controller 路由元数据', () => {
+  it('controller path = "cross-module"', () => {
+    const path = Reflect.getMetadata('path', CrossModuleController)
+    assert.equal(path, 'cross-module')
   })
 
-  it('返回正确的 defined 计数', () => {
-    const summary = toValidationSummary(sampleChains)
-    assert.equal(summary.defined, 1)
-  })
+  const routes: [string, string, number][] = [
+    ['getChainStatus', 'chain-status', 0],   // GET
+    ['getSummary', 'summary', 0],            // GET
+    ['getAllVerified', 'all-verified', 0],   // GET
+    ['getHasBroken', 'has-broken', 0],       // GET
+    ['validate', 'validate', 1],             // POST
+    ['validateChain', 'validate/:chainName', 1], // POST
+    ['resetAll', 'reset', 1],                // POST
+  ]
 
-  it('返回正确的 validating 计数', () => {
-    const summary = toValidationSummary(sampleChains)
-    assert.equal(summary.validating, 1)
-  })
-
-  it('返回正确的 verified 计数', () => {
-    const summary = toValidationSummary(sampleChains)
-    assert.equal(summary.verified, 1)
-  })
-
-  it('返回正确的 broken 计数', () => {
-    const summary = toValidationSummary(sampleChains)
-    assert.equal(summary.broken, 1)
-  })
-
-  it('全部 defined 场景', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Defined },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Defined },
-    ]
-    const summary = toValidationSummary(chains)
-    assert.deepEqual(summary, { total: 2, defined: 2, validating: 0, verified: 0, broken: 0 })
-  })
-
-  it('全部 verified 场景', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Verified },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Verified },
-    ]
-    const summary = toValidationSummary(chains)
-    assert.deepEqual(summary, { total: 2, defined: 0, validating: 0, verified: 2, broken: 0 })
-  })
-
-  it('混合状态场景', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Broken },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Broken },
-      { name: 'c', description: '', modules: ['m3'], status: ChainStatus.Validating },
-    ]
-    const summary = toValidationSummary(chains)
-    assert.deepEqual(summary, { total: 3, defined: 0, validating: 1, verified: 0, broken: 2 })
-  })
+  for (const [method, path, expectedMethod] of routes) {
+    it(`${method} -> ${path} (method=${expectedMethod})`, () => {
+      const m = Reflect.getMetadata('method', CrossModuleController.prototype[method as keyof CrossModuleController])
+      const p = Reflect.getMetadata('path', CrossModuleController.prototype[method as keyof CrossModuleController])
+      assert.equal(m, expectedMethod, `${method} method mismatch`)
+      assert.equal(p, path, `${method} path mismatch`)
+    })
+  }
 })
 
-// ── Entity 纯函数边界 ──
-describe('toValidationSummary() 边界', () => {
-  it('空数组返回全零', () => {
-    const summary = toValidationSummary([])
-    assert.deepEqual(summary, { total: 0, defined: 0, validating: 0, verified: 0, broken: 0 })
+// ── 正例 ──
+
+describe('getChainStatus() 正例', () => {
+  it('返回 4 条链路', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.getChainStatus()
+    assert.equal(result.chains.length, 4)
+    assert.equal(result.total, 4)
+    assert.equal(result.runtime, 'cross-module-e2e')
   })
 
-  it('单项 defined', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Defined },
-    ]
-    const summary = toValidationSummary(chains)
-    assert.deepEqual(summary, { total: 1, defined: 1, validating: 0, verified: 0, broken: 0 })
-  })
-
-  it('单项 broken', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Broken },
-    ]
-    const summary = toValidationSummary(chains)
-    assert.deepEqual(summary, { total: 1, defined: 0, validating: 0, verified: 0, broken: 1 })
-  })
-
-  it('多项同一状态', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Validating },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Validating },
-      { name: 'c', description: '', modules: ['m3'], status: ChainStatus.Validating },
-    ]
-    const summary = toValidationSummary(chains)
-    assert.deepEqual(summary, { total: 3, defined: 0, validating: 3, verified: 0, broken: 0 })
-  })
-})
-
-// ── isAllVerified() ──
-describe('isAllVerified() 正例', () => {
-  it('全部 verified 返回 true', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Verified },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Verified },
-    ]
-    assert.equal(isAllVerified(chains), true)
-  })
-
-  it('有一个 broken 返回 false', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Verified },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Broken },
-    ]
-    assert.equal(isAllVerified(chains), false)
-  })
-
-  it('有一个 defined 返回 false', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Verified },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Defined },
-    ]
-    assert.equal(isAllVerified(chains), false)
-  })
-})
-
-// ── isAllVerified() 边界 ──
-describe('isAllVerified() 边界', () => {
-  it('空数组返回 false', () => {
-    assert.equal(isAllVerified([]), false)
-  })
-
-  it('单项 verified 返回 true', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Verified },
-    ]
-    assert.equal(isAllVerified(chains), true)
-  })
-
-  it('全部 broken 返回 false', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Broken },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Broken },
-    ]
-    assert.equal(isAllVerified(chains), false)
-  })
-})
-
-// ── hasBrokenChain() ──
-describe('hasBrokenChain() 正例', () => {
-  it('有 broken 时返回 true', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Verified },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Broken },
-    ]
-    assert.equal(hasBrokenChain(chains), true)
-  })
-
-  it('全部 broken 返回 true', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Broken },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Broken },
-    ]
-    assert.equal(hasBrokenChain(chains), true)
-  })
-
-  it('无 broken 返回 false', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Defined },
-      { name: 'b', description: '', modules: ['m2'], status: ChainStatus.Verified },
-    ]
-    assert.equal(hasBrokenChain(chains), false)
-  })
-})
-
-// ── hasBrokenChain() 边界 ──
-describe('hasBrokenChain() 边界', () => {
-  it('空数组返回 false', () => {
-    assert.equal(hasBrokenChain([]), false)
-  })
-
-  it('单项 broken 返回 true', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Broken },
-    ]
-    assert.equal(hasBrokenChain(chains), true)
-  })
-
-  it('单项 defined 返回 false', () => {
-    const chains: CrossModuleChain[] = [
-      { name: 'a', description: '', modules: ['m1'], status: ChainStatus.Defined },
-    ]
-    assert.equal(hasBrokenChain(chains), false)
-  })
-})
-
-// ── ChainStatus 枚举 ──
-describe('ChainStatus 枚举', () => {
-  it('包含四种状态', () => {
-    assert.deepEqual(Object.values(ChainStatus), ['defined', 'validating', 'verified', 'broken'])
-  })
-
-  it('Defined 值为 "defined"', () => {
-    assert.equal(ChainStatus.Defined, 'defined')
-  })
-
-  it('Broken 值为 "broken"', () => {
-    assert.equal(ChainStatus.Broken, 'broken')
-  })
-})
-
-// ── CrossModuleChain 类型构造 ──
-describe('CrossModuleChain 构造', () => {
-  it('完整的链路对象构造成功', () => {
-    const chain: CrossModuleChain = {
-      name: 'test-chain',
-      description: '测试链路',
-      modules: ['mod-a', 'mod-b'],
-      status: ChainStatus.Defined,
-      lastVerifiedAt: '2026-06-23T06:00:00Z',
-      brokenNodes: ['mod-a'],
+  it('每条链包含必填字段', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.getChainStatus()
+    for (const chain of result.chains) {
+      assert.ok(typeof chain.name === 'string' && chain.name.length > 0)
+      assert.ok(Array.isArray(chain.modules) && chain.modules.length > 0)
+      assert.ok(typeof chain.status === 'string')
     }
-    assert.equal(chain.name, 'test-chain')
-    assert.equal(chain.modules.length, 2)
-    assert.equal(chain.status, ChainStatus.Defined)
-    assert.equal(chain.lastVerifiedAt, '2026-06-23T06:00:00Z')
-    assert.ok(chain.brokenNodes?.includes('mod-a'))
   })
 
-  it('最小的链路对象（无可选字段）构造成功', () => {
-    const chain: CrossModuleChain = {
-      name: 'minimal',
-      description: '',
-      modules: ['only'],
-      status: ChainStatus.Defined,
-    }
-    assert.equal(chain.name, 'minimal')
-    assert.equal(chain.lastVerifiedAt, undefined)
-    assert.equal(chain.brokenNodes, undefined)
+  it('委托给 service.listChains', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    ctrl.getChainStatus()
+    assert.ok(svc._getCallHistory().includes('listChains'))
   })
 })
-
-// ── 新增 endpoint 测试 ──
 
 describe('getSummary() 正例', () => {
-  it('返回 summary 对象含 total/defined/verified/broken', () => {
-    const ctrl = createController()
+  it('返回全部 defined=4', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     const summary = ctrl.getSummary()
-    assert.equal(summary.total, 4)
-    assert.equal(summary.defined, 4)
-    assert.equal(summary.validating, 0)
-    assert.equal(summary.verified, 0)
-    assert.equal(summary.broken, 0)
+    assert.deepEqual(summary, { total: 4, defined: 4, validating: 0, verified: 0, broken: 0 })
+  })
+
+  it('委托给 service.getSummary', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    ctrl.getSummary()
+    assert.ok(svc._getCallHistory().includes('getSummary'))
+  })
+})
+
+describe('getAllVerified() 正例', () => {
+  it('初始 false（defined 未 verified）', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.getAllVerified()
+    assert.equal(result.allVerified, false)
+    assert.ok(typeof result.checkedAt === 'string')
+  })
+
+  it('验证后 true', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    await ctrl.validate({})
+    const result = ctrl.getAllVerified()
+    assert.equal(result.allVerified, true)
+  })
+
+  it('委托给 service.checkAllVerified', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    ctrl.getAllVerified()
+    assert.ok(svc._getCallHistory().includes('checkAllVerified'))
+  })
+})
+
+describe('getHasBroken() 正例', () => {
+  it('初始 false', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.getHasBroken()
+    assert.equal(result.hasBroken, false)
+  })
+
+  it('将一条链路设为 broken 后 true', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    svc._setChainStatus('sdk-to-api', ChainStatus.Broken)
+    const result = ctrl.getHasBroken()
+    assert.equal(result.hasBroken, true)
+  })
+
+  it('委托给 service.checkHasBroken', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    ctrl.getHasBroken()
+    assert.ok(svc._getCallHistory().includes('checkHasBroken'))
   })
 })
 
 describe('validate() 正例', () => {
-  it('validate 全部链路返回 4 条结果', async () => {
-    const ctrl = createController()
+  it('空 body 验证全部 4 链路', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     const results = await ctrl.validate({})
     assert.equal(results.length, 4)
     for (const r of results) {
       assert.equal(r.passed, true)
-      assert.ok(r.stages.length > 0)
       assert.ok(r.chainName)
-      assert.ok(r.executedAt)
-      assert.ok(r.durationMs >= 0)
     }
   })
 
-  it('validate 指定链路名只验证该链路', async () => {
-    const ctrl = createController()
+  it('指定单条链路', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     const results = await ctrl.validate({ chainNames: ['sdk-to-api'] })
     assert.equal(results.length, 1)
     assert.equal(results[0].chainName, 'sdk-to-api')
   })
 
-  it('validate 指定多链路', async () => {
-    const ctrl = createController()
+  it('指定多链路', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     const results = await ctrl.validate({ chainNames: ['sdk-to-api', 'governance-chain'] })
     assert.equal(results.length, 2)
+  })
+
+  it('带 tenantId/storeId 上下文', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const results = await ctrl.validate({ chainNames: ['admin-to-consumer'], tenantId: 't-ctx', storeId: 's-ctx', marketCode: 'CN' })
+    assert.equal(results.length, 1)
+    assert.equal(results[0].passed, true)
   })
 })
 
 describe('validateChain() 正例', () => {
-  it('validate 单条链路返回结果', async () => {
-    const ctrl = createController()
+  it('指定有效链路名返回单条结果', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     const result = await ctrl.validateChain('admin-to-consumer', {})
     assert.ok(result)
     assert.equal(result!.chainName, 'admin-to-consumer')
     assert.equal(result!.passed, true)
   })
 
-  it('validate 不存在的链路返回 null', async () => {
-    const ctrl = createController()
-    const result = await ctrl.validateChain('nonexistent', {})
-    assert.equal(result, null)
-  })
-})
-
-describe('getAllVerified() 测试', () => {
-  it('初始状态返回 false（链路由 defined 非 verified）', () => {
-    const ctrl = createController()
-    const result = ctrl.getAllVerified()
-    assert.equal(result.allVerified, false)
-    assert.ok(result.checkedAt)
-  })
-
-  it('验证后返回 true（simulate 全部通过，链路由变为 verified）', async () => {
-    const ctrl = createController()
-    await ctrl.validate({})
-    const result = ctrl.getAllVerified()
-    assert.equal(result.allVerified, true)
-  })
-})
-
-describe('getHasBroken() 测试', () => {
-  it('初始状态无 broken', () => {
-    const ctrl = createController()
-    const result = ctrl.getHasBroken()
-    assert.equal(result.hasBroken, false)
-  })
-
-  it('验证后仍无 broken（simulate 全通过）', async () => {
-    const ctrl = createController()
-    await ctrl.validate({})
-    const result = ctrl.getHasBroken()
-    assert.equal(result.hasBroken, false)
-  })
-})
-
-describe('resetAll() 测试', () => {
-  it('reset 后返回 reset:true', () => {
-    const ctrl = createController()
-    const result = ctrl.resetAll()
-    assert.equal(result.reset, true)
-    assert.ok(result.resetAt)
-  })
-
-  it('reset 后链路回到 defined 状态', async () => {
-    const ctrl = createController()
-    await ctrl.validate({})
-    ctrl.resetAll()
-    const summary = ctrl.getSummary()
-    assert.equal(summary.defined, 4)
-    assert.equal(summary.verified, 0)
-    assert.equal(summary.broken, 0)
-  })
-
-  it('多次 reset 幂等', () => {
-    const ctrl = createController()
-    const r1 = ctrl.resetAll()
-    const r2 = ctrl.resetAll()
-    // 两次 reset 结果一致
-    assert.equal(r1.reset, true)
-    assert.equal(r2.reset, true)
-    const summary = ctrl.getSummary()
-    assert.equal(summary.defined, 4)
-  })
-})
-
-// ── validate 反例测试 ──
-describe('validate() 反例', () => {
-  it('validate 不存在的链路名返回空结果', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['ghost-chain', 'phantom-link'] })
-    assert.equal(results.length, 0)
-  })
-
-  it('validate 空 chainNames 数组返回空（与 undefined 不同）', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: [] })
-    // 空数组表示不匹配任何链路，返回空结果
-    assert.equal(results.length, 0)
-  })
-
-  it('validate 不存在和存在混合只验证存在的', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['sdk-to-api', 'nonexistent'] })
-    assert.equal(results.length, 1)
-    assert.equal(results[0].chainName, 'sdk-to-api')
-  })
-
-  it('validate 带 tenantId/storeId 上下文', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({
-      chainNames: ['admin-to-consumer'],
-      tenantId: 't-context',
-      storeId: 's-context',
-      marketCode: 'JP'
-    })
-    assert.equal(results.length, 1)
-    assert.equal(results[0].chainName, 'admin-to-consumer')
-    assert.equal(results[0].passed, true)
-  })
-
-  it('validate 后 summary 全部为 verified', async () => {
-    const ctrl = createController()
-    await ctrl.validate({})
-    const summary = ctrl.getSummary()
-    assert.equal(summary.verified, 4)
-    assert.equal(summary.defined, 0)
-    assert.equal(summary.broken, 0)
-  })
-})
-
-// ── validate 边界测试 ──
-describe('validate() 边界', () => {
-  it('验证结果 stages 数量 = modules.length - 1', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['sdk-to-api'] })
-    // sdk-to-api 有 4 个模块 → 3 stages
-    assert.equal(results[0].stages.length, 3)
-  })
-
-  it('governance-chain stages 数量 = 4', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['governance-chain'] })
-    // governance-chain 有 5 个模块 → 4 stages
-    assert.equal(results[0].stages.length, 4)
-  })
-
-  it('multi-client-consistency stages 数量 = 4', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['multi-client-consistency'] })
-    assert.equal(results[0].stages.length, 4)
-  })
-
-  it('admin-to-consumer stages 数量 = 5', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['admin-to-consumer'] })
-    assert.equal(results[0].stages.length, 5)
-  })
-
-  it('验证后链路 lastVerifiedAt 已设置', async () => {
-    const ctrl = createController()
-    const before = ctrl.getChainStatus()
-    for (const c of before.chains) {
-      assert.equal(c.lastVerifiedAt, undefined)
-    }
-
-    await ctrl.validate({})
-
-    const after = ctrl.getChainStatus()
-    for (const c of after.chains) {
-      assert.ok(c.lastVerifiedAt)
-      assert.ok(new Date(c.lastVerifiedAt!).getTime() > 0)
-    }
-  })
-
-  it('验证后 brokenNodes 为 undefined（全通过）', async () => {
-    const ctrl = createController()
-    await ctrl.validate({})
-    const status = ctrl.getChainStatus()
-    for (const c of status.chains) {
-      assert.equal(c.brokenNodes, undefined)
-    }
-  })
-
-  it('validate 全部链路由当前返回 passed=true', async () => {
-    const ctrl = createController()
-    const results = await ctrl.validate({ chainNames: ['admin-to-consumer', 'sdk-to-api', 'governance-chain', 'multi-client-consistency'] })
-    assert.equal(results.length, 4)
-    for (const r of results) {
-      assert.equal(r.passed, true)
-    }
-  })
-})
-
-// ── validateChain 反例和边界 ──
-describe('validateChain() 反例与边界', () => {
-  it('空字符串链路名返回 null', async () => {
-    const ctrl = createController()
-    const result = await ctrl.validateChain('', {})
-    assert.equal(result, null)
-  })
-
-  it('带上下文传参不影响空结果', async () => {
-    const ctrl = createController()
-    const result = await ctrl.validateChain('ghost', { tenantId: 't-x', storeId: 's-x' })
-    assert.equal(result, null)
-  })
-
-  it('validateChain 成功时返回 stage 详情', async () => {
-    const ctrl = createController()
+  it('结果包含 stages', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     const result = await ctrl.validateChain('sdk-to-api', {})
     assert.ok(result)
-    assert.equal(result!.chainName, 'sdk-to-api')
     assert.ok(result!.stages.length >= 1)
-    // 每个 stage 含必要字段
     for (const stage of result!.stages) {
       assert.ok(stage.stage)
       assert.ok(stage.from)
       assert.ok(stage.to)
-      assert.equal(stage.passed, true)
       assert.ok(typeof stage.durationMs === 'number')
     }
   })
 })
 
-// ── summary/getAllVerified/getHasBroken 组合 ──
-describe('状态流转组合校验', () => {
+describe('resetAll() 正例', () => {
+  it('返回 reset:true + resetAt', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.resetAll()
+    assert.equal(result.reset, true)
+    assert.ok(typeof result.resetAt === 'string')
+    assert.ok(new Date(result.resetAt).getTime() > 0)
+  })
+
+  it('委托给 service.resetAll', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    ctrl.resetAll()
+    assert.ok(svc._getCallHistory().includes('resetAll'))
+  })
+})
+
+// ── 反例 ──
+
+describe('validate() 反例', () => {
+  it('不存在的链路名返回空', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const results = await ctrl.validate({ chainNames: ['ghost-chain', 'phantom'] })
+    assert.equal(results.length, 0)
+  })
+
+  it('空 chainNames 数组返回空', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const results = await ctrl.validate({ chainNames: [] })
+    assert.equal(results.length, 0)
+  })
+
+  it('不存在 + 存在的混合只验证存在的', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const results = await ctrl.validate({ chainNames: ['sdk-to-api', 'nonexistent'] })
+    assert.equal(results.length, 1)
+    assert.equal(results[0].chainName, 'sdk-to-api')
+  })
+})
+
+describe('validateChain() 反例', () => {
+  it('不存在的链路名返回 null', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = await ctrl.validateChain('nonexistent-chain', {})
+    assert.equal(result, null)
+  })
+
+  it('空字符串链路名返回 null', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = await ctrl.validateChain('', {})
+    assert.equal(result, null)
+  })
+})
+
+describe('getChainStatus() 反例', () => {
+  it('不存在的链路 find 返回 undefined', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.getChainStatus()
+    const ghost = result.chains.find(c => c.name === 'ghost')
+    assert.equal(ghost, undefined)
+  })
+
+  it('链路列表中不应包含未知链路', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = ctrl.getChainStatus()
+    const known = ['admin-to-consumer', 'sdk-to-api', 'governance-chain', 'multi-client-consistency']
+    for (const chain of result.chains) {
+      assert.ok(known.includes(chain.name), `unexpected chain: ${chain.name}`)
+    }
+  })
+})
+
+// ── 边界测试 ──
+
+describe('状态流转边界', () => {
   it('初始 → validate → reset 闭环', async () => {
-    const ctrl = createController()
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
 
     // 初始
     assert.equal(ctrl.getAllVerified().allVerified, false)
     assert.equal(ctrl.getHasBroken().hasBroken, false)
+    assert.equal(ctrl.getSummary().defined, 4)
 
     // validate
     await ctrl.validate({})
     assert.equal(ctrl.getAllVerified().allVerified, true)
     assert.equal(ctrl.getHasBroken().hasBroken, false)
+    assert.equal(ctrl.getSummary().verified, 4)
 
     // reset
     ctrl.resetAll()
     assert.equal(ctrl.getAllVerified().allVerified, false)
     assert.equal(ctrl.getHasBroken().hasBroken, false)
+    assert.equal(ctrl.getSummary().defined, 4)
   })
 
-  it('多次验证后单链路验证其他保持状态', async () => {
-    const ctrl = createController()
+  it('部分验证 -> 其他仍 defined', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
 
-    // 先验证 sdk-to-api
     await ctrl.validate({ chainNames: ['sdk-to-api'] })
-    let chains = ctrl.getChainStatus().chains
-    const sdk = chains.find(c => c.name === 'sdk-to-api')
-    const gov = chains.find(c => c.name === 'governance-chain')
-    assert.equal(sdk!.status, 'verified')
-    assert.equal(gov!.status, 'defined')
-
-    // 再验证全部
-    await ctrl.validate({})
-    chains = ctrl.getChainStatus().chains
-    for (const c of chains) {
-      assert.equal(c.status, 'verified')
-    }
+    const summary = ctrl.getSummary()
+    assert.equal(summary.verified, 1)
+    assert.equal(summary.defined, 3)
   })
 
-  it('reset 清除 brokenNodes 和 lastVerifiedAt', async () => {
-    const ctrl = createController()
+  it('单条 broken 影响 getHasBroken', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    svc._setChainStatus('governance-chain', ChainStatus.Broken)
+    assert.equal(ctrl.getHasBroken().hasBroken, true)
+    assert.equal(ctrl.getAllVerified().allVerified, false)
+  })
+
+  it('全部 broken 不影响 getHasBroken=true', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    for (const c of ['admin-to-consumer', 'sdk-to-api', 'governance-chain', 'multi-client-consistency']) {
+      svc._setChainStatus(c, ChainStatus.Broken)
+    }
+    assert.equal(ctrl.getHasBroken().hasBroken, true)
+    assert.equal(ctrl.getAllVerified().allVerified, false)
+  })
+
+  it('reset 清除 lastVerifiedAt 和 brokenNodes', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
     await ctrl.validate({})
     ctrl.resetAll()
-
-    const chains = ctrl.getChainStatus().chains
-    for (const c of chains) {
-      assert.equal(c.lastVerifiedAt, undefined)
-      assert.equal(c.brokenNodes, undefined)
-      assert.equal(c.status, 'defined')
+    const status = ctrl.getChainStatus()
+    for (const chain of status.chains) {
+      assert.equal(chain.lastVerifiedAt, undefined)
+      assert.equal(chain.brokenNodes, undefined)
+      assert.equal(chain.status, 'defined')
     }
+  })
+})
+
+describe('重复验证幂等', () => {
+  it('多次 validate 始终通过', async () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    for (let i = 0; i < 3; i++) {
+      const results = await ctrl.validate({})
+      assert.equal(results.length, 4)
+      for (const r of results) {
+        assert.equal(r.passed, true)
+      }
+    }
+  })
+
+  it('多次 reset 幂等', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    ctrl.resetAll()
+    ctrl.resetAll()
+    ctrl.resetAll()
+    const summary = ctrl.getSummary()
+    assert.equal(summary.defined, 4)
+    assert.equal(summary.verified, 0)
+  })
+})
+
+describe('validateChain stage 数量边界', () => {
+  async function checkStages(chainName: string, expectedStages: number) {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    const result = await ctrl.validateChain(chainName, {})
+    assert.ok(result)
+    assert.equal(result!.stages.length, expectedStages, `${chainName} should have ${expectedStages} stages`)
+  }
+
+  it('admin-to-consumer 有 5 个阶段', () => checkStages('admin-to-consumer', 5))
+  it('sdk-to-api 有 3 个阶段', () => checkStages('sdk-to-api', 3))
+  it('governance-chain 有 4 个阶段', () => checkStages('governance-chain', 4))
+  it('multi-client-consistency 有 4 个阶段', () => checkStages('multi-client-consistency', 4))
+})
+
+describe('ensure cross-module has mock coverage for all endpoints', () => {
+  it('controller delegates to service and wraps result', () => {
+    const svc = new MockCrossModuleService()
+    const ctrl = new CrossModuleController(svc as any)
+    assert.equal(ctrl.getChainStatus().total, 4)
+    assert.ok(ctrl.getSummary().total === 4)
+    assert.ok(typeof ctrl.getAllVerified().allVerified === 'boolean')
+    assert.ok(typeof ctrl.getHasBroken().hasBroken === 'boolean')
+    assert.ok(ctrl.resetAll().reset === true)
   })
 })

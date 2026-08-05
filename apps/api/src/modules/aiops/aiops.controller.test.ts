@@ -1,22 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
+// 8角色视角 + 边界测试: 👔店长 🛒前台 👥HR 🔧安监 🎮导玩员 🎯运行专员 🤝团建 📢营销
 import { Test, TestingModule } from '@nestjs/testing'
 import { AIOpsController } from './aiops.controller'
-import { AIOpsService } from "./aiops.service"
+import { AIOpsService } from './aiops.service'
 import { AIOpsPredictionService, TimeSeriesAnomalyDetector, SelfHealingService } from './aiops-prediction.service'
-import type { TimeSeriesPoint } from './aiops-prediction.service'
 
-function makePoints(values: number[], count: number): TimeSeriesPoint[] {
-  const now = Date.now()
-  return Array.from({ length: count }, (_, i) => ({
-    timestamp: new Date(now - (count - i) * 60000).toISOString(),
-    value: values[i] ?? 50 + Math.random() * 10,
+function makeHistory(values: number[]): { timestamp: string; value: number }[] {
+  return values.map((v, i) => ({
+    timestamp: new Date(Date.now() - (values.length - i) * 60000).toISOString(),
+    value: v,
   }))
 }
 
-describe('AIOpsController', () => {
+describe('AIOpsController (spec)', () => {
   let controller: AIOpsController
   let detector: TimeSeriesAnomalyDetector
-  let healService: SelfHealingService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,263 +24,250 @@ describe('AIOpsController', () => {
 
     controller = module.get<AIOpsController>(AIOpsController)
     detector = module.get<TimeSeriesAnomalyDetector>(TimeSeriesAnomalyDetector)
-    healService = module.get<SelfHealingService>(SelfHealingService)
     detector.resetForTests()
   })
 
-  // ── POST /aiops/detect ────────────────────────────────────────────────
-
-  describe('POST /aiops/detect (detect)', () => {
-    it('正例: 足够数据检测到异常突增', async () => {
-      const history = makePoints(
-        Array.from({ length: 10 }, () => 50 + Math.random() * 5),
-        10,
-      )
-      const result = await controller.detect({
-        metricName: 'mem_usage',
-        value: 98,
-        history,
-      })
-      expect(result.data.metricName).toBe('mem_usage')
-      expect(result.data.isAnomaly).toBe(true)
-      expect(result.data.anomalyScore).toBeGreaterThan(0)
-      expect(result.data.severity).toBeOneOf(['NORMAL', 'WARNING', 'CRITICAL'])
-      expect(result.data.detectedAt).toBeDefined()
-      expect(result.data.details).toBeDefined()
+  // ── 👔 店长: 关注整体系统运营健康度和AI预测概览 ──
+  describe('👔 店长 Store Manager', () => {
+    it('AC-1: 查看引擎状态 — 应返回整体运行状态', () => {
+      const result = controller.getStatus()
+      expect(result.data.engineName).toBe('AIOpsPredictionService')
+      expect(result.data.status).toBe('ACTIVE')
+      expect(result.data.anomalyRulesCount).toBe(3)
+      expect(result.data.attackRulesCount).toBe(4)
+      expect(result.data.lastDetectedAt).toBeDefined()
     })
 
-    it('正例: 正常数据应判定为无异常', async () => {
-      const stableValues = [50, 50.5, 49.8, 50.2, 49.9, 50.1, 50.3, 49.7, 50, 50.4]
-      const history = makePoints(stableValues, 10)
-      const result = await controller.detect({
-        metricName: 'cpu_normal',
-        value: 50.1,
-        history,
-      })
-      expect(result.data.isAnomaly).toBe(false)
-      expect(result.data.anomalyScore).toBeLessThan(0.5)
-    })
+    it('AC-2: 异常检测 — 异常数据应被正确标记', async () => {
+      const history = makeHistory([100, 101, 99, 100, 102, 98, 101, 99, 100, 101])
+      const normal = await controller.detect({ metricName: 'p95_latency', value: 100, history })
+      expect(normal.data.isAnomaly).toBe(false)
 
-    it('反例: 数据不足时 isAnomaly 为 false', async () => {
-      const result = await controller.detect({
-        metricName: 'new_metric',
-        value: 100,
-        history: [],
-      })
-      expect(result.data.isAnomaly).toBe(false)
-      expect(result.data.anomalyScore).toBe(0)
-      expect(result.data.details).toContain('数据点不足')
-    })
-
-    it('反例: 单点历史数据仍不足', async () => {
-      const result = await controller.detect({
-        metricName: 'sparse',
-        value: 99,
-        history: [{ timestamp: new Date().toISOString(), value: 50 }],
-      })
-      expect(result.data.isAnomaly).toBe(false)
-    })
-
-    it('边界: 刚好 5 个数据点的阈值情况', async () => {
-      const values = [50, 51, 49, 50, 99] // 最后一个明显偏高
-      const history = makePoints(values, 5)
-      const result = await controller.detect({
-        metricName: 'threshold_5',
-        value: 99,
-        history,
-      })
-      expect(result.data.metricName).toBe('threshold_5')
-    })
-
-    it('边界: 极大值检测', async () => {
-      const stable = Array.from({ length: 10 }, () => 50)
-      const history = makePoints(stable, 10)
-      const result = await controller.detect({
-        metricName: 'huge_spike',
-        value: 999999,
-        history,
-      })
-      expect(result.data.isAnomaly).toBe(true)
+      const anomaly = await controller.detect({ metricName: 'p95_latency', value: 999, history })
+      expect(anomaly.data.isAnomaly).toBe(true)
+      expect(anomaly.data.anomalyScore).toBeGreaterThan(0.8)
+      expect(anomaly.data.severity).toBe('CRITICAL')
     })
   })
 
-  // ── POST /aiops/predict ───────────────────────────────────────────────
-
-  describe('POST /aiops/predict (predict)', () => {
-    it('正例: 预测未来 5 个值', () => {
-      const result = controller.predict({ metricName: 'nonexistent', horizon: 5 })
-      expect(result.data.predictedValues).toHaveLength(5)
-      expect(result.data.horizon).toBe(5)
-      expect(result.data.metricName).toBe('nonexistent')
-      expect(result.data.confidence).toBeGreaterThanOrEqual(0)
-      expect(result.data.predictedAt).toBeDefined()
-    })
-
-    it('正例: 有历史数据时预测更准确', () => {
-      const history = makePoints(Array.from({ length: 20 }, () => 100), 20)
-      for (const pt of history) {
-        detector.recordDataPoint('predict_metric', pt)
+  // ── 🛒 前台: 关注系统响应速度和在线体验异常 ──
+  describe('🛒 前台 Front Desk', () => {
+    it('AC-3: 页面加载时间预测 — 应返回预测值', () => {
+      const history = makeHistory([200, 210, 190, 205, 195, 210, 190, 200, 205, 195])
+      for (const p of history) {
+        detector.recordDataPoint('page_load_ms', p)
       }
-      const result = controller.predict({ metricName: 'predict_metric', horizon: 3 })
+      const result = controller.predict({ metricName: 'page_load_ms', horizon: 3 })
       expect(result.data.predictedValues).toHaveLength(3)
+      expect(result.data.metricName).toBe('page_load_ms')
       expect(result.data.confidence).toBeGreaterThan(0)
     })
 
-    it('边界: horizon=1 最小预测', () => {
-      const result = controller.predict({ metricName: 'min_horizon', horizon: 1 })
-      expect(result.data.predictedValues).toHaveLength(1)
-    })
-
-    it('边界: horizon=100 最大预测', () => {
-      const result = controller.predict({ metricName: 'max_horizon', horizon: 100 })
-      expect(result.data.predictedValues).toHaveLength(100)
-    })
-
-    it('正例: 数据波动大时 confidence 仍有效', () => {
-      const noisy = Array.from({ length: 30 }, () => 50 + Math.random() * 40)
-      const history = makePoints(noisy, 30)
-      for (const pt of history) {
-        detector.recordDataPoint('noisy', pt)
+    it('AC-4: 结账响应攻击检测 — 正常流量不被误判', () => {
+      for (let i = 0; i < 15; i++) {
+        detector.recordDataPoint('checkout_ms', makeHistory([300, 310, 290, 305, 295])[0])
       }
-      const result = controller.predict({ metricName: 'noisy', horizon: 5 })
-      expect(result.data.confidence).toBeGreaterThanOrEqual(0)
-      expect(result.data.confidence).toBeLessThanOrEqual(1)
+      const result = controller.detectAttack({ metricName: 'checkout_ms' })
+      expect(result.data.isUnderAttack).toBe(false)
     })
   })
 
-  // ── POST /aiops/attack ────────────────────────────────────────────────
-
-  describe('POST /aiops/attack (detectAttack)', () => {
-    it('正例: 未知指标检测为非攻击', () => {
-      const result = controller.detectAttack({ metricName: 'unknown' })
-      expect(result.data.isUnderAttack).toBe(false)
-      expect(result.data.metricName).toBe('unknown')
-      expect(result.data.evidence).toBeInstanceOf(Array)
-      expect(result.data.detectedAt).toBeDefined()
+  // ── 👥 HR: 关注人员相关系统和服务稳定性 ──
+  describe('👥 HR HR Manager', () => {
+    it('AC-5: 自愈触发 — 应返回有效的 healing action', async () => {
+      const result = await controller.heal({ targetSystem: 'hr-portal' })
+      expect(result.data.id).toBeDefined()
+      expect(result.data.targetSystem).toBe('hr-portal')
+      expect(['restart', 'rollback', 'scale', 'isolate']).toContain(result.data.action)
+      expect(['pending', 'running', 'completed', 'failed']).toContain(result.data.status)
     })
 
-    it('正例: 有大量数据时攻击检测正常运行', () => {
-      const now = Date.now()
-      for (let i = 0; i < 100; i++) {
-        detector.recordDataPoint('attacked', {
-          timestamp: new Date(now - (100 - i) * 500).toISOString(),
+    it('AC-6: 攻击检测 — 应返回检测结果', () => {
+      // 注入一些攻击特征数据
+      for (let i = 0; i < 30; i++) {
+        detector.recordDataPoint('hr_api', {
+          timestamp: new Date(Date.now() - i * 1000).toISOString(),
+          value: 200,
+        })
+      }
+      const result = controller.detectAttack({ metricName: 'hr_api' })
+      expect(result.data.evidence).toBeDefined()
+      expect(Array.isArray(result.data.evidence)).toBe(true)
+    })
+  })
+
+  // ── 🔧 安监: 关注安全隐患和紧急异常告警 ──
+  describe('🔧 安监 Safety Supervisor', () => {
+    it('AC-7: 极端异常应立即检测 — 高分数', async () => {
+      const history = makeHistory([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+      const result = await controller.detect({ metricName: 'fire_alarm', value: 100, history })
+      expect(result.data.isAnomaly).toBe(true)
+      expect(result.data.anomalyScore).toBeGreaterThan(0.9)
+      expect(result.data.severity).toBe('CRITICAL')
+    })
+
+    it('AC-8: DDoS 攻击检测 — 大量请求涌入应识别', () => {
+      // 先记录正常流量 (平稳低量)
+      for (let i = 0; i < 10; i++) {
+        detector.recordDataPoint('api_gateway', {
+          timestamp: new Date(Date.now() - (10 - i) * 60000).toISOString(),
+          value: 10,
+        })
+      }
+      // 模拟 DDoS 攻击流量
+      for (let i = 0; i < 50; i++) {
+        detector.recordDataPoint('api_gateway', {
+          timestamp: new Date(Date.now() - i * 500).toISOString(),
+          value: 500,
+        })
+      }
+      const result = controller.detectAttack({ metricName: 'api_gateway' })
+      expect(result.data.isUnderAttack).toBe(true)
+      expect(result.data.confidence).toBeGreaterThan(0.3)
+    })
+  })
+
+  // ── 🎮 导玩员: 关注设备/游戏机运行异常 ──
+  describe('🎮 导玩员 Game Guide', () => {
+    it('AC-9: 设备温度趋势预测 — 应返回趋势值', () => {
+      for (let i = 0; i < 10; i++) {
+        detector.recordDataPoint('machine_temp', {
+          timestamp: new Date(Date.now() - (10 - i) * 30000).toISOString(),
+          value: 40 + i,
+        })
+      }
+      const result = controller.predict({ metricName: 'machine_temp', horizon: 5 })
+      expect(result.data.predictedValues).toHaveLength(5)
+      expect(result.data.predictedValues.every((v) => v > 0)).toBe(true)
+    })
+
+    it('AC-10: 设备离线攻击检测 — 正常模式不误报', () => {
+      for (let i = 0; i < 15; i++) {
+        detector.recordDataPoint('device_offline', {
+          timestamp: new Date(Date.now() - (15 - i) * 60000).toISOString(),
+          value: Math.random() < 0.2 ? 1 : 0,
+        })
+      }
+      const result = controller.detectAttack({ metricName: 'device_offline' })
+      // 正常离线波动不被视为攻击
+      expect(result.data.detectedAt).toBeDefined()
+    })
+  })
+
+  // ── 🎯 运行专员: 关注系统运行参数和性能调优 ──
+  describe('🎯 运行专员 Operations Specialist', () => {
+    it('AC-11: 健康检查 — 应返回所有系统状态', () => {
+      const result = controller.getHealth()
+      expect(result.data).toBeDefined()
+      expect(Array.isArray(result.data)).toBe(true)
+    })
+
+    it('AC-12: 自愈后系统状态应更新', async () => {
+      await controller.heal({ targetSystem: 'ops-target' })
+      const health = controller.getHealth()
+      const found = health.data.find((h) => h.systemId === 'ops-target')
+      expect(found).toBeDefined()
+      expect(found!.status).toBeDefined()
+    })
+
+    it('AC-13: 异常预测高于正常基线', async () => {
+      const history = makeHistory([30, 32, 29, 31, 30, 33, 28, 31, 30, 32])
+      const result = await controller.detect({ metricName: 'cpu_usage', value: 95, history })
+      expect(result.data.isAnomaly).toBe(true)
+    })
+  })
+
+  // ── 🤝 团建: 关注协作流程和团队使用的稳定性 ──
+  describe('🤝 团建 Team Building Coordinator', () => {
+    it('AC-14: 多次异常检测不抛异常 — 正常可用', async () => {
+      const h = makeHistory([100, 101, 99, 100])
+      const r1 = await controller.detect({ metricName: 'team_metric_1', value: 100, history: h })
+      const r2 = await controller.detect({ metricName: 'team_metric_2', value: 200, history: h })
+      const r3 = await controller.detect({ metricName: 'team_metric_3', value: 300, history: h })
+      expect(r1.data.metricName).toBe('team_metric_1')
+      expect(r2.data.metricName).toBe('team_metric_2')
+      expect(r3.data.metricName).toBe('team_metric_3')
+    })
+
+    it('AC-15: 状态查询包含引擎元信息', () => {
+      const result = controller.getStatus()
+      expect(result.data).toHaveProperty('engineName')
+      expect(result.data).toHaveProperty('anomalyRulesCount')
+      expect(result.data).toHaveProperty('attackRulesCount')
+      expect(result.data).toHaveProperty('healedSystemsCount')
+      expect(result.data).toHaveProperty('status')
+      expect(result.data).toHaveProperty('lastDetectedAt')
+      expect(typeof result.data.anomalyRulesCount).toBe('number')
+    })
+  })
+
+  // ── 📢 营销: 关注促销期间流量异常和趋势预测 ──
+  describe('📢 营销 Marketing Manager', () => {
+    it('AC-16: 大促流量预测 — 应返回合理数值', () => {
+      for (let i = 0; i < 20; i++) {
+        detector.recordDataPoint('traffic_volume', {
+          timestamp: new Date(Date.now() - (20 - i) * 60000).toISOString(),
           value: 1000 + Math.random() * 500,
         })
       }
-      const result = controller.detectAttack({ metricName: 'attacked' })
-      expect(result.data.metricName).toBe('attacked')
-      expect(result.data.confidence).toBeGreaterThanOrEqual(0)
-      expect(result.data.detectedAt).toBeDefined()
-      expect(result.data.evidence).toBeInstanceOf(Array)
+      const result = controller.predict({ metricName: 'traffic_volume', horizon: 5 })
+      expect(result.data.predictedValues).toHaveLength(5)
+      expect(result.data.confidence).toBeGreaterThan(0)
     })
 
-    it('边界: 少量数据时不应误报攻击', () => {
-      detector.recordDataPoint('quiet', { timestamp: new Date().toISOString(), value: 50 })
-      const result = controller.detectAttack({ metricName: 'quiet' })
+    it('AC-17: 营销活动期间异常流量不应误判攻击', async () => {
+      // 模拟大促期间流量逐步上升
+      for (let i = 0; i < 20; i++) {
+        detector.recordDataPoint('promo_conversion', {
+          timestamp: new Date(Date.now() - (20 - i) * 60000).toISOString(),
+          value: 100 + i * 10,
+        })
+      }
+      const history = makeHistory(new Array(20).fill(0).map((_, i) => 100 + i * 10))
+      const result = await controller.detect({ metricName: 'promo_conversion', value: 300, history })
+      // 逐步上升趋势可能检测为趋势异常
+      expect(result.data.isAnomaly).toBeDefined()
+    })
+  })
+
+  // ── 额外边界场景 ──
+  describe('边界场景 Edge Cases', () => {
+    it('AC-18: 最少历史数据（2个点）应能检测', async () => {
+      const history = makeHistory([100, 101])
+      const result = await controller.detect({ metricName: 'minimal', value: 200, history })
+      expect(result.data.isAnomaly).toBeDefined()
+    })
+
+    it('AC-19: 空历史数据 — 应返回非异常', async () => {
+      const result = await controller.detect({ metricName: 'empty', value: 100, history: [] })
+      expect(result.data.isAnomaly).toBe(false)
+      expect(result.data.anomalyScore).toBe(0)
+    })
+
+    it('AC-20: 预测 horizon=0 最近似结果', () => {
+      detector.recordDataPoint('zero_horizon', makeHistory([100])[0])
+      const result = controller.predict({ metricName: 'zero_horizon', horizon: 1 })
+      expect(result.data.horizon).toBe(1)
+      expect(result.data.predictedValues).toHaveLength(1)
+    })
+
+    it('AC-21: 未知指标攻击检测返回未攻击', () => {
+      const result = controller.detectAttack({ metricName: 'nonexistent' })
       expect(result.data.isUnderAttack).toBe(false)
     })
 
-    it('反例: 无数据时给出证据信息', () => {
-      const result = controller.detectAttack({ metricName: 'no_data_metric' })
-      expect(result.data.evidence).toBeInstanceOf(Array)
-      expect(result.data.evidence.length).toBeGreaterThanOrEqual(1)
-    })
-  })
-
-  // ── POST /aiops/heal ──────────────────────────────────────────────────
-
-  describe('POST /aiops/heal (heal)', () => {
-    it('正例: 触发自愈返回 healing action', async () => {
-      const result = await controller.heal({ targetSystem: 'web-01' })
-      expect(result.data.id).toBeDefined()
-      expect(result.data.id).toBeTypeOf('string')
-      expect(result.data.targetSystem).toBe('web-01')
-      expect(['restart', 'rollback', 'scale', 'isolate']).toContain(result.data.action)
-      expect(['pending', 'running', 'completed', 'failed']).toContain(result.data.status)
+    it('AC-22: 自愈含 timestamp 参数', async () => {
+      const ts = new Date().toISOString()
+      const result = await controller.heal({ targetSystem: 'ts-test', timestamp: ts })
+      expect(result.data.targetSystem).toBe('ts-test')
       expect(result.data.triggeredAt).toBeDefined()
     })
 
-    it('正例: 多个系统可独立触发自愈', async () => {
-      const r1 = await controller.heal({ targetSystem: 'api-gw-01' })
-      const r2 = await controller.heal({ targetSystem: 'db-master' })
-      expect(r1.data.id).not.toBe(r2.data.id)
-      expect(r1.data.targetSystem).toBe('api-gw-01')
-      expect(r2.data.targetSystem).toBe('db-master')
-    })
-
-    it('正例: 相同系统多次触发每次生成唯一 ID', async () => {
-      const r1 = await controller.heal({ targetSystem: 'same-system' })
-      const r2 = await controller.heal({ targetSystem: 'same-system' })
-      expect(r1.data.id).not.toBe(r2.data.id)
-    })
-
-    it('边界: 特殊字符系统名', async () => {
-      const result = await controller.heal({ targetSystem: 'sys_01-特殊' })
-      expect(result.data.targetSystem).toBe('sys_01-特殊')
-    })
-  })
-
-  // ── GET /aiops/status ─────────────────────────────────────────────────
-
-  describe('GET /aiops/status (getStatus)', () => {
-    it('正例: 返回引擎状态基本信息', () => {
-      const result = controller.getStatus()
-      expect(result.data.status).toBe('ACTIVE')
-      expect(result.data.engineName).toBe('AIOpsPredictionService')
-      expect(result.data.anomalyRulesCount).toBeGreaterThanOrEqual(0)
-      expect(result.data.attackRulesCount).toBeGreaterThanOrEqual(0)
-      expect(result.data.healedSystemsCount).toBeGreaterThanOrEqual(0)
-    })
-
-    it('正例: 自愈后 healedSystemsCount 增加', async () => {
-      await controller.heal({ targetSystem: 'sys-a' })
-      await controller.heal({ targetSystem: 'sys-b' })
-      await controller.heal({ targetSystem: 'sys-c' })
-      const result = controller.getStatus()
-      // 只有被 heal 且非 critical 的系统才会计入
-      expect(result.data.healedSystemsCount).toBeGreaterThanOrEqual(0)
-    })
-
-    it('正例: lastDetectedAt 存在', () => {
-      const result = controller.getStatus()
-      expect(result.data.lastDetectedAt).toBeDefined()
-    })
-  })
-
-  // ── GET /aiops/health ─────────────────────────────────────────────────
-
-  describe('GET /aiops/health (getHealth)', () => {
-    it('正例: 无跟踪系统时返回空数组', () => {
-      const result = controller.getHealth()
-      expect(result.data).toBeInstanceOf(Array)
-      expect(result.data.length).toBeGreaterThanOrEqual(0)
-    })
-
-    it('正例: heal 后系统出现在健康列表中', async () => {
-      await controller.heal({ targetSystem: 'health-sys' })
-      const result = controller.getHealth()
-      const found = result.data.find((h: any) => h.systemId === 'health-sys')
-      expect(found).toBeDefined()
-      expect(['healthy', 'degraded', 'critical', 'unknown']).toContain(found!.status)
-    })
-
-    it('正例: 多个自愈系统都在健康列表中', async () => {
-      await controller.heal({ targetSystem: 'node-1' })
-      await controller.heal({ targetSystem: 'node-2' })
-      await controller.heal({ targetSystem: 'node-3' })
-      const result = controller.getHealth()
-      const ids = result.data.map((h: any) => h.systemId)
-      expect(ids).toContain('node-1')
-      expect(ids).toContain('node-2')
-      expect(ids).toContain('node-3')
-    })
-
-    it('边界: 每个健康项包含 systemId 和 status', async () => {
-      await controller.heal({ targetSystem: 'sys-complete' })
-      const result = controller.getHealth()
-      const entry = result.data.find((h: any) => h.systemId === 'sys-complete')
-      expect(entry).toHaveProperty('systemId')
-      expect(entry).toHaveProperty('status')
+    it('AC-23: 检测含 timestamp 参数', async () => {
+      const ts = new Date().toISOString()
+      const history = makeHistory([100, 101, 99, 100])
+      const result = await controller.detect({ metricName: 'ts-test', value: 100, history, timestamp: ts })
+      expect(result.data.detectedAt).toBeDefined()
     })
   })
 })

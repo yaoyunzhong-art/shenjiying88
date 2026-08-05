@@ -1,17 +1,20 @@
 /**
- * salary.service.test.ts - 薪资管理服务单元测试
+ * salary.service.spec.ts - SalaryService 单元测试 (V2)
  *
- * 覆盖:
- * - calculatePayroll: 基本薪资计算
- * - 审批流程: submit → approve/reject → pay
- * - 查询与统计: list, get, summary
- * - 删除与取消
+ * 15+ tests covering:
+ * - calculatePayroll with various salary modes/components
+ * - submit/approve/pay lifecycle
+ * - filtering, statistics, approval history
+ * - error/edge cases
  */
 
-import { describe, it, expect, beforeAll } from 'vitest'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { SalaryService } from './salary.service'
-import type { SalaryCalculationRequest, SalaryStatus } from './salary.entity'
+import type { SalaryCalculationRequest, SalaryStatus, SalaryMode, PaymentMethod } from './salary.entity'
+
+function makeService(): SalaryService {
+  return new SalaryService()
+}
 
 function makeRequest(overrides: Partial<SalaryCalculationRequest> = {}): SalaryCalculationRequest {
   return {
@@ -36,216 +39,202 @@ function makeRequest(overrides: Partial<SalaryCalculationRequest> = {}): SalaryC
 }
 
 describe('SalaryService', () => {
-  let service: SalaryService
+  let svc: SalaryService
 
-  beforeAll(() => {
-    service = new SalaryService()
+  beforeEach(() => {
+    svc = makeService()
   })
 
-  // ─── calculatePayroll ─────────────────────────────────
+  // ─── 1. 薪资计算 ──────────────────────────────
 
   describe('calculatePayroll', () => {
-    it('计算月薪制薪资, 收入项和扣款项正确', () => {
-      const req = makeRequest()
-      const result = service.calculatePayroll(req)
-
-      assert.equal(result.employeeName, '测试员工')
-      assert.equal(result.storeId, 'store-001')
-      assert.equal(result.mode, 'monthly')
-      assert.equal(result.status, 'draft') // 初始草稿
-      assert.match(result.code, /^SAL\d{6}$/)
-
-      // 总收入: 10000 + 2000 + 500 + 1000 = 13500
-      assert.equal(result.grossPay, 13500)
-      // 总扣款: 1200 + 840 + 500 = 2540
-      assert.equal(result.totalDeductions, 2540)
-      // 净收入: 13500 - 2540 = 10960
-      assert.equal(result.netPay, 10960)
+    it('月薪制计算正确: 应发=收入合计, 扣款=扣款合计, 实发=差值', () => {
+      const r = makeRequest()
+      const p = svc.calculatePayroll(r)
+      expect(p.grossPay).toBe(10000 + 2000 + 500 + 1000) // 13500
+      expect(p.totalDeductions).toBe(1200 + 840 + 500)    // 2540
+      expect(p.netPay).toBe(13500 - 2540)
+      expect(p.status).toBe('draft')
     })
 
-    it('提成制薪资计算', () => {
-      const req = makeRequest({
-        mode: 'commission',
-        baseSalary: 0,
-        bonus: 0,
-        overtimePay: 0,
-        commission: 8500,
-        allowance: 0,
-        socialSecurity: 600,
-        housingFund: 0,
-        tax: 400,
-      })
-      const result = service.calculatePayroll(req)
-
-      assert.equal(result.mode, 'commission')
-      assert.equal(result.grossPay, 8500)
-      assert.equal(result.totalDeductions, 1000) // 600 + 400
-      assert.equal(result.netPay, 7500)
+    it('纯提成制 (commission)', () => {
+      const p = svc.calculatePayroll(makeRequest({ mode: 'commission', baseSalary: 0, bonus: 0, overtimePay: 0, commission: 8000, allowance: 0, socialSecurity: 500, tax: 300 }))
+      expect(p.grossPay).toBe(8000)
+      expect(p.netPay).toBe(8000 - 500 - 300)
+      expect(p.mode).toBe('commission')
     })
 
-    it('无任何扣款时 netPay = grossPay', () => {
-      const req = makeRequest({
-        baseSalary: 5000,
-        bonus: 0,
-        overtimePay: 0,
-        allowance: 0,
-        socialSecurity: 0,
-        housingFund: 0,
-        tax: 0,
-      })
-      const result = service.calculatePayroll(req)
-      assert.equal(result.grossPay, 5000)
-      assert.equal(result.totalDeductions, 0)
-      assert.equal(result.netPay, 5000)
+    it('混合模式 (mixed) 包含多种收入扣款项', () => {
+      const p = svc.calculatePayroll(makeRequest({ mode: 'mixed', baseSalary: 5000, commission: 6000, allowance: 500, socialSecurity: 1500, housingFund: 1000, tax: 800, otherDeductions: 200 }))
+      expect(p.grossPay).toBe(5000 + 6000 + 500)
+      expect(p.totalDeductions).toBe(1500 + 1000 + 800 + 200)
     })
 
-    it('创建后 status 为 draft, 可查到', () => {
-      const result = service.calculatePayroll(makeRequest())
-      const found = service.getPayroll(result.id)
-      assert.ok(found)
-      assert.equal(found!.status, 'draft')
+    it('所有收入项都为 0 时 grossPay 为 0', () => {
+      const p = svc.calculatePayroll(makeRequest({ baseSalary: 0, bonus: 0, overtimePay: 0, commission: 0, allowance: 0, reimbursement: 0 }))
+      expect(p.grossPay).toBe(0)
+      expect(p.items.filter(i => i.amount > 0).length).toBe(0)
+    })
+
+    it('code 自动递增', () => {
+      const p1 = svc.calculatePayroll(makeRequest())
+      const p2 = svc.calculatePayroll(makeRequest())
+      expect(Number(p1.code.slice(3))).toBeLessThan(Number(p2.code.slice(3)))
+    })
+
+    it('创建后自动添加审批记录', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      const hist = svc.getApprovalHistory(p.id)
+      expect(hist.length).toBe(1)
+      expect(hist[0].action).toBe('submit')
     })
   })
 
-  // ─── 审批流程 ──────────────────────────────────────
+  // ─── 2. 查询 ──────────────────────────────────
 
-  describe('审批流程', () => {
-    it('submitPayroll: draft → pending', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      const submitted = service.submitPayroll(payroll.id)
-
-      assert.equal(submitted.status, 'pending')
-      assert.ok(submitted.updatedAt >= payroll.createdAt)
+  describe('getPayroll / listPayrolls', () => {
+    it('getPayroll 返回已存在的薪资单', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      expect(svc.getPayroll(p.id)).not.toBeNull()
     })
 
-    it('approvePayroll: pending → approved', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      service.submitPayroll(payroll.id)
-      const approved = service.approvePayroll(payroll.id, 'approve', 'admin-001', '管理员', '同意发放')
-
-      assert.equal(approved.status, 'approved')
-      assert.equal(approved.approverId, 'admin-001')
-      assert.ok(approved.approvalAt)
+    it('getPayroll 不存在返回 null', () => {
+      expect(svc.getPayroll('non-existent')).toBeNull()
     })
 
-    it('approvePayroll: approve → reject 正确变更', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      service.submitPayroll(payroll.id)
-      const rejected = service.approvePayroll(payroll.id, 'reject', 'admin-002', '管理员2', '不通过')
-
-      assert.equal(rejected.status, 'rejected')
+    it('listPayrolls 按 employeeId 过滤', () => {
+      svc.calculatePayroll(makeRequest({ employeeId: 'emp-a' }))
+      svc.calculatePayroll(makeRequest({ employeeId: 'emp-b' }))
+      const list = svc.listPayrolls({ employeeId: 'emp-a' })
+      expect(list.every(p => p.employeeId === 'emp-a')).toBe(true)
     })
 
-    it('payPayroll: approved → paid', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      service.submitPayroll(payroll.id)
-      service.approvePayroll(payroll.id, 'approve', 'admin-001', '管理员', '同意')
-      const paid = service.payPayroll(payroll.id, 'bank', '6217****8888', 'finance-001', '财务小王')
-
-      assert.equal(paid.status, 'paid')
-      assert.equal(paid.paymentMethod, 'bank')
-      assert.equal(paid.paymentAccount, '6217****8888')
-      assert.ok(paid.paidAt)
-    })
-
-    it('submitPayroll 非 draft 状态抛异常', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      service.submitPayroll(payroll.id)
-
-      assert.throws(
-        () => service.submitPayroll(payroll.id),
-        /Cannot submit/,
-      )
-    })
-
-    it('approvePayroll 非 pending 状态抛异常', () => {
-      assert.throws(
-        () => service.approvePayroll('pay-seed-001', 'approve', 'admin', 'admin'),
-        /Cannot approve/,
-      )
-    })
-
-    it('payPayroll 非 approved 状态抛异常', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-
-      assert.throws(
-        () => service.payPayroll(payroll.id, 'bank', 'acct', 'op', 'op'),
-        /Cannot pay/,
-      )
+    it('listPayrolls 按 period 过滤', () => {
+      svc.calculatePayroll(makeRequest({ period: '2026-09' }))
+      expect(svc.listPayrolls({ period: '2026-09' }).length).toBeGreaterThanOrEqual(1)
+      expect(svc.listPayrolls({ period: '2026-99' }).length).toBe(0)
     })
   })
 
-  // ─── 取消与删除 ─────────────────────────────────────
+  // ─── 3. 审批流程 ──────────────────────────────
 
-  describe('取消与删除', () => {
-    it('取消 draft 状态的薪资单', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      const cancelled = service.cancelPayroll(payroll.id, 'admin-001', '管理员', '测试取消')
-      assert.equal(cancelled.status, 'cancelled')
+  describe('submitPayroll / approvePayroll', () => {
+    it('提交 draft → pending', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      const submitted = svc.submitPayroll(p.id)
+      expect(submitted.status).toBe('pending')
     })
 
-    it('已支付的薪资单不可取消', () => {
-      assert.throws(
-        () => service.cancelPayroll('pay-seed-001', 'admin', 'admin'),
-        /Cannot cancel a paid/,
-      )
+    it('非 draft 提交抛错', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      expect(() => svc.submitPayroll(p.id)).toThrow()
     })
 
-    it('删除 draft 状态的薪资单', () => {
-      const payroll = service.calculatePayroll(makeRequest())
-      const deleted = service.deletePayroll(payroll.id)
-      assert.equal(deleted, true)
-      assert.equal(service.getPayroll(payroll.id), null)
+    it('审批通过 pending → approved', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      const ap = svc.approvePayroll(p.id, 'approve', 'admin-1', '管理员')
+      expect(ap.status).toBe('approved')
+      expect(ap.approverId).toBe('admin-1')
     })
 
-    it('非 draft 状态的薪资单不可删除', () => {
-      assert.throws(
-        () => service.deletePayroll('pay-seed-002'),
-        /Cannot delete/,
-      )
+    it('审批驳回 pending → rejected', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      const rp = svc.approvePayroll(p.id, 'reject', 'admin-1', '管理员', '数据有误')
+      expect(rp.status).toBe('rejected')
+      expect(rp.approvalRemark).toBe('数据有误')
     })
   })
 
-  // ─── list 与统计 ──────────────────────────────────
+  // ─── 4. 发放流程 ──────────────────────────────
 
-  describe('listPayrolls 与 getSalarySummary', () => {
-    it('listPayrolls 按状态筛选', () => {
-      const paid = service.listPayrolls({ status: 'paid' })
-      assert.ok(paid.length > 0)
-      paid.forEach((p) => assert.equal(p.status, 'paid'))
+  describe('payPayroll', () => {
+    it('发放 approved → paid', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      svc.approvePayroll(p.id, 'approve', 'admin-1', '管理员')
+      const paid = svc.payPayroll(p.id, 'bank', '6217****8888', 'finance-1', '财务')
+      expect(paid.status).toBe('paid')
+      expect(paid.paymentMethod).toBe('bank')
+      expect(paid.paymentAccount).toBe('6217****8888')
     })
 
-    it('listPayrolls 按门店筛选', () => {
-      const store2 = service.listPayrolls({ storeId: 'store-002' })
-      assert.ok(store2.length > 0)
-      store2.forEach((p) => assert.equal(p.storeId, 'store-002'))
+    it('非 approved 发放抛错', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      expect(() => svc.payPayroll(p.id, 'cash', 'x', 'op', 'op')).toThrow()
     })
 
-    it('getSalarySummary 统计聚合', () => {
-      const summary = service.getSalarySummary('2026-07', '2026-07-01', '2026-07-31')
-      assert.ok(summary.totalGross > 0)
-      assert.ok(summary.totalEmployees > 0)
-      assert.ok(summary.totalPaid > 0)
-      assert.ok(summary.byStore['store-001'] !== undefined)
-      assert.ok(summary.byMode['monthly'] !== undefined)
+    it('发放后不可取消', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      svc.approvePayroll(p.id, 'approve', 'admin-1', '管理员')
+      svc.payPayroll(p.id, 'bank', 'acc', 'finance-1', '财务')
+      expect(() => svc.cancelPayroll(p.id, 'u1', 'u1')).toThrow()
+    })
+  })
+
+  // ─── 5. 取消与删除 ─────────────────────────────
+
+  describe('cancelPayroll / deletePayroll', () => {
+    it('取消 pending 成功', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      const cp = svc.cancelPayroll(p.id, 'u1', 'u1', '作废')
+      expect(cp.status).toBe('cancelled')
     })
 
-    it('getPayrollDetail 包含审批历史', () => {
-      const detail = service.getPayrollDetail('pay-seed-001')
-      assert.ok(detail)
-      assert.ok(detail.approvalHistory)
-      assert.equal(detail.employeeName, '张三')
-      assert.ok(detail.approvalHistory!.length >= 3)
+    it('取消 draft 成功', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      const cp = svc.cancelPayroll(p.id, 'u1', 'u1')
+      expect(cp.status).toBe('cancelled')
     })
 
-    it('getApprovalHistory 返回审批记录', () => {
-      const history = service.getApprovalHistory('pay-seed-001')
-      assert.ok(history.length > 0)
-      assert.equal(history[0]!.payrollId, 'pay-seed-001')
+    it('已取消再次取消抛错', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.cancelPayroll(p.id, 'u1', 'u1')
+      expect(() => svc.cancelPayroll(p.id, 'u1', 'u1')).toThrow()
     })
 
-    it('不存在的薪资单返回 null', () => {
-      assert.equal(service.getPayroll('non-existent'), null)
+    it('删除 draft 成功', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      expect(svc.deletePayroll(p.id)).toBe(true)
+      expect(svc.getPayroll(p.id)).toBeNull()
+    })
+
+    it('删除不存在返回 false', () => {
+      expect(svc.deletePayroll('non-existent')).toBe(false)
+    })
+  })
+
+  // ─── 6. 审批历史 ──────────────────────────────
+
+  describe('getApprovalHistory / getPayrollDetail', () => {
+    it('完整审批流产生 3 条记录', () => {
+      const p = svc.calculatePayroll(makeRequest())
+      svc.submitPayroll(p.id)
+      svc.approvePayroll(p.id, 'approve', 'admin-1', '管理员')
+      svc.payPayroll(p.id, 'bank', 'acc', 'finance-1', '财务')
+      expect(svc.getApprovalHistory(p.id).length).toBe(4)
+    })
+  })
+
+  // ─── 7. 统计 ──────────────────────────────────
+
+  describe('getSalarySummary', () => {
+    it('统计包含门店和模式汇总', () => {
+      const s = svc.getSalarySummary('2026-08', '2026-08-01', '2026-08-31')
+      expect(s.period).toBe('2026-08')
+      expect(s.totalGross).toBeGreaterThan(0)
+      expect(typeof s.byStore).toBe('object')
+      expect(typeof s.byMode).toBe('object')
+    })
+
+    it('按门店过滤统计结果', () => {
+      svc.calculatePayroll(makeRequest({ storeId: 'store-filter' }))
+      const s = svc.getSalarySummary('test', '2026-01-01', '2026-12-31', 'store-filter')
+      expect(s.totalEmployees).toBeGreaterThanOrEqual(1)
     })
   })
 })

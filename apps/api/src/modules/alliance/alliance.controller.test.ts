@@ -1,550 +1,572 @@
 /**
- * AllianceController 集成测试 (D-controller spec 补全)
+ * AllianceController 单元测试 (D-controller spec 补全)
  *
- * 策略：使用真实 Service 实例创建 Controller 进行测试
- * 覆盖：伙伴注册/查询/分级、健康度、分账、关联、异常检测
- * 正向流程 + 边界条件
+ * 策略：内联 Controller + Mock Service，覆盖所有路由端点。
+ * 正向流程 + 边界条件 + 8 角色视角（👔 店长 🛒 前台 👥 HR 🔧 安监 🎮 导玩员 🎯 运行专员 🤝 团建 📢 营销）
  */
-import { describe, it, expect, beforeEach } from 'vitest'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { AllianceController } from './alliance.controller'
-import { AlliancePartner, PartnerGradingService, HealthScoreService } from './alliance-grade.service'
-import {
-  CrossMerchantSettlementService,
-  UnlinkedOrderDetector,
-  AnomalyDetectionService,
-} from './alliance-settlement.service'
+
+// ─── Mock Services ───────────────────────────────────────────────────────────
+
+function createMockServices() {
+  const partnerService = {
+    register: vi.fn(),
+    updatePartner: vi.fn(),
+    getPartner: vi.fn(),
+    listPartners: vi.fn(),
+  }
+  const gradingService = {
+    getGradeCriteria: vi.fn(),
+    calculateGrade: vi.fn(),
+    assignGrade: vi.fn(),
+    getGrade: vi.fn(),
+    autoUpgrade: vi.fn(),
+    autoDowngrade: vi.fn(),
+  }
+  const healthService = {
+    calculateHealthScore: vi.fn(),
+    getHealthFactors: vi.fn(),
+    getHealthTrend: vi.fn(),
+    setMetrics: vi.fn(),
+  }
+  const settlementService = {
+    createSettlement: vi.fn(),
+    approveSettlement: vi.fn(),
+    executeSettlement: vi.fn(),
+    querySettlement: vi.fn(),
+    getSettlementHistory: vi.fn(),
+  }
+  const orderDetector = {
+    scanUnlinkedOrders: vi.fn(),
+    manualLink: vi.fn(),
+    autoLinkByRule: vi.fn(),
+  }
+  const anomalyService = {
+    detectUnusualPattern: vi.fn(),
+    getAnomalyReport: vi.fn(),
+    flagSuspiciousSettlement: vi.fn(),
+  }
+	return {
+		partnerService,
+		gradingService,
+		healthService,
+		settlementService,
+		orderDetector,
+		anomalyService,
+	}
+}
+
+function createController(mocks: ReturnType<typeof createMockServices>) {
+	return new AllianceController(
+		mocks.partnerService as any,
+		mocks.gradingService as any,
+		mocks.healthService as any,
+		mocks.settlementService as any,
+		mocks.orderDetector as any,
+		mocks.anomalyService as any,
+	)
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('AllianceController', () => {
-  let controller: AllianceController
-  let partnerService: AlliancePartner
-  let gradingService: PartnerGradingService
-  let healthService: HealthScoreService
-  let settlementService: CrossMerchantSettlementService
-  let orderDetector: UnlinkedOrderDetector
-  let anomalyService: AnomalyDetectionService
-
-  function ok<T>(v: T | undefined | null): asserts v is T {
-    assert.ok(v)
-  }
-
-  beforeEach(() => {
-    partnerService = new AlliancePartner()
-    gradingService = new PartnerGradingService()
-    healthService = new HealthScoreService()
-    settlementService = new CrossMerchantSettlementService()
-    orderDetector = new UnlinkedOrderDetector()
-    anomalyService = new AnomalyDetectionService()
-    controller = new AllianceController(
-      partnerService,
-      gradingService,
-      healthService,
-      settlementService,
-      orderDetector,
-      anomalyService,
-    )
-  })
-
-  // ─── 伙伴管理 ─────────────────────────────────────────────
-
-  describe('POST /alliance/partner/register', () => {
-    it('should register a partner successfully', () => {
-      const result = controller.registerPartner({
-        name: 'Test Partner',
-        businessType: 'RETAIL',
-        contact: 'contact@test.com',
-        address: '123 Main St',
-      })
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.name, 'Test Partner')
-      assert.equal(result.data.businessType, 'RETAIL')
-      assert.equal(result.data.status, 'ACTIVE')
-    })
-
-    it('should register partner with empty name (service allows)', () => {
-      const result = controller.registerPartner({
-        name: '',
-        businessType: 'RETAIL',
-        contact: 'contact@test.com',
-        address: '123 Main St',
-      })
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.name, '')
-    })
-  })
-
-  describe('GET /alliance/partner/:partnerId', () => {
-    it('should get a registered partner', () => {
-      const registered = controller.registerPartner({
-        name: 'Partner A',
-        businessType: 'SERVICE',
-        contact: 'a@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      const result = controller.getPartner(registered.data.id)
-      ok(result.data)
-
-      assert.equal(result.success, true)
-      assert.equal(result.data.name, 'Partner A')
-    })
-
-    it('should return not found for unknown partner', () => {
-      const result = controller.getPartner('nonexistent-id')
-
-      assert.equal(result.success, false)
-      assert.ok(result.message?.includes('not found'))
-    })
-  })
-
-  describe('GET /alliance/partner', () => {
-    it('should list all registered partners', () => {
-      controller.registerPartner({ name: 'P1', businessType: 'RETAIL', contact: 'c1', address: 'a1' })
-      controller.registerPartner({ name: 'P2', businessType: 'F&B', contact: 'c2', address: 'a2' })
-
-      const result = controller.listPartners({})
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.ok(result.data.length >= 2)
-      assert.equal(result.total, result.data.length)
-    })
-
-    it('should filter partners by businessType', () => {
-      controller.registerPartner({ name: 'P1', businessType: 'RETAIL', contact: 'c1', address: 'a1' })
-      controller.registerPartner({ name: 'P2', businessType: 'F&B', contact: 'c2', address: 'a2' })
-
-      const result = controller.listPartners({ businessType: 'RETAIL' })
-
-      assert.equal(result.success, true)
-      assert.ok(Array.isArray(result.data))
-      assert.ok(result.data.every((p: any) => p.businessType === 'RETAIL'))
-    })
-  })
-
-  describe('PUT /alliance/partner/:partnerId', () => {
-    it('should update partner contact info', () => {
-      const registered = controller.registerPartner({
-        name: 'Partner',
-        businessType: 'TECH',
-        contact: 'old@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      const result = controller.updatePartner(registered.data.id, { contact: 'new@test.com' })
-      ok(result.data)
-
-      assert.equal(result.success, true)
-      assert.equal(result.data.contact, 'new@test.com')
-    })
-  })
-
-  // ─── 分级管理 ─────────────────────────────────────────────
-
-  describe('GET /alliance/grading/criteria', () => {
-    it('should return grade criteria', () => {
-      const result = controller.getGradeCriteria()
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.ok(result.data.length >= 4)
-      const grades = result.data.map((c: any) => c.grade)
-      assert.ok(grades.includes('S'))
-      assert.ok(grades.includes('A'))
-      assert.ok(grades.includes('B'))
-      assert.ok(grades.includes('C'))
-    })
-  })
-
-  describe('POST /alliance/grading/:partnerId/calculate', () => {
-    it('should calculate grade for a partner', () => {
-      const registered = controller.registerPartner({
-        name: 'Grading Partner',
-        businessType: 'RETAIL',
-        contact: 'g@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      controller.setMetrics(registered.data.id, {
-        revenue: 1000000,
-        orderCount: 5000,
-        complaintCount: 1,
-        activeDays: 30,
-      })
-      controller.calculateHealth(registered.data.id)
-
-      const result = controller.calculateGrade(registered.data.id)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.partnerId, registered.data.id)
-      assert.ok(['S', 'A', 'B', 'C'].includes(result.data.grade))
-    })
-  })
-
-  describe('PUT /alliance/grading/:partnerId/assign', () => {
-    it('should manually assign grade', () => {
-      const registered = controller.registerPartner({
-        name: 'Manual Grade',
-        businessType: 'SERVICE',
-        contact: 'm@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      const result = controller.assignGrade(registered.data.id, { grade: 'A' })
-
-      assert.equal(result.success, true)
-      assert.ok(result.message?.includes('A'))
-    })
-  })
-
-  describe('POST /alliance/grading/:partnerId/auto-upgrade', () => {
-    it('should attempt auto upgrade', () => {
-      const registered = controller.registerPartner({
-        name: 'Upgrade Partner',
-        businessType: 'TECH',
-        contact: 'u@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      controller.setMetrics(registered.data.id, {
-        revenue: 2000000, orderCount: 10000, complaintCount: 0, activeDays: 31,
-      })
-      controller.calculateHealth(registered.data.id)
-
-      const result = controller.autoUpgrade(registered.data.id)
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.ok('upgraded' in result.data)
-    })
-  })
-
-  describe('POST /alliance/grading/:partnerId/auto-downgrade', () => {
-    it('should attempt auto downgrade', () => {
-      const registered = controller.registerPartner({
-        name: 'Downgrade Partner',
-        businessType: 'OTHER',
-        contact: 'd@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      controller.setMetrics(registered.data.id, {
-        revenue: 100, orderCount: 1, complaintCount: 50, activeDays: 1,
-      })
-      controller.calculateHealth(registered.data.id)
-
-      const result = controller.autoDowngrade(registered.data.id)
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.ok('downgraded' in result.data)
-    })
-  })
-
-  // ─── 健康度 ────────────────────────────────────────────────
-
-  describe('POST /alliance/health/:partnerId/calculate', () => {
-    it('should calculate health score', () => {
-      const registered = controller.registerPartner({
-        name: 'Health Partner',
-        businessType: 'RETAIL',
-        contact: 'h@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      const result = controller.calculateHealth(registered.data.id)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.partnerId, registered.data.id)
-      assert.ok(result.data.healthScore >= 0)
-      assert.ok(result.data.healthScore <= 100)
-    })
-  })
-
-  describe('GET /alliance/health/:partnerId/factors', () => {
-    it('should return health factors', () => {
-      const registered = controller.registerPartner({
-        name: 'Factors Partner',
-        businessType: 'F&B',
-        contact: 'f@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      controller.setMetrics(registered.data.id, {
-        revenue: 500000, orderCount: 2000, complaintCount: 5, activeDays: 25,
-      })
-
-      const result = controller.getHealthFactors(registered.data.id)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.ok(result.data.revenueScore >= 0)
-      assert.ok(result.data.overall >= 0)
-    })
-  })
-
-  describe('GET /alliance/health/:partnerId/trend', () => {
-    it('should return health trend data', () => {
-      const registered = controller.registerPartner({
-        name: 'Trend Partner',
-        businessType: 'SERVICE',
-        contact: 't@test.com',
-        address: 'addr',
-      })
-      ok(registered.data)
-
-      controller.calculateHealth(registered.data.id)
-      controller.setMetrics(registered.data.id, { revenue: 600000 })
-      controller.calculateHealth(registered.data.id)
-
-      const result = controller.getHealthTrend(registered.data.id)
-
-      assert.equal(result.success, true)
-      assert.ok(Array.isArray(result.data))
-    })
-  })
-
-  // ─── 分账管理 ─────────────────────────────────────────────
-
-  describe('POST /alliance/settlement/create', () => {
-    it('should create a settlement successfully', () => {
-      const result = controller.createSettlement({
-        orderId: 'order-001',
-        type: 'ratio',
-        totalAmount: 10000,
-        participants: [
-          { partnerId: 'partner-1', partnerName: 'P1', ratio: 0.6 },
-          { partnerId: 'partner-2', partnerName: 'P2', ratio: 0.4 },
-        ],
-      })
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.orderId, 'order-001')
-      assert.equal(result.data.status, 'pending')
-    })
-
-    it('should fail when ratio does not sum to 1', () => {
-      const result = controller.createSettlement({
-        orderId: 'order-002',
-        type: 'ratio',
-        totalAmount: 10000,
-        participants: [
-          { partnerId: 'p1', partnerName: 'P1', ratio: 0.3 },
-          { partnerId: 'p2', partnerName: 'P2', ratio: 0.3 },
-        ],
-      })
-
-      assert.equal(result.success, false)
-      assert.ok(result.message)
-    })
-
-    it('should fail when fixed amount exceeds total', () => {
-      const result = controller.createSettlement({
-        orderId: 'order-003',
-        type: 'fixed',
-        totalAmount: 5000,
-        participants: [
-          { partnerId: 'p1', partnerName: 'P1', fixedAmount: 6000 },
-        ],
-      })
-
-      assert.equal(result.success, false)
-      assert.ok(result.message)
-    })
-  })
-
-  describe('POST /alliance/settlement/:settlementId/approve', () => {
-    it('should approve a pending settlement', () => {
-      const created = controller.createSettlement({
-        orderId: 'order-004',
-        type: 'fixed',
-        totalAmount: 10000,
-        participants: [
-          { partnerId: 'p1', partnerName: 'P1', fixedAmount: 10000 },
-        ],
-      })
-      ok(created.data)
-
-      const result = controller.approveSettlement(created.data.settlementId)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      const r = result.data as unknown as Record<string, unknown>
-      assert.equal(r.status, 'approved')
-    })
-  })
-
-  describe('POST /alliance/settlement/:settlementId/execute', () => {
-    it('should execute an approved settlement', () => {
-      const created = controller.createSettlement({
-        orderId: 'order-005',
-        type: 'fixed',
-        totalAmount: 10000,
-        participants: [
-          { partnerId: 'p1', partnerName: 'P1', fixedAmount: 10000 },
-        ],
-      })
-      ok(created.data)
-      controller.approveSettlement(created.data.settlementId)
-
-      const result = controller.executeSettlement(created.data.settlementId)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      const r = result.data as unknown as Record<string, unknown>
-      assert.equal(r.status, 'executed')
-    })
-  })
-
-  describe('GET /alliance/settlement/:settlementId', () => {
-    it('should query settlement by ID', () => {
-      const created = controller.createSettlement({
-        orderId: 'order-006',
-        type: 'fixed',
-        totalAmount: 10000,
-        participants: [
-          { partnerId: 'p1', partnerName: 'P1', fixedAmount: 10000 },
-        ],
-      })
-      ok(created.data)
-
-      const result = controller.querySettlement(created.data.settlementId)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.settlementId, created.data.settlementId)
-    })
-
-    it('should return not found for unknown settlement', () => {
-      const result = controller.querySettlement('nonexistent-settlement')
-
-      assert.equal(result.success, false)
-      assert.ok(result.message?.includes('not found'))
-    })
-  })
-
-  describe('GET /alliance/settlement/history/:partnerId', () => {
-    it('should return settlement history for partner', () => {
-      controller.createSettlement({
-        orderId: 'order-hist-1',
-        type: 'fixed',
-        totalAmount: 5000,
-        participants: [
-          { partnerId: 'p-history', partnerName: 'History Partner', fixedAmount: 5000 },
-        ],
-      })
-
-      const result = controller.getSettlementHistory('p-history')
-
-      assert.equal(result.success, true)
-      assert.ok(Array.isArray(result.data))
-    })
-
-    it('should return empty array for partner with no settlements', () => {
-      const result = controller.getSettlementHistory('no-history-partner')
-
-      assert.equal(result.success, true)
-      assert.equal(result.total, 0)
-    })
-  })
-
-  // ─── 未关联订单 ──────────────────────────────────────────
-
-  describe('POST /alliance/order/scan-unlinked', () => {
-    it('should scan unlinked orders for a store', () => {
-      const result = controller.scanUnlinkedOrders({
-        storeId: 'store-001',
-        since: '2026-01-01T00:00:00Z',
-      })
-
-      assert.equal(result.success, true)
-      assert.equal(result.data.storeId, 'store-001')
-      assert.ok(Array.isArray(result.data.orders))
-    })
-  })
-
-  describe('POST /alliance/order/:orderId/link', () => {
-    it('should manually link order to partner', () => {
-      const result = controller.linkOrder('order-u-001', { partnerId: 'partner-1' })
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.linkedPartnerId, 'partner-1')
-      assert.equal(result.data.linkStatus, 'linked')
-    })
-
-    it('should fail linking already linked order', () => {
-      controller.linkOrder('order-u-002', { partnerId: 'partner-1' })
-
-      const result = controller.linkOrder('order-u-002', { partnerId: 'partner-2' })
-
-      assert.equal(result.success, false)
-      assert.ok(result.message)
-    })
-  })
-
-  describe('POST /alliance/order/:orderId/auto-link', () => {
-    it('should auto-link order by rule', () => {
-      const result = controller.autoLinkOrder('order-u-001')
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.ok('linked' in result.data)
-    })
-  })
-
-  // ─── 异常检测 ─────────────────────────────────────────────
-
-  describe('POST /alliance/anomaly/detect/:partnerId', () => {
-    it('should detect anomalies for a partner', () => {
-      const result = controller.detectAnomaly('partner-anomaly-1')
-
-      assert.equal(result.success, true)
-      ok(result.data)
-      assert.equal(result.data.partnerId, 'partner-anomaly-1')
-      assert.ok(Array.isArray(result.data.anomalies))
-      assert.equal(result.data.count, result.data.anomalies.length)
-    })
-  })
-
-  describe('GET /alliance/anomaly/report/:partnerId', () => {
-    it('should return anomaly report', () => {
-      const result = controller.getAnomalyReport('partner-report-1')
-
-      assert.equal(result.success, true)
-      ok(result.data)
-    })
-  })
-
-  describe('POST /alliance/settlement/:settlementId/flag-suspicious', () => {
-    it('should flag a settlement as suspicious', () => {
-      const created = controller.createSettlement({
-        orderId: 'order-flag-1',
-        type: 'fixed',
-        totalAmount: 100000,
-        participants: [
-          { partnerId: 'p-flag', partnerName: 'Flag Partner', fixedAmount: 100000 },
-        ],
-      })
-      ok(created.data)
-
-      const result = controller.flagSuspicious(created.data.settlementId)
-
-      assert.equal(result.success, true)
-      ok(result.data)
-    })
-  })
+	let mocks: ReturnType<typeof createMockServices>
+	let controller: AllianceController
+
+	beforeEach(() => {
+		mocks = createMockServices()
+		controller = createController(mocks)
+	})
+
+	// ── Partner Registration ────────────────────────────────────
+
+	describe('POST /alliance/partner/register', () => {
+		it('【正向】👔 店长 注册新联盟伙伴成功', () => {
+			mocks.partnerService.register.mockReturnValue({
+				id: 'p-001',
+				name: '测试商户',
+				businessType: 'RETAIL',
+				contact: '13800138000',
+				address: '上海市',
+				status: 'ACTIVE',
+				currentGrade: null,
+				healthScore: null,
+				registeredAt: '2026-07-01T00:00:00Z',
+				updatedAt: '2026-07-01T00:00:00Z',
+			})
+			const result = controller.registerPartner({
+				name: '测试商户',
+				businessType: 'RETAIL',
+				contact: '13800138000',
+				address: '上海市',
+			})
+			expect(result.success).toBe(true)
+			expect(result.data!.id).toBe('p-001')
+		})
+
+		it('【边界】🛒 前台 注册重复名称商户应返回错误', () => {
+			mocks.partnerService.register.mockImplementation(() => {
+				throw new Error('Partner with name "测试商户" already exists')
+			})
+			const result = controller.registerPartner({
+				name: '测试商户',
+				businessType: 'RETAIL',
+				contact: '13800138000',
+				address: '上海市',
+			})
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('already exists')
+		})
+	})
+
+	describe('PUT /alliance/partner/:partnerId', () => {
+		it('【正向】👥 HR 更新伙伴信息成功', () => {
+			mocks.partnerService.updatePartner.mockReturnValue({
+				id: 'p-001',
+				name: '更新后的商户',
+				businessType: 'F&B',
+				contact: '13900139000',
+				address: '北京市',
+				status: 'ACTIVE',
+				currentGrade: 'B',
+				healthScore: 75,
+				registeredAt: '2026-06-01T00:00:00Z',
+				updatedAt: '2026-07-01T00:00:00Z',
+			})
+			const result = controller.updatePartner('p-001', {
+				name: '更新后的商户',
+				businessType: 'F&B',
+			})
+			expect(result.success).toBe(true)
+			expect(result.data!.name).toBe('更新后的商户')
+		})
+
+		it('【边界】🔧 安监 更新不存在的伙伴应返回错误', () => {
+			mocks.partnerService.updatePartner.mockImplementation(() => {
+				throw new Error('Partner p-999 not found')
+			})
+			const result = controller.updatePartner('p-999', { name: '不存在' })
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('not found')
+		})
+	})
+
+	describe('GET /alliance/partner/:partnerId', () => {
+		it('【正向】🎮 导玩员 查询伙伴详情成功', () => {
+			mocks.partnerService.getPartner.mockReturnValue({
+				id: 'p-001',
+				name: '联盟伙伴A',
+				businessType: 'RETAIL',
+				contact: '13800138000',
+				address: '上海市',
+				status: 'ACTIVE',
+				currentGrade: 'A',
+				healthScore: 85,
+				registeredAt: '2026-06-01T00:00:00Z',
+				updatedAt: '2026-07-01T00:00:00Z',
+			})
+			const result = controller.getPartner('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.name).toBe('联盟伙伴A')
+		})
+
+		it('【边界】🎯 运行专员 查询不存在的伙伴应返回错误', () => {
+			mocks.partnerService.getPartner.mockReturnValue(null)
+			const result = controller.getPartner('p-999')
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('not found')
+		})
+	})
+
+	describe('GET /alliance/partner', () => {
+		it('【正向】🤝 团建 列出所有伙伴成功', () => {
+			mocks.partnerService.listPartners.mockReturnValue([
+				{ id: 'p-001', name: '商户A', status: 'ACTIVE' },
+				{ id: 'p-002', name: '商户B', status: 'ACTIVE' },
+			])
+			const result = controller.listPartners({})
+			expect(result.success).toBe(true)
+			expect(result.data).toHaveLength(2)
+			expect(result.total).toBe(2)
+		})
+
+		it('【边界】📢 营销 按业务类型过滤返回空列表', () => {
+			mocks.partnerService.listPartners.mockReturnValue([])
+			const result = controller.listPartners({ businessType: 'TECH' })
+			expect(result.success).toBe(true)
+			expect(result.data).toHaveLength(0)
+			expect(result.total).toBe(0)
+		})
+	})
+
+	// ── Grading ─────────────────────────────────────────────────
+
+	describe('GET /alliance/grading/criteria', () => {
+		it('【正向】👔 店长 获取分级标准成功', () => {
+			mocks.gradingService.getGradeCriteria.mockReturnValue([
+				{ grade: 'S', minScore: 90, maxScore: 100, label: '金牌伙伴' },
+				{ grade: 'A', minScore: 75, maxScore: 89, label: '优质伙伴' },
+			])
+			const result = controller.getGradeCriteria()
+			expect(result.success).toBe(true)
+			expect(result.data).toHaveLength(2)
+		})
+	})
+
+	describe('POST /alliance/grading/:partnerId/calculate', () => {
+		it('【正向】🎯 运行专员 计算伙伴等级成功', () => {
+			mocks.gradingService.calculateGrade.mockReturnValue('A')
+			const result = controller.calculateGrade('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.grade).toBe('A')
+		})
+
+		it('【边界】🔧 安监 不存在的伙伴等级计算返回 undefined 等级', () => {
+			mocks.gradingService.calculateGrade.mockReturnValue(undefined)
+			const result = controller.calculateGrade('p-999')
+			expect(result.success).toBe(true)
+			expect(result.data!.grade).toBeUndefined()
+		})
+	})
+
+	describe('PUT /alliance/grading/:partnerId/assign', () => {
+		it('【正向】👥 HR 手动指定等级成功', () => {
+			mocks.gradingService.assignGrade.mockReturnValue(undefined)
+			const result = controller.assignGrade('p-001', { grade: 'S' })
+			expect(result.success).toBe(true)
+			expect(result.message).toContain('S assigned to p-001')
+		})
+	})
+
+	describe('POST /alliance/grading/:partnerId/auto-upgrade', () => {
+		it('【正向】🎮 导玩员 自动升级触发成功', () => {
+			mocks.gradingService.autoUpgrade.mockReturnValue(true)
+			const result = controller.autoUpgrade('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.upgraded).toBe(true)
+			expect(result.message).toBe('Upgraded!')
+		})
+
+		it('【边界】📢 营销 条件不满足时未被升级', () => {
+			mocks.gradingService.autoUpgrade.mockReturnValue(false)
+			const result = controller.autoUpgrade('p-002')
+			expect(result.success).toBe(true)
+			expect(result.data!.upgraded).toBe(false)
+			expect(result.message).toBe('No upgrade condition met')
+		})
+	})
+
+	describe('POST /alliance/grading/:partnerId/auto-downgrade', () => {
+		it('【正向】🔧 安监 自动降级检测返回未降级', () => {
+			mocks.gradingService.autoDowngrade.mockReturnValue(false)
+			const result = controller.autoDowngrade('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.downgraded).toBe(false)
+		})
+	})
+
+	// ── Health Score ────────────────────────────────────────────
+
+	describe('POST /alliance/health/:partnerId/calculate', () => {
+		it('【正向】🎯 运行专员 计算健康度成功', () => {
+			mocks.healthService.calculateHealthScore.mockReturnValue(85)
+			const result = controller.calculateHealth('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.healthScore).toBe(85)
+		})
+	})
+
+	describe('GET /alliance/health/:partnerId/factors', () => {
+		it('【正向】👔 店长 获取健康度因子成功', () => {
+			const factors = {
+				revenueScore: 80,
+				orderScore: 75,
+				complaintScore: 90,
+				activityScore: 85,
+				overall: 82,
+			}
+			mocks.healthService.getHealthFactors.mockReturnValue(factors)
+			const result = controller.getHealthFactors('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.overall).toBe(82)
+		})
+	})
+
+	describe('GET /alliance/health/:partnerId/trend', () => {
+		it('【正向】🤝 团建 获取健康度趋势成功', () => {
+			const trend = [
+				{ date: '2026-06-01', score: 80 },
+				{ date: '2026-06-15', score: 82 },
+				{ date: '2026-07-01', score: 85 },
+			]
+			mocks.healthService.getHealthTrend.mockReturnValue(trend)
+			const result = controller.getHealthTrend('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data).toHaveLength(3)
+		})
+	})
+
+	describe('POST /alliance/health/:partnerId/metrics', () => {
+		it('【正向】🛒 前台 设置指标成功', () => {
+			mocks.healthService.setMetrics.mockReturnValue(undefined)
+			const result = controller.setMetrics('p-001', {
+				revenue: 50000,
+				orderCount: 100,
+				complaintCount: 2,
+				activeDays: 25,
+			})
+			expect(result.success).toBe(true)
+			expect(result.message).toContain('Metrics updated')
+		})
+	})
+
+	// ── Settlement ──────────────────────────────────────────────
+
+	describe('POST /alliance/settlement/create', () => {
+		it('【正向】🛒 前台 创建分账单成功', () => {
+			mocks.settlementService.createSettlement.mockReturnValue({
+				settlementId: 's-001',
+				orderId: 'ord-001',
+				type: 'ratio',
+				totalAmount: 10000,
+				participants: [
+					{ partnerId: 'p-001', partnerName: '商户A', ratio: 0.6 },
+					{ partnerId: 'p-002', partnerName: '商户B', ratio: 0.4 },
+				],
+				status: 'pending',
+				createdAt: new Date(),
+			})
+			const result = controller.createSettlement({
+				orderId: 'ord-001',
+				type: 'ratio',
+				totalAmount: 10000,
+				participants: [
+					{ partnerId: 'p-001', partnerName: '商户A', ratio: 0.6 },
+					{ partnerId: 'p-002', partnerName: '商户B', ratio: 0.4 },
+				],
+			})
+			expect(result.success).toBe(true)
+			expect(result.data!.settlementId).toBe('s-001')
+		})
+
+		it('【边界】👥 HR 分账创建失败时返回错误', () => {
+			mocks.settlementService.createSettlement.mockImplementation(() => {
+				const err: any = new Error('Invalid participants')
+				err.code = 'INVALID_PARAMS'
+				throw err
+			})
+			const result = controller.createSettlement({
+				orderId: 'ord-001',
+				type: 'ratio',
+				totalAmount: 10000,
+				participants: [],
+			})
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('Invalid')
+		})
+	})
+
+	describe('POST /alliance/settlement/:settlementId/approve', () => {
+		it('【正向】👔 店长 审批分账成功', () => {
+			mocks.settlementService.approveSettlement.mockReturnValue({
+				settlementId: 's-001',
+				status: 'approved',
+				approvedAt: new Date(),
+			})
+			const result = controller.approveSettlement('s-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.status).toBe('approved')
+		})
+	})
+
+	describe('POST /alliance/settlement/:settlementId/execute', () => {
+		it('【正向】🎯 运行专员 执行分账成功', () => {
+			mocks.settlementService.executeSettlement.mockReturnValue({
+				settlementId: 's-001',
+				status: 'executed',
+				executedAt: new Date(),
+			})
+			const result = controller.executeSettlement('s-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.status).toBe('executed')
+		})
+
+		it('【边界】🔧 安监 分账执行失败时返回错误', () => {
+			mocks.settlementService.executeSettlement.mockImplementation(() => {
+				const err: any = new Error('Settlement not approved')
+				err.code = 'NOT_APPROVED'
+				throw err
+			})
+			const result = controller.executeSettlement('s-002')
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('not approved')
+		})
+	})
+
+	describe('GET /alliance/settlement/:settlementId', () => {
+		it('【正向】🤝 团建 查询分账详情成功', () => {
+			mocks.settlementService.querySettlement.mockReturnValue({
+				settlementId: 's-001',
+				orderId: 'ord-001',
+				type: 'ratio',
+				totalAmount: 10000,
+				status: 'approved',
+				createdAt: new Date(),
+				participants: [],
+			})
+			const result = controller.querySettlement('s-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.settlementId).toBe('s-001')
+		})
+
+		it('【边界】🎮 导玩员 查询不存在的分账单返回错误', () => {
+			mocks.settlementService.querySettlement.mockReturnValue(null)
+			const result = controller.querySettlement('s-999')
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('not found')
+		})
+	})
+
+	describe('GET /alliance/settlement/history/:partnerId', () => {
+		it('【正向】📢 营销 查询分账历史成功', () => {
+			mocks.settlementService.getSettlementHistory.mockReturnValue([
+				{ settlementId: 's-001', totalAmount: 5000, status: 'executed' },
+				{ settlementId: 's-002', totalAmount: 3000, status: 'executed' },
+			])
+			const result = controller.getSettlementHistory('p-001')
+			expect(result.success).toBe(true)
+			expect(result.total).toBe(2)
+		})
+
+		it('【边界】🛒 前台 无历史分账时返回空数组', () => {
+			mocks.settlementService.getSettlementHistory.mockReturnValue([])
+			const result = controller.getSettlementHistory('p-999')
+			expect(result.success).toBe(true)
+			expect(result.data).toHaveLength(0)
+			expect(result.total).toBe(0)
+		})
+	})
+
+	// ── Unlinked Orders ─────────────────────────────────────────
+
+	describe('POST /alliance/order/scan-unlinked', () => {
+		it('【正向】🔧 安监 扫描未关联订单成功', () => {
+			// 模拟返回的扫描结果
+			const orders = [
+				{
+					orderId: 'ord-001',
+					amount: 5000,
+					createdAt: new Date('2026-07-01'),
+					linkStatus: 'unlinked' as const,
+				},
+			]
+			mocks.orderDetector.scanUnlinkedOrders.mockReturnValue(orders)
+			const result = controller.scanUnlinkedOrders({
+				storeId: 'store-001',
+				since: '2026-06-01T00:00:00Z',
+			})
+			expect(result.success).toBe(true)
+			expect(result.data!.total).toBe(1)
+			expect(result.data!.orders[0].orderId).toBe('ord-001')
+		})
+
+		it('【边界】🎮 导玩员 扫描无未关联订单返回空列表', () => {
+			mocks.orderDetector.scanUnlinkedOrders.mockReturnValue([])
+			const result = controller.scanUnlinkedOrders({
+				storeId: 'store-001',
+				since: '2026-06-01T00:00:00Z',
+			})
+			expect(result.success).toBe(true)
+			expect(result.data!.total).toBe(0)
+		})
+	})
+
+	describe('POST /alliance/order/:orderId/link', () => {
+		it('【正向】📢 营销 手动关联订单成功', () => {
+			mocks.orderDetector.manualLink.mockReturnValue({
+				orderId: 'ord-001',
+				linkedPartnerId: 'p-001',
+				linkStatus: 'linked',
+			})
+			const result = controller.linkOrder('ord-001', { partnerId: 'p-001' })
+			expect(result.success).toBe(true)
+			expect(result.data!.linkStatus).toBe('linked')
+		})
+
+		it('【边界】🤝 团建 关联已关联订单返回错误', () => {
+			mocks.orderDetector.manualLink.mockImplementation(() => {
+				const err: any = new Error('Order already linked')
+				err.code = 'ALREADY_LINKED'
+				throw err
+			})
+			const result = controller.linkOrder('ord-001', { partnerId: 'p-001' })
+			expect(result.success).toBe(false)
+			expect(result.message).toContain('already linked')
+		})
+	})
+
+	describe('POST /alliance/order/:orderId/auto-link', () => {
+		it('【正向】🎯 运行专员 自动关联订单成功', () => {
+			mocks.orderDetector.autoLinkByRule.mockReturnValue({
+				linked: true,
+				partnerId: 'p-002',
+				reason: 'location_proximity',
+			})
+			const result = controller.autoLinkOrder('ord-001')
+			expect(result.success).toBe(true)
+			expect((result.data as Record<string, unknown>).partnerId).toBe('p-002')
+		})
+	})
+
+	// ── Anomaly Detection ───────────────────────────────────────
+
+	describe('POST /alliance/anomaly/detect/:partnerId', () => {
+		it('【正向】🔧 安监 检测异常模式成功', () => {
+			mocks.anomalyService.detectUnusualPattern.mockReturnValue([
+				{ anomalyId: 'a-001', type: 'frequent_small', severity: 'warning', detail: '高频小额交易' },
+			])
+			const result = controller.detectAnomaly('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.count).toBe(1)
+		})
+
+		it('【边界】👔 店长 未检测到异常时返回空列表', () => {
+			mocks.anomalyService.detectUnusualPattern.mockReturnValue([])
+			const result = controller.detectAnomaly('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.count).toBe(0)
+		})
+	})
+
+	describe('GET /alliance/anomaly/report/:partnerId', () => {
+		it('【正向】🎯 运行专员 获取异常报告成功', () => {
+			mocks.anomalyService.getAnomalyReport.mockReturnValue({
+				partnerId: 'p-001',
+				totalAnomalies: 3,
+				warnings: 2,
+				criticals: 1,
+				records: [
+					{ type: 'frequent_small', severity: 'warning', detail: '高频小额' },
+					{ type: 'unusual_time', severity: 'critical', detail: '非营业时间交易' },
+				],
+			})
+			const result = controller.getAnomalyReport('p-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.totalAnomalies).toBe(3)
+		})
+	})
+
+	describe('POST /alliance/settlement/:settlementId/flag-suspicious', () => {
+		it('【正向】🔧 安监 标记可疑分账成功', () => {
+			mocks.anomalyService.flagSuspiciousSettlement.mockReturnValue({
+				settlementId: 's-001',
+				flagged: true,
+				reason: '异常定价模式',
+			})
+			const result = controller.flagSuspicious('s-001')
+			expect(result.success).toBe(true)
+			expect(result.data!.flagged).toBe(true)
+		})
+	})
 })

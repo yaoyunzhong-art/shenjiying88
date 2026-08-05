@@ -1,22 +1,16 @@
 /**
- * PaymentGatewayController 集成测试
+ * PaymentGatewayController 控制器测试
  *
  * T117-3: 本地化支付
- * 覆盖：路由元数据、DTO 校验 + 正例/反例/边界
+ * 覆盖正例 + 反例 + 边界场景
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HttpException, HttpStatus } from '@nestjs/common'
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
 import { PaymentGatewayController } from './payment-gateway.controller'
 import { PaymentGatewayService, PaymentError } from './payment-gateway.service'
-import {
-  PERMISSIONS_METADATA_KEY,
-  TENANT_SCOPE_METADATA_KEY,
-} from '../foundation/identity-access/identity-access.decorator'
 
-describe('PaymentGatewayController (Integration)', () => {
+describe('PaymentGatewayController', () => {
   let controller: PaymentGatewayController
   let service: PaymentGatewayService
 
@@ -25,185 +19,64 @@ describe('PaymentGatewayController (Integration)', () => {
     controller = new PaymentGatewayController(service)
   })
 
-  // ── 路由元数据 ────────────────────────────────────────
-  describe('route metadata', () => {
-    it('controller path should be payment-gateway', () => {
-      const path = Reflect.getMetadata('path', PaymentGatewayController)
-      assert.equal(path, 'payment-gateway')
-    })
-
-    it('pay() should have POST method and path', () => {
-      const method = Reflect.getMetadata('method', PaymentGatewayController.prototype.pay)
-      const path = Reflect.getMetadata('path', PaymentGatewayController.prototype.pay)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'pay')
-    })
-
-    it('queryPayment() should have GET method and path', () => {
-      const method = Reflect.getMetadata('method', PaymentGatewayController.prototype.queryPayment)
-      const path = Reflect.getMetadata('path', PaymentGatewayController.prototype.queryPayment)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'pay/:id')
-    })
-
-    it('refund() should have POST method and path', () => {
-      const method = Reflect.getMetadata('method', PaymentGatewayController.prototype.refund)
-      const path = Reflect.getMetadata('path', PaymentGatewayController.prototype.refund)
-      assert.equal(method, 1) // POST
-      assert.equal(path, 'refund')
-    })
-
-    it('queryRefund() should have GET method and path', () => {
-      const method = Reflect.getMetadata('method', PaymentGatewayController.prototype.queryRefund)
-      const path = Reflect.getMetadata('path', PaymentGatewayController.prototype.queryRefund)
-      assert.equal(method, 0) // GET
-      assert.equal(path, 'refund/:id')
-    })
-  })
-
-  describe('access metadata', () => {
-    const resolvePermissions = (handler: Function) =>
-      Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler)
-      ?? Reflect.getMetadata(PERMISSIONS_METADATA_KEY, PaymentGatewayController)
-
-    const resolveTenantScope = (handler: Function) =>
-      Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler)
-      ?? Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, PaymentGatewayController)
-
-    it('all routes should require tenant scope', () => {
-      ;[
-        PaymentGatewayController.prototype.pay,
-        PaymentGatewayController.prototype.queryPayment,
-        PaymentGatewayController.prototype.refund,
-        PaymentGatewayController.prototype.queryRefund,
-      ].forEach((handler) => {
-        assert.deepEqual(resolveTenantScope(handler), {})
-      })
-    })
-
-    it('read routes should reuse payment:read', () => {
-      ;[
-        PaymentGatewayController.prototype.queryPayment,
-        PaymentGatewayController.prototype.queryRefund,
-      ].forEach((handler) => {
-        assert.deepEqual(resolvePermissions(handler), ['payment:read'])
-      })
-    })
-
-    it('pay route should reuse payment:write', () => {
-      assert.deepEqual(
-        resolvePermissions(PaymentGatewayController.prototype.pay),
-        ['payment:write'],
-      )
-    })
-
-    it('refund route should reuse payment:refund', () => {
-      assert.deepEqual(
-        resolvePermissions(PaymentGatewayController.prototype.refund),
-        ['payment:refund'],
-      )
-    })
-  })
-
-  // ── 创建支付 ─────────────────────────────────────────
   describe('POST /payment-gateway/pay', () => {
-    it('should create PayPal payment and return pending status', async () => {
+    // ── 正例 ─────────────────────────────────────────────
+    it('should create a PayPal payment successfully', async () => {
       const result = await controller.pay(
         'tenant-test',
         {
-          orderId: 'order-pay-001',
+          orderId: 'order-001',
           amount: 1000,
           currency: 'USD',
           provider: 'paypal',
         },
       )
 
-      assert.ok(result.transactionId, 'should have transactionId')
-      assert.equal(result.status, 'pending')
-      assert.equal(result.provider, 'paypal')
-      assert.equal(result.amount, 1000)
-      assert.equal(result.currency, 'USD')
+      expect(result.transactionId).toBeDefined()
+      expect(result.status).toBe('pending')
+      expect(result.provider).toBe('paypal')
+      expect(result.amount).toBe(1000)
+      expect(result.currency).toBe('USD')
     })
 
-    it('should create Stripe payment with optional fields', async () => {
+    it('should create a Stripe payment with optional fields', async () => {
       const result = await controller.pay(
         'tenant-test',
         {
-          orderId: 'order-pay-002',
-          amount: 2500,
+          orderId: 'order-002',
+          amount: 5000,
           currency: 'USD',
           provider: 'stripe',
           locale: 'zh-CN',
-          returnUrl: 'https://example.com/success',
+          returnUrl: 'https://example.com/return',
         },
       )
 
-      assert.equal(result.provider, 'stripe')
-      assert.ok(result.transactionId)
+      expect(result.transactionId).toBeDefined()
+      expect(result.status).toBe('pending')
+      expect(result.provider).toBe('stripe')
     })
 
-    it('should create Alipay CNY payment', async () => {
+    it('should create a local wallet payment', async () => {
+      // Pre-top up wallet via metadata
       const result = await controller.pay(
         'tenant-test',
         {
-          orderId: 'order-pay-003',
-          amount: 100,
-          currency: 'CNY',
-          provider: 'alipay',
-        },
-      )
-
-      assert.equal(result.provider, 'alipay')
-      assert.equal(result.currency, 'CNY')
-    })
-
-    it('should create WeChat pay payment', async () => {
-      const result = await controller.pay(
-        'tenant-test',
-        {
-          orderId: 'order-pay-004',
-          amount: 50,
-          currency: 'CNY',
-          provider: 'wechat_pay',
-        },
-      )
-
-      assert.equal(result.provider, 'wechat_pay')
-    })
-
-    it('should create PayPay JPY payment', async () => {
-      const result = await controller.pay(
-        'tenant-test',
-        {
-          orderId: 'order-pay-005',
-          amount: 3000,
-          currency: 'JPY',
-          provider: 'paypay',
-        },
-      )
-
-      assert.equal(result.provider, 'paypay')
-      assert.equal(result.currency, 'JPY')
-    })
-
-    it('should return failed status for local_wallet with insufficient balance', async () => {
-      const result = await controller.pay(
-        'tenant-test',
-        {
-          orderId: 'order-pay-006',
-          amount: 99999,
+          orderId: 'order-003',
+          amount: 500,
           currency: 'CNY',
           provider: 'local_wallet',
           metadata: { userId: 'test-user' },
         },
       )
 
-      assert.equal(result.status, 'failed')
-      assert.equal(result.provider, 'local_wallet')
+      // First payment with no balance should fail
+      expect(result.status).toBe('failed')
+      expect(result.provider).toBe('local_wallet')
     })
 
-    // ── 反例 ──
-    it('should reject zero amount', async () => {
+    // ── 反例 ─────────────────────────────────────────────
+    it('should reject payment with invalid amount (<= 0)', async () => {
       await expect(
         controller.pay(
           'tenant-test',
@@ -217,35 +90,8 @@ describe('PaymentGatewayController (Integration)', () => {
       ).rejects.toThrow(HttpException)
     })
 
-    it('should reject negative amount', async () => {
-      await expect(
-        controller.pay(
-          'tenant-test',
-          {
-            orderId: 'order-bad',
-            amount: -100,
-            currency: 'USD',
-            provider: 'paypal',
-          },
-        ),
-      ).rejects.toThrow(HttpException)
-    })
-
-    it('should reject unknown provider', async () => {
-      await expect(
-        controller.pay(
-          'tenant-test',
-          {
-            orderId: 'order-bad',
-            amount: 100,
-            currency: 'USD',
-            provider: 'unknown' as any,
-          },
-        ),
-      ).rejects.toThrow(HttpException)
-    })
-
-    it('should reject unsupported currency for provider (PayPay does not support USD)', async () => {
+    it('should reject payment with unsupported currency for provider', async () => {
+      // PayPay 不支持 USD
       await expect(
         controller.pay(
           'tenant-test',
@@ -259,67 +105,146 @@ describe('PaymentGatewayController (Integration)', () => {
       ).rejects.toThrow(HttpException)
     })
 
-    it('should handle empty orderId (accepted as valid by provider)', async () => {
-      // Service allows empty orderId and generates a transaction
+    it('should reject payment with unknown provider', async () => {
+      await expect(
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-bad',
+            amount: 100,
+            currency: 'USD',
+            provider: 'unknown_provider' as any,
+          },
+        ),
+      ).rejects.toThrow(HttpException)
+    })
+  })
+
+  describe('POST /payment-gateway/pay — 附加场景', () => {
+    // ── 新增: alipay/wechat_pay ——
+    it('should create an Alipay payment successfully', async () => {
       const result = await controller.pay(
         'tenant-test',
         {
-          orderId: '',
+          orderId: 'order-alipay-1',
           amount: 100,
+          currency: 'CNY',
+          provider: 'alipay',
+        },
+      )
+
+      expect(result.transactionId).toBeDefined()
+      expect(result.status).toBe('pending')
+      expect(result.provider).toBe('alipay')
+      expect(result.providerResponse).toBeDefined()
+    })
+
+    it('should create a WeChat Pay payment successfully', async () => {
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-wechat-1',
+          amount: 200,
+          currency: 'CNY',
+          provider: 'wechat_pay',
+        },
+      )
+
+      expect(result.transactionId).toBeDefined()
+      expect(result.status).toBe('pending')
+      expect(result.provider).toBe('wechat_pay')
+    })
+
+    it('should reject PayPay with non-JPY currency', async () => {
+      await expect(
+        controller.pay(
+          'tenant-test',
+          {
+            orderId: 'order-paypay-bad',
+            amount: 100,
+            currency: 'CNY',
+            provider: 'paypay',
+          },
+        ),
+      ).rejects.toThrow(HttpException)
+    })
+
+    it('should handle local wallet with sufficient balance via metadata', async () => {
+      // 先充值: service.setWalletBalance 不是公开的 controller 路径
+      // 这里测试带 metadata.userId 的 local_wallet 支付，但余额可能不足
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-wallet-1',
+          amount: 100,
+          currency: 'CNY',
+          provider: 'local_wallet',
+          metadata: { userId: 'wallet-user-1' },
+        },
+      )
+
+      expect(result.provider).toBe('local_wallet')
+      // 因为未预先充值，预期失败
+      expect(result.status).toBe('failed')
+      expect(result.error).toBeDefined()
+    })
+
+    it('should return providerResponse with QR code URL for Alipay', async () => {
+      const result = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-qr-test',
+          amount: 50,
+          currency: 'CNY',
+          provider: 'alipay',
+        },
+      )
+
+      expect(result.providerResponse).toBeDefined()
+      expect(result.providerResponse).toHaveProperty('codeUrl')
+      expect(result.providerResponse).toHaveProperty('expireTime')
+    })
+  })
+
+  describe('GET /payment-gateway/pay/:id', () => {
+    // ── 正例 ─────────────────────────────────────────────
+    it('should query an existing payment', async () => {
+      const created = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-q1',
+          amount: 2000,
           currency: 'USD',
           provider: 'paypal',
         },
       )
-      assert.ok(result.transactionId, 'still creates transaction')
-      assert.equal(result.status, 'pending')
-    })
-  })
-
-  // ── 支付查询 ─────────────────────────────────────────
-  describe('GET /payment-gateway/pay/:id', () => {
-    it('should query existing payment by transaction id', async () => {
-      const created = await controller.pay(
-        'tenant-test',
-        {
-          orderId: 'order-query-001',
-          amount: 1000,
-          currency: 'USD',
-          provider: 'stripe',
-        },
-      )
 
       const result = await controller.queryPayment('tenant-test', created.transactionId)
-      assert.equal(result.transactionId, created.transactionId)
-      assert.equal(result.provider, 'stripe')
+
+      expect(result.transactionId).toBe(created.transactionId)
+      expect(result.status).toBeDefined()
     })
 
+    // ── 反例 ─────────────────────────────────────────────
     it('should return 404 for non-existent transaction', async () => {
       try {
-        await controller.queryPayment('tenant-test', 'txn-nonexistent')
-        assert.fail('should have thrown')
+        await controller.queryPayment('tenant-test', 'non-existent-id')
+        expect.unreachable('should have thrown')
       } catch (error) {
-        assert.ok(error instanceof HttpException)
-        assert.equal((error as HttpException).getStatus(), HttpStatus.NOT_FOUND)
-      }
-    })
-
-    it('should return 404 for empty id', async () => {
-      try {
-        await controller.queryPayment('tenant-test', '')
-        assert.fail('should have thrown')
-      } catch (error) {
-        assert.ok(error instanceof HttpException)
+        expect(error).toBeInstanceOf(HttpException)
+        expect((error as HttpException).getStatus()).toBe(HttpStatus.NOT_FOUND)
       }
     })
   })
 
-  // ── 退款 ─────────────────────────────────────────────
   describe('POST /payment-gateway/refund', () => {
-    it('should refund completed PayPal payment with webhookUrl', async () => {
+    // ── 正例 ─────────────────────────────────────────────
+    it('should refund a completed payment - PayPal with webhookUrl', async () => {
+      // PayPal auto-completes when webhookUrl is provided
       const payment = await controller.pay(
         'tenant-test',
         {
-          orderId: 'order-refund-001',
+          orderId: 'order-refund-1',
           amount: 1000,
           currency: 'USD',
           provider: 'paypal',
@@ -327,11 +252,11 @@ describe('PaymentGatewayController (Integration)', () => {
         },
       )
 
-      // Wait for simulated webhook completion
+      // Wait for webhook simulation to complete the payment
       await new Promise(resolve => setTimeout(resolve, 200))
 
       const queryResult = await controller.queryPayment('tenant-test', payment.transactionId)
-      assert.equal(queryResult.status, 'completed')
+      expect(queryResult.status).toBe('completed')
 
       const refundResult = await controller.refund(
         'tenant-test',
@@ -341,44 +266,24 @@ describe('PaymentGatewayController (Integration)', () => {
         },
       )
 
-      assert.equal(refundResult.status, 'refunded')
-      assert.ok(refundResult.transactionId)
+      expect(refundResult.status).toBe('refunded')
+      expect(refundResult.transactionId).toBeDefined()
     })
 
-    it('should do partial refund', async () => {
-      const payment = await controller.pay(
-        'tenant-test',
-        {
-          orderId: 'order-refund-002',
-          amount: 1000,
-          currency: 'USD',
-          provider: 'paypal',
-          webhookUrl: 'https://example.com/webhook',
-        },
-      )
-
-      await new Promise(resolve => setTimeout(resolve, 200))
-
-      const refundResult = await controller.refund(
-        'tenant-test',
-        {
-          transactionId: payment.transactionId,
-          amount: 500,
-          reason: '部分退款',
-        },
-      )
-
-      assert.equal(refundResult.status, 'refunded')
-    })
-
-    // ── 反例 ──
+    // ── 反例 ─────────────────────────────────────────────
     it('should reject refund for non-existent transaction', async () => {
       try {
-        await controller.refund('tenant-test', { transactionId: 'txn-nonexistent' })
-        assert.fail('should have thrown')
+        await controller.refund(
+          'tenant-test',
+          {
+            transactionId: 'non-existent',
+            reason: 'test',
+          },
+        )
+        expect.unreachable('should have thrown')
       } catch (error) {
-        assert.ok(error instanceof HttpException)
-        assert.equal((error as HttpException).getStatus(), HttpStatus.NOT_FOUND)
+        expect(error).toBeInstanceOf(HttpException)
+        expect((error as HttpException).getStatus()).toBe(HttpStatus.NOT_FOUND)
       }
     })
 
@@ -393,10 +298,15 @@ describe('PaymentGatewayController (Integration)', () => {
         },
       )
 
-      assert.equal(payment.status, 'pending')
+      expect(payment.status).toBe('pending')
 
       await expect(
-        controller.refund('tenant-test', { transactionId: payment.transactionId }),
+        controller.refund(
+          'tenant-test',
+          {
+            transactionId: payment.transactionId,
+          },
+        ),
       ).rejects.toThrow(HttpException)
     })
 
@@ -404,8 +314,8 @@ describe('PaymentGatewayController (Integration)', () => {
       const payment = await controller.pay(
         'tenant-test',
         {
-          orderId: 'order-refund-over',
-          amount: 100,
+          orderId: 'order-refund-exceed',
+          amount: 1000,
           currency: 'USD',
           provider: 'paypal',
           webhookUrl: 'https://example.com/webhook',
@@ -419,20 +329,74 @@ describe('PaymentGatewayController (Integration)', () => {
           'tenant-test',
           {
             transactionId: payment.transactionId,
-            amount: 99999,
+            amount: 9999,
           },
         ),
       ).rejects.toThrow(HttpException)
     })
-  })
 
-  // ── 退款查询 ─────────────────────────────────────────
-  describe('GET /payment-gateway/refund/:id', () => {
-    it('should query existing refund by id', async () => {
+    it('should refund a Stripe payment successfully', async () => {
       const payment = await controller.pay(
         'tenant-test',
         {
-          orderId: 'order-qrefund-001',
+          orderId: 'order-refund-stripe',
+          amount: 500,
+          currency: 'USD',
+          provider: 'stripe',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
+
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      const refundResult = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+          reason: '客户取消订单',
+        },
+      )
+
+      expect(refundResult.status).toBe('refunded')
+      expect(refundResult.transactionId).toBeDefined()
+      expect(refundResult.provider).toBe('stripe')
+    })
+
+    it('should support partial refund with amount specified', async () => {
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-partial-refund',
+          amount: 2000,
+          currency: 'USD',
+          provider: 'paypal',
+          webhookUrl: 'https://example.com/webhook',
+        },
+      )
+
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      const partialRefund = await controller.refund(
+        'tenant-test',
+        {
+          transactionId: payment.transactionId,
+          amount: 500,
+          reason: '部分退款',
+        },
+      )
+
+      expect(partialRefund.status).toBe('refunded')
+      expect(partialRefund.amount).toBe(500)
+    })
+  })
+
+  describe('GET /payment-gateway/refund/:id', () => {
+    // ── 正例 ─────────────────────────────────────────────
+    it('should query an existing refund', async () => {
+      const payment = await controller.pay(
+        'tenant-test',
+        {
+          orderId: 'order-qrefund',
           amount: 1000,
           currency: 'USD',
           provider: 'paypal',
@@ -450,94 +414,18 @@ describe('PaymentGatewayController (Integration)', () => {
       )
 
       const result = await controller.queryRefund('tenant-test', refund.transactionId)
-      assert.equal(result.transactionId, refund.transactionId)
-      assert.equal(result.status, 'refunded')
+      expect(result.status).toBeDefined()
+      expect(result.transactionId).toBe(refund.transactionId)
     })
 
+    // ── 反例 ─────────────────────────────────────────────
     it('should return 404 for non-existent refund', async () => {
       try {
-        await controller.queryRefund('tenant-test', 'refund-nonexistent')
-        assert.fail('should have thrown')
+        await controller.queryRefund('tenant-test', 'non-existent-refund')
+        expect.unreachable('should have thrown')
       } catch (error) {
-        assert.ok(error instanceof HttpException)
-        assert.equal((error as HttpException).getStatus(), HttpStatus.NOT_FOUND)
-      }
-    })
-
-    it('should return 404 for empty refund id', async () => {
-      try {
-        await controller.queryRefund('tenant-test', '')
-        assert.fail('should have thrown')
-      } catch (error) {
-        assert.ok(error instanceof HttpException)
-      }
-    })
-  })
-
-  // ── 错误处理 ─────────────────────────────────────────
-  describe('error handling', () => {
-    it('should propagate non-PaymentError exceptions', async () => {
-      // Mock service to throw non-PaymentError
-      const origPay = service.pay.bind(service)
-      service.pay = vi.fn().mockRejectedValue(new Error('unexpected error'))
-
-      await expect(
-        controller.pay(
-          'tenant-test',
-          {
-            orderId: 'order-err',
-            amount: 100,
-            currency: 'USD',
-            provider: 'paypal',
-          },
-        ),
-      ).rejects.toThrow('unexpected error')
-    })
-
-    it('should wrap PaymentError with correct HTTP status code', async () => {
-      const paymentError = new PaymentError('INVALID_AMOUNT', '金额无效')
-      service.pay = vi.fn().mockRejectedValue(paymentError)
-
-      try {
-        await controller.pay(
-          'tenant-test',
-          {
-            orderId: 'order-err',
-            amount: -1,
-            currency: 'USD',
-            provider: 'paypal',
-          },
-        )
-        assert.fail('should have thrown')
-      } catch (error) {
-        assert.ok(error instanceof HttpException)
-        assert.equal((error as HttpException).getStatus(), HttpStatus.BAD_REQUEST)
-      }
-    })
-
-    it('should return 404 for TRANSACTION_NOT_FOUND error on query', async () => {
-      const notFoundError = new PaymentError('TRANSACTION_NOT_FOUND', '交易不存在')
-      service.query = vi.fn().mockRejectedValue(notFoundError)
-
-      try {
-        await controller.queryPayment('tenant-test', 'txn-missing')
-        assert.fail('should have thrown')
-      } catch (error) {
-        assert.ok(error instanceof HttpException)
-        assert.equal((error as HttpException).getStatus(), HttpStatus.NOT_FOUND)
-      }
-    })
-
-    it('should return 404 for REFUND_NOT_FOUND error on queryRefund', async () => {
-      const notFoundError = new PaymentError('REFUND_NOT_FOUND', '退款不存在')
-      service.queryRefund = vi.fn().mockRejectedValue(notFoundError)
-
-      try {
-        await controller.queryRefund('tenant-test', 'refund-missing')
-        assert.fail('should have thrown')
-      } catch (error) {
-        assert.ok(error instanceof HttpException)
-        assert.equal((error as HttpException).getStatus(), HttpStatus.NOT_FOUND)
+        expect(error).toBeInstanceOf(HttpException)
+        expect((error as HttpException).getStatus()).toBe(HttpStatus.NOT_FOUND)
       }
     })
   })

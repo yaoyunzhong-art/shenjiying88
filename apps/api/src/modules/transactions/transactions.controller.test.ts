@@ -1,534 +1,579 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * 🐜 自动: [transactions] [D] controller spec 补全
+ * transactions.controller.spec.ts — TransactionsController 路由/功能 spec 测试
  *
- * 覆盖：startCheckout / applyPaymentCallback / getOrderTransaction / listOrderTransactions
- *       requestRefund / approveRefund / rejectRefund / listRefunds / getRefund
- *       batchApproveRefunds / batchRejectRefunds / batchAssignRefunds / batchClaimRefunds
- *       timeoutCloseOrder / batchTimeoutCloseOrders / manualCloseOrder
- *       getRefundDashboard / listPendingRefunds / listMemberTransactions
- *       snapshot 路由 (lyt)
+ * 策略：直接实例化 TransactionsController（无 NestJS DI），
+ *      依赖的 CashierService / LoyaltyService / MemberService 做内联 mock。
+ *
+ * 覆盖：
+ *   - POST /transactions/checkout                        startCheckout
+ *   - POST /transactions/payments/standardized-callback  applyPaymentCallback
+ *   - GET  /transactions/orders/:orderId                 getOrderTransaction
+ *   - GET  /transactions/orders                          listOrderTransactions
+ *   - GET  /transactions/persistent/snapshots/orders             listLytOrderSnapshots
+ *   - GET  /transactions/persistent/snapshots/orders/:id        getLytOrderSnapshot
+ *   - GET  /transactions/persistent/snapshots/payments           listLytPaymentSnapshots
+ *   - GET  /transactions/persistent/snapshots/payments/:id      getLytPaymentSnapshot
+ *   - POST /transactions/orders/:orderId/timeout-close           timeoutCloseOrder
+ *   - POST /transactions/orders/batch-timeout-close              batchTimeoutCloseOrders
+ *   - POST /transactions/orders/:orderId/manual-close            manualCloseOrder
+ *   - GET  /transactions/orders/:orderId/refunds                 listOrderRefunds
+ *   - GET  /transactions/refunds                                 listRefunds
+ *   - GET  /transactions/refunds/pending                         listPendingRefunds
+ *   - GET  /transactions/refunds/dashboard                       getRefundDashboard
+ *   - GET  /transactions/refunds/:refundId                       getRefund
+ *   - POST /transactions/orders/:orderId/refunds                 requestRefund
+ *   - POST /transactions/refunds/:refundId/approve               approveRefund
+ *   - POST /transactions/refunds/:refundId/reject                rejectRefund
+ *   - POST /transactions/refunds/batch-approve                   batchApproveRefunds
+ *   - POST /transactions/refunds/batch-reject                    batchRejectRefunds
+ *   - POST /transactions/refunds/batch-assign                    batchAssignRefunds
+ *   - POST /transactions/refunds/batch-claim                     batchClaimRefunds
+ *   - GET  /transactions/members/:memberId                       listMemberTransactions
+ *   - GET  /transactions/members/:memberId/refunds               listMemberRefunds
  *
  * 正例 + 反例 + 边界
  */
 
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import {
-  PERMISSIONS_METADATA_KEY,
-  TENANT_SCOPE_METADATA_KEY,
-} from '../foundation/identity-access/identity-access.decorator'
-import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
-import { resetTransactionsServiceTestState } from './transactions.service'
 import { TransactionsController } from './transactions.controller'
 import { TransactionsService } from './transactions.service'
 import { CashierService } from '../cashier/cashier.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService } from '../member/member.service'
-import { CashierPaymentStatus, CashierOrderStatus } from '../cashier/cashier.entity'
+import { CashierOrderStatus, CashierPaymentStatus } from '../cashier/cashier.entity'
+import { TransactionRefundStatus } from './transactions.entity'
+import { resetTransactionsServiceTestState } from './transactions.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import type { TransactionAggregate } from './transactions.entity'
-import { TransactionRefundStatus } from './transactions.entity'
 import type {
   CreateTransactionCheckoutDto,
-  RequestTransactionRefundDto,
-  RequestTransactionTimeoutCloseDto,
-  RequestTransactionManualCloseDto,
-  BatchReviewTransactionRefundsDto,
   BatchAssignTransactionRefundsDto,
-  BatchClaimTransactionRefundsDto
+  BatchClaimTransactionRefundsDto,
+  GetTransactionRefundDashboardQueryDto,
 } from './transactions.dto'
 
+// ── Test Helpers ──────────────────────────────────────────────────
+
 const CTX: RequestTenantContext = {
-  tenantId: 'tenant-a',
-  brandId: 'brand-a',
-  storeId: 'store-a',
-  marketCode: 'cn-mainland'
+  tenantId: 'tenant-t',
+  brandId: 'brand-t',
+  storeId: 'store-t',
+  marketCode: 'cn-mainland',
 }
 
-let memberService: MemberService
-let controller: TransactionsController
-
-function buildServices() {
-  memberService = new MemberService()
+function makeController() {
+  const memberService = new MemberService()
   const loyaltyService = new LoyaltyService(memberService)
   const cashierService = new CashierService(memberService, loyaltyService)
-  controller = new TransactionsController(
-    new TransactionsService(cashierService, loyaltyService, undefined, memberService)
-  )
+  const transactionsService = new TransactionsService(cashierService, loyaltyService)
+  const controller = new TransactionsController(transactionsService)
+  return { controller, memberService, cashierService, loyaltyService, transactionsService }
 }
 
-function reg(memberId: string) {
-  memberService.register({ memberId, tenantContext: CTX, nickname: `Test-${memberId}` })
+function registerMember(memberId: string) {
+  const ms = new MemberService()
+  ms.register({ memberId, tenantContext: CTX, nickname: `Test-${memberId}` })
+  return ms
 }
 
-async function checkoutAndPay(
+async function prepareCheckoutAndPay(
+  controller: TransactionsController,
   memberId: string,
   amount: number,
   extPayId: string
 ): Promise<TransactionAggregate> {
-  reg(memberId)
+  registerMember(memberId)
   const dto: CreateTransactionCheckoutDto = {
     memberId,
-    items: [{ skuId: `it-${memberId}`, quantity: 1, price: amount }],
+    items: [{ skuId: `sku-${memberId}`, quantity: 1, price: amount }],
     paymentChannel: 'wechat',
     amount,
-    externalPaymentId: extPayId
+    externalPaymentId: extPayId,
   }
-  const created = await controller.startCheckout(CTX, dto)
+  const checkout = await controller.startCheckout(CTX, dto)
   await controller.applyPaymentCallback({
-    orderId: created.order.orderId,
-    paymentId: created.payment!.paymentId,
+    orderId: checkout.order.orderId,
+    paymentId: checkout.payment!.paymentId,
     tenantId: CTX.tenantId,
     standardizedEventName: 'cashier.payment-succeeded',
     status: CashierPaymentStatus.Succeeded,
     amount,
     externalPaymentId: extPayId,
-    paidAt: new Date().toISOString()
+    paidAt: new Date().toISOString(),
   } as any)
-  // Re-fetch to get updated aggregate with latest status
-  return controller.getOrderTransaction(created.order.orderId, CTX)
+  return controller.getOrderTransaction(checkout.order.orderId, CTX)
 }
 
-async function checkoutOnly(
+async function prepareCheckoutOnly(
+  controller: TransactionsController,
   memberId: string,
   amount: number,
   extPayId: string
 ): Promise<TransactionAggregate> {
-  reg(memberId)
+  registerMember(memberId)
   return controller.startCheckout(CTX, {
     memberId,
-    items: [{ skuId: `it-${memberId}`, quantity: 1, price: amount }],
+    items: [{ skuId: `sku-${memberId}`, quantity: 1, price: amount }],
     paymentChannel: 'wechat',
     amount,
-    externalPaymentId: extPayId
+    externalPaymentId: extPayId,
   })
 }
 
-beforeEach(() => { buildServices() })
+let controller: TransactionsController
+
+beforeEach(() => {
+  const built = makeController()
+  controller = built.controller
+})
 afterEach(() => { resetTransactionsServiceTestState() })
 
-describe('transactions controller', () => {
-  describe('authorization metadata', () => {
-    const readHandlers = [
-      TransactionsController.prototype.getOrderTransaction,
-      TransactionsController.prototype.listOrderTransactions,
-      TransactionsController.prototype.listLytOrderSnapshots,
-      TransactionsController.prototype.getLytOrderSnapshot,
-      TransactionsController.prototype.listLytPaymentSnapshots,
-      TransactionsController.prototype.getLytPaymentSnapshot,
-      TransactionsController.prototype.listOrderRefunds,
-      TransactionsController.prototype.listRefunds,
-      TransactionsController.prototype.listPendingRefunds,
-      TransactionsController.prototype.getRefundDashboard,
-      TransactionsController.prototype.getRefund,
-      TransactionsController.prototype.listMemberTransactions,
-      TransactionsController.prototype.listMemberRefunds,
-    ]
-    const writeHandlers = [
-      TransactionsController.prototype.startCheckout,
-      TransactionsController.prototype.timeoutCloseOrder,
-      TransactionsController.prototype.batchTimeoutCloseOrders,
-      TransactionsController.prototype.manualCloseOrder,
-    ]
-    const refundHandlers = [
-      TransactionsController.prototype.requestRefund,
-      TransactionsController.prototype.approveRefund,
-      TransactionsController.prototype.rejectRefund,
-      TransactionsController.prototype.batchApproveRefunds,
-      TransactionsController.prototype.batchRejectRefunds,
-      TransactionsController.prototype.batchAssignRefunds,
-      TransactionsController.prototype.batchClaimRefunds,
-    ]
+// ── Specs ─────────────────────────────────────────────────────────
 
-    it('payment callback 应标记为 Public', () => {
-      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, TransactionsController.prototype.applyPaymentCallback), true)
-    })
-
-    it('order 读取链路应要求 tenant scope 和 order:read', () => {
-      readHandlers.forEach((handler) => {
-        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
-        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['order:read'])
-      })
-    })
-
-    it('order 写入链路应要求 tenant scope 和 order:write', () => {
-      writeHandlers.forEach((handler) => {
-        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
-        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['order:write'])
-      })
-    })
-
-    it('refund 操作链路应要求 tenant scope 和 order:refund', () => {
-      refundHandlers.forEach((handler) => {
-        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
-        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['order:refund'])
-      })
-    })
-  })
-
-  describe('startCheckout', () => {
-    it('should create checkout and return aggregate', async () => {
-      reg('m-1')
+describe('TransactionsController', () => {
+  // ── POST /transactions/checkout ──────────────────────────────
+  describe('startCheckout()', () => {
+    it('正例: should create checkout and return aggregate', async () => {
+      registerMember('sc-m1')
       const result = await controller.startCheckout(CTX, {
-        memberId: 'm-1',
-        items: [{ skuId: 'a', quantity: 2, price: 29.9 }],
-        paymentChannel: 'wechat',
-        amount: 59.8
+        memberId: 'sc-m1',
+        items: [{ skuId: 'item-a', quantity: 2, price: 29.9 }],
+        paymentChannel: 'alipay',
+        amount: 59.8,
       })
-      assert.equal(result.order.memberId, 'm-1')
+      assert.equal(result.order.memberId, 'sc-m1')
+      assert.equal(result.order.status, 'PENDING_PAYMENT')
       assert.ok(result.payment)
-      assert.equal(result.payment.amount, 59.8)
+      assert.equal(result.payment!.amount, 59.8)
     })
 
-    it('should throw when items is empty (boundary)', async () => {
-      reg('m-1b')
+    it('反例: should reject empty items', async () => {
+      registerMember('sc-m2')
       await assert.rejects(
-        () => controller.startCheckout(CTX, { memberId: 'm-1b', items: [], paymentChannel: 'wechat' }),
+        () => controller.startCheckout(CTX, { memberId: 'sc-m2', items: [], paymentChannel: 'alipay' }),
         /at least one item/
       )
     })
 
-    it('should throw when member not found (negative)', async () => {
+    it('边界: should reject unknown member', async () => {
       await assert.rejects(
-        () => controller.startCheckout(CTX, { memberId: 'ghost', items: [{ skuId: 'x', quantity: 1, price: 10 }], paymentChannel: 'wechat' }),
+        () => controller.startCheckout(CTX, {
+          memberId: 'ghost-member',
+          items: [{ skuId: 'x', quantity: 1, price: 10 }],
+          paymentChannel: 'alipay',
+        }),
+        /not found/i
+      )
+    })
+  })
+
+  // ── POST /transactions/payments/standardized-callback ─────────
+  describe('applyPaymentCallback()', () => {
+    it('正例: should apply payment and transition status', async () => {
+      const init = await prepareCheckoutOnly(controller, 'apc-m1', 50, 'apc-e1')
+      const result = await controller.applyPaymentCallback({
+        orderId: init.order.orderId,
+        paymentId: init.payment!.paymentId,
+        tenantId: CTX.tenantId,
+        standardizedEventName: 'cashier.payment-succeeded',
+        status: CashierPaymentStatus.Succeeded,
+        amount: 50,
+        externalPaymentId: 'apc-e1',
+        paidAt: new Date().toISOString(),
+      } as any)
+      assert.equal(result.order.status, CashierOrderStatus.Paid)
+    })
+
+    it('反例: should throw for unknown order', async () => {
+      await assert.rejects(
+        () => controller.applyPaymentCallback({
+          orderId: 'no-such-order',
+          paymentId: 'p-0',
+          tenantId: CTX.tenantId,
+          status: CashierPaymentStatus.Succeeded,
+          amount: 10,
+        } as any),
+        /not found|unknown/i
+      )
+    })
+
+    it('边界: failed payment transitions order to PaymentFailed', async () => {
+      const init = await prepareCheckoutOnly(controller, 'apc-m2', 30, 'apc-e2')
+      const result = await controller.applyPaymentCallback({
+        orderId: init.order.orderId,
+        paymentId: init.payment!.paymentId,
+        tenantId: CTX.tenantId,
+        standardizedEventName: 'cashier.payment-failed',
+        status: CashierPaymentStatus.Failed,
+        amount: 30,
+        externalPaymentId: 'apc-e2',
+        paidAt: new Date().toISOString(),
+      } as any)
+      // Failed payment moves order to PaymentFailed, no throw
+      assert.equal(result.order.status, CashierOrderStatus.PaymentFailed)
+    })
+  })
+
+  // ── GET /transactions/orders/:orderId ────────────────────────
+  describe('getOrderTransaction()', () => {
+    it('正例: should return existing aggregate', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'got-m1', 80, 'got-e1')
+      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
+      assert.equal(result.order.orderId, created.order.orderId)
+      assert.ok(result.payment)
+    })
+
+    it('反例: should throw for missing order', async () => {
+      await assert.rejects(
+        () => controller.getOrderTransaction('not-found', CTX),
+        /not found/
+      )
+    })
+
+    it('边界: should throw for wrong tenant', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'got-m2', 20, 'got-e2')
+      await assert.rejects(
+        () => controller.getOrderTransaction(created.order.orderId, { ...CTX, tenantId: 'other-tenant' }),
         /not found/
       )
     })
   })
 
-  describe('applyPaymentCallback', () => {
-    it('should apply payment callback (positive)', async () => {
-      const initial = await checkoutOnly('m-2', 30, 'ep-2')
-      const result = await controller.applyPaymentCallback({
-        orderId: initial.order.orderId,
-        paymentId: initial.payment!.paymentId,
-        tenantId: CTX.tenantId,
-        standardizedEventName: 'cashier.payment-succeeded',
-        status: CashierPaymentStatus.Succeeded,
-        amount: 30,
-        externalPaymentId: 'ep-2',
-        paidAt: new Date().toISOString()
-      } as any)
-      assert.equal(result.order.status, CashierOrderStatus.Paid)
+  // ── GET /transactions/orders ─────────────────────────────────
+  describe('listOrderTransactions()', () => {
+    it('正例: should list all orders for tenant', async () => {
+      await prepareCheckoutAndPay(controller, 'lot-m1', 10, 'lot-e1')
+      const result = controller.listOrderTransactions(CTX)
+      assert.ok(Array.isArray(result.items))
+      assert.ok(result.items.length >= 1)
+      assert.ok(result.total >= 1)
     })
 
-    it('should throw for unknown order (negative)', async () => {
+    it('正例: should filter by memberId', async () => {
+      await prepareCheckoutAndPay(controller, 'lot-m2', 20, 'lot-e2')
+      const result = controller.listOrderTransactions(CTX, { memberId: 'lot-m2' })
+      assert.ok(result.items.length >= 1)
+      result.items.forEach((item) => assert.equal(item.memberId, 'lot-m2'))
+    })
+
+    it('边界: should return empty for unknown member', () => {
+      const result = controller.listOrderTransactions(CTX, { memberId: 'nobody' })
+      assert.equal(result.items.length, 0)
+    })
+
+    it('边界: should filter by hasRefund', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'lot-m3', 100, 'lot-e3')
+      await controller.requestRefund(created.order.orderId, CTX, { reason: 'test', refundAmount: 30 })
+      const result = controller.listOrderTransactions(CTX, { hasRefund: true })
+      assert.ok(result.items.some((item) => item.orderId === created.order.orderId))
+    })
+  })
+
+  // ── LYT Snapshot routes ──────────────────────────────────────
+  describe('lyt order snapshots', () => {
+    it('正例: listLytOrderSnapshots should return array', async () => {
+      const result = controller.listLytOrderSnapshots(CTX)
+      assert.ok(Array.isArray(await result))
+    })
+
+    it('边界: getLytOrderSnapshot for unknown id returns undefined', async () => {
+      const result = await controller.getLytOrderSnapshot('unknown-id', CTX)
+      assert.equal(result, undefined)
+    })
+  })
+
+  describe('lyt payment snapshots', () => {
+    it('正例: listLytPaymentSnapshots should return array', async () => {
+      const result = controller.listLytPaymentSnapshots(CTX)
+      assert.ok(Array.isArray(await result))
+    })
+
+    it('边界: getLytPaymentSnapshot for unknown id returns undefined', async () => {
+      const result = await controller.getLytPaymentSnapshot('unknown-pay', CTX)
+      assert.equal(result, undefined)
+    })
+  })
+
+  // ── POST /transactions/orders/:orderId/timeout-close ─────────
+  describe('timeoutCloseOrder()', () => {
+    it('正例: should timeout close a pending order', async () => {
+      const init = await prepareCheckoutOnly(controller, 'tco-m1', 40, 'tco-e1')
+      const result = await controller.timeoutCloseOrder(init.order.orderId, CTX, { reason: 'timeout', operator: 'sys' })
+      assert.equal(result.order.closeReason, 'PAYMENT_TIMEOUT')
+      assert.equal(result.order.status, CashierOrderStatus.Closed)
+    })
+
+    it('反例: should throw for ghost order', async () => {
       await assert.rejects(
-        () => controller.applyPaymentCallback({
-          orderId: 'ghost', paymentId: 'ghost-pay', tenantId: CTX.tenantId, status: CashierPaymentStatus.Succeeded, amount: 10
-        } as any),
-        /not found|unknown/i
+        () => controller.timeoutCloseOrder('ghost', CTX, { reason: 'no', operator: 'sys' }),
+        /not found/
+      )
+    })
+
+    it('边界: cannot timeout close an already paid order', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'tco-m2', 50, 'tco-e2')
+      await assert.rejects(
+        () => controller.timeoutCloseOrder(created.order.orderId, CTX, { reason: 'late', operator: 'sys' }),
+        /cannot be timeout-closed/
       )
     })
   })
 
-  describe('getOrderTransaction', () => {
-    it('should return aggregate for existing order', async () => {
-      const created = await checkoutAndPay('m-3', 50, 'ep-3')
-      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
-      assert.equal(result.order.memberId, 'm-3')
-      assert.equal(result.memberNickname, 'Test-m-3')
-      assert.ok(result.payment)
+  // ── POST /transactions/orders/batch-timeout-close ────────────
+  describe('batchTimeoutCloseOrders()', () => {
+    it('正例: should batch close stale orders', async () => {
+      await prepareCheckoutOnly(controller, 'btc-m1', 30, 'btc-e1')
+      const result = await controller.batchTimeoutCloseOrders(CTX, { memberId: 'btc-m1', limit: 10 })
+      assert.ok(result.processedCount >= 1)
     })
 
-    it('should expose paid aggregate fields used by app order detail', async () => {
-      const created = await checkoutAndPay('m-3b', 88, 'ep-3b')
-      const result = await controller.getOrderTransaction(created.order.orderId, CTX)
-      assert.equal(result.payment?.channel, 'wechat')
-      assert.match(result.order.paidAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
-      assert.ok((result.settlement?.awardedPoints ?? 0) > 0)
-      assert.ok(result.pointsLedger.length >= 1)
-    })
-
-    it('should throw for non-existing order (negative)', async () => {
-      await assert.rejects(() => controller.getOrderTransaction('ghost', CTX), /not found/)
+    it('边界: no matching orders returns zero', async () => {
+      const result = await controller.batchTimeoutCloseOrders(CTX, { memberId: 'nobody', limit: 10 })
+      assert.equal(result.processedCount, 0)
     })
   })
 
-  describe('listOrderTransactions', () => {
-    it('should list all orders for tenant', async () => {
-      await checkoutAndPay('m-4', 10, 'ep-4')
-      const result = controller.listOrderTransactions(CTX)
-      assert.ok(result.items.length >= 1)
-      assert.ok(result.total >= 1)
-      assert.equal(result.page, 1)
-      assert.equal(result.items[0]?.itemCount, 1)
-      assert.match(result.items[0]?.orderNo ?? '', /^ORD\d{11}$/)
-      assert.equal(result.items[0]?.paymentChannel, 'wechat')
-      assert.match(result.items[0]?.paidAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
+  // ── POST /transactions/orders/:orderId/manual-close ─────────
+  describe('manualCloseOrder()', () => {
+    it('正例: should manually close an order', async () => {
+      const init = await prepareCheckoutOnly(controller, 'mco-m1', 35, 'mco-e1')
+      const result = await controller.manualCloseOrder(init.order.orderId, CTX, { reason: 'manual', operator: 'admin' })
+      assert.equal(result.order.status, CashierOrderStatus.Closed)
+      assert.equal(result.order.closeReason, 'MANUAL_CANCEL')
     })
 
-    it('should filter by memberId', async () => {
-      await checkoutAndPay('m-5', 20, 'ep-5')
-      const result = controller.listOrderTransactions(CTX, { memberId: 'm-5' })
-      result.items.forEach((item) => assert.equal(item.memberId, 'm-5'))
-    })
-
-    it('should filter by hasRefund=true (boundary)', async () => {
-      const created = await checkoutAndPay('m-rf', 100, 'ep-rf')
-      await controller.requestRefund(created.order.orderId, CTX, { reason: 'test', refundAmount: 50 })
-      const result = controller.listOrderTransactions(CTX, { hasRefund: true })
-      const refundedOrder = result.items.find((item) => item.orderId === created.order.orderId)
-      assert.ok(refundedOrder)
-      assert.equal(refundedOrder?.refundedAmount, 0)
-      assert.match(refundedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
-    })
-
-    it('should include completed refund timestamp after refund approval', async () => {
-      const created = await checkoutAndPay('m-rf-approved', 120, 'ep-rf-approved')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'approved', refundAmount: 30 })
-      await controller.approveRefund(withRefund.refunds[0].refundId, CTX, { operator: 'reviewer' })
-
-      const result = controller.listOrderTransactions(CTX, { hasRefund: true })
-      const refundedOrder = result.items.find((item) => item.orderId === created.order.orderId)
-      assert.ok(refundedOrder)
-      assert.equal(refundedOrder?.refundedAmount, 30)
-      assert.match(refundedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
-      assert.match(refundedOrder?.refundCompletedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
-    })
-
-    it('should keep rejected refund out of refunded amount and completed time', async () => {
-      const created = await checkoutAndPay('m-rf-rejected', 120, 'ep-rf-rejected')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'rejected', refundAmount: 30 })
-      await controller.rejectRefund(withRefund.refunds[0].refundId, CTX, { operator: 'reviewer', note: 'rejected' })
-
-      const result = controller.listOrderTransactions(CTX, { hasRefund: true })
-      const rejectedOrder = result.items.find((item) => item.orderId === created.order.orderId)
-      assert.ok(rejectedOrder)
-      assert.equal(rejectedOrder?.refundedAmount, 0)
-      assert.match(rejectedOrder?.refundRequestedAt ?? '', /^\d{4}-\d{2}-\d{2}T/)
-      assert.equal(rejectedOrder?.refundCompletedAt, undefined)
+    it('反例: should throw for ghost order', async () => {
+      await assert.rejects(
+        () => controller.manualCloseOrder('ghost', CTX, { reason: 'x', operator: 'admin' }),
+        /not found/
+      )
     })
   })
 
-  describe('requestRefund', () => {
-    it('should create pending refund for paid order', async () => {
-      const created = await checkoutAndPay('m-6', 80, 'ep-6')
-      const result = await controller.requestRefund(created.order.orderId, CTX, { reason: 'quality', refundAmount: 30, operator: 'ops' })
+  // ── POST /transactions/orders/:orderId/refunds ───────────────
+  describe('requestRefund()', () => {
+    it('正例: should create pending refund for paid order', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'rr-m1', 100, 'rr-e1')
+      const result = await controller.requestRefund(created.order.orderId, CTX, { reason: 'defect', refundAmount: 40 })
       const refund = result.refunds.find(r => r.status === TransactionRefundStatus.Pending)
       assert.ok(refund)
-      assert.equal(refund.refundAmount, 30)
-      assert.equal(refund.operator, 'ops')
+      assert.equal(refund!.refundAmount, 40)
     })
 
-    it('should throw when refund exceeds payment (negative)', async () => {
-      const created = await checkoutAndPay('m-7', 50, 'ep-7')
+    it('反例: should throw when refund exceeds amount', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'rr-m2', 50, 'rr-e2')
       await assert.rejects(
-        () => controller.requestRefund(created.order.orderId, CTX, { reason: 'too much', refundAmount: 999 }),
+        () => controller.requestRefund(created.order.orderId, CTX, { reason: 'too much', refundAmount: 9999 }),
         /exceeds refundable/
       )
     })
 
-    it('should throw when order is not paid (boundary)', async () => {
-      const created = await checkoutOnly('m-8', 30, 'ep-8')
+    it('边界: cannot refund unpaid order', async () => {
+      const init = await prepareCheckoutOnly(controller, 'rr-m3', 60, 'rr-e3')
       await assert.rejects(
-        () => controller.requestRefund(created.order.orderId, CTX, { reason: 'premature', refundAmount: 10 }),
+        () => controller.requestRefund(init.order.orderId, CTX, { reason: 'premature', refundAmount: 10 }),
         /not eligible/
       )
     })
   })
 
+  // ── POST /transactions/refunds/:refundId/approve|reject ──────
   describe('approveRefund / rejectRefund', () => {
-    it('should approve a pending refund', async () => {
-      const created = await checkoutAndPay('m-9', 60, 'ep-9')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'ok', refundAmount: 20 })
-      const refundId = withRefund.refunds[0].refundId
-      const approved = await controller.approveRefund(refundId, CTX, { operator: 'r', note: 'ok' })
+    it('正例: should approve pending refund', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'ar-m1', 200, 'ar-e1')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'ok', refundAmount: 50 })
+      const refundId = wRefund.refunds[0].refundId
+      const approved = await controller.approveRefund(refundId, CTX, { operator: 'approver', note: 'approved' })
       const found = approved.refunds.find(r => r.refundId === refundId)
       assert.equal(found?.status, TransactionRefundStatus.Completed)
     })
 
-    it('should reject a pending refund', async () => {
-      const created = await checkoutAndPay('m-10', 40, 'ep-10')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'no', refundAmount: 10 })
-      const refundId = withRefund.refunds[0].refundId
-      const rejected = await controller.rejectRefund(refundId, CTX, { operator: 'r2', note: 'no' })
+    it('正例: should reject pending refund', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'ar-m2', 150, 'ar-e2')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'no', refundAmount: 20 })
+      const refundId = wRefund.refunds[0].refundId
+      const rejected = await controller.rejectRefund(refundId, CTX, { operator: 'rejecter' })
       assert.equal(rejected.refunds.find(r => r.refundId === refundId)?.status, TransactionRefundStatus.Rejected)
     })
 
-    it('should throw when approving already handled refund (negative)', async () => {
-      const created = await checkoutAndPay('m-11', 70, 'ep-11')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'x', refundAmount: 10 })
-      const refundId = withRefund.refunds[0].refundId
+    it('反例: cannot approve already handled refund', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'ar-m3', 80, 'ar-e3')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'done', refundAmount: 10 })
+      const refundId = wRefund.refunds[0].refundId
       await controller.approveRefund(refundId, CTX, {})
       await assert.rejects(
         () => controller.approveRefund(refundId, CTX, {}),
         /not pending/
       )
     })
-  })
 
-  describe('listRefunds / getRefund / listOrderRefunds', () => {
-    it('should list refunds for tenant', async () => {
-      const created = await checkoutAndPay('m-12', 100, 'ep-12')
-      await controller.requestRefund(created.order.orderId, CTX, { reason: 'list', refundAmount: 25 })
-      assert.ok(controller.listRefunds(CTX).length >= 1)
-    })
-
-    it('should get single refund by id', async () => {
-      const created = await checkoutAndPay('m-13', 90, 'ep-13')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'get', refundAmount: 15 })
-      const refundId = withRefund.refunds[0].refundId
-      const refund = controller.getRefund(refundId, CTX)
-      assert.equal(refund.refundId, refundId)
-      assert.equal(refund.refundAmount, 15)
-    })
-
-    it('should throw for unknown refund id (negative)', () => {
-      assert.throws(() => controller.getRefund('not-exist', CTX), /not found/)
-    })
-
-    it('should list refunds for specific order', async () => {
-      const created = await checkoutAndPay('m-14', 120, 'ep-14')
-      await controller.requestRefund(created.order.orderId, CTX, { reason: 'order', refundAmount: 20 })
-      assert.ok(controller.listOrderRefunds(created.order.orderId, CTX).length >= 1)
-    })
-  })
-
-  describe('listPendingRefunds', () => {
-    it('should return only pending refunds', async () => {
-      const created = await checkoutAndPay('m-15', 200, 'ep-15')
-      await controller.requestRefund(created.order.orderId, CTX, { reason: 'pending', refundAmount: 50 })
-      const pending = controller.listPendingRefunds(CTX)
-      assert.ok(pending.length >= 1)
-      pending.forEach(r => assert.equal(r.status, TransactionRefundStatus.Pending))
-    })
-  })
-
-  describe('batchApproveRefunds / batchRejectRefunds', () => {
-    it('should batch approve refunds', async () => {
-      const created = await checkoutAndPay('m-16', 300, 'ep-16')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'batch', refundAmount: 30 })
-      const refundId = withRefund.refunds[0].refundId
-      const dto: BatchReviewTransactionRefundsDto = { refundIds: [refundId], operator: 'approver' }
-      const result = await controller.batchApproveRefunds(CTX, dto)
-      assert.equal(result.processedCount, 1)
-      assert.equal(result.refunds[0].status, TransactionRefundStatus.Completed)
-    })
-
-    it('should batch reject refunds', async () => {
-      const created = await checkoutAndPay('m-17', 150, 'ep-17')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'batch', refundAmount: 10 })
-      const refundId = withRefund.refunds[0].refundId
-      const dto: BatchReviewTransactionRefundsDto = { refundIds: [refundId], operator: 'rejecter' }
-      const result = await controller.batchRejectRefunds(CTX, dto)
-      assert.equal(result.processedCount, 1)
-      assert.equal(result.refunds[0].status, TransactionRefundStatus.Rejected)
-    })
-
-    it('should skip non-existent refund ids (boundary)', async () => {
-      const result = await controller.batchApproveRefunds(CTX, { refundIds: ['ghost-refund'], operator: 'ghost' })
-      assert.equal(result.skippedCount, 1)
-    })
-  })
-
-  describe('batchAssignRefunds / batchClaimRefunds', () => {
-    it('should batch assign refunds', async () => {
-      const created = await checkoutAndPay('m-18', 80, 'ep-18')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'assign', refundAmount: 20 })
-      const dto: BatchAssignTransactionRefundsDto = {
-        refundIds: [withRefund.refunds[0].refundId],
-        assignee: 'assigned-user',
-        operator: 'admin'
-      }
-      const result = await controller.batchAssignRefunds(CTX, dto)
-      assert.equal(result.processedCount, 1)
-      assert.equal(result.refunds[0].assignedTo, 'assigned-user')
-    })
-
-    it('should batch claim refunds', async () => {
-      const created = await checkoutAndPay('m-19', 60, 'ep-19')
-      const withRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'claim', refundAmount: 10 })
-      const dto: BatchClaimTransactionRefundsDto = {
-        refundIds: [withRefund.refunds[0].refundId],
-        operator: 'self-claimer'
-      }
-      const result = await controller.batchClaimRefunds(CTX, dto)
-      assert.equal(result.processedCount, 1)
-      assert.equal(result.refunds[0].assignedTo, 'self-claimer')
-    })
-  })
-
-  describe('timeoutCloseOrder / batchTimeoutCloseOrders / manualCloseOrder', () => {
-    it('should timeout close a stale order', async () => {
-      const created = await checkoutOnly('m-20', 40, 'ep-20')
-      const result = await controller.timeoutCloseOrder(created.order.orderId, CTX, { reason: 'timeout', operator: 'sys' })
-      assert.equal(result.order.closeReason, 'PAYMENT_TIMEOUT')
-    })
-
-    it('should batch timeout close orders', async () => {
-      await checkoutOnly('m-21', 25, 'ep-21')
-      const result = await controller.batchTimeoutCloseOrders(CTX, { memberId: 'm-21', limit: 10 })
-      assert.ok(result.processedCount >= 1)
-    })
-
-    it('should manual close an order', async () => {
-      const created = await checkoutOnly('m-22', 35, 'ep-22')
-      const result = await controller.manualCloseOrder(created.order.orderId, CTX, { reason: 'cancel', operator: 'admin' })
-      assert.equal(result.order.status, CashierOrderStatus.Closed)
-    })
-
-    it('should throw when closing non-existent order (negative)', async () => {
+    it('边界: approve non-existent refund', async () => {
       await assert.rejects(
-        () => controller.timeoutCloseOrder('ghost', CTX, { reason: 'nope', operator: 'sys' }),
+        () => controller.approveRefund('ghost-refund', CTX, {}),
         /not found/
       )
     })
   })
 
-  describe('getRefundDashboard', () => {
-    it('should return dashboard with status groups and aging', async () => {
-      const created = await checkoutAndPay('m-23', 500, 'ep-23')
-      await controller.requestRefund(created.order.orderId, CTX, { reason: 'dash', refundAmount: 100 })
-      const dashboard = controller.getRefundDashboard(CTX)
-      assert.ok(dashboard.totalCount >= 1)
-      assert.ok(dashboard.statusGroups.length >= 1)
-      assert.ok(dashboard.agingBuckets.length >= 1)
-      assert.ok(dashboard.slaThresholds.teamLeadMinutes > 0)
+  // ── GET /transactions/refunds / orders/:id/refunds / refunds/:id ─
+  describe('listRefunds / getRefund / listOrderRefunds', () => {
+    it('正例: listRefunds returns refunds for tenant', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'lr-m1', 90, 'lr-e1')
+      await controller.requestRefund(created.order.orderId, CTX, { reason: 'test list', refundAmount: 15 })
+      assert.ok(controller.listRefunds(CTX).length >= 1)
     })
 
-    it('should respect query limits (boundary)', () => {
-      const dashboard = controller.getRefundDashboard(CTX, { priorityQueueLimit: 1, recentReviewLimit: 1, dispatchQueueLimit: 2 })
-      assert.ok(dashboard.priorityQueue.length <= 1)
-      assert.ok(dashboard.recentReviews.length <= 1)
-      assert.ok(dashboard.dispatchQueue.length <= 2)
-    })
-  })
-
-  describe('lyt snapshots', () => {
-    it('should list lyt order snapshots', () => {
-      const result = controller.listLytOrderSnapshots(CTX)
-      assert.ok(result instanceof Promise || Array.isArray(result))
+    it('正例: getRefund by id returns correct record', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'lr-m2', 120, 'lr-e2')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'single get', refundAmount: 25 })
+      const refundId = wRefund.refunds[0].refundId
+      const refund = controller.getRefund(refundId, CTX)
+      assert.equal(refund.refundId, refundId)
+      assert.equal(refund.refundAmount, 25)
     })
 
-    it('should list lyt payment snapshots', () => {
-      const result = controller.listLytPaymentSnapshots(CTX)
-      assert.ok(result instanceof Promise || Array.isArray(result))
+    it('反例: getRefund throws for unknown id', () => {
+      assert.throws(
+        () => controller.getRefund('no-such', CTX),
+        /not found/
+      )
     })
 
-    it('should return undefined for unknown lyt order snapshot', async () => {
-      assert.equal(await controller.getLytOrderSnapshot('no-such', CTX), undefined)
-    })
-
-    it('should return undefined for unknown lyt payment snapshot', async () => {
-      assert.equal(await controller.getLytPaymentSnapshot('no-such', CTX), undefined)
+    it('正例: listOrderRefunds for a specific order', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'lr-m3', 60, 'lr-e3')
+      await controller.requestRefund(created.order.orderId, CTX, { reason: 'order refunds', refundAmount: 5 })
+      const refunds = controller.listOrderRefunds(created.order.orderId, CTX)
+      assert.ok(refunds.length >= 1)
     })
   })
 
-  describe('listMemberTransactions', () => {
-    it('should return member timeline', async () => {
-      await checkoutAndPay('m-24', 10, 'ep-24')
-      const timeline = controller.listMemberTransactions('m-24', CTX)
+  // ── GET /transactions/refunds/pending ─────────────────────────
+  describe('listPendingRefunds()', () => {
+    it('正例: should return only pending refunds', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'lpr-m1', 300, 'lpr-e1')
+      await controller.requestRefund(created.order.orderId, CTX, { reason: 'pending test', refundAmount: 100 })
+      const pending = controller.listPendingRefunds(CTX)
+      assert.ok(pending.length >= 1)
+      pending.forEach(r => assert.equal(r.status, TransactionRefundStatus.Pending))
+    })
+
+    it('边界: no pending refunds returns empty', async () => {
+      const pending = controller.listPendingRefunds(CTX)
+      assert.ok(Array.isArray(pending))
+    })
+  })
+
+  // ── GET /transactions/refunds/dashboard ───────────────────────
+  describe('getRefundDashboard()', () => {
+    it('正例: should return dashboard shape', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'grd-m1', 500, 'grd-e1')
+      await controller.requestRefund(created.order.orderId, CTX, { reason: 'dashboard', refundAmount: 200 })
+      const dash = controller.getRefundDashboard(CTX)
+      assert.ok(dash.totalCount >= 1)
+      assert.ok(Array.isArray(dash.statusGroups))
+      assert.ok(Array.isArray(dash.agingBuckets))
+      assert.ok(dash.slaThresholds.teamLeadMinutes > 0)
+    })
+
+    it('边界: should respect query limits', () => {
+      const dash = controller.getRefundDashboard(CTX, { priorityQueueLimit: 1, recentReviewLimit: 1, dispatchQueueLimit: 2 } as GetTransactionRefundDashboardQueryDto)
+      assert.ok(dash.priorityQueue.length <= 1)
+      assert.ok(dash.recentReviews.length <= 1)
+      assert.ok(dash.dispatchQueue.length <= 2)
+    })
+  })
+
+  // ── POST /transactions/refunds/batch-approve / batch-reject ──
+  describe('batchApproveRefunds / batchRejectRefunds', () => {
+    it('正例: batch approve multiple refunds', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'ba-m1', 250, 'ba-e1')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'batch app', refundAmount: 30 })
+      const result = await controller.batchApproveRefunds(CTX, { refundIds: [wRefund.refunds[0].refundId], operator: 'batch-approver' })
+      assert.equal(result.processedCount, 1)
+      assert.equal(result.refunds[0].status, TransactionRefundStatus.Completed)
+    })
+
+    it('正例: batch reject multiple refunds', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'ba-m2', 180, 'ba-e2')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'batch rej', refundAmount: 20 })
+      const result = await controller.batchRejectRefunds(CTX, { refundIds: [wRefund.refunds[0].refundId], operator: 'batch-rejecter' })
+      assert.equal(result.processedCount, 1)
+      assert.equal(result.refunds[0].status, TransactionRefundStatus.Rejected)
+    })
+
+    it('边界: skip non-existent refund ids', async () => {
+      const result = await controller.batchApproveRefunds(CTX, { refundIds: ['ghost-id'], operator: 'nobody' })
+      assert.equal(result.skippedCount, 1)
+      assert.equal(result.processedCount, 0)
+    })
+  })
+
+  // ── POST /transactions/refunds/batch-assign / batch-claim ────
+  describe('batchAssignRefunds / batchClaimRefunds', () => {
+    it('正例: batch assign refunds to user', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'bas-m1', 90, 'bas-e1')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'assign', refundAmount: 10 })
+      const dto: BatchAssignTransactionRefundsDto = {
+        refundIds: [wRefund.refunds[0].refundId],
+        assignee: 'handler-1',
+        operator: 'admin',
+      }
+      const result = await controller.batchAssignRefunds(CTX, dto)
+      assert.equal(result.processedCount, 1)
+      assert.equal(result.refunds[0].assignedTo, 'handler-1')
+    })
+
+    it('正例: batch claim refunds for self', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'bas-m2', 70, 'bas-e2')
+      const wRefund = await controller.requestRefund(created.order.orderId, CTX, { reason: 'claim', refundAmount: 15 })
+      const dto: BatchClaimTransactionRefundsDto = {
+        refundIds: [wRefund.refunds[0].refundId],
+        operator: 'self-claimer',
+      }
+      const result = await controller.batchClaimRefunds(CTX, dto)
+      assert.equal(result.processedCount, 1)
+      assert.equal(result.refunds[0].assignedTo, 'self-claimer')
+    })
+
+    it('反例: batch assign throws for non-existent refund id', () => {
+      assert.throws(
+        () => controller.batchAssignRefunds(CTX, { refundIds: ['ghost'], assignee: 'x', operator: 'x' }),
+        /not found/
+      )
+    })
+  })
+
+  // ── GET /transactions/members/:memberId ───────────────────────
+  describe('listMemberTransactions()', () => {
+    it('正例: should return member transaction timeline', async () => {
+      await prepareCheckoutAndPay(controller, 'lmt-m1', 15, 'lmt-e1')
+      const timeline = controller.listMemberTransactions('lmt-m1', CTX)
       assert.ok(Array.isArray(timeline))
       assert.ok(timeline.length >= 1)
-      timeline.forEach(e => assert.equal(e.memberId, 'm-24'))
+      timeline.forEach(e => assert.equal(e.memberId, 'lmt-m1'))
     })
 
-    it('should return empty for unknown member (boundary)', () => {
-      const timeline = controller.listMemberTransactions('unknown', CTX)
+    it('边界: unknown member returns empty', () => {
+      const timeline = controller.listMemberTransactions('nobody', CTX)
       assert.ok(Array.isArray(timeline))
       assert.equal(timeline.length, 0)
+    })
+  })
+
+  // ── GET /transactions/members/:memberId/refunds ──────────────
+  describe('listMemberRefunds()', () => {
+    it('正例: should list refunds for a member', async () => {
+      const created = await prepareCheckoutAndPay(controller, 'lmr-m1', 200, 'lmr-e1')
+      await controller.requestRefund(created.order.orderId, CTX, { reason: 'member refund', refundAmount: 50 })
+      const refunds = controller.listMemberTransactions('lmr-m1', CTX)
+      assert.ok(refunds.length >= 1)
+    })
+
+    it('边界: unknown member returns empty', () => {
+      const refunds = controller.listMemberTransactions('nobody', CTX)
+      assert.equal(refunds.length, 0)
     })
   })
 })

@@ -1,184 +1,227 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { CostTrackerService, InMemoryCostStorage } from './cost-tracker.service'
-import type { UsageMetrics, LLMRequest, LLMResponse } from './types'
+import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
+/**
+ * cost-tracker.service.spec.ts · 成本追踪单元测试 (Phase-19 TD-001)
+ *
+ * 覆盖范围:
+ *   - 月度预算闸门 (硬上限 / 软上限 / 预警)
+ *   - Token 计量 + 累加
+ *   - Prompt 缓存命中 / 失效
+ *   - 报表生成
+ */
 
-function makeMockConfig(overrides: Record<string, unknown> = {}) {
-  return {
-    defaultProvider: 'claude',
-    monthlyHardLimitUsd: 1000,
-    monthlySoftLimitUsd: 800,
-    alertThreshold: 0.8,
-    enablePromptCache: true,
-    cacheTtlSeconds: 86400,
-    claude: { apiKey: 'sk-test', baseUrl: 'https://api.anthropic.com', model: 'claude-sonnet-4-6', timeoutMs: 60000, maxRetries: 3 },
-    openai: { apiKey: 'sk-test', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', timeoutMs: 30000, maxRetries: 3 },
-    deepseek: { apiKey: 'sk-test', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat', timeoutMs: 60000, maxRetries: 3 },
-    fallbackChain: ['deepseek', 'openai', 'claude'],
-    ...overrides,
-  } as any
+import {
+  CostTrackerService,
+  InMemoryCostStorage,
+} from './cost-tracker.service'
+import {
+  BudgetExceededError,
+  type LLMResponse,
+  type UsageMetrics,
+} from './types'
+
+type CostTrackerConfig = ConstructorParameters<typeof CostTrackerService>[0]
+
+// ─── Fixture ───────────────────────────────────────────────────────────
+
+const mockConfig = {
+  defaultProvider: 'claude' as const,
+  monthlyHardLimitUsd: 100,
+  monthlySoftLimitUsd: 80,
+  alertThreshold: 0.8,
+  enablePromptCache: true,
+  cacheTtlSeconds: 60,
+  claude: { apiKey: '', baseUrl: '', model: 'claude-sonnet-4-6', timeoutMs: 60000, maxRetries: 3 },
+  openai: { apiKey: '', baseUrl: '', model: 'gpt-4o-mini', timeoutMs: 30000, maxRetries: 3 },
+  fallbackChain: ['openai', 'claude'] as const,
 }
 
+const fakeConfig = {
+  ...mockConfig,
+  get: () => mockConfig,
+} as unknown as CostTrackerConfig
+
+const usage = (provider: 'claude' | 'openai', cost: number): UsageMetrics => ({
+  inputTokens: 1000,
+  outputTokens: 500,
+  totalTokens: 1500,
+  costUsd: cost,
+  provider,
+  model: 'test',
+  timestamp: new Date().toISOString(),
+})
+
+const fakeResponse = (content = 'hello'): LLMResponse => ({
+  content,
+  provider: 'claude',
+  model: 'claude-sonnet-4-6',
+  usage: usage('claude', 0.01),
+  latencyMs: 100,
+  cacheHit: false,
+  finishReason: 'stop',
+})
+
+// ─── Test ──────────────────────────────────────────────────────────────
+
 describe('CostTrackerService', () => {
+  let tracker: CostTrackerService
+  let storage: InMemoryCostStorage
+
+  beforeEach(() => {
+    storage = new InMemoryCostStorage()
+    tracker = new CostTrackerService(fakeConfig, storage)
+  })
+
+  // ─── 月度预算 ─────────────────────────────────────────────────────
+
+  describe('checkBudget', () => {
+    it('未达软上限时允许继续', () => {
+      const r = tracker.checkBudget('claude')
+      expect(r.allowed).toBe(true)
+      expect(r.fallback).toBeUndefined()
+    })
+
+    it('超过硬上限时抛出 BudgetExceededError', () => {
+      storage.incrementMonthlyCost(tracker.currentMonthKey(), 100)
+      expect(() => tracker.checkBudget('claude')).toThrow(BudgetExceededError)
+    })
+
+    it('达到软上限时返回 fallback', () => {
+      storage.incrementMonthlyCost(tracker.currentMonthKey(), 80)
+      const r = tracker.checkBudget('claude')
+      expect(r.allowed).toBe(false)
+      expect(r.fallback).toBe('openai')
+    })
+
+    it('预警阈值 (80%) 时仍允许但 log warn', () => {
+      storage.incrementMonthlyCost(tracker.currentMonthKey(), 85)
+      const r = tracker.checkBudget('claude')
+      expect(r.allowed).toBe(false)
+    })
+  })
+
+  // ─── Token 计量 ─────────────────────────────────────────────────
+
+  describe('recordUsage', () => {
+    it('累加月度成本', () => {
+      tracker.recordUsage(usage('claude', 10))
+      tracker.recordUsage(usage('claude', 20))
+      expect(tracker.currentMonthCost()).toBeCloseTo(30, 5)
+    })
+
+    it('记录后 monthlyCost 同步', () => {
+      tracker.recordUsage(usage('claude', 50))
+      const result = tracker.recordUsage(usage('claude', 25))
+      expect(result.monthlyCost).toBeCloseTo(75, 5)
+    })
+
+    it('不同 provider 累加到同一月度', () => {
+      tracker.recordUsage(usage('claude', 30))
+      tracker.recordUsage(usage('openai', 40))
+      expect(tracker.currentMonthCost()).toBeCloseTo(70, 5)
+    })
+  })
+
+  // ─── Prompt 缓存 ────────────────────────────────────────────────
+
+  describe('prompt cache', () => {
+    it('第一次查询未命中', () => {
+      const r = tracker.checkCache({ userPrompt: 'q', cacheKey: 'k1' })
+      expect(r.hit).toBe(false)
+    })
+
+    it('写入后命中', () => {
+      tracker.setCache({ userPrompt: 'q', cacheKey: 'k1' }, fakeResponse('cached'))
+      const r = tracker.checkCache({ userPrompt: 'q', cacheKey: 'k1' })
+      expect(r.hit).toBe(true)
+      expect(r.response?.content).toBe('cached')
+    })
+
+    it('不同 cacheKey 独立', () => {
+      tracker.setCache({ userPrompt: 'q', cacheKey: 'k1' }, fakeResponse('a'))
+      tracker.setCache({ userPrompt: 'q', cacheKey: 'k2' }, fakeResponse('b'))
+      expect(tracker.checkCache({ userPrompt: 'q', cacheKey: 'k1' }).response?.content).toBe('a')
+      expect(tracker.checkCache({ userPrompt: 'q', cacheKey: 'k2' }).response?.content).toBe('b')
+    })
+
+    it('禁用缓存时不写入', () => {
+      const noCacheCfg = { ...mockConfig, enablePromptCache: false }
+      const noCacheCfgWrapped = { ...noCacheCfg, get: () => noCacheCfg } as unknown as CostTrackerConfig
+      const noCacheTracker = new CostTrackerService(noCacheCfgWrapped, storage)
+      noCacheTracker.setCache({ userPrompt: 'q', cacheKey: 'k1' }, fakeResponse())
+      expect(noCacheTracker.checkCache({ userPrompt: 'q', cacheKey: 'k1' }).hit).toBe(false)
+    })
+
+    it('无 cacheKey 不写入', () => {
+      tracker.setCache({ userPrompt: 'q' }, fakeResponse())
+      expect(storage.cacheSize).toBe(0)
+    })
+
+    it('error finishReason 不缓存', () => {
+      tracker.setCache({ userPrompt: 'q', cacheKey: 'k1' }, {
+        ...fakeResponse(),
+        finishReason: 'error',
+      })
+      expect(storage.cacheSize).toBe(0)
+    })
+
+    it('TTL 过期后不命中', async () => {
+      const shortTtlCfg = { ...mockConfig, cacheTtlSeconds: 0 }
+      const shortTtlCfgWrapped = { ...shortTtlCfg, get: () => shortTtlCfg } as unknown as CostTrackerConfig
+      const shortTracker = new CostTrackerService(shortTtlCfgWrapped, storage)
+      shortTracker.setCache({ userPrompt: 'q', cacheKey: 'k1' }, fakeResponse())
+      await new Promise((r) => setTimeout(r, 10))
+      expect(shortTracker.checkCache({ userPrompt: 'q', cacheKey: 'k1' }).hit).toBe(false)
+    })
+  })
+
+  // ─── 报表 ────────────────────────────────────────────────────────
+
+  describe('snapshot', () => {
+    it('返回完整月度状态', () => {
+      tracker.recordUsage(usage('claude', 50))
+      const s = tracker.snapshot()
+      expect(s.costUsd).toBeCloseTo(50, 5)
+      expect(s.hardLimitUsd).toBe(100)
+      expect(s.softLimitUsd).toBe(80)
+      expect(s.utilizationPct).toBeCloseTo(50, 5)
+      expect(s.overSoftLimit).toBe(false)
+      expect(s.overHardLimit).toBe(false)
+    })
+
+    it('超过软上限时标记', () => {
+      tracker.recordUsage(usage('claude', 85))
+      const s = tracker.snapshot()
+      expect(s.overSoftLimit).toBe(true)
+      expect(s.overHardLimit).toBe(false)
+    })
+
+    it('超过硬上限时标记', () => {
+      tracker.recordUsage(usage('claude', 105))
+      const s = tracker.snapshot()
+      expect(s.overHardLimit).toBe(true)
+    })
+
+    it('monthKey 格式 YYYY-MM', () => {
+      const s = tracker.snapshot()
+      expect(s.monthKey).toMatch(/^\d{4}-\d{2}$/)
+    })
+  })
+
+  // ─── InMemory Storage ────────────────────────────────────────────
+
   describe('InMemoryCostStorage', () => {
-    let storage: InMemoryCostStorage
-    beforeEach(() => { storage = new InMemoryCostStorage() })
-
-    it('should start with zero monthly cost', () => {
-      expect(storage.getMonthlyCost('2026-07')).toBe(0)
-    })
-
-    it('should increment monthly cost correctly', () => {
-      storage.incrementMonthlyCost('2026-07', 10)
-      expect(storage.getMonthlyCost('2026-07')).toBe(10)
-      storage.incrementMonthlyCost('2026-07', 5.5)
-      expect(storage.getMonthlyCost('2026-07')).toBe(15.5)
-    })
-
-    it('should isolate different months', () => {
-      storage.incrementMonthlyCost('2026-07', 100)
-      storage.incrementMonthlyCost('2026-08', 50)
-      expect(storage.getMonthlyCost('2026-07')).toBe(100)
-      expect(storage.getMonthlyCost('2026-08')).toBe(50)
-    })
-
-    it('should cache and retrieve entries', () => {
-      const response: LLMResponse = { content: 'test', provider: 'claude', model: 'test', usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15, costUsd: 0.01, provider: 'claude', model: 'test', timestamp: '2026-07-20T00:00:00Z' }, latencyMs: 100, cacheHit: false }
-      storage.setCache('key-1', response, 3600)
-      const result = storage.getCacheHit('key-1')
-      expect(result.hit).toBe(true)
-      expect(result.response!.content).toBe('test')
-    })
-
-    it('should expire cache entries by TTL', () => {
-      const response: LLMResponse = { content: 'expired', provider: 'claude', model: 'test', usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, costUsd: 0, provider: 'claude', model: 'test', timestamp: '' }, latencyMs: 0, cacheHit: false }
-      storage.setCache('key-exp', response, 0)
-      const result = storage.getCacheHit('key-exp')
-      expect(result.hit).toBe(false)
-    })
-
-    it('should return cache miss for unknown key', () => {
-      const result = storage.getCacheHit('nonexistent')
-      expect(result.hit).toBe(false)
-    })
-
-    it('should reset all state', () => {
-      storage.incrementMonthlyCost('2026-07', 50)
-      storage.setCache('k', { content: 'x', provider: 'claude', model: 'x', usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, costUsd: 0, provider: 'claude', model: 'x', timestamp: '' }, latencyMs: 0, cacheHit: false }, 3600)
+    it('reset() 清空所有数据', () => {
+      storage.incrementMonthlyCost('2026-06', 50)
+      storage.setCache('k1', fakeResponse(), 60)
       storage.reset()
-      expect(storage.getMonthlyCost('2026-07')).toBe(0)
+      expect(storage.getMonthlyCost('2026-06')).toBe(0)
       expect(storage.cacheSize).toBe(0)
     })
 
-    it('should track month keys correctly', () => {
-      storage.incrementMonthlyCost('2026-07', 10)
-      storage.incrementMonthlyCost('2026-08', 20)
-      expect(storage.monthKeys.sort()).toEqual(['2026-07', '2026-08'])
-    })
-  })
-
-  describe('CostTrackerService — budget', () => {
-    it('should allow usage within budget', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000 }), storage)
-      const result = service.checkBudget('claude')
-      expect(result.allowed).toBe(true)
-    })
-
-    it('should throw BudgetExceededError when over hard limit', () => {
-      const storage = new InMemoryCostStorage()
-      storage.incrementMonthlyCost('2026-07', 1000)
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000 }), storage)
-      expect(() => service.checkBudget('claude')).toThrow('BudgetExceededError')
-    })
-
-    it('should return fallback provider when over soft limit', () => {
-      const storage = new InMemoryCostStorage()
-      storage.incrementMonthlyCost('2026-07', 800)
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000, monthlySoftLimitUsd: 800 }), storage)
-      const result = service.checkBudget('claude')
-      expect(result.allowed).toBe(false)
-      expect(result.reason).toBe('soft-limit-hit')
-      expect(result.fallback).toBe('openai')
-    })
-
-    it('should format current month key properly', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000 }), storage)
-      const key = service.currentMonthKey()
-      expect(key).toMatch(/^\d{4}-\d{2}$/)
-    })
-
-    it('should track monthly cost accurately', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000 }), storage)
-      const usage: UsageMetrics = { inputTokens: 1000, outputTokens: 500, totalTokens: 1500, costUsd: 0.01, provider: 'claude', model: 'claude-sonnet-4-6', timestamp: new Date().toISOString() }
-      service.recordUsage(usage)
-      expect(storage.getMonthlyCost(service.currentMonthKey())).toBe(0.01)
-    })
-  })
-
-  describe('CostTrackerService — cache', () => {
-    it('should check cache and return hit if available', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ enablePromptCache: true }), storage)
-      const response: LLMResponse = { content: 'cached', provider: 'claude', model: 'test', usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, costUsd: 0, provider: 'claude', model: 'test', timestamp: '' }, latencyMs: 0, cacheHit: false }
-      storage.setCache('ckey', response, 3600)
-      const result = service.checkCache({ userPrompt: 'hello', cacheKey: 'ckey' } as LLMRequest)
-      expect(result.hit).toBe(true)
-      expect(result.response!.content).toBe('cached')
-    })
-
-    it('should miss cache when disabled', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ enablePromptCache: false }), storage)
-      const result = service.checkCache({ userPrompt: 'hello', cacheKey: 'some-key' } as LLMRequest)
-      expect(result.hit).toBe(false)
-    })
-
-    it('should miss cache when no cacheKey', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ enablePromptCache: true }), storage)
-      const result = service.checkCache({ userPrompt: 'hello' } as LLMRequest)
-      expect(result.hit).toBe(false)
-    })
-
-    it('should set cache entries', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ enablePromptCache: true }), storage)
-      const response: LLMResponse = { content: 'new', provider: 'claude', model: 'test', usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, costUsd: 0, provider: 'claude', model: 'test', timestamp: '' }, latencyMs: 0, cacheHit: false, finishReason: 'stop' }
-      service.setCache({ userPrompt: 'hi', cacheKey: 'ck2' } as LLMRequest, response)
-      const hit = storage.getCacheHit('ck2')
-      expect(hit.hit).toBe(true)
-    })
-
-    it('should not cache error responses', () => {
-      const storage = new InMemoryCostStorage()
-      const service = new CostTrackerService(makeMockConfig({ enablePromptCache: true }), storage)
-      const errorResponse: LLMResponse = { content: 'error', provider: 'claude', model: 'test', usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, costUsd: 0, provider: 'claude', model: 'test', timestamp: '' }, latencyMs: 0, cacheHit: false, finishReason: 'error' }
-      service.setCache({ userPrompt: 'hi', cacheKey: 'ck3' } as LLMRequest, errorResponse)
-      expect(storage.cacheSize).toBe(0)
-    })
-  })
-
-  describe('CostTrackerService — snapshot', () => {
-    it('should return snapshot with utilization percentage', () => {
-      const storage = new InMemoryCostStorage()
-      storage.incrementMonthlyCost('2026-07', 100)
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000 }), storage)
-      const snap = service.snapshot()
-      expect(snap.costUsd).toBe(100)
-      expect(snap.utilizationPct).toBe(10)
-      expect(snap.overSoftLimit).toBe(false)
-      expect(snap.overHardLimit).toBe(false)
-    })
-
-    it('should indicate over soft/hard limits', () => {
-      const storage = new InMemoryCostStorage()
-      storage.incrementMonthlyCost('2026-07', 900)
-      const service = new CostTrackerService(makeMockConfig({ monthlyHardLimitUsd: 1000, monthlySoftLimitUsd: 800 }), storage)
-      const snap = service.snapshot()
-      expect(snap.overSoftLimit).toBe(true)
-      expect(snap.overHardLimit).toBe(false)
+    it('缓存大小统计', () => {
+      storage.setCache('k1', fakeResponse(), 60)
+      storage.setCache('k2', fakeResponse(), 60)
+      expect(storage.cacheSize).toBe(2)
     })
   })
 })

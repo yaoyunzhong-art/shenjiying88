@@ -1,277 +1,445 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * Phase 98 CDN Service Tests (V10 Sprint 2 Day 29)
+ * cdn.service.spec.ts — CDN 缓存 Service 深层单元测试
  *
- * 15 tests 覆盖:
- * - URL pattern 匹配 (3)
- * - Cache-Control 头构造 (2)
- * - 规则 CRUD (2)
- * - 边缘节点管理 (2)
- * - 主动失效 (2)
- * - 命中/未命中统计 (2)
- * - 跨租户隔离 (1)
- * - 工具函数 (1)
+ * 覆盖：CdnCacheService
+ *  - createRule:          正例（创建/合法pattern）/ 反例（空pattern/非法pattern）
+ *  - getRule/updateRule/deleteRule: 正例/反例（不存在）
+ *  - listRules:           正例（按优先级排序）
+ *  - matchRule:           正例（匹配URL/匹配method）/ 边界（不匹配/disabled规则）
+ *  - getCacheControlForUrl: 正例/边界（null）
+ *  - 边缘节点管理:        正例（add/list/remove/heartbeat）/ 反例（缺少字段/不存在）
+ *  - invalidate:          正例（url模式/pattern模式/指定节点）/ 边界（空）
+ *  - 缓存命中统计:        正例（hit/miss/hitRate）/ 边界（0命中）
+ *  - getEdgeNodeStats:    正例
+ *  - 测试辅助:            正例（add/remove/list entries）
+ *
+ * 全部内联 mock。≥ 30 项测试。
  */
 
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { CdnCacheService } from './cdn.service'
-import {
-  matchUrl, compilePattern, buildCacheControlHeader,
-  buildCacheKey, contentFingerprint, generateETag,
-} from './cdn.entity'
-import { runWithTenant } from '../../common/context/tenant-context'
+import type { CreateRuleDto, UpdateRuleDto, InvalidateDto, AddEdgeNodeDto } from './cdn.dto'
 
-const TENANT_A = {
-  tenantId: 'tenant-A', storeId: 'store-001', userId: 'admin-A',
-  role: 'tenant_admin' as const,
-}
-const TENANT_B = {
-  tenantId: 'tenant-B', storeId: 'store-002', userId: 'admin-B',
-  role: 'tenant_admin' as const,
-}
+// ═══════════════════════════════════════════════════════════════
+// Mock 环境 — cdn.service.ts 内部引用 requireTenantContext
+// ═══════════════════════════════════════════════════════════════
 
-const SHARED_CDN = new CdnCacheService()
+// TenantContext mock — 必须在 import cdn.service 前设置
+const mockTenantContext = { tenantId: 'tenant_test_001', userId: 'user_test' }
 
-describe('Phase 98 CDN (V10 Sprint 2 Day 29)', () => {
-  // ============ 1. URL Pattern (3) ============
-  describe('1. URL pattern 匹配', () => {
-    it('精确匹配', () => {
-      const r = matchUrl('/api/reports', '/api/reports')
-      assert.equal(r.match, true)
+// 模拟 tenant-context 模块，避免 Jest/Nest 的 DI 依赖
+import * as tcModule from '../../common/context/tenant-context'
+import { vi } from 'vitest'
+
+vi.spyOn(tcModule, 'requireTenantContext').mockReturnValue(mockTenantContext as never)
+
+// ═══════════════════════════════════════════════════════════════
+// 测试套件
+// ═══════════════════════════════════════════════════════════════
+
+describe('CdnCacheService', () => {
+  let service: CdnCacheService
+
+  beforeEach(() => {
+    service = new CdnCacheService()
+  })
+
+  // ── createRule ─────────────────────────────────────────────
+  describe('createRule', () => {
+    it('✅ 正例: 创建带 pattern 的规则', async () => {
+      const rule = await service.createRule({
+        name: 'api-cache',
+        urlPattern: '/api/*',
+        maxAge: 3600,
+        strategy: 'public',
+        priority: 0,
+        enabled: true,
+      } as CreateRuleDto)
+      expect(rule.id).toBeDefined()
+      expect(rule.tenantId).toBe('tenant_test_001')
+      expect(rule.name).toBe('api-cache')
+      expect(rule.createdAt).toBeDefined()
     })
 
-    it(':param 提取参数', () => {
-      const r = matchUrl('/api/reports/:id', '/api/reports/rpt-001')
-      assert.equal(r.match, true)
-      assert.equal(r.params.id, 'rpt-001')
+    it('✅ 正例: 创建规则含默认 methods', async () => {
+      const rule = await service.createRule({
+        name: 'static',
+        urlPattern: '/static/*',
+      } as CreateRuleDto)
+      expect(rule.methods).toContain('GET')
+      expect(rule.methods).toContain('HEAD')
+      expect(rule.enableETag).toBe(true)
     })
 
-    it('* 通配符 + 多参数', () => {
-      const r = matchUrl('/api/stores/:storeId/reports/*', '/api/stores/s001/reports/2026/06')
-      assert.equal(r.match, true)
-      assert.equal(r.params.storeId, 's001')
+    it('❌ 反例: 空 urlPattern 抛 BadRequest', async () => {
+      await expect(service.createRule({
+        name: 'bad',
+        urlPattern: '',
+      } as CreateRuleDto)).rejects.toThrow('urlPattern 必填')
+    })
+
+    it('🔲 边界: 超长 priority 规则仍正常创建', async () => {
+      const rule = await service.createRule({
+        name: 'max-priority',
+        urlPattern: '/max/*',
+        priority: 999999,
+      } as CreateRuleDto)
+      expect(rule.priority).toBe(999999)
     })
   })
 
-  // ============ 2. Cache-Control (2) ============
-  describe('2. Cache-Control 头构造', () => {
-    it('public + max-age + SWR', () => {
-      const rule = makeRule({ strategy: 'public', maxAge: 3600, staleWhileRevalidate: 86400 })
-      const header = buildCacheControlHeader(rule)
-      assert.ok(header.includes('public'))
-      assert.ok(header.includes('max-age=3600'))
-      assert.ok(header.includes('stale-while-revalidate=86400'))
+  // ── getRule / updateRule / deleteRule ──────────────────────
+  describe('rule CRUD', () => {
+    let ruleId: string
+
+    beforeEach(async () => {
+      const rule = await service.createRule({
+        name: 'test-rule',
+        urlPattern: '/test/*',
+      } as CreateRuleDto)
+      ruleId = rule.id
     })
 
-    it('immutable 不带 max-age', () => {
-      const rule = makeRule({ strategy: 'immutable', maxAge: 31536000 })
-      const header = buildCacheControlHeader(rule)
-      assert.ok(header.includes('immutable'))
-      assert.ok(header.includes('max-age=31536000'))
+    it('✅ 正例: getRule 获取规则', async () => {
+      const rule = await service.getRule(ruleId)
+      expect(rule.name).toBe('test-rule')
     })
 
-    it('no-store 不带 max-age', () => {
-      const rule = makeRule({ strategy: 'no-store', maxAge: 0 })
-      const header = buildCacheControlHeader(rule)
-      assert.ok(header.includes('no-store'))
-      assert.ok(!header.includes('max-age'))
-    })
-  })
-
-  // ============ 3. 规则 CRUD (2) ============
-  describe('3. 规则 CRUD', () => {
-    it('创建规则 → 默认值 + 启用', async () => {
-      const rule = await runWithTenant(TENANT_A, async () =>
-        SHARED_CDN.createRule({
-          name: 'reports-cache',
-          urlPattern: '/api/reports/:id',
-          maxAge: 600,
-          staleWhileRevalidate: 3600,
-        }),
-      )
-      assert.equal(rule.strategy, 'public')
-      assert.equal(rule.maxAge, 600)
-      assert.equal(rule.enableGzip, true)
-      assert.equal(rule.enabled, true)
+    it('❌ 反例: getRule 不存在的 ID 抛 NotFound', async () => {
+      await expect(service.getRule('nonexistent')).rejects.toThrow('不存在')
     })
 
-    it('非法 pattern 被拒', async () => {
-      await assert.rejects(
-        () => runWithTenant(TENANT_A, async () =>
-          SHARED_CDN.createRule({ name: 'bad', urlPattern: '' }),
-        ),
-        /urlPattern 必填/,
-      )
+    it('✅ 正例: updateRule 更新字段', async () => {
+      const updated = await service.updateRule(ruleId, { maxAge: 7200 } as UpdateRuleDto)
+      expect(updated.maxAge).toBe(7200)
+      expect(updated.updatedAt).toBeDefined()
+    })
+
+    it('✅ 正例: deleteRule 后 list 为空', async () => {
+      await service.deleteRule(ruleId)
+      const list = await service.listRules()
+      expect(list).toHaveLength(0)
+    })
+
+    it('❌ 反例: deleteRule 不存在抛 NotFound', async () => {
+      await expect(service.deleteRule('nonexistent')).rejects.toThrow('不存在')
     })
   })
 
-  // ============ 4. URL 匹配 (1) ============
-  describe('4. URL 匹配', () => {
-    it('按优先级匹配最具体的规则', async () => {
-      // 添加两个规则
-      await runWithTenant(TENANT_A, async () =>
-        SHARED_CDN.createRule({
-          name: 'fallback-api',
-          urlPattern: '/api/*',
-          priority: 1,
-        }),
-      )
-      await runWithTenant(TENANT_A, async () =>
-        SHARED_CDN.createRule({
-          name: 'specific-reports',
-          urlPattern: '/api/reports/:id',
-          priority: 10,
-        }),
-      )
-      const rule = await runWithTenant(TENANT_A, async () =>
-        SHARED_CDN.matchRule('/api/reports/rpt-001'),
-      )
-      assert.ok(rule)
-      assert.equal(rule!.name, 'specific-reports')
+  // ── listRules ──────────────────────────────────────────────
+  describe('listRules', () => {
+    it('✅ 正例: 按优先级倒序排列', async () => {
+      await service.createRule({ name: 'low', urlPattern: '/low/*', priority: 0 } as CreateRuleDto)
+      await service.createRule({ name: 'high', urlPattern: '/high/*', priority: 100 } as CreateRuleDto)
+      const list = await service.listRules()
+      expect(list[0].priority).toBe(100)
+      expect(list[1].priority).toBe(0)
     })
   })
 
-  // ============ 5. 边缘节点 (2) ============
-  describe('5. 边缘节点管理', () => {
-    it('添加 + 心跳更新', async () => {
-      const node = await SHARED_CDN.addEdgeNode({
-        name: 'edge-cn-shanghai-01',
-        region: 'cn-shanghai',
-        endpoint: 'https://edge.shanghai.shenjiying88.com',
-        capacityBytes: 10 * 1024 * 1024 * 1024,
-      })
-      assert.equal(node.status, 'online')
-
-      await SHARED_CDN.recordHeartbeat(node.id, 0.95, 12.5, 1024 * 1024 * 100)
-      const updated = await SHARED_CDN.listEdgeNodes()
-      const target = updated.find((n) => n.id === node.id)!
-      assert.equal(target.hitRate, 0.95)
-      assert.equal(target.avgLatencyMs, 12.5)
-      assert.equal(target.usedBytes, 1024 * 1024 * 100)
+  // ── matchRule ──────────────────────────────────────────────
+  describe('matchRule', () => {
+    beforeEach(async () => {
+      await service.createRule({ name: 'api', urlPattern: '/api/*', priority: 10 } as CreateRuleDto)
+      await service.createRule({ name: 'static', urlPattern: '/static/*', priority: 5 } as CreateRuleDto)
     })
 
-    it('nodeStats 聚合', async () => {
-      const stats = SHARED_CDN.getEdgeNodeStats()
-      assert.ok(stats.totalNodes >= 1)
-      assert.ok(stats.onlineNodes >= 1)
-      assert.ok(stats.totalCapacityBytes > 0)
+    it('✅ 正例: 匹配 /api/orders', async () => {
+      const rule = await service.matchRule('/api/orders')
+      expect(rule).not.toBeNull()
+      expect(rule!.name).toBe('api')
+    })
+
+    it('✅ 正例: 匹配指定 method', async () => {
+      const rule = await service.matchRule('/api/orders', 'GET')
+      expect(rule).not.toBeNull()
+    })
+
+    it('🔲 边界: 不匹配规则返回 null', async () => {
+      const rule = await service.matchRule('/not-cached/page')
+      expect(rule).toBeNull()
     })
   })
 
-  // ============ 6. 主动失效 (2) ============
-  describe('6. 主动失效', () => {
-    it('URL 精确失效', async () => {
-      // 添加一些测试缓存条目
-      SHARED_CDN.addCacheEntryForTesting({
-        key: '/api/reports/rpt-001', ruleId: 'r1', edgeNodeId: 'e1',
-        url: '/api/reports/rpt-001', statusCode: 200, sizeBytes: 1024,
-        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0, ttl: 3600, nodeName: "edge-test",
-      })
-      SHARED_CDN.addCacheEntryForTesting({
-        key: '/api/reports/rpt-002', ruleId: 'r1', edgeNodeId: 'e1',
-        url: '/api/reports/rpt-002', statusCode: 200, sizeBytes: 1024,
-        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0, ttl: 3600, nodeName: "edge-test",
-      })
-      const inv = await runWithTenant(TENANT_A, async () =>
-        SHARED_CDN.invalidate({ mode: 'url', target: '/api/reports/rpt-001' }),
-      )
-      assert.equal(inv.affectedEntries, 1)
-      assert.equal(inv.status, 'completed')
-      const remaining = SHARED_CDN.listCacheEntriesForTesting().map((e) => e.url)
-      assert.ok(!remaining.includes('/api/reports/rpt-001'))
-      assert.ok(remaining.includes('/api/reports/rpt-002'))
+  // ── getCacheControlForUrl ──────────────────────────────────
+  describe('getCacheControlForUrl', () => {
+    beforeEach(async () => {
+      await service.createRule({
+        name: 'api',
+        urlPattern: '/api/*',
+        maxAge: 3600,
+        strategy: 'public',
+      } as CreateRuleDto)
     })
 
-    it('pattern 失效 → 影响多个', async () => {
-      SHARED_CDN.addCacheEntryForTesting({
-        key: '/api/stores/s001/reports', ruleId: 'r1', edgeNodeId: 'e1',
-        url: '/api/stores/s001/reports', statusCode: 200, sizeBytes: 100,
-        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0, ttl: 3600, nodeName: "edge-test",
-      })
-      SHARED_CDN.addCacheEntryForTesting({
-        key: '/api/stores/s001/insights', ruleId: 'r1', edgeNodeId: 'e1',
-        url: '/api/stores/s001/insights', statusCode: 200, sizeBytes: 100,
-        cachedAt: Date.now(), expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
-        hitCount: 0, ttl: 3600, nodeName: "edge-test",
-      })
-      const inv = await runWithTenant(TENANT_A, async () =>
-        SHARED_CDN.invalidate({ mode: 'pattern', target: '/api/stores/s001/*' }),
-      )
-      assert.equal(inv.affectedEntries, 2)
+    it('✅ 正例: 返回 Cache-Control 头', async () => {
+      const header = await service.getCacheControlForUrl('/api/orders')
+      expect(header).toContain('max-age=3600')
+      expect(header).toContain('public')
+    })
+
+    it('🔲 边界: 不匹配 URL 返回 null', async () => {
+      const header = await service.getCacheControlForUrl('/no-rule')
+      expect(header).toBeNull()
     })
   })
 
-  // ============ 7. 命中率 (2) ============
-  describe('7. 命中率统计', () => {
-    it('hit + miss → hitRate 0.5', () => {
-      SHARED_CDN.recordHit('tenant-test-1')
-      SHARED_CDN.recordMiss('tenant-test-1')
-      assert.equal(SHARED_CDN.getHitRate('tenant-test-1'), 0.5)
+  // ── 边缘节点管理 ────────────────────────────────────────────
+  describe('edge node management', () => {
+    it('✅ 正例: addEdgeNode', async () => {
+      const node = await service.addEdgeNode({
+        name: 'cn-beijing-1',
+        region: 'cn-beijing',
+        endpoint: 'https://beijing1.example.com',
+        capacityBytes: 1_000_000_000,
+      } as AddEdgeNodeDto)
+      expect(node.id).toBeDefined()
+      expect(node.status).toBe('online')
+      expect(node.usedBytes).toBe(0)
     })
 
-    it('全 hit → 1.0', () => {
-      SHARED_CDN.recordHit('tenant-test-2')
-      SHARED_CDN.recordHit('tenant-test-2')
-      assert.equal(SHARED_CDN.getHitRate('tenant-test-2'), 1)
+    it('❌ 反例: 缺少必填字段抛 BadRequest', async () => {
+      await expect(service.addEdgeNode({
+        name: 'bad',
+      } as AddEdgeNodeDto)).rejects.toThrow('必填')
+    })
+
+    it('✅ 正例: listEdgeNodes', async () => {
+      await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1.example.com',
+      } as AddEdgeNodeDto)
+      await service.addEdgeNode({
+        name: 'n2', region: 'r2', endpoint: 'https://n2.example.com',
+      } as AddEdgeNodeDto)
+      const nodes = await service.listEdgeNodes()
+      expect(nodes).toHaveLength(2)
+    })
+
+    it('✅ 正例: removeEdgeNode', async () => {
+      const node = await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1.example.com',
+      } as AddEdgeNodeDto)
+      await service.removeEdgeNode(node.id)
+      expect(await service.listEdgeNodes()).toHaveLength(0)
+    })
+
+    it('❌ 反例: remove 不存在的节点抛 NotFound', async () => {
+      await expect(service.removeEdgeNode('nonexistent')).rejects.toThrow('不存在')
+    })
+
+    it('✅ 正例: recordHeartbeat 更新状态', async () => {
+      const node = await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1',
+      } as AddEdgeNodeDto)
+      const updated = await service.recordHeartbeat(node.id, 95, 12, 500_000_000)
+      expect(updated.hitRate).toBe(95)
+      expect(updated.avgLatencyMs).toBe(12)
     })
   })
 
-  // ============ 8. 跨租户隔离 (1) ============
-  describe('8. 跨租户隔离', () => {
-    it('tenant B 看不到 tenant A 的规则', async () => {
-      const aList = await runWithTenant(TENANT_A, async () => SHARED_CDN.listRules())
-      const bList = await runWithTenant(TENANT_B, async () => SHARED_CDN.listRules())
-      assert.ok(aList.length > 0)
-      assert.equal(bList.length, 0)
-      // tenant B getRule 应 404
-      await assert.rejects(
-        () => runWithTenant(TENANT_B, async () => SHARED_CDN.getRule(aList[0].id)),
-        /不存在/,
-      )
+  // ── invalidate ─────────────────────────────────────────────
+  describe('invalidate', () => {
+    beforeEach(async () => {
+      await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1',
+      } as AddEdgeNodeDto)
+      // 添加缓存条目
+      service.addCacheEntryForTesting({
+        key: '/api/users',
+        url: '/api/users',
+        etag: '"abc"',
+        statusCode: 200,
+        sizeBytes: 1000,
+        ttlMs: 300000,
+        cachedAt: Date.now(),
+        expiresAt: Date.now() + 300000,
+      } as never)
+      service.addCacheEntryForTesting({
+        key: '/api/orders',
+        url: '/api/orders',
+        etag: '"def"',
+        statusCode: 200,
+        sizeBytes: 2000,
+        ttlMs: 300000,
+        cachedAt: Date.now(),
+        expiresAt: Date.now() + 300000,
+      } as never)
+    })
+
+    it('✅ 正例: url 模式失效删除指定条目', async () => {
+      const inv = await service.invalidate({ mode: 'url', target: '/api/users' } as InvalidateDto)
+      expect(inv.affectedEntries).toBe(1)
+      expect(service.listCacheEntriesForTesting()).toHaveLength(1)
+    })
+
+    it('✅ 正例: pattern 模式失效匹配条目', async () => {
+      const inv = await service.invalidate({ mode: 'pattern', target: '/api/*' } as InvalidateDto)
+      expect(inv.affectedEntries).toBe(2)
+      expect(service.listCacheEntriesForTesting()).toHaveLength(0)
+    })
+
+    it('🔲 边界: 无匹配条目时 affectedEntries=0', async () => {
+      const inv = await service.invalidate({ mode: 'url', target: '/nonexistent' } as InvalidateDto)
+      expect(inv.affectedEntries).toBe(0)
     })
   })
 
-  // ============ 9. 工具函数 (1) ============
-  describe('9. 工具函数', () => {
-    it('compilePattern + contentFingerprint + buildCacheKey', () => {
-      const { paramNames } = compilePattern('/api/:storeId/items/:itemId')
-      assert.deepEqual(paramNames, ['storeId', 'itemId'])
+  // ── 缓存命中统计 ───────────────────────────────────────────
+  describe('hit rate', () => {
+    it('✅ 正例: recordHit/Miss 统计', () => {
+      service.recordHit('t1')
+      service.recordHit('t1')
+      service.recordMiss('t1')
+      expect(service.getHitRate('t1')).toBeCloseTo(2 / 3)
+    })
 
-      const fp = contentFingerprint('hello world')
-      assert.equal(fp.length, 12)
+    it('🔲 边界: 无记录 hitRate = 0', () => {
+      expect(service.getHitRate('empty')).toBe(0)
+    })
+  })
 
-      const key = buildCacheKey('/api/x', { 'Accept-Encoding': 'gzip' })
-      assert.ok(key.includes('Accept-Encoding=gzip'))
+  // ── getEdgeNodeStats ───────────────────────────────────────
+  describe('getEdgeNodeStats', () => {
+    it('✅ 正例: 统计所有节点', async () => {
+      await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1',
+        capacityBytes: 1000,
+      } as AddEdgeNodeDto)
+      await service.addEdgeNode({
+        name: 'n2', region: 'r2', endpoint: 'https://n2',
+        capacityBytes: 2000,
+      } as AddEdgeNodeDto)
+      const stats = service.getEdgeNodeStats()
+      expect(stats.totalNodes).toBe(2)
+      expect(stats.onlineNodes).toBe(2)
+      expect(stats.totalCapacityBytes).toBe(3000)
+    })
+  })
 
-      const etag = generateETag('content')
-      assert.ok(etag.startsWith('W/"'))
+  // ── test helpers ───────────────────────────────────────────
+  describe('test helpers', () => {
+    it('✅ 正例: add/remove/list cache entries', () => {
+      expect(service.listCacheEntriesForTesting()).toHaveLength(0)
+      service.addCacheEntryForTesting({
+        key: '/test', url: '/test', etag: '"x"',
+        statusCode: 200, sizeBytes: 100, ttlMs: 1000,
+        cachedAt: Date.now(), expiresAt: Date.now() + 1000,
+      } as never)
+      expect(service.listCacheEntriesForTesting()).toHaveLength(1)
+      service.removeCacheEntryForTesting('/test')
+      expect(service.listCacheEntriesForTesting()).toHaveLength(0)
+    })
+  })
+
+  // ── matchRule: disabled 规则 ──────────────────────────────
+  describe('matchRule disabled', () => {
+    it('🔲 边界: disabled 规则不参与匹配', async () => {
+      await service.createRule({
+        name: 'disabled-api',
+        urlPattern: '/api/*',
+        enabled: false,
+        priority: 100,
+      } as CreateRuleDto)
+      const rule = await service.matchRule('/api/orders')
+      expect(rule).toBeNull()
+    })
+
+    it('🔲 边界: method 不匹配', async () => {
+      await service.createRule({
+        name: 'only-get',
+        urlPattern: '/api/*',
+        methods: ['GET'],
+      } as CreateRuleDto)
+      const rule = await service.matchRule('/api/orders', 'POST')
+      expect(rule).toBeNull()
+    })
+  })
+
+  // ── getCacheControlForUrl: different strategies ────────────
+  describe('getCacheControlForUrl strategies', () => {
+    it('✅ 正例: no-store 策略返回 no-store', async () => {
+      await service.createRule({
+        name: 'no-store-rule',
+        urlPattern: '/auth/*',
+        strategy: 'no-store',
+        maxAge: 0,
+      } as CreateRuleDto)
+      const header = await service.getCacheControlForUrl('/auth/login')
+      expect(header).toContain('no-store')
+      expect(header).not.toContain('max-age')
+    })
+
+    it('✅ 正例: immutable 策略', async () => {
+      await service.createRule({
+        name: 'immutable-rule',
+        urlPattern: '/static/*',
+        strategy: 'immutable',
+        maxAge: 31536000,
+      } as CreateRuleDto)
+      const header = await service.getCacheControlForUrl('/static/v1/bundle.js')
+      expect(header).toContain('immutable')
+      expect(header).toContain('max-age=31536000')
+    })
+  })
+
+  // ── invalidate with edgeNodeIds ───────────────────────────
+  describe('invalidate with specific nodes', () => {
+    it('✅ 正例: 指定边缘节点失效', async () => {
+      const node = await service.addEdgeNode({
+        name: 'node-1', region: 'r1', endpoint: 'https://n1',
+      } as AddEdgeNodeDto)
+      service.addCacheEntryForTesting({
+        key: '/data', url: '/data', etag: '"a"', statusCode: 200, sizeBytes: 100,
+        ttlMs: 300000, cachedAt: Date.now(), expiresAt: Date.now() + 300000,
+      } as never)
+
+      const inv = await service.invalidate({
+        mode: 'url', target: '/data', edgeNodeIds: [node.id],
+      } as InvalidateDto)
+      expect(inv.edgeNodeIds).toContain(node.id)
+      expect(inv.affectedEntries).toBe(1)
+    })
+  })
+
+  // ── listInvalidations ─────────────────────────────────────
+  describe('listInvalidations', () => {
+    it('✅ 正例: 列出失效记录', async () => {
+      await service.addEdgeNode({
+        name: 'n1', region: 'r1', endpoint: 'https://n1',
+      } as AddEdgeNodeDto)
+      service.addCacheEntryForTesting({
+        key: '/x', url: '/x', etag: '"e"', statusCode: 200, sizeBytes: 10,
+        ttlMs: 1000, cachedAt: Date.now(), expiresAt: Date.now() + 1000,
+      } as never)
+
+      await service.invalidate({ mode: 'url', target: '/x' } as InvalidateDto)
+      const list = await service.listInvalidations()
+      expect(list.length).toBeGreaterThanOrEqual(1)
+      expect(list[0].status).toBe('completed')
+    })
+  })
+
+  // ── getEdgeNodeStats empty ────────────────────────────────
+  describe('getEdgeNodeStats empty', () => {
+    it('🔲 边界: 无节点返回零值', () => {
+      const fresh = new CdnCacheService()
+      const stats = fresh.getEdgeNodeStats()
+      expect(stats.totalNodes).toBe(0)
+      expect(stats.onlineNodes).toBe(0)
+      expect(stats.totalCapacityBytes).toBe(0)
+      expect(stats.averageHitRate).toBe(0)
+    })
+  })
+
+  // ── updateRule no-op ──────────────────────────────────────
+  describe('updateRule edge', () => {
+    it('🔲 边界: 空更新不改变字段', async () => {
+      const rule = await service.createRule({
+        name: 'noop', urlPattern: '/noop/*',
+      } as CreateRuleDto)
+      const updated = await service.updateRule(rule.id, {} as UpdateRuleDto)
+      expect(updated.name).toBe('noop')
+      expect(updated.maxAge).toBe(3600) // default
     })
   })
 })
-
-// ============ Helper ============
-function makeRule(overrides: any = {}) {
-  return {
-    id: 'r-test',
-    tenantId: 'tenant-A',
-    name: 'test',
-    urlPattern: '/api/*',
-    methods: ['GET', 'HEAD'] as any,
-    strategy: 'public' as const,
-    maxAge: 3600,
-    staleWhileRevalidate: 0,
-    enableETag: true,
-    enableGzip: true,
-    enableBrotli: false,
-    varyHeaders: ['Accept-Encoding'],
-    cacheableStatusCodes: [200, 301],
-    priority: 0,
-    enabled: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    ...overrides,
-  }
-}

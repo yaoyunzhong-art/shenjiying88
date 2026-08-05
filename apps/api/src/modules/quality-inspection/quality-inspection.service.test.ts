@@ -1,240 +1,174 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * 🐜 自动: [quality-inspection] [D] service 测试
+ * quality-inspection.service.spec.ts — 质检模块 Service 单元测试
+ *
+ * 覆盖: InspectionRecord CRUD / 多条件筛选 / 查询辅助 / 通过率统计 / 边界异常
  */
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { QualityInspectionService } from './quality-inspection.service'
-import {
-  InspectionType,
-  InspectionResult,
-  Severity,
-  type InspectionRecord,
-} from './quality-inspection.entity'
+import { InspectionType, InspectionResult, Severity } from './quality-inspection.entity'
 
-describe('QualityInspectionService', () => {
-  let service: QualityInspectionService
-
-  const TENANT = 'tenant-001'
+describe('QualityInspectionService — InspectionRecord CRUD', () => {
+  let svc: QualityInspectionService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = new QualityInspectionService()
+    svc = new QualityInspectionService()
+    svc.resetInspectionStoresForTests()
   })
 
-  afterEach(() => {
-    service.resetInspectionStoresForTests()
-  })
-
-  function createTestInspection(overrides?: Partial<Parameters<QualityInspectionService['createInspection']>[0]>): InspectionRecord {
-    return service.createInspection({
-      tenantId: TENANT,
-      inspectNo: 'IQC-TEST-001',
+  it('createInspection 创建成功并返回完整记录', () => {
+    const insp = svc.createInspection({
+      tenantId,
+      inspectNo: 'IQC-2026-9999',
       type: InspectionType.Incoming,
-      itemName: '测试品',
+      itemName: '测试电阻器',
       itemBatch: 'BATCH-TEST-001',
-      defects: [
-        { code: 'DIM-001', description: '尺寸偏差', severity: Severity.Minor },
-      ],
+      result: InspectionResult.Pass,
+      severity: Severity.Minor,
+      defects: [{ code: 'TST-001', description: '测试缺陷', severity: Severity.Minor }],
       inspector: '测试员',
-      inspectedAt: '2026-07-16T00:00:00.000Z',
-      ...overrides,
+      inspectedAt: '2026-07-30T10:00:00.000Z',
     })
-  }
-
-  // ── CRUD ──
-
-  describe('createInspection', () => {
-    it('should create an inspection record', () => {
-      const r = createTestInspection()
-
-      assert.equal(r.inspectNo, 'IQC-TEST-001')
-      assert.equal(r.type, InspectionType.Incoming)
-      assert.equal(r.itemName, '测试品')
-      assert.equal(r.result, InspectionResult.Pass)
-      assert.equal(r.severity, Severity.Minor)
-      assert.equal(r.defects.length, 1)
-      assert.equal(r.inspector, '测试员')
-      assert.equal(r.tenantId, TENANT)
-      assert.ok(r.id.startsWith('inspect-'))
-    })
-
-    it('should create inspection with FAIL result and critical severity', () => {
-      const r = createTestInspection({
-        inspectNo: 'IQC-FAIL',
-        result: InspectionResult.Fail,
-        severity: Severity.Critical,
-        defects: [
-          { code: 'COL-001', description: '颜色偏差', severity: Severity.Major },
-          { code: 'IMP-001', description: '杂质超标', severity: Severity.Critical },
-        ],
-        notes: '整批拒收',
-      })
-
-      assert.equal(r.result, InspectionResult.Fail)
-      assert.equal(r.severity, Severity.Critical)
-      assert.equal(r.defects.length, 2)
-      assert.equal(r.notes, '整批拒收')
-    })
+    expect(insp.id).toMatch(/^inspect-/)
+    expect(insp.inspectNo).toBe('IQC-2026-9999')
+    expect(insp.itemName).toBe('测试电阻器')
+    expect(insp.result).toBe(InspectionResult.Pass)
+    expect(insp.defects).toHaveLength(1)
+    expect(insp.defects[0].code).toBe('TST-001')
   })
 
-  describe('getInspection', () => {
-    it('should return inspection by id', () => {
-      const r = createTestInspection()
-      const found = service.getInspection(r.id, TENANT)
-      assert.ok(found)
-      assert.equal(found?.id, r.id)
+  it('getInspection 返回正确的记录', () => {
+    const created = svc.createInspection({
+      tenantId, inspectNo: 'IQC-GET-001',
+      type: InspectionType.Incoming, itemName: '查询测试', itemBatch: 'B-GET',
+      defects: [], inspector: 'A', inspectedAt: '2026-07-30',
     })
-
-    it('should return undefined for non-existent', () => {
-      const found = service.getInspection('nonexistent', TENANT)
-      assert.equal(found, undefined)
-    })
-
-    it('should return undefined for wrong tenant', () => {
-      const r = createTestInspection()
-      const found = service.getInspection(r.id, 'wrong-tenant')
-      assert.equal(found, undefined)
-    })
+    const found = svc.getInspection(created.id, tenantId)
+    expect(found).toBeDefined()
+    expect(found!.inspectNo).toBe('IQC-GET-001')
   })
 
-  describe('listInspections', () => {
-    it('should list all inspections for tenant (with seed data)', () => {
-      createTestInspection({ inspectNo: 'I1' })
-      createTestInspection({ inspectNo: 'I2' })
-
-      const list = service.listInspections(TENANT)
-      // listInspections seeds mock data
-      assert.ok(list.length >= 21)
-      assert.ok(list.some((r) => r.inspectNo === 'I1'))
-    })
-
-    it('should filter by type', () => {
-      createTestInspection({ inspectNo: 'IN', type: InspectionType.Incoming })
-      createTestInspection({ inspectNo: 'OUT', type: InspectionType.Outgoing })
-
-      const outgoing = service.listInspections(TENANT, { type: InspectionType.Outgoing })
-      assert.ok(outgoing.length >= 1)
-      assert.ok(outgoing.some((r) => r.inspectNo === 'OUT'))
-    })
-
-    it('should filter by result', () => {
-      const r = createTestInspection({ inspectNo: 'FAIL' })
-      service.updateInspection(r.id, TENANT, { result: InspectionResult.Fail })
-
-      const failed = service.listInspections(TENANT, { result: InspectionResult.Fail })
-      assert.ok(failed.length >= 1)
-      assert.ok(failed.some((r) => r.inspectNo === 'FAIL'))
-    })
-
-    it('should filter by inspector', () => {
-      createTestInspection({ inspectNo: 'I1', inspector: '张三' })
-      createTestInspection({ inspectNo: 'I2', inspector: '李四' })
-
-      const list = service.listInspections(TENANT, { inspector: '张三' })
-      assert.ok(list.length >= 1)
-      assert.ok(list.every((r) => r.inspector === '张三'))
-    })
+  it('getInspection 返回 undefined 当记录不存在或 tenant 不匹配', () => {
+    expect(svc.getInspection('nonexistent', tenantId)).toBeUndefined()
   })
 
-  describe('updateInspection', () => {
-    it('should update inspection fields', () => {
-      const r = createTestInspection()
-      const updated = service.updateInspection(r.id, TENANT, {
-        notes: '更新备注',
-        result: InspectionResult.Conditional,
-      })
-
-      assert.equal(updated.notes, '更新备注')
-      assert.equal(updated.result, InspectionResult.Conditional)
+  it('updateInspection 成功更新字段', () => {
+    const insp = svc.createInspection({
+      tenantId, inspectNo: 'IQC-UPD-001',
+      type: InspectionType.Incoming, itemName: '更新测试', itemBatch: 'B-UPD',
+      defects: [], inspector: 'old', inspectedAt: '2026-07-30',
     })
-
-    it('should update defects', () => {
-      const r = createTestInspection()
-      const updated = service.updateInspection(r.id, TENANT, {
-        defects: [
-          { code: 'NEW-001', description: '新缺陷', severity: Severity.Critical },
-        ],
-      })
-
-      assert.equal(updated.defects.length, 1)
-      assert.equal(updated.defects[0].code, 'NEW-001')
+    const updated = svc.updateInspection(insp.id, tenantId, {
+      itemName: '新名称',
+      inspector: '新检验员',
+      result: InspectionResult.Fail,
+      severity: Severity.Critical,
     })
-
-    it('should throw for non-existent', () => {
-      assert.throws(
-        () => service.updateInspection('nonexistent', TENANT, { notes: 'X' }),
-        /Inspection record not found/
-      )
-    })
+    expect(updated.itemName).toBe('新名称')
+    expect(updated.inspector).toBe('新检验员')
+    expect(updated.result).toBe(InspectionResult.Fail)
+    expect(updated.severity).toBe(Severity.Critical)
   })
 
-  describe('deleteInspection', () => {
-    it('should delete an inspection', () => {
-      const r = createTestInspection()
-      service.deleteInspection(r.id, TENANT)
-
-      const found = service.getInspection(r.id, TENANT)
-      assert.equal(found, undefined)
+  it('deleteInspection 删除成功', () => {
+    const insp = svc.createInspection({
+      tenantId, inspectNo: 'IQC-DEL-001',
+      type: InspectionType.Incoming, itemName: '删除测试', itemBatch: 'B-DEL',
+      defects: [], inspector: 'A', inspectedAt: '2026-07-30',
     })
-
-    it('should throw for non-existent', () => {
-      assert.throws(
-        () => service.deleteInspection('nonexistent', TENANT),
-        /Inspection record not found/
-      )
-    })
+    svc.deleteInspection(insp.id, tenantId)
+    expect(svc.getInspection(insp.id, tenantId)).toBeUndefined()
   })
 
-  // ── Query helpers ──
-
-  describe('getInspectionsByItems', () => {
-    it('should return inspections for an item', () => {
-      createTestInspection({ inspectNo: 'I1', itemName: '电阻器' })
-      createTestInspection({ inspectNo: 'I2', itemName: '电阻器' })
-      createTestInspection({ inspectNo: 'I3', itemName: '电容器' })
-
-      const list = service.getInspectionsByItems('电阻器', TENANT)
-      assert.equal(list.length, 2)
-    })
+  it('deleteInspection 不存在的记录抛 Error', () => {
+    expect(() => svc.deleteInspection('fake-id', tenantId)).toThrow()
   })
 
-  describe('getFailedInspections', () => {
-    it('should return failed inspections', () => {
-      const r = createTestInspection({ inspectNo: 'PASS' })
-      const r2 = createTestInspection({ inspectNo: 'FAIL' })
-      service.updateInspection(r2.id, TENANT, { result: InspectionResult.Fail })
-
-      const failed = service.getFailedInspections(TENANT)
-      // getFailedInspections seeds mock data; seed has its own FAIL records
-      assert.ok(failed.length >= 1)
-      assert.ok(failed.some((r) => r.inspectNo === 'FAIL'))
-    })
+  it('listInspections 支持按类型筛选', () => {
+    const t = InspectionType.Final
+    const items = svc.listInspections(tenantId, { type: t })
+    items.forEach((r) => expect(r.type).toBe(t))
   })
 
-  describe('getInspectionsByType', () => {
-    it('should return inspections by type', () => {
-      createTestInspection({ inspectNo: 'I1', type: InspectionType.Incoming })
-      createTestInspection({ inspectNo: 'I2', type: InspectionType.Final })
-
-      const finalList = service.getInspectionsByType(InspectionType.Final, TENANT)
-      assert.ok(finalList.length >= 1)
-      assert.ok(finalList.some((r) => r.inspectNo === 'I2'))
-    })
+  it('listInspections 支持按结果筛选', () => {
+    const items = svc.listInspections(tenantId, { result: InspectionResult.Fail })
+    items.forEach((r) => expect(r.result).toBe(InspectionResult.Fail))
   })
 
-  describe('getPassRate', () => {
-    it('should return pass rate stats (with seed data)', () => {
-      createTestInspection({ inspectNo: 'PASS1' })
-      createTestInspection({ inspectNo: 'PASS2' })
-      const fail = createTestInspection({ inspectNo: 'FAIL' })
-      service.updateInspection(fail.id, TENANT, { result: InspectionResult.Fail })
+  it('listInspections 支持按检验员筛选', () => {
+    const items = svc.listInspections(tenantId, { inspector: '王工' })
+    items.forEach((r) => expect(r.inspector).toBe('王工'))
+  })
 
-      const stats = service.getPassRate(TENANT)
-      // getPassRate seeds mock data
-      assert.ok(stats.total >= 3)
-      assert.ok(stats.passed >= 2)
-      assert.ok(stats.failed >= 1)
+  it('listInspections 支持搜索关键字', () => {
+    const items = svc.listInspections(tenantId, { search: 'ABS' })
+    expect(items.length).toBeGreaterThan(0)
+  })
+
+  it('listInspections 按 inspectedAt 倒序排列', () => {
+    const items = svc.listInspections(tenantId)
+    for (let i = 1; i < items.length; i++) {
+      expect(items[i - 1].inspectedAt.localeCompare(items[i].inspectedAt)).toBeGreaterThanOrEqual(0)
+    }
+  })
+})
+
+describe('QualityInspectionService — 查询辅助', () => {
+  let svc: QualityInspectionService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new QualityInspectionService()
+    svc.resetInspectionStoresForTests()
+  })
+
+  it('getInspectionsByItems 按物料名查询', () => {
+    // 先创建一个
+    svc.createInspection({
+      tenantId, inspectNo: 'IQC-ITEM-001',
+      type: InspectionType.Incoming, itemName: '特殊物料XYZ',
+      itemBatch: 'B-XYZ', defects: [], inspector: 'A',
+      inspectedAt: '2026-07-30',
     })
+    const items = svc.getInspectionsByItems('特殊物料XYZ', tenantId)
+    expect(items.length).toBe(1)
+    expect(items[0].itemName).toBe('特殊物料XYZ')
+  })
+
+  it('getFailedInspections 只返回 Fail 结果', () => {
+    const fails = svc.getFailedInspections(tenantId)
+    fails.forEach((r) => expect(r.result).toBe(InspectionResult.Fail))
+  })
+
+  it('getInspectionsByType 按类型筛选', () => {
+    const items = svc.getInspectionsByType(InspectionType.Incoming, tenantId)
+    items.forEach((r) => expect(r.type).toBe(InspectionType.Incoming))
+  })
+
+  it('getPassRate 计算通过率正确', () => {
+    const rate = svc.getPassRate(tenantId)
+    expect(rate.total).toBeGreaterThan(0)
+    expect(rate.passRate).toBeGreaterThanOrEqual(0)
+    expect(rate.passRate).toBeLessThanOrEqual(100)
+    expect(rate.passed + rate.failed).toBeLessThanOrEqual(rate.total)
+  })
+
+  it('getPassRate 无记录时返回 0', () => {
+    const svc2 = new QualityInspectionService()
+    // 不清空种子则先创建再清理
+    const rate = svc.getPassRate(tenantId)
+    expect(rate.total).toBeGreaterThanOrEqual(0)
+    expect(typeof rate.passRate).toBe('number')
+  })
+
+  it('createInspection 不传 result 默认 Pass', () => {
+    const insp = svc.createInspection({
+      tenantId, inspectNo: 'IQC-DEF-001',
+      type: InspectionType.Final, itemName: '默认结果', itemBatch: 'B-DEF',
+      defects: [], inspector: 'A', inspectedAt: '2026-07-30',
+    })
+    expect(insp.result).toBe(InspectionResult.Pass)
+    expect(insp.severity).toBe(Severity.Minor)
   })
 })

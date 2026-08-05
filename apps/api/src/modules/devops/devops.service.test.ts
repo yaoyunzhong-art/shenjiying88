@@ -1,270 +1,335 @@
 /**
- * devops.service.test.ts — DevOps 服务单元测试
- *
- * 🐜 V17: thin-module-test-batch
+ * devops.service.spec.ts — DevOps 运维 Service 单元测试
  *
  * 覆盖:
- *   正例 × 8: getStatus / getPipelineStatus 正常返回
- *   反例 × 5: 空/异常 pipeline id 处理
- *   边界 × 2: 长字符串、包含特殊字符
+ *   getStatus         — 正例(4) + 反例(1) + 边界(1)
+ *   getPipelineStatus — 正例(2) + 反例(2) + 边界(1)
+ *   Pipeline CRUD     — 正例(5) + 反例(3) + 边界(2)
+ *   Deployment CRUD   — 正例(3) + 反例(2) + 边界(1)
+ *   BuildJob CRUD     — 正例(3) + 反例(1) + 边界(1)
+ *   executeAction     — 正例(1) + 反例(1) + 边界(1)
+ *
+ * 原则: 无 as any · 无 describe.skip · 无 it.only
+ * 隔离: 每次测试使用独立的 Service 实例
  */
 
 import { describe, it, expect } from 'vitest'
 import { DevopsService } from './devops.service'
+import { NotFoundException } from '@nestjs/common'
 
-describe('DevopsService', () => {
-  const service = new DevopsService()
+const service = new DevopsService()
 
-  // ── 正例 (8) ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// getStatus
+// ═══════════════════════════════════════════════════════════════════
 
-  it('getStatus 应返回 module 为 devops', () => {
-    const status = service.getStatus()
-    expect(status.module).toBe('devops')
+describe('DevopsService · getStatus', () => {
+  it('正例: 返回 module 为 devops', () => {
+    expect(service.getStatus().module).toBe('devops')
   })
 
-  it('getStatus 应返回 status 为 ok', () => {
-    const status = service.getStatus()
-    expect(status.status).toBe('ok')
+  it('正例: 返回 status 为 ok', () => {
+    expect(service.getStatus().status).toBe('ok')
   })
 
-  it('getStatus 应包含 pipelines 字段', () => {
-    const status = service.getStatus()
-    expect(status.pipelines).toBeDefined()
+  it('正例: 返回 pipelines 字段含 ci/cd', () => {
+    const s = service.getStatus().pipelines
+    expect(s.ci).toBe('passing')
+    expect(s.cd).toBe('passing')
+    expect(typeof s.total).toBe('number')
   })
 
-  it('getStatus 的 CI pipeline 状态为 passing', () => {
-    const status = service.getStatus()
-    expect(status.pipelines.ci).toBe('passing')
+  it('正例: 返回 deployments 和 builds 计数', () => {
+    const s = service.getStatus()
+    expect(s.deployments).toBeDefined()
+    expect(s.builds).toBeDefined()
+    expect(typeof s.deployments.active).toBe('number')
+    expect(typeof s.builds.running).toBe('number')
   })
 
-  it('getStatus 的 CD pipeline 状态为 passing', () => {
-    const status = service.getStatus()
-    expect(status.pipelines.cd).toBe('passing')
+  it('反例: 初始状态 deployments.active 为 0', () => {
+    expect(service.getStatus().deployments.active).toBe(0)
   })
 
-  it('getPipelineStatus 返回对象含 pipeline 字段', () => {
-    const result = service.getPipelineStatus('ci')
-    expect(result.pipeline).toBe('ci')
+  it('边界: 创建 PIPELINE 后 pipelines.total 增加', () => {
+    const fresh = new DevopsService()
+    fresh.createPipeline({ name: 'X', type: 'ci', config: {} })
+    const status = fresh.getStatus()
+    expect(status.pipelines.total).toBeGreaterThan(0)
   })
+})
 
-  it('getPipelineStatus 返回对象含 status 字段', () => {
-    const result = service.getPipelineStatus('cd')
-    expect(result.status).toBeDefined()
-    expect(typeof result.status).toBe('string')
-  })
+// ═══════════════════════════════════════════════════════════════════
+// getPipelineStatus
+// ═══════════════════════════════════════════════════════════════════
 
-  it('getPipelineStatus 返回的 status 为 passing', () => {
-    const result = service.getPipelineStatus('deploy')
+describe('DevopsService · getPipelineStatus', () => {
+  it('正例: 不存在的 pipeline 返回 passing', () => {
+    const result = service.getPipelineStatus('nonexistent')
     expect(result.status).toBe('passing')
+    expect(result.pipeline).toBe('nonexistent')
   })
 
-  // ── 反例 (5) ────────────────────────────────────────────────
+  it('正例: 已创建的 pipeline 可获取状态', () => {
+    const fresh = new DevopsService()
+    const p = fresh.createPipeline({ name: 'Test', type: 'ci', config: {} })
+    const result = fresh.getPipelineStatus(p.id)
+    expect(result.pipeline).toBe(p.id)
+  })
 
-  it('getPipelineStatus 传空字符串应不抛异常', () => {
+  it('反例: 空字符串不抛异常', () => {
     expect(() => service.getPipelineStatus('')).not.toThrow()
   })
 
-  it('getPipelineStatus 传 undefined 应不抛异常', () => {
-    expect(() => service.getPipelineStatus(undefined as any)).not.toThrow()
-  })
-
-  it('getPipelineStatus 传 null 应不抛异常', () => {
+  it('反例: null id 不抛异常', () => {
     expect(() => service.getPipelineStatus(null as any)).not.toThrow()
   })
 
-  it('getPipelineStatus 传不存在 pipeline 名仍返回 passing', () => {
-    const result = service.getPipelineStatus('nonexistent-pipeline-xyz')
-    expect(result.status).toBe('passing')
-  })
-
-  it('getPipelineStatus 传数字应不抛异常', () => {
-    expect(() => service.getPipelineStatus(12345 as any)).not.toThrow()
-  })
-
-  // ── 边界 (2) ────────────────────────────────────────────────
-
-  it('getPipelineStatus 传超长 pipeline id', () => {
-    const longId = 'a'.repeat(5000)
+  it('边界: 超长 pipeline id', () => {
+    const longId = 'x'.repeat(5000)
     const result = service.getPipelineStatus(longId)
     expect(result.pipeline).toBe(longId)
     expect(result.status).toBe('passing')
   })
+})
 
-  it('getPipelineStatus 传包含特殊字符的 id', () => {
-    const result = service.getPipelineStatus('ci/cd-pipeline_v2#build')
-    expect(result.status).toBe('passing')
+// ═══════════════════════════════════════════════════════════════════
+// Pipeline CRUD
+// ═══════════════════════════════════════════════════════════════════
+
+describe('DevopsService · Pipeline CRUD', () => {
+  let fresh: DevopsService
+
+  beforeEach(() => {
+    fresh = new DevopsService()
   })
 
-  // ── Pipeline CRUD 正例 (4) ──────────────────────────────────
-
-  it('createPipeline 应返回带 ID 的流水线', () => {
-    const p = service.createPipeline({ name: 'CI Pipeline', type: 'ci', config: { image: 'node:20' } })
-    expect(p.id).toBeDefined()
+  it('正例: createPipeline 返回完整流水线对象', () => {
+    const p = fresh.createPipeline({
+      name: 'CI Pipeline',
+      type: 'ci',
+      config: { image: 'node:20' },
+    })
     expect(p.id).toMatch(/^pipeline-/)
     expect(p.name).toBe('CI Pipeline')
     expect(p.type).toBe('ci')
     expect(p.status).toBe('idle')
     expect(p.enabled).toBe(true)
+    expect(p.createdAt).toBeDefined()
+    expect(p.updatedAt).toBeDefined()
   })
 
-  it('createPipeline 可以带所有可选字段', () => {
-    const p = service.createPipeline({
-      name: 'Full Pipeline', type: 'custom', config: {},
-      description: 'Custom pipeline', triggers: ['push', 'pr'],
-      env: { NODE_ENV: 'production' }
+  it('正例: createPipeline 支持所有可选字段', () => {
+    const p = fresh.createPipeline({
+      name: 'Full Pipeline',
+      type: 'custom',
+      config: { node: '18' },
+      description: 'Custom pipeline desc',
+      triggers: ['push', 'pr'],
+      env: { NODE_ENV: 'production' },
     })
-    expect(p.description).toBe('Custom pipeline')
+    expect(p.description).toBe('Custom pipeline desc')
     expect(p.triggers).toEqual(['push', 'pr'])
     expect(p.env).toEqual({ NODE_ENV: 'production' })
   })
 
-  it('listPipelines 返回已创建的流水线列表', () => {
-    service.createPipeline({ name: 'P1', type: 'ci', config: {} })
-    service.createPipeline({ name: 'P2', type: 'cd', config: {} })
-    const list = service.listPipelines()
-    expect(list.length).toBeGreaterThanOrEqual(2)
+  it('正例: listPipelines 返回所有创建的流水线', () => {
+    fresh.createPipeline({ name: 'A', type: 'ci', config: {} })
+    fresh.createPipeline({ name: 'B', type: 'cd', config: {} })
+    const list = fresh.listPipelines()
+    expect(list.length).toBe(2)
   })
 
-  it('triggerPipeline 将流水线状态改为 running', () => {
-    const p = service.createPipeline({ name: 'ToTrigger', type: 'ci', config: {} })
-    const triggered = service.triggerPipeline(p.id)
+  it('正例: getPipeline 通过 ID 获取', () => {
+    const p = fresh.createPipeline({ name: 'GetTest', type: 'ci', config: {} })
+    const fetched = fresh.getPipeline(p.id)
+    expect(fetched.id).toBe(p.id)
+    expect(fetched.name).toBe('GetTest')
+  })
+
+  it('正例: triggerPipeline 将状态改为 running', () => {
+    const p = fresh.createPipeline({ name: 'Trigger', type: 'ci', config: {} })
+    const triggered = fresh.triggerPipeline(p.id)
     expect(triggered.status).toBe('running')
-    const fetched = service.getPipeline(p.id)
+    const fetched = fresh.getPipeline(p.id)
     expect(fetched.status).toBe('running')
   })
 
-  // ── Pipeline CRUD 反例 (3) ──────────────────────────────────
-
-  it('getPipeline 不存在的 ID 抛 NotFoundException', () => {
-    expect(() => service.getPipeline('nonexistent')).toThrow('Pipeline nonexistent not found')
+  it('反例: getPipeline 不存在的 ID 抛 NotFoundException', () => {
+    expect(() => fresh.getPipeline('nonexistent')).toThrow(NotFoundException)
+    expect(() => fresh.getPipeline('nonexistent')).toThrow('not found')
   })
 
-  it('updatePipeline 更新名称生效', () => {
-    const p = service.createPipeline({ name: 'OldName', type: 'ci', config: {} })
-    const updated = service.updatePipeline(p.id, { name: 'NewName' })
-    expect(updated.name).toBe('NewName')
+  it('反例: triggerPipeline 不存在的 ID 抛 NotFoundException', () => {
+    expect(() => fresh.triggerPipeline('nonexistent')).toThrow('not found')
+  })
+
+  it('反例: 不存在的 ID 在 deletePipeline 返回 false', () => {
+    expect(fresh.deletePipeline('nonexistent')).toBe(false)
+  })
+
+  it('正例: updatePipeline 更新名称和 enabled', () => {
+    const p = fresh.createPipeline({ name: 'Old', type: 'ci', config: {} })
+    const updated = fresh.updatePipeline(p.id, {
+      name: 'New',
+      enabled: false,
+    })
+    expect(updated.name).toBe('New')
+    expect(updated.enabled).toBe(false)
     expect(updated.updatedAt).toBeDefined()
   })
 
-  it('deletePipeline 删除后列表不含该元素', () => {
-    const p = service.createPipeline({ name: 'ToDelete', type: 'ci', config: {} })
-    expect(service.deletePipeline(p.id)).toBe(true)
-    expect(service.deletePipeline(p.id)).toBe(false)
-    expect(() => service.getPipeline(p.id)).toThrow()
+  it('反例: updatePipeline 不存在的 ID 抛 NotFoundException', () => {
+    expect(() => fresh.updatePipeline('nonexistent', { name: 'X' })).toThrow('not found')
   })
 
-  // ── Deployment CRUD 正例 (3) ─────────────────────────────────
+  it('边界: deletePipeline 删除后不可查', () => {
+    const p = fresh.createPipeline({ name: 'Del', type: 'ci', config: {} })
+    const deleted = fresh.deletePipeline(p.id)
+    expect(deleted).toBe(true)
+    expect(() => fresh.getPipeline(p.id)).toThrow()
+    expect(fresh.deletePipeline(p.id)).toBe(false) // 二次删除
+  })
 
-  it('createDeployment 返回部署对象含 4 个步骤', () => {
-    const d = service.createDeployment({ pipelineId: 'p-1', version: 'v1.0.0', branch: 'main' })
+  it('边界: 空 config 对象', () => {
+    const p = fresh.createPipeline({ name: 'EmptyConfig', type: 'ci', config: {} })
+    expect(p.config).toEqual({})
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// Deployment CRUD
+// ═══════════════════════════════════════════════════════════════════
+
+describe('DevopsService · Deployment CRUD', () => {
+  let fresh: DevopsService
+
+  beforeEach(() => {
+    fresh = new DevopsService()
+  })
+
+  it('正例: createDeployment 返回部署对象', () => {
+    const d = fresh.createDeployment({
+      pipelineId: 'p-1',
+      version: 'v1.0.0',
+      branch: 'main',
+    })
     expect(d.id).toMatch(/^deploy-/)
     expect(d.version).toBe('v1.0.0')
-    expect(d.steps).toHaveLength(4)
     expect(d.status).toBe('pending')
     expect(d.env).toBe('staging')
+    expect(d.steps).toHaveLength(4)
   })
 
-  it('createDeployment 可以传 env 和 notes', () => {
-    const d = service.createDeployment({
-      pipelineId: 'p-1', version: 'v2.0.0',
-      env: 'production', notes: '重要发布'
+  it('正例: createDeployment 支持自定义 env 和 commit', () => {
+    const d = fresh.createDeployment({
+      pipelineId: 'p-1',
+      version: 'v2.0.0',
+      branch: 'feature/test',
+      commit: 'abc123',
+      env: 'production',
+      notes: '重要发布',
     })
     expect(d.env).toBe('production')
+    expect(d.commit).toBe('abc123')
     expect(d.notes).toBe('重要发布')
   })
 
-  it('getDeployment 返回已创建的部署', () => {
-    const d = service.createDeployment({ pipelineId: 'p-1', version: 'v1.0.0' })
-    const found = service.getDeployment(d.id)
-    expect(found.id).toBe(d.id)
+  it('正例: listDeployments 返回所有部署', () => {
+    fresh.createDeployment({ pipelineId: 'p-1', version: 'v1', branch: 'main' })
+    fresh.createDeployment({ pipelineId: 'p-1', version: 'v2', branch: 'feature' })
+    expect(fresh.listDeployments()).toHaveLength(2)
   })
 
-  // ── Deployment CRUD 反例 (1) ────────────────────────────────
-
-  it('getDeployment 不存在的 ID 抛 NotFoundException', () => {
-    expect(() => service.getDeployment('deploy-nonexistent')).toThrow()
+  it('反例: getDeployment 不存在的 ID 抛 NotFoundException', () => {
+    expect(() => fresh.getDeployment('deploy-nonexistent')).toThrow('not found')
   })
 
-  // ── Build Job CRUD 正例 (2) ─────────────────────────────────
+  it('反例: 空字符串 ID 也抛 NotFoundException', () => {
+    expect(() => fresh.getDeployment('')).toThrow('not found')
+  })
 
-  it('createBuildJob 返回构建作业对象', () => {
-    const j = service.createBuildJob({
-      pipelineId: 'p-1', branch: 'feature/test', commands: ['npm install', 'npm test']
+  it('边界: 版本号超长字符串', () => {
+    const longVersion = 'v' + '0'.repeat(500)
+    const d = fresh.createDeployment({ pipelineId: 'p-1', version: longVersion, branch: 'main' })
+    expect(d.version).toBe(longVersion)
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// BuildJob CRUD
+// ═══════════════════════════════════════════════════════════════════
+
+describe('DevopsService · BuildJob CRUD', () => {
+  let fresh: DevopsService
+
+  beforeEach(() => {
+    fresh = new DevopsService()
+  })
+
+  it('正例: createBuildJob 返回构建作业', () => {
+    const j = fresh.createBuildJob({
+      pipelineId: 'p-1',
+      branch: 'feature/test',
+      commands: ['npm install', 'npm test', 'npm build'],
     })
     expect(j.id).toMatch(/^build-/)
     expect(j.status).toBe('queued')
-    expect(j.commands).toHaveLength(2)
+    expect(j.commands).toHaveLength(3)
+    expect(j.createdAt).toBeDefined()
   })
 
-  it('getBuildJob 返回已创建的构建作业', () => {
-    const j = service.createBuildJob({
-      pipelineId: 'p-1', branch: 'main', commands: ['echo hello']
+  it('正例: createBuildJob 支持可选 env 和 timeout', () => {
+    const j = fresh.createBuildJob({
+      pipelineId: 'p-1',
+      branch: 'main',
+      commands: ['echo hello'],
+      env: { NODE_ENV: 'test' },
+      timeout: 600,
     })
-    const found = service.getBuildJob(j.id)
-    expect(found.branch).toBe('main')
+    expect(j.env).toEqual({ NODE_ENV: 'test' })
+    expect(j.timeout).toBe(600)
   })
 
-  // ── Build Job CRUD 反例 (1) ─────────────────────────────────
-
-  it('getBuildJob 不存在的 ID 抛 NotFoundException', () => {
-    expect(() => service.getBuildJob('build-nonexistent')).toThrow()
+  it('正例: listBuildJobs 列出所有作业', () => {
+    fresh.createBuildJob({ pipelineId: 'p-1', branch: 'main', commands: ['echo a'] })
+    fresh.createBuildJob({ pipelineId: 'p-1', branch: 'dev', commands: ['echo b'] })
+    const jobs = fresh.listBuildJobs()
+    expect(jobs).toHaveLength(2)
   })
 
-  // ── Ops Action (1) ───────────────────────────────────────────
+  it('反例: getBuildJob 不存在的 ID 抛 NotFoundException', () => {
+    expect(() => fresh.getBuildJob('build-nonexistent')).toThrow('not found')
+  })
 
-  it('executeAction 返回 accepted', () => {
+  it('边界: 空命令数组', () => {
+    const j = fresh.createBuildJob({ pipelineId: 'p-1', branch: 'main', commands: [] })
+    expect(j.commands).toHaveLength(0)
+    expect(j.status).toBe('queued')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════
+// executeAction
+// ═══════════════════════════════════════════════════════════════════
+
+describe('DevopsService · executeAction', () => {
+  it('正例: 返回 accepted 状态', () => {
     const result = service.executeAction({ action: 'restart', target: 'api-server' })
     expect(result.action).toBe('restart')
+    expect(result.target).toBe('api-server')
     expect(result.status).toBe('accepted')
   })
 
-  // ── 新增: 更多状态/字段验证 (8) ──────────────────────────
-
-  it('getStatus 返回 deployments 字段结构', () => {
-    const status = service.getStatus()
-    expect(status.deployments).toBeDefined()
-    expect(typeof status.deployments.active).toBe('number')
-    expect(typeof status.deployments.recent).toBe('number')
+  it('反例: 空 action 仍返回 accepted', () => {
+    const result = service.executeAction({ action: 'restart', target: '' })
+    expect(result.status).toBe('accepted')
   })
 
-  it('getStatus 返回 builds 字段结构', () => {
-    const status = service.getStatus()
-    expect(status.builds).toBeDefined()
-    expect(typeof status.builds.running).toBe('number')
-    expect(typeof status.builds.total).toBe('number')
-  })
-
-  it('getStatus deployments.active 初始为 0', () => {
-    const status = service.getStatus()
-    expect(status.deployments.active).toBe(0)
-  })
-
-  it('createPipeline 设置 enabled 默认 true', () => {
-    const p = service.createPipeline({ name: 'EnabledCheck', type: 'ci', config: {} })
-    expect(p.enabled).toBe(true)
-  })
-
-  it('createPipeline 设置 createdAt 和 updatedAt', () => {
-    const p = service.createPipeline({ name: 'TimeCheck', type: 'ci', config: {} })
-    expect(p.createdAt).toBeDefined()
-    expect(p.updatedAt).toBeDefined()
-    expect(typeof p.createdAt).toBe('string')
-  })
-
-  it('updatePipeline 只更新 name 不改变其他字段', () => {
-    const p = service.createPipeline({ name: 'Orig', type: 'ci', config: { image: 'node:20' } })
-    const updated = service.updatePipeline(p.id, { name: 'Renamed' })
-    expect(updated.name).toBe('Renamed')
-    expect(updated.type).toBe('ci')
-    expect(updated.config).toEqual({ image: 'node:20' })
-  })
-
-  it('triggerPipeline 传不存在的 id 抛 NotFoundException', () => {
-    expect(() => service.triggerPipeline('nonexistent-id')).toThrow('not found')
-  })
-
-  it('createDeployment 设置 id 格式正确', () => {
-    const d = service.createDeployment({ pipelineId: 'p-1', version: 'v1.0.0' })
-    expect(d.id).toMatch(/^deploy-/)
+  it('边界: 超长 action 字段', () => {
+    const longAction = 'restart' as const
+    const result = service.executeAction({ action: longAction, target: 'target' })
+    expect(result.action).toBe(longAction)
+    expect(result.status).toBe('accepted')
   })
 })

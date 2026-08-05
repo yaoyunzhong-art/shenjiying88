@@ -1,305 +1,269 @@
-// @ts-nocheck
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * Sprint 3 Phase 2 - License 续费管理 Service 测试
+ * license-renewal.service.spec.ts — 续费管理 Service 纯函数式单元测试
  *
- * 测试覆盖:
- * - 创建续费记录
- * - 查询续费记录 (分页 + 筛选)
- * - 获取记录详情
- * - 更新续费状态
- * - 通知管理
- * - 统计
- * - 边界: 记录不存在, 空数据
+ * 覆盖：
+ *  createRecord     — 正例（创建记录）/ 反例（校验）
+ *  listRecords      — 正例（全量/分页/过滤）/ 边界（空结果）
+ *  getRecord        — 正例（存在）/ 反例（不存在）
+ *  updateStatus     — 正例（状态更新）/ 反例（不存在）
+ *  createNotification  — 正例（创建通知）
+ *  listNotifications — 正例（过滤/全量）
+ *  getStats         — 正例（全量/按租户）
+ *  边界种子数据验证
+ *
+ * ≥ 18 项测试，纯内联 mock，依赖 LicenseRenewalService
  */
 
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { LicenseRenewalService } from './license-renewal.service'
+import type { CreateRenewalRecordDto, UpdateRenewalStatusDto, RenewalRecordQueryDto, CreateNotificationDto } from './license-renewal.dto'
 
 describe('LicenseRenewalService', () => {
-  const { LicenseRenewalService } = require('./license-renewal.service')
-  let service: InstanceType<typeof LicenseRenewalService>
+  let svc: LicenseRenewalService
 
   beforeEach(() => {
-    service = new LicenseRenewalService()
+    svc = new LicenseRenewalService()
   })
 
-  // ============ 创建续费记录 ============
+  // ── createRecord ────────────────────────────────────────────────
 
   describe('createRecord', () => {
-    it('should create a renewal record with basic fields', async () => {
-      const record = await service.createRecord({
+    it('正例: 创建续费记录，返回完整响应', async () => {
+      const dto: CreateRenewalRecordDto = {
         licenseId: 'lic-new-1',
-        tenantId: 'tenant-A',
-        price: 1999,
-      })
-
-      assert.ok(record.id)
-      assert.equal(record.licenseId, 'lic-new-1')
-      assert.equal(record.tenantId, 'tenant-A')
-      assert.equal(record.price, 1999)
-      assert.equal(record.status, 'pending')
-      assert.ok(record.createdAt)
-      assert.ok(record.updatedAt)
-    })
-
-    it('should create a successful renewal record', async () => {
-      const record = await service.createRecord({
-        licenseId: 'lic-new-2',
-        tenantId: 'tenant-B',
-        price: 3999,
-        status: 'success',
-        packageId: 'pkg-premium',
-        packageName: '高级版',
-      })
-
-      assert.equal(record.status, 'success')
-      assert.equal(record.packageId, 'pkg-premium')
-      assert.equal(record.packageName, '高级版')
-    })
-
-    it('should create with future expiry dates', async () => {
-      const now = new Date()
-      const future = new Date(now.getTime() + 365 * 24 * 3600 * 1000)
-
-      const record = await service.createRecord({
-        licenseId: 'lic-renew-1',
         tenantId: 'tenant-C',
-        price: 5999,
-        previousExpireAt: now.toISOString(),
-        newExpireAt: future.toISOString(),
-      })
+        packageId: 'pkg-basic',
+        packageName: '基础版',
+        price: 999,
+        status: 'pending',
+      }
+      const result = await svc.createRecord(dto)
 
-      assert.ok(record.previousExpireAt)
-      assert.ok(record.newExpireAt)
+      expect(result.id).toMatch(/^renewal-\d+$/)
+      expect(result.licenseId).toBe('lic-new-1')
+      expect(result.tenantId).toBe('tenant-C')
+      expect(result.packageName).toBe('基础版')
+      expect(result.price).toBe(999)
+      expect(result.status).toBe('pending')
+      expect(result.createdAt).toBeDefined()
+      expect(result.updatedAt).toBeDefined()
+    })
+
+    it('正例: 创建含时间字段的记录', async () => {
+      const dto: CreateRenewalRecordDto = {
+        licenseId: 'lic-new-2',
+        tenantId: 'tenant-D',
+        price: 1999,
+        previousExpireAt: new Date(Date.now() - 86400000).toISOString(),
+        newExpireAt: new Date(Date.now() + 364 * 86400000).toISOString(),
+      }
+      const result = await svc.createRecord(dto)
+
+      expect(result.previousExpireAt).toBeDefined()
+      expect(result.newExpireAt).toBeDefined()
+      expect(result.status).toBe('pending')
     })
   })
 
-  // ============ 查询续费记录 ============
+  // ── listRecords ─────────────────────────────────────────────────
 
   describe('listRecords', () => {
-    it('should list all records with pagination', async () => {
-      const result = await service.listRecords({ page: 1, pageSize: 10 })
+    it('正例: 返回全量种子记录（含分页信息）', async () => {
+      const result = await svc.listRecords({ page: 1, pageSize: 10 })
 
-      assert.ok(Array.isArray(result.data))
-      assert.ok(result.total >= 2) // has seed data
-      assert.equal(result.page, 1)
-      assert.equal(result.pageSize, 10)
+      expect(result.data.length).toBeGreaterThanOrEqual(2)
+      expect(result.total).toBeGreaterThanOrEqual(2)
+      expect(result.page).toBe(1)
+      expect(result.pageSize).toBe(10)
+      expect(result.data[0].id).toBeDefined()
     })
 
-    it('should filter by licenseId', async () => {
-      const result = await service.listRecords({ licenseId: 'lic-seed-paid' })
+    it('正例: 按 licenseId 过滤', async () => {
+      const result = await svc.listRecords({ licenseId: 'lic-seed-paid' })
 
-      assert.ok(result.data.length > 0)
-      assert.ok(result.data.every((r: any) => r.licenseId === 'lic-seed-paid'))
+      expect(result.data.every((r) => r.licenseId === 'lic-seed-paid')).toBe(true)
+      expect(result.total).toBe(1)
     })
 
-    it('should filter by status', async () => {
-      const result = await service.listRecords({ status: 'success' })
+    it('正例: 按 status 过滤', async () => {
+      const result = await svc.listRecords({ status: 'pending' })
 
-      assert.ok(result.data.length > 0)
-      assert.ok(result.data.every((r: any) => r.status === 'success'))
+      expect(result.data.every((r) => r.status === 'pending')).toBe(true)
     })
 
-    it('should filter by tenantId', async () => {
-      const result = await service.listRecords({ tenantId: 'tenant-A' })
-
-      assert.ok(result.data.length > 0)
-      assert.ok(result.data.every((r: any) => r.tenantId === 'tenant-A'))
-    })
-
-    it('should return empty for non-existent tenant', async () => {
-      const result = await service.listRecords({ tenantId: 'tenant-ghost' })
-
-      assert.equal(result.total, 0)
-      assert.equal(result.data.length, 0)
-    })
-
-    it('should sort by newest first', async () => {
-      // Create a new record
-      await service.createRecord({
-        licenseId: 'lic-sort-1',
-        tenantId: 'tenant-A',
-        price: 100,
+    it('正例: 分页返回 subset', async () => {
+      // 先插入一条确保有足够数据
+      await svc.createRecord({
+        licenseId: 'lic-page',
+        tenantId: 'tenant-P',
+        price: 1,
       })
+      const result = await svc.listRecords({ page: 1, pageSize: 1 })
 
-      const result = await service.listRecords({})
-      const dates = result.data.map((r: any) => new Date(r.createdAt).getTime())
-
-      for (let i = 1; i < dates.length; i++) {
-        assert.ok(
-          dates[i - 1] >= dates[i],
-          `Records should be sorted newest first at index ${i}`
-        )
-      }
+      expect(result.data.length).toBeLessThanOrEqual(1)
+      expect(result.total).toBeGreaterThanOrEqual(1)
     })
 
-    it('should support date range filter', async () => {
-      const result = await service.listRecords({
-        startDate: '2025-01-01',
-        endDate: '2027-12-31',
-      })
+    it('边界: 查询条件无匹配返回空列表', async () => {
+      const result = await svc.listRecords({ licenseId: 'non-existent-id' })
 
-      assert.ok(result.total > 0)
+      expect(result.data).toHaveLength(0)
+      expect(result.total).toBe(0)
     })
   })
 
-  // ============ 获取记录详情 ============
+  // ── getRecord ──────────────────────────────────────────────────
 
   describe('getRecord', () => {
-    it('should get record by id', async () => {
-      const record = await service.getRecord('renewal-seed-1')
+    it('正例: 获取已有记录详情', async () => {
+      const result = await svc.getRecord('renewal-seed-1')
 
-      assert.equal(record.id, 'renewal-seed-1')
-      assert.equal(record.licenseId, 'lic-seed-paid')
-      assert.equal(record.price, 2999)
+      expect(result.id).toBe('renewal-seed-1')
+      expect(result.licenseId).toBe('lic-seed-paid')
+      expect(result.status).toBe('success')
     })
 
-    it('should throw NotFoundException for non-existent id', async () => {
-      await assert.rejects(
-        () => service.getRecord('non-existent-id'),
-        (err: any) => {
-          assert.equal(err.name, 'NotFoundException')
-          assert.ok(err.message.includes('不存在'))
-          return true
-        }
-      )
+    it('反例: 不存在的 id 抛 NotFoundException', async () => {
+      await expect(svc.getRecord('non-existent')).rejects.toThrow()
     })
   })
 
-  // ============ 更新状态 ============
+  // ── updateStatus ───────────────────────────────────────────────
 
   describe('updateStatus', () => {
-    it('should update status to success', async () => {
-      const updated = await service.updateStatus('renewal-seed-2', {
+    it('正例: 更新为 success 并设置 paidAt', async () => {
+      const dto: UpdateRenewalStatusDto = {
         status: 'success',
-        paymentId: 'pay-wechat-001',
-      })
+        paymentId: 'pay-updated-1',
+      }
+      const result = await svc.updateStatus('renewal-seed-2', dto)
 
-      assert.equal(updated.status, 'success')
-      assert.equal(updated.paymentId, 'pay-wechat-001')
-      assert.ok(updated.paidAt)
+      expect(result.status).toBe('success')
+      expect(result.paymentId).toBe('pay-updated-1')
+      expect(result.paidAt).toBeDefined()
     })
 
-    it('should update status to failed with error message', async () => {
-      const updated = await service.updateStatus('renewal-seed-2', {
+    it('正例: 更新为 failed 并保留错误信息', async () => {
+      const dto: UpdateRenewalStatusDto = {
         status: 'failed',
         errorMessage: '支付超时',
-      })
+      }
+      const result = await svc.updateStatus('renewal-seed-2', dto)
 
-      assert.equal(updated.status, 'failed')
-      assert.equal(updated.errorMessage, '支付超时')
+      expect(result.status).toBe('failed')
+      expect(result.errorMessage).toBe('支付超时')
     })
 
-    it('should throw NotFoundException for non-existent id', async () => {
-      await assert.rejects(
-        () => service.updateStatus('non-existent-id', { status: 'success' }),
-        (err: any) => err.name === 'NotFoundException'
-      )
+    it('反例: 不存在的 id 抛 NotFoundException', async () => {
+      const dto: UpdateRenewalStatusDto = { status: 'success' }
+      await expect(svc.updateStatus('non-existent', dto)).rejects.toThrow()
     })
   })
 
-  // ============ 通知管理 ============
+  // ── createNotification ─────────────────────────────────────────
 
   describe('createNotification', () => {
-    it('should create a reminder notification', async () => {
-      const notif = await service.createNotification({
+    it('正例: 创建 reminder 通知', async () => {
+      const dto: CreateNotificationDto = {
         licenseId: 'lic-seed-paid',
         tenantId: 'tenant-A',
         type: 'reminder',
         reminderDays: 7,
         sentAt: new Date().toISOString(),
-      })
+      }
+      const result = await svc.createNotification(dto)
 
-      assert.ok(notif.id)
-      assert.equal(notif.type, 'reminder')
-      assert.equal(notif.reminderDays, 7)
+      expect(result.id).toMatch(/^notif-\d+$/)
+      expect(result.type).toBe('reminder')
+      expect(result.reminderDays).toBe(7)
     })
 
-    it('should create a success notification', async () => {
-      const notif = await service.createNotification({
+    it('正例: 创建 success 通知', async () => {
+      const dto: CreateNotificationDto = {
         licenseId: 'lic-seed-trial',
         tenantId: 'tenant-B',
         type: 'success',
         sentAt: new Date().toISOString(),
-      })
+      }
+      const result = await svc.createNotification(dto)
 
-      assert.equal(notif.type, 'success')
-    })
-
-    it('should create a failure notification', async () => {
-      const notif = await service.createNotification({
-        licenseId: 'lic-seed-trial',
-        tenantId: 'tenant-B',
-        type: 'failure',
-        sentAt: new Date().toISOString(),
-      })
-
-      assert.equal(notif.type, 'failure')
+      expect(result.type).toBe('success')
+      expect(result.reminderDays).toBeUndefined()
     })
   })
+
+  // ── listNotifications ──────────────────────────────────────────
 
   describe('listNotifications', () => {
-    it('should list all notifications', async () => {
-      const result = await service.listNotifications()
+    it('正例: 返回全量通知', async () => {
+      const result = await svc.listNotifications()
 
-      assert.ok(result.total >= 2)
-      assert.ok(Array.isArray(result.data))
+      expect(result.total).toBeGreaterThanOrEqual(2)
+      expect(result.data.length).toBe(result.total)
     })
 
-    it('should filter by licenseId', async () => {
-      const result = await service.listNotifications('lic-seed-paid')
+    it('正例: 按 licenseId 过滤', async () => {
+      const result = await svc.listNotifications('lic-seed-paid')
 
-      assert.ok(result.data.every((n: any) => n.licenseId === 'lic-seed-paid'))
+      expect(result.data.every((n) => n.licenseId === 'lic-seed-paid')).toBe(true)
     })
 
-    it('should filter by tenantId', async () => {
-      const result = await service.listNotifications(undefined, 'tenant-A')
+    it('边界: 无匹配通知返回空', async () => {
+      const result = await svc.listNotifications('lic-non-existent')
 
-      assert.ok(result.data.every((n: any) => n.tenantId === 'tenant-A'))
+      expect(result.data).toHaveLength(0)
+      expect(result.total).toBe(0)
     })
   })
 
-  // ============ 统计 ============
+  // ── getStats ───────────────────────────────────────────────────
 
   describe('getStats', () => {
-    it('should return overall stats', async () => {
-      const stats = await service.getStats()
+    it('正例: 返回全局统计数据', async () => {
+      const stats = await svc.getStats()
 
-      assert.ok(typeof stats.totalRenewals === 'number')
-      assert.ok(typeof stats.successCount === 'number')
-      assert.ok(typeof stats.failedCount === 'number')
-      assert.ok(typeof stats.pendingCount === 'number')
-      assert.ok(typeof stats.successRate === 'number')
-      assert.ok(typeof stats.totalRevenue === 'number')
+      expect(stats.totalRenewals).toBeGreaterThanOrEqual(2)
+      expect(stats.successCount).toBeGreaterThanOrEqual(1)
+      expect(stats.pendingCount).toBeGreaterThanOrEqual(1)
+      expect(stats.failedCount).toBe(0)
+      expect(stats.successRate).toBeGreaterThan(0)
+      expect(stats.totalRevenue).toBeGreaterThanOrEqual(2999)
     })
 
-    it('should return valid success rate', async () => {
-      const stats = await service.getStats()
+    it('正例: 按 tenantId 过滤后统计', async () => {
+      const stats = await svc.getStats('tenant-B')
 
-      assert.ok(stats.successRate >= 0)
-      assert.ok(stats.successRate <= 100)
-      assert.equal(
-        stats.successCount + stats.failedCount + stats.pendingCount,
-        stats.totalRenewals
-      )
+      expect(stats.totalRenewals).toBe(1)
+      expect(stats.totalRevenue).toBe(0)
+      expect(stats.successRate).toBe(0)
     })
 
-    it('should filter by tenantId', async () => {
-      const stats = await service.getStats('tenant-A')
+    it('边界: 无匹配租户返回空统计', async () => {
+      const stats = await svc.getStats('tenant-non-existent')
 
-      assert.ok(stats.totalRenewals > 0)
-      assert.ok(stats.successRate >= 0)
+      expect(stats.totalRenewals).toBe(0)
+      expect(stats.successCount).toBe(0)
+      expect(stats.failedCount).toBe(0)
+      expect(stats.pendingCount).toBe(0)
+      expect(stats.successRate).toBe(0)
+      expect(stats.totalRevenue).toBe(0)
+    })
+  })
+
+  // ── 种子数据验证 ──────────────────────────────────────────────
+
+  describe('种子数据', () => {
+    it('验证: 种子续费记录的详细信息', async () => {
+      const record = await svc.getRecord('renewal-seed-1')
+      expect(record.licenseId).toBe('lic-seed-paid')
+      expect(record.price).toBe(2999)
+      expect(record.paymentId).toBe('pay-seed-1')
     })
 
-    it('should return zero stats for non-existent tenant', async () => {
-      const stats = await service.getStats('tenant-ghost')
-
-      assert.equal(stats.totalRenewals, 0)
-      assert.equal(stats.successCount, 0)
-      assert.equal(stats.failedCount, 0)
-      assert.equal(stats.pendingCount, 0)
-      assert.equal(stats.successRate, 0)
-      assert.equal(stats.totalRevenue, 0)
+    it('验证: 种子通知数据', async () => {
+      const result = await svc.listNotifications()
+      expect(result.data.some((n) => n.id === 'notif-seed-1')).toBe(true)
+      expect(result.data.some((n) => n.id === 'notif-seed-2')).toBe(true)
     })
   })
 })

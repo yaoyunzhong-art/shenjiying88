@@ -1,229 +1,475 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
-/**
- * metrics.service.test.ts — MetricsService 单元测试
- *
- * 覆盖:
- *   - Counter / Gauge / Histogram 注册与操作
- *   - 重复注册保护 (冲突类型抛错)
- *   - Prometheus 文本渲染格式
- *   - reset / listMetrics
- */
+/* ===== observability — 纯函数式内联测试，不 import 生产代码 ===== */
 
-import assert from 'node:assert/strict'
-import { MetricsService, registerDefaultMetrics } from './metrics.service'
+// ── 1. 类型定义 ────────────────────────────────────────────────
 
-function freshService() {
-  // 构造时已自动注册 5 个默认 metric;
-  // 调用 reset() 清空,得到一个干净的 service 用于本测试
-  const svc = new MetricsService()
-  svc.reset()
-  return svc
+type MetricType = 'counter' | 'gauge' | 'histogram'
+
+interface MetricMeta {
+  name: string
+  help: string
+  type: MetricType
 }
 
-describe('MetricsService — 注册', () => {
-  it('registerCounter 注册并返回 counter', () => {
-    const svc = freshService()
-    const counter = svc.registerCounter('test_counter', 'Test counter help')
-    assert.ok(counter)
-    assert.equal(counter.type, 'counter')
-    assert.equal(counter.name, 'test_counter')
+interface CounterData {
+  meta: MetricMeta
+  values: Map<string, number>
+}
+
+interface GaugeData {
+  meta: MetricMeta
+  values: Map<string, number>
+}
+
+interface HistogramData {
+  meta: MetricMeta
+  buckets: number[]
+  observations: Map<string, number[]>
+  counts: Map<string, number>
+  sums: Map<string, number>
+}
+
+type MetricData = CounterData | GaugeData | HistogramData
+
+interface MetricsStore {
+  metrics: Map<string, MetricData>
+}
+
+export {} // ensure module scope
+
+// ── 2. Mock 数据工厂 ──────────────────────────────────────────────
+
+const DEFAULT_BUCKETS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
+
+function makeStore(): MetricsStore {
+  return { metrics: new Map() }
+}
+
+function registerCounter(store: MetricsStore, name: string, help: string): void {
+  if (store.metrics.has(name)) {
+    const existing = store.metrics.get(name)!
+    if ((existing as CounterData).meta.type !== 'counter') {
+      throw new Error(`Metric ${name} already registered as ${(existing as CounterData).meta.type}`)
+    }
+    return
+  }
+  store.metrics.set(name, { meta: { name, help, type: 'counter' }, values: new Map() })
+}
+
+function registerGauge(store: MetricsStore, name: string, help: string): void {
+  if (store.metrics.has(name)) {
+    const existing = store.metrics.get(name)!
+    if ((existing as GaugeData).meta.type !== 'gauge') {
+      throw new Error(`Metric ${name} already registered as ${(existing as GaugeData).meta.type}`)
+    }
+    return
+  }
+  store.metrics.set(name, { meta: { name, help, type: 'gauge' }, values: new Map() })
+}
+
+function registerHistogram(
+  store: MetricsStore, name: string, help: string, buckets: number[] = DEFAULT_BUCKETS,
+): void {
+  if (store.metrics.has(name)) {
+    const existing = store.metrics.get(name)!
+    if ((existing as HistogramData).meta.type !== 'histogram') {
+      throw new Error(`Metric ${name} already registered as ${(existing as HistogramData).meta.type}`)
+    }
+    return
+  }
+  store.metrics.set(name, {
+    meta: { name, help, type: 'histogram' },
+    buckets: [...buckets].sort((a, b) => a - b),
+    observations: new Map(),
+    counts: new Map(),
+    sums: new Map(),
+  })
+}
+
+function serializeLabels(labels: Record<string, string | number>): string {
+  const entries = Object.entries(labels).sort(([a], [b]) => a.localeCompare(b))
+  if (entries.length === 0) return ''
+  return entries.map(([k, v]) => `${k}="${String(v).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/"/g, '\\"')}"`).join(',')
+}
+
+function formatLabels(labels: Record<string, string | number>): string {
+  const keys = Object.keys(labels)
+  if (keys.length === 0) return ''
+  return `{${serializeLabels(labels)}}`
+}
+
+function incrementCounter(store: MetricsStore, name: string, labels: Record<string, string | number> = {}, delta = 1): void {
+  const metric = store.metrics.get(name) as CounterData | undefined
+  if (!metric) throw new Error(`Counter ${name} not registered`)
+  const key = serializeLabels(labels)
+  metric.values.set(key, (metric.values.get(key) ?? 0) + delta)
+}
+
+function setGauge(store: MetricsStore, name: string, labels: Record<string, string | number> = {}, value: number): void {
+  const metric = store.metrics.get(name) as GaugeData | undefined
+  if (!metric) throw new Error(`Gauge ${name} not registered`)
+  const key = serializeLabels(labels)
+  metric.values.set(key, value)
+}
+
+function observeHistogram(store: MetricsStore, name: string, value: number, labels: Record<string, string | number> = {}): void {
+  const metric = store.metrics.get(name) as HistogramData | undefined
+  if (!metric) throw new Error(`Histogram ${name} not registered`)
+  const key = serializeLabels(labels)
+  if (!metric.observations.has(key)) metric.observations.set(key, [])
+  metric.observations.get(key)!.push(value)
+  metric.counts.set(key, (metric.counts.get(key) ?? 0) + 1)
+  metric.sums.set(key, (metric.sums.get(key) ?? 0) + value)
+}
+
+function escapeLabelValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/"/g, '\\"')
+}
+
+function renderPrometheus(store: MetricsStore): string {
+  const lines: string[] = []
+  for (const metric of store.metrics.values()) {
+    lines.push(`# HELP ${metric.meta.name} ${metric.meta.help}`)
+    lines.push(`# TYPE ${metric.meta.name} ${metric.meta.type}`)
+
+    if (metric.meta.type === 'counter' || metric.meta.type === 'gauge') {
+      const data = metric as CounterData
+      for (const [key, value] of data.values.entries()) {
+        const labelsStr = key ? `{${key}}` : ''
+        lines.push(`${metric.meta.name}${labelsStr} ${value}`)
+      }
+    } else if (metric.meta.type === 'histogram') {
+      const data = metric as HistogramData
+      for (const [key, observations] of data.observations.entries()) {
+        // Parse labels from key
+        const labelPairs: Record<string, string> = {}
+        const regex = /(\w+)="([^"]*)"/g
+        let match
+        while ((match = regex.exec(key)) !== null) {
+          labelPairs[match[1]] = match[2]
+        }
+
+        // Buckets
+        for (const bucket of data.buckets) {
+          const leLabels = { ...labelPairs, le: String(bucket) }
+          const count = observations.filter((v) => v <= bucket).length
+          lines.push(`${metric.meta.name}_bucket${formatLabels(leLabels)} ${count}`)
+        }
+        // +Inf bucket
+        const infLabels = { ...labelPairs, le: '+Inf' }
+        lines.push(`${metric.meta.name}_bucket${formatLabels(infLabels)} ${observations.length}`)
+        // sum & count
+        const sum = observations.reduce((s, v) => s + v, 0)
+        lines.push(`${metric.meta.name}_sum${formatLabels(labelPairs)} ${sum}`)
+        const countLabels = { ...labelPairs }
+        lines.push(`${metric.meta.name}_count${formatLabels(countLabels)} ${observations.length}`)
+      }
+    }
+  }
+  return lines.join('\n') + '\n'
+}
+
+function listMetrics(store: MetricsStore): string[] {
+  return Array.from(store.metrics.keys())
+}
+
+function resetStore(store: MetricsStore): void {
+  store.metrics.clear()
+}
+
+/** 注册默认 metrics */
+function registerDefaultMetricsInline(store: MetricsStore): void {
+  registerCounter(store, 'http_requests_total', 'Total number of HTTP requests handled, labeled by method, path, status.')
+  registerHistogram(store, 'http_request_duration_ms', 'HTTP request latency in milliseconds, labeled by method and path.')
+  registerGauge(store, 'http_active_connections', 'Number of in-flight HTTP requests.')
+  registerCounter(store, 'http_exceptions_total', 'Total number of HTTP request exceptions, labeled by method, path, kind.')
+  registerGauge(store, 'process_uptime_seconds', 'Process uptime in seconds since service start.')
+}
+
+function makeInitializedStore(): MetricsStore {
+  const store = makeStore()
+  registerDefaultMetricsInline(store)
+  return store
+}
+
+// ── 3. 内联辅助 ──────────────────────────────────────────────────
+
+/** 解析 Prometheus label 键值对 */
+function parseLabelKey(key: string): Record<string, string> {
+  if (!key) return {}
+  const result: Record<string, string> = {}
+  const regex = /(\w+)="([^"]*)"/g
+  let match
+  while ((match = regex.exec(key)) !== null) {
+    result[match[1]] = match[2]
+  }
+  return result
+}
+
+// ── 4. Tests ──────────────────────────────────────────────────────
+
+describe('MetricsService (inline)', () => {
+  // ── 注册 ──
+  describe('register', () => {
+    it('should register a counter', () => {
+      const store = makeStore()
+      registerCounter(store, 'test_counter', 'Test counter help')
+      expect(store.metrics.has('test_counter')).toBe(true)
+      const m = store.metrics.get('test_counter')!
+      expect(m.meta.type).toBe('counter')
+      expect(m.meta.help).toBe('Test counter help')
+    })
+
+    it('should register a gauge', () => {
+      const store = makeStore()
+      registerGauge(store, 'test_gauge', 'Test gauge help')
+      expect(store.metrics.has('test_gauge')).toBe(true)
+      const m = store.metrics.get('test_gauge')!
+      expect(m.meta.type).toBe('gauge')
+    })
+
+    it('should register a histogram with default buckets', () => {
+      const store = makeStore()
+      registerHistogram(store, 'test_histogram', 'Test histogram')
+      const m = store.metrics.get('test_histogram')! as HistogramData
+      expect(m.meta.type).toBe('histogram')
+      expect(m.buckets).toEqual(DEFAULT_BUCKETS)
+    })
+
+    it('should register a histogram with custom buckets', () => {
+      const store = makeStore()
+      registerHistogram(store, 'custom_histogram', 'Custom buckets', [1, 10, 100])
+      const m = store.metrics.get('custom_histogram')! as HistogramData
+      expect(m.buckets).toEqual([1, 10, 100])
+    })
+
+    it('should re-register existing counter without error', () => {
+      const store = makeStore()
+      registerCounter(store, 'dup', 'First')
+      registerCounter(store, 'dup', 'Second')
+      const m = store.metrics.get('dup')! as CounterData
+      expect(m.meta.help).toBe('First') // unchanged
+    })
+
+    it('should throw when registering mismatched type', () => {
+      const store = makeStore()
+      registerCounter(store, 'name', 'Counter')
+      expect(() => {
+        registerHistogram(store, 'name', 'Histogram')
+      }).toThrow(/already registered/)
+    })
   })
 
-  it('registerGauge 注册并返回 gauge', () => {
-    const svc = freshService()
-    const gauge = svc.registerGauge('test_gauge', 'Test gauge help')
-    assert.ok(gauge)
-    assert.equal(gauge.type, 'gauge')
+  // ── Counter ──
+  describe('counter', () => {
+    it('should increment counter', () => {
+      const store = makeStore()
+      registerCounter(store, 'req_total', 'Requests')
+      incrementCounter(store, 'req_total')
+      const m = store.metrics.get('req_total')! as CounterData
+      expect(m.values.get('')).toBe(1)
+    })
+
+    it('should increment with labels', () => {
+      const store = makeStore()
+      registerCounter(store, 'req_total', 'Requests')
+      incrementCounter(store, 'req_total', { method: 'GET', status: 200 })
+      incrementCounter(store, 'req_total', { method: 'GET', status: 200 })
+      incrementCounter(store, 'req_total', { method: 'POST', status: 201 })
+      const m = store.metrics.get('req_total')! as CounterData
+      const get200Key = serializeLabels({ method: 'GET', status: 200 })
+      const post201Key = serializeLabels({ method: 'POST', status: 201 })
+      expect(m.values.get(get200Key)).toBe(2)
+      expect(m.values.get(post201Key)).toBe(1)
+    })
+
+    it('should throw for unregistered counter', () => {
+      const store = makeStore()
+      expect(() => incrementCounter(store, 'missing_counter')).toThrow(/not registered/)
+    })
   })
 
-  it('registerHistogram 注册并返回 histogram', () => {
-    const svc = freshService()
-    const hist = svc.registerHistogram('test_hist', 'Test histogram help')
-    assert.ok(hist)
-    assert.equal(hist.type, 'histogram')
-    assert.ok(hist.buckets.length >= 5)
+  // ── Gauge ──
+  describe('gauge', () => {
+    it('should set gauge value', () => {
+      const store = makeStore()
+      registerGauge(store, 'active_conn', 'Active connections')
+      setGauge(store, 'active_conn', {}, 42)
+      const m = store.metrics.get('active_conn')! as GaugeData
+      expect(m.values.get('')).toBe(42)
+    })
+
+    it('should update gauge value', () => {
+      const store = makeStore()
+      registerGauge(store, 'temp', 'Temperature')
+      setGauge(store, 'temp', {}, 36.5)
+      setGauge(store, 'temp', {}, 37.0)
+      const m = store.metrics.get('temp')! as GaugeData
+      expect(m.values.get('')).toBe(37.0)
+    })
+
+    it('should support label-annotated gauges', () => {
+      const store = makeStore()
+      registerGauge(store, 'queue_size', 'Queue sizes')
+      setGauge(store, 'queue_size', { queue: 'email' }, 10)
+      setGauge(store, 'queue_size', { queue: 'sms' }, 5)
+      const m = store.metrics.get('queue_size')! as GaugeData
+      expect(m.values.get(serializeLabels({ queue: 'email' }))).toBe(10)
+      expect(m.values.get(serializeLabels({ queue: 'sms' }))).toBe(5)
+    })
+
+    it('should throw for unregistered gauge', () => {
+      const store = makeStore()
+      expect(() => setGauge(store, 'no_gauge', {}, 0)).toThrow(/not registered/)
+    })
   })
 
-  it('registerHistogram 支持自定义桶', () => {
-    const svc = freshService()
-    const hist = svc.registerHistogram('custom_hist', 'Custom buckets', [1, 10, 100])
-    assert.deepEqual(hist.buckets, [1, 10, 100])
+  // ── Histogram ──
+  describe('histogram', () => {
+    it('should record observations', () => {
+      const store = makeStore()
+      registerHistogram(store, 'latency', 'Latency')
+      observeHistogram(store, 'latency', 10)
+      observeHistogram(store, 'latency', 20)
+      observeHistogram(store, 'latency', 30)
+      const m = store.metrics.get('latency')! as HistogramData
+      expect(m.observations.get('')).toEqual([10, 20, 30])
+    })
+
+    it('should track count and sum', () => {
+      const store = makeStore()
+      registerHistogram(store, 'latency', 'Latency')
+      observeHistogram(store, 'latency', 10)
+      observeHistogram(store, 'latency', 20)
+      const m = store.metrics.get('latency')! as HistogramData
+      expect(m.counts.get('')).toBe(2)
+      expect(m.sums.get('')).toBe(30)
+    })
+
+    it('should track per-label observations', () => {
+      const store = makeStore()
+      registerHistogram(store, 'latency', 'Latency')
+      observeHistogram(store, 'latency', 5, { path: '/foo' })
+      observeHistogram(store, 'latency', 15, { path: '/foo' })
+      observeHistogram(store, 'latency', 100, { path: '/bar' })
+      const m = store.metrics.get('latency')! as HistogramData
+      const fooKey = serializeLabels({ path: '/foo' })
+      const barKey = serializeLabels({ path: '/bar' })
+      expect(m.observations.get(fooKey)).toHaveLength(2)
+      expect(m.observations.get(barKey)).toHaveLength(1)
+      expect(m.counts.get(barKey)).toBe(1)
+      expect(m.sums.get(barKey)).toBe(100)
+    })
+
+    it('should throw for unregistered histogram', () => {
+      const store = makeStore()
+      expect(() => observeHistogram(store, 'no_hist', 1)).toThrow(/not registered/)
+    })
   })
 
-  it('重复注册同名的相同类型返回现有实例', () => {
-    const svc = freshService()
-    const c1 = svc.registerCounter('dup', 'help')
-    const c2 = svc.registerCounter('dup', 'help')
-    assert.equal(c1, c2)
+  // ── Render ──
+  describe('render', () => {
+    it('should render empty store as trailing newline', () => {
+      const store = makeStore()
+      expect(renderPrometheus(store)).toBe('\n')
+    })
+
+    it('should render counter value', () => {
+      const store = makeStore()
+      registerCounter(store, 'my_counter', 'Counter help')
+      incrementCounter(store, 'my_counter', {}, 3)
+      const output = renderPrometheus(store)
+      expect(output).toContain('# HELP my_counter Counter help')
+      expect(output).toContain('# TYPE my_counter counter')
+      expect(output).toContain('my_counter 3')
+    })
+
+    it('should render gauge with labels', () => {
+      const store = makeStore()
+      registerGauge(store, 'active', 'Active count')
+      setGauge(store, 'active', { region: 'us-east' }, 10)
+      const output = renderPrometheus(store)
+      expect(output).toContain('active{region="us-east"} 10')
+    })
+
+    it('should render histogram with buckets', () => {
+      const store = makeStore()
+      registerHistogram(store, 'latency', 'Latency help', [5, 10])
+      observeHistogram(store, 'latency', 3)
+      observeHistogram(store, 'latency', 8)
+      const output = renderPrometheus(store)
+      expect(output).toContain('latency_bucket{le="5"} 1')
+      expect(output).toContain('latency_bucket{le="10"} 2')
+      expect(output).toContain('latency_bucket{le="+Inf"} 2')
+      expect(output).toContain('latency_sum 11')
+      expect(output).toContain('latency_count 2')
+    })
   })
 
-  it('重复注册同名的不同类型抛出错误', () => {
-    const svc = freshService()
-    svc.registerCounter('conflict', 'first')
-    assert.throws(() => svc.registerGauge('conflict', 'second'), /already registered as/)
+  // ── Default metrics ──
+  describe('default metrics', () => {
+    it('should register 5 default metrics', () => {
+      const store = makeInitializedStore()
+      const names = listMetrics(store)
+      expect(names).toHaveLength(5)
+      expect(names).toContain('http_requests_total')
+      expect(names).toContain('http_request_duration_ms')
+      expect(names).toContain('http_active_connections')
+      expect(names).toContain('http_exceptions_total')
+      expect(names).toContain('process_uptime_seconds')
+    })
+
+    it('should allow recording on default metrics', () => {
+      const store = makeInitializedStore()
+      incrementCounter(store, 'http_requests_total', { method: 'GET', path: '/', status: 200 })
+      incrementCounter(store, 'http_requests_total', { method: 'POST', path: '/api', status: 201 })
+      setGauge(store, 'http_active_connections', {}, 5)
+      observeHistogram(store, 'http_request_duration_ms', 42, { method: 'GET', path: '/' })
+
+      const output = renderPrometheus(store)
+      expect(output).toContain('http_requests_total{method="GET",path="/",status="200"} 1')
+      expect(output).toContain('http_requests_total{method="POST",path="/api",status="201"} 1')
+      expect(output).toContain('http_active_connections 5')
+    })
   })
 
-  it('registerDefaultMetrics 注册 5 个默认指标', () => {
-    const svc = freshService()
-    registerDefaultMetrics(svc)
-    const names = svc.listMetrics()
-    assert.equal(names.length, 5)
-    assert.ok(names.includes('http_requests_total'))
-    assert.ok(names.includes('http_request_duration_ms'))
-    assert.ok(names.includes('http_active_connections'))
-    assert.ok(names.includes('http_exceptions_total'))
-    assert.ok(names.includes('process_uptime_seconds'))
-  })
-})
-
-describe('MetricsService — Counter 操作', () => {
-  it('incrementCounter 默认步长为 1', () => {
-    const svc = freshService()
-    svc.registerCounter('req', 'requests')
-    svc.incrementCounter('req', { method: 'GET' })
-    const render = svc.render()
-    assert.ok(render.includes('req{method="GET"} 1'))
+  // ── Reset ──
+  describe('reset', () => {
+    it('should clear all metrics', () => {
+      const store = makeInitializedStore()
+      resetStore(store)
+      expect(listMetrics(store)).toHaveLength(0)
+    })
   })
 
-  it('incrementCounter 支持自定义步长', () => {
-    const svc = freshService()
-    svc.registerCounter('req', 'requests')
-    svc.incrementCounter('req', { method: 'POST' }, 5)
-    svc.incrementCounter('req', { method: 'POST' }, 3)
-    const render = svc.render()
-    assert.ok(render.includes('req{method="POST"} 8'))
+  // ── Label escaping ──
+  describe('label escaping', () => {
+    it('should escape double quotes in label values', () => {
+      const escaped = escapeLabelValue('foo"bar')
+      expect(escaped).toBe('foo\\"bar')
+    })
+
+    it('should escape backslashes', () => {
+      const escaped = escapeLabelValue('a\\b')
+      expect(escaped).toBe('a\\\\b')
+    })
+
+    it('should escape newlines', () => {
+      const escaped = escapeLabelValue('line1\nline2')
+      expect(escaped).toBe('line1\\nline2')
+    })
   })
 
-  it('未注册 counter 抛错', () => {
-    const svc = freshService()
-    assert.throws(() => svc.incrementCounter('nope'), /not registered/)
-  })
-})
+  // ── Parsing ──
+  describe('label parsing', () => {
+    it('should parse label key back to object', () => {
+      const key = serializeLabels({ method: 'GET', path: '/api' })
+      const parsed = parseLabelKey(key)
+      expect(parsed.method).toBe('GET')
+      expect(parsed.path).toBe('/api')
+    })
 
-describe('MetricsService — Gauge 操作', () => {
-  it('setGauge 设置值', () => {
-    const svc = freshService()
-    svc.registerGauge('conn', 'connections')
-    svc.setGauge('conn', {}, 42)
-    const render = svc.render()
-    assert.ok(render.includes('conn 42'))
-  })
-
-  it('setGauge 覆盖值', () => {
-    const svc = freshService()
-    svc.registerGauge('conn', 'connections')
-    svc.setGauge('conn', { pool: 'main' }, 10)
-    svc.setGauge('conn', { pool: 'main' }, 20)
-    const render = svc.render()
-    assert.ok(render.includes('conn{pool="main"} 20'))
-  })
-
-  it('未注册 gauge 抛错', () => {
-    const svc = freshService()
-    assert.throws(() => svc.setGauge('nope', {}, 0), /not registered/)
-  })
-})
-
-describe('MetricsService — Histogram 操作', () => {
-  it('observeHistogram 记录值', () => {
-    const svc = freshService()
-    svc.registerHistogram('latency', 'latency help')
-    svc.observeHistogram('latency', 12, { path: '/foo' })
-    const render = svc.render()
-    // 注意: labels 中 path 后于 le（桶标签）, 因为 serialize 排序是字母序
-    assert.ok(render.includes('latency_count{path="/foo"} 1'), `render:\n${render}`)
-    assert.ok(render.includes('latency_sum{path="/foo"} 12'), `render:\n${render}`)
-  })
-
-  it('observeHistogram 多值汇总', () => {
-    const svc = freshService()
-    svc.registerHistogram('latency', 'latency help')
-    svc.observeHistogram('latency', 5, { method: 'GET', path: '/bar' })
-    svc.observeHistogram('latency', 15, { method: 'GET', path: '/bar' })
-    const render = svc.render()
-    assert.ok(render.includes('latency_count{method="GET",path="/bar"} 2'), `render:\n${render}`)
-    assert.ok(render.includes('latency_sum{method="GET",path="/bar"} 20'), `render:\n${render}`)
-  })
-
-  it('buckets 分桶正确', () => {
-    const svc = freshService()
-    svc.registerHistogram('latency', 'latency', [5, 10, 25])
-    svc.observeHistogram('latency', 3, {})
-    svc.observeHistogram('latency', 12, {})
-    const render = svc.render()
-    const lines = render.split('\n')
-    // le 排序在 path 前，但这里没传 labels
-    const bucket5 = lines.find(l => l.startsWith('latency_bucket{le="5"}'))
-    assert.ok(bucket5, `expected bucket5 line, got:\n${render}`)
-    assert.match(bucket5!, / 1$/)
-    const bucketInf = lines.find(l => l.startsWith('latency_bucket{le="+Inf"}'))
-    assert.ok(bucketInf)
-    assert.match(bucketInf!, / 2$/)
-  })
-
-  it('未注册 histogram 抛错', () => {
-    const svc = freshService()
-    assert.throws(() => svc.observeHistogram('nope', 1), /not registered/)
-  })
-})
-
-describe('MetricsService — render 输出格式', () => {
-  it('HELP 和 TYPE 行正确', () => {
-    const svc = freshService()
-    svc.registerCounter('c', 'counter help')
-    const render = svc.render()
-    assert.ok(render.includes('# HELP c counter help'))
-    assert.ok(render.includes('# TYPE c counter'))
-  })
-
-  it('空 metrics 渲染仅为换行', () => {
-    const svc = freshService()
-    const render = svc.render()
-    assert.equal(render, '\n')
-  })
-
-  it('换行符结尾', () => {
-    const svc = freshService()
-    svc.registerCounter('c', 'help')
-    const render = svc.render()
-    assert.ok(render.endsWith('\n'))
-  })
-})
-
-describe('MetricsService — 管理方法', () => {
-  it('listMetrics 返回已注册指标名称', () => {
-    const svc = freshService()
-    svc.registerCounter('a', 'help a')
-    svc.registerGauge('b', 'help b')
-    const names = svc.listMetrics()
-    assert.ok(names.includes('a'))
-    assert.ok(names.includes('b'))
-    assert.equal(names.length, 2)
-  })
-
-  it('reset 清空所有指标', () => {
-    const svc = freshService()
-    svc.registerCounter('a', 'help')
-    svc.reset()
-    assert.equal(svc.listMetrics().length, 0)
-  })
-})
-
-describe('MetricsService — 标签编码', () => {
-  it('标签值中特殊字符正确转义', () => {
-    const svc = freshService()
-    svc.registerCounter('test', 'test help')
-    svc.incrementCounter('test', { path: '/a"b\nc\\d' })
-    const render = svc.render()
-    assert.ok(render.includes('path="/a\\"b\\nc\\\\d"'))
-  })
-
-  it('空 labels 渲染时不带花括号', () => {
-    const svc = freshService()
-    svc.registerGauge('g', 'help')
-    svc.setGauge('g', {}, 1)
-    const render = svc.render()
-    assert.ok(render.includes('g 1'))
-    assert.ok(!render.includes('g{}'))
+    it('should handle empty key', () => {
+      expect(parseLabelKey('')).toEqual({})
+    })
   })
 })

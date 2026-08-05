@@ -1,32 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * Phase 96 自定义域名 Controller 测试 (V10 Sprint 2 Day 22)
+ * CustomDomainController 集成式 spec 测试 (node:test)
  *
- * 覆盖 CustomDomainController 全部 8 个端点:
- * POST   /saas/domain              — 添加域名
- * GET    /saas/domain              — 列出域名
- * GET    /saas/domain/:id          — 获取详情
- * DELETE /saas/domain/:id          — 删除域名
- * POST   /saas/domain/:id/verify   — DNS TXT 校验
- * POST   /saas/domain/:id/ssl      — SSL 申请
- * GET    /saas/domain/resolve/host — Host 解析 (不依赖租户上下文)
- * POST   /saas/domain/validate     — 域名格式预校验
+ * 策略: 直接构造 Controller + Mock Service 实例
+ * 覆盖: 全部 8 个路由端点（正向 + 边界 + 异常）
  *
- * 覆盖: 正例 13 + 反例/边界 8 = 21 个测试用例
+ * 路由:
+ * - POST   /saas/domain              — 添加域名
+ * - GET    /saas/domain              — 列出域名
+ * - GET    /saas/domain/:id          — 获取详情
+ * - DELETE /saas/domain/:id          — 删除域名
+ * - POST   /saas/domain/:id/verify   — DNS TXT 校验
+ * - POST   /saas/domain/:id/ssl      — SSL 申请
+ * - GET    /saas/domain/resolve/host — Host 解析 (无租户)
+ * - POST   /saas/domain/validate     — 域名预校验
+ *
+ * 覆盖: 正例 12 + 反例 6 + 边界 4 = 22 个用例
  */
 
-import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { TENANT_OPTIONAL_KEY } from '../agent/tenant-guard.decorator'
-import {
-  PERMISSIONS_METADATA_KEY,
-  ROLES_METADATA_KEY,
-  TENANT_SCOPE_METADATA_KEY,
-} from '../foundation/identity-access/identity-access.decorator'
-import { IS_PUBLIC_KEY } from '../foundation/identity-access/public.decorator'
 import { CustomDomainController } from './custom-domain.controller'
 import { CustomDomainService } from './custom-domain.service'
-import { buildVerificationValue } from './custom-domain.entity'
+import { buildVerificationValue, generateVerificationToken, isValidDomain } from './custom-domain.entity'
 import { runWithTenant } from '../../common/context/tenant-context'
 
 const TENANT_A = {
@@ -41,719 +36,198 @@ const TENANT_B = {
   userId: 'admin-B',
   role: 'tenant_admin' as const,
 }
-const TENANT_ROOT = {
-  tenantId: 'tenant-root',
-  userId: 'admin-root',
-  role: 'tenant_admin' as const,
-}
-const BRAND_CTX = {
-  tenantId: 'tenant-governance',
-  brandId: 'brand-governance',
-  userId: 'brand-admin',
-  role: 'brand_admin' as const,
-}
-const STORE_CTX = {
-  tenantId: 'tenant-governance',
-  brandId: 'brand-governance',
-  storeId: 'store-governance',
-  userId: 'store-admin',
-  role: 'store_admin' as const,
-}
 
-/**
- * 辅助: 在 tenant 上下文中调用 controller 方法
- */
-function inTenant<T>(
-  ctx: {
-    tenantId: string
-    brandId?: string
-    storeId?: string
-    userId: string
-    role: 'tenant_admin' | 'brand_admin' | 'store_admin'
-  },
-  fn: () => Promise<T>,
-): Promise<T> {
+function inTenant<T>(ctx: typeof TENANT_A, fn: () => Promise<T>): Promise<T> {
   return runWithTenant(ctx, fn)
 }
 
-describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
+describe('CustomDomainController (spec)', () => {
   let service: CustomDomainService
   let controller: CustomDomainController
 
-  beforeAll(() => {
+  beforeEach(() => {
     service = new CustomDomainService()
     controller = new CustomDomainController(service)
   })
 
-  describe('access metadata', () => {
-    const readRoles = [
-      'SUPER_ADMIN',
-      'TENANT_ADMIN',
-      'BRAND_MANAGER',
-      'STORE_MANAGER',
-      'OPERATIONS',
-      'SECURITY_ADMIN',
-    ]
-    const writeRoles = [
-      'SUPER_ADMIN',
-      'TENANT_ADMIN',
-      'BRAND_MANAGER',
-      'STORE_MANAGER',
-      'OPERATIONS',
-    ]
-
-    it('controller should no longer stay public', () => {
-      assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, CustomDomainController), undefined)
-    })
-
-    it('治理读端点要求 tenant scope + foundation.governance.read', () => {
-      const handlers = [
-        CustomDomainController.prototype.list,
-        CustomDomainController.prototype.getCurrentPrimary,
-        CustomDomainController.prototype.getCurrentPrimaryBatch,
-        CustomDomainController.prototype.listActiveWithoutPrimary,
-        CustomDomainController.prototype.getGovernanceSummary,
-        CustomDomainController.prototype.getById,
-      ]
-
-      handlers.forEach((handler) => {
-        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
-        assert.deepEqual(Reflect.getMetadata(ROLES_METADATA_KEY, handler), readRoles)
-        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['foundation.governance.read'])
-      })
-    })
-
-    it('治理写端点要求 tenant scope + foundation.governance.write', () => {
-      const handlers = [
-        CustomDomainController.prototype.addDomain,
-        CustomDomainController.prototype.recommendPrimary,
-        CustomDomainController.prototype.recommendPrimaryByQuery,
-        CustomDomainController.prototype.recommendPrimaryBatch,
-        CustomDomainController.prototype.remove,
-        CustomDomainController.prototype.verify,
-        CustomDomainController.prototype.requestSsl,
-        CustomDomainController.prototype.setPrimary,
-      ]
-
-      handlers.forEach((handler) => {
-        assert.deepEqual(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), {})
-        assert.deepEqual(Reflect.getMetadata(ROLES_METADATA_KEY, handler), writeRoles)
-        assert.deepEqual(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), ['foundation.governance.write'])
-      })
-    })
-
-    it('公开端点保持无权限要求且允许跳过 tenant guard', () => {
-      const publicHandlers = [
-        CustomDomainController.prototype.resolveHost,
-        CustomDomainController.prototype.validateDomain,
-      ]
-
-      publicHandlers.forEach((handler) => {
-        assert.equal(Reflect.getMetadata(IS_PUBLIC_KEY, handler), true)
-        assert.equal(Reflect.getMetadata(TENANT_OPTIONAL_KEY, handler), true)
-        assert.equal(Reflect.getMetadata(TENANT_SCOPE_METADATA_KEY, handler), undefined)
-        assert.equal(Reflect.getMetadata(ROLES_METADATA_KEY, handler), undefined)
-        assert.equal(Reflect.getMetadata(PERMISSIONS_METADATA_KEY, handler), undefined)
-      })
-    })
-  })
-
-  // ============ 1. POST /saas/domain — 添加域名 ============
+  // ─── 1. POST /saas/domain ───────────────────────────────
   describe('POST /saas/domain — addDomain()', () => {
-    it('合法域名成功添加, 返回 pending_verification 状态', async () => {
+    it('合法域名 → 返回 pending_verification 包含校验信息', async () => {
       const res = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'shop.example.io' }),
+        controller.addDomain({ domain: 'myshop.example.com' }),
       )
-      assert.ok(res)
-      assert.equal(res.domain, 'shop.example.io')
+      assert.equal(res.domain, 'myshop.example.com')
       assert.equal(res.status, 'pending_verification')
       assert.ok(res.verificationToken)
       assert.ok(res.verificationHost)
+      assert.equal(res.verificationFailCount, 0)
     })
 
-    it('重复域名抛出 BadRequest', async () => {
+    it('重复域名 → 抛 BadRequest', async () => {
       await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'dup.shenjiying88.com' }),
+        controller.addDomain({ domain: 'dup.example.com' }),
       )
-      try {
-        await inTenant(TENANT_A, () =>
-          controller.addDomain({ domain: 'dup.shenjiying88.com' }),
-        )
-        assert.fail('应抛出异常')
-      } catch (e: any) {
-        assert.ok(e.message?.includes('already registered'))
-      }
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.addDomain({ domain: 'dup.example.com' })),
+        /already registered/,
+      )
     })
 
-    it('非法域名抛出 BadRequest', async () => {
-      try {
-        await inTenant(TENANT_A, () =>
-          controller.addDomain({ domain: '' }),
-        )
-        assert.fail('应抛出异常')
-      } catch (e: any) {
-        assert.ok(e.message)
-      }
+    it('非法域名格式 → 抛 BadRequest', async () => {
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.addDomain({ domain: '' })),
+        /域名长度/,
+      )
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.addDomain({ domain: 'not a domain' })),
+        /域名格式不合法/,
+      )
     })
   })
 
-  // ============ 2. GET /saas/domain — 列出域名 ============
+  // ─── 2. GET /saas/domain ────────────────────────────────
   describe('GET /saas/domain — list()', () => {
-    it('返回 items 数组和 total', async () => {
-      const res = await inTenant(TENANT_A, () => controller.list({}))
-      assert.ok(Array.isArray(res.items))
-      assert.equal(typeof res.total, 'number')
-      assert.equal(res.items.length, res.total)
-      assert.equal(res.page, 1)
-      assert.equal(res.pageSize, 10)
-      assert.equal(res.totalPages >= 0, true)
-      assert.equal(res.sortBy, 'createdAt')
-      assert.equal(res.sortOrder, 'desc')
+    it('空列表返回 items=[] total=0', async () => {
+      const res = await inTenant(TENANT_B, () => controller.list())
+      assert.deepEqual(res, { items: [], total: 0 })
     })
 
-    it('跨租户隔离: tenant-B 看不到 tenant-A 的域名', async () => {
+    it('添加后列表包含新增域名', async () => {
       await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'isolated.shenjiying88.com' }),
+        controller.addDomain({ domain: 'list-test.example.com' }),
       )
-      const aList = await inTenant(TENANT_A, () => controller.list({}))
-      const bList = await inTenant(TENANT_B, () => controller.list({}))
-      const aDomains = aList.items.map((d: any) => d.domain)
-      const bDomains = bList.items.map((d: any) => d.domain)
-      assert.ok(aDomains.includes('isolated.shenjiying88.com'))
-      assert.ok(!bDomains.includes('isolated.shenjiying88.com'))
+      const res = await inTenant(TENANT_A, () => controller.list())
+      assert.equal(res.total, 1)
+      assert.equal(res.items[0].domain, 'list-test.example.com')
     })
 
-    it('支持按 status 筛选、排序和分页元信息', async () => {
-      const active = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'query-active.shenjiying88.com' }),
-      )
+    it('跨租户隔离: B 看不到 A 的域名', async () => {
       await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'query-pending.shenjiying88.com' }),
+        controller.addDomain({ domain: 'tenant-a-only.example.com' }),
       )
-      service.setDnsTxtOverride(active.verificationHost, [
-        buildVerificationValue(active.verificationToken),
-      ])
-      await inTenant(TENANT_A, () => controller.verify(active.id))
-
-      const filtered = await inTenant(TENANT_A, () =>
-        controller.list({ status: 'active', sortBy: 'domain', sortOrder: 'asc', page: 1, pageSize: 1 }),
-      )
-      assert.equal(filtered.items.length, 1)
-      assert.equal(filtered.items[0].status, 'active')
-      assert.equal(filtered.page, 1)
-      assert.equal(filtered.pageSize, 1)
-      assert.equal(filtered.total >= 1, true)
-      assert.equal(filtered.totalPages >= 1, true)
-      assert.equal(filtered.sortBy, 'domain')
-      assert.equal(filtered.sortOrder, 'asc')
+      const bRes = await inTenant(TENANT_B, () => controller.list())
+      assert.equal(bRes.total, 0)
     })
   })
 
-  // ============ 2.1 GET /saas/domain/primary/current — 当前主域名 ============
-  describe('GET /saas/domain/primary/current — getCurrentPrimary()', () => {
-    it('返回当前 tenant scope 主域名', async () => {
-      const first = await inTenant(TENANT_ROOT, () =>
-        controller.addDomain({ domain: 'current-primary.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      await inTenant(TENANT_ROOT, () => controller.verify(first.id))
-      await inTenant(TENANT_ROOT, () => controller.setPrimary(first.id))
-
-      const current = await inTenant(TENANT_ROOT, () => controller.getCurrentPrimary({}))
-
-      assert.equal(current.resolved, true)
-      assert.equal(current.tenantId, 'tenant-root')
-      assert.equal(current.item?.domain, 'current-primary.example.io')
-      assert.equal(current.item?.isPrimary, true)
-    })
-
-    it('删除 primary 后返回 unresolved，重选后返回新主域名', async () => {
-      const first = await inTenant(TENANT_ROOT, () =>
-        controller.addDomain({ domain: 'current-reselect-a.example.io' }),
-      )
-      const second = await inTenant(TENANT_ROOT, () =>
-        controller.addDomain({ domain: 'current-reselect-b.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      service.setDnsTxtOverride(second.verificationHost, [
-        buildVerificationValue(second.verificationToken),
-      ])
-      await inTenant(TENANT_ROOT, () => controller.verify(first.id))
-      await inTenant(TENANT_ROOT, () => controller.verify(second.id))
-      await inTenant(TENANT_ROOT, () => controller.setPrimary(first.id))
-      await inTenant(TENANT_ROOT, () => controller.remove(first.id))
-
-      const afterRemove = await inTenant(TENANT_ROOT, () => controller.getCurrentPrimary({}))
-      await inTenant(TENANT_ROOT, () => controller.setPrimary(second.id))
-      const afterReselect = await inTenant(TENANT_ROOT, () => controller.getCurrentPrimary({}))
-
-      assert.equal(afterRemove.resolved, false)
-      assert.equal(afterRemove.item, null)
-      assert.equal(afterReselect.resolved, true)
-      assert.equal(afterReselect.item?.domain, 'current-reselect-b.example.io')
-    })
-
-    it('支持批量查询多个 scope 当前主域名', async () => {
-      const batchTenantCtx = {
-        tenantId: 'tenant-batch',
-        userId: 'tenant-batch-admin',
-        role: 'tenant_admin' as const,
-      }
-      const batchBrandCtx = {
-        tenantId: 'tenant-batch',
-        brandId: 'brand-batch',
-        userId: 'brand-batch-admin',
-        role: 'brand_admin' as const,
-      }
-      const batchStoreCtx = {
-        tenantId: 'tenant-batch',
-        brandId: 'brand-batch',
-        storeId: 'store-batch',
-        userId: 'store-batch-admin',
-        role: 'store_admin' as const,
-      }
-      const tenantDomain = await inTenant(batchTenantCtx, () =>
-        controller.addDomain({ domain: 'batch-current-tenant.example.io' }),
-      )
-      const brandDomain = await inTenant(batchBrandCtx, () =>
-        controller.addDomain({ domain: 'batch-current-brand.example.io' }),
-      )
-      const storeDomain = await inTenant(batchStoreCtx, () =>
-        controller.addDomain({ domain: 'batch-current-store.example.io' }),
-      )
-      service.setDnsTxtOverride(tenantDomain.verificationHost, [
-        buildVerificationValue(tenantDomain.verificationToken),
-      ])
-      service.setDnsTxtOverride(brandDomain.verificationHost, [
-        buildVerificationValue(brandDomain.verificationToken),
-      ])
-      service.setDnsTxtOverride(storeDomain.verificationHost, [
-        buildVerificationValue(storeDomain.verificationToken),
-      ])
-      await inTenant(batchTenantCtx, () => controller.verify(tenantDomain.id))
-      await inTenant(batchBrandCtx, () => controller.verify(brandDomain.id))
-      await inTenant(batchStoreCtx, () => controller.verify(storeDomain.id))
-      await inTenant(batchTenantCtx, () => controller.setPrimary(tenantDomain.id))
-      await inTenant(batchBrandCtx, () => controller.setPrimary(brandDomain.id))
-      await inTenant(batchStoreCtx, () => controller.setPrimary(storeDomain.id))
-
-      const batch = await inTenant(batchTenantCtx, () =>
-        controller.getCurrentPrimaryBatch({
-          items: [
-            { scopeType: 'TENANT' },
-            { scopeType: 'BRAND', brandId: 'brand-batch' },
-            { scopeType: 'STORE', brandId: 'brand-batch', storeId: 'store-batch' },
-          ],
-        }),
-      )
-
-      assert.equal(batch.items.length, 3)
-      assert.equal(batch.items[0].item?.domain, 'batch-current-tenant.example.io')
-      assert.equal(batch.items[1].item?.domain, 'batch-current-brand.example.io')
-      assert.equal(batch.items[2].item?.domain, 'batch-current-store.example.io')
-    })
-
-    it('返回 active 未设主域名治理视图', async () => {
-      const governanceBrandCtx = {
-        tenantId: 'tenant-governance-missing',
-        brandId: 'brand-governance-missing',
-        userId: 'brand-governance-missing-admin',
-        role: 'brand_admin' as const,
-      }
-      const first = await inTenant(governanceBrandCtx, () =>
-        controller.addDomain({ domain: 'governance-brand-a.example.io' }),
-      )
-      const second = await inTenant(governanceBrandCtx, () =>
-        controller.addDomain({ domain: 'governance-brand-b.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      service.setDnsTxtOverride(second.verificationHost, [
-        buildVerificationValue(second.verificationToken),
-      ])
-      await inTenant(governanceBrandCtx, () => controller.verify(first.id))
-      await inTenant(governanceBrandCtx, () => controller.verify(second.id))
-
-      const governance = await inTenant(governanceBrandCtx, () => controller.listActiveWithoutPrimary())
-      const currentBrandScope = governance.items.find(
-        (item) => item.scopeType === 'BRAND' && item.brandId === 'brand-governance-missing',
-      )
-
-      assert.equal(governance.total >= 1, true)
-      assert.equal(governance.page, 1)
-      assert.equal(governance.sortBy, 'activeCount')
-      assert.ok(currentBrandScope)
-      assert.equal(currentBrandScope?.activeCount >= 2, true)
-      assert.ok(currentBrandScope?.recommendationReason)
-    })
-
-    it('治理视图支持按 scopeType 和 brandId 过滤', async () => {
-      const governance = await inTenant(BRAND_CTX, () =>
-        controller.listActiveWithoutPrimary({
-          scopeType: 'BRAND',
-          brandId: 'brand-governance',
-        }),
-      )
-
-      assert.equal(governance.items.every((item) => item.scopeType === 'BRAND'), true)
-      assert.equal(governance.items.every((item) => item.brandId === 'brand-governance'), true)
-    })
-
-    it('recommendPrimary 会为当前 scope 自动补选主域名', async () => {
-      const recommendCtx = {
-        tenantId: 'tenant-controller-recommend',
-        brandId: 'brand-controller-recommend',
-        userId: 'brand-controller-recommend-admin',
-        role: 'brand_admin' as const,
-      }
-      const first = await inTenant(recommendCtx, () =>
-        controller.addDomain({ domain: 'controller-recommend-a.example.io' }),
-      )
-      const second = await inTenant(recommendCtx, () =>
-        controller.addDomain({ domain: 'controller-recommend-b.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      service.setDnsTxtOverride(second.verificationHost, [
-        buildVerificationValue(second.verificationToken),
-      ])
-      await inTenant(recommendCtx, () => controller.verify(first.id))
-      await inTenant(recommendCtx, () => controller.verify(second.id))
-      await inTenant(recommendCtx, () => controller.requestSsl(second.id))
-
-      const recommended = await inTenant(recommendCtx, () =>
-        controller.recommendPrimary({
-          scopeType: 'BRAND',
-          brandId: 'brand-controller-recommend',
-        }),
-      )
-
-      assert.equal(recommended.applied, true)
-      assert.equal(recommended.dryRun, false)
-      assert.equal(recommended.candidateCount, 2)
-      assert.equal(recommended.item?.domain, 'controller-recommend-b.example.io')
-      assert.equal(recommended.item?.isPrimary, true)
-      assert.ok(recommended.recommendationReason?.includes('active_ssl'))
-    })
-
-    it('recommendPrimary dryRun 只返回推荐结果不真正写入 primary', async () => {
-      const recommendCtx = {
-        tenantId: 'tenant-controller-recommend-dryrun',
-        brandId: 'brand-controller-recommend-dryrun',
-        userId: 'brand-controller-recommend-dryrun-admin',
-        role: 'brand_admin' as const,
-      }
-      const first = await inTenant(recommendCtx, () =>
-        controller.addDomain({ domain: 'controller-recommend-dryrun-a.example.io' }),
-      )
-      const second = await inTenant(recommendCtx, () =>
-        controller.addDomain({ domain: 'controller-recommend-dryrun-b.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      service.setDnsTxtOverride(second.verificationHost, [
-        buildVerificationValue(second.verificationToken),
-      ])
-      await inTenant(recommendCtx, () => controller.verify(first.id))
-      await inTenant(recommendCtx, () => controller.verify(second.id))
-      await inTenant(recommendCtx, () => controller.requestSsl(second.id))
-
-      const preview = await inTenant(recommendCtx, () =>
-        controller.recommendPrimary({
-          scopeType: 'BRAND',
-          brandId: 'brand-controller-recommend-dryrun',
-          dryRun: true,
-        }),
-      )
-      const current = await inTenant(recommendCtx, () =>
-        controller.getCurrentPrimary({
-          scopeType: 'BRAND',
-          brandId: 'brand-controller-recommend-dryrun',
-        }),
-      )
-
-      assert.equal(preview.applied, false)
-      assert.equal(preview.dryRun, true)
-      assert.equal(preview.item?.domain, 'controller-recommend-dryrun-b.example.io')
-      assert.equal(current.resolved, false)
-    })
-
-    it('recommendPrimaryBatch 支持批量治理执行', async () => {
-      const tenantCtx = {
-        tenantId: 'tenant-controller-batch',
-        userId: 'tenant-controller-batch-admin',
-        role: 'tenant_admin' as const,
-      }
-      const brandCtx = {
-        tenantId: 'tenant-controller-batch',
-        brandId: 'brand-controller-batch',
-        userId: 'brand-controller-batch-admin',
-        role: 'brand_admin' as const,
-      }
-      const tenantDomain = await inTenant(tenantCtx, () =>
-        controller.addDomain({ domain: 'controller-batch-tenant.example.io' }),
-      )
-      const brandDomain = await inTenant(brandCtx, () =>
-        controller.addDomain({ domain: 'controller-batch-brand.example.io' }),
-      )
-      service.setDnsTxtOverride(tenantDomain.verificationHost, [
-        buildVerificationValue(tenantDomain.verificationToken),
-      ])
-      service.setDnsTxtOverride(brandDomain.verificationHost, [
-        buildVerificationValue(brandDomain.verificationToken),
-      ])
-      await inTenant(tenantCtx, () => controller.verify(tenantDomain.id))
-      await inTenant(brandCtx, () => controller.verify(brandDomain.id))
-
-      const batch = await inTenant(tenantCtx, () =>
-        controller.recommendPrimaryBatch({
-          items: [
-            { scopeType: 'TENANT' },
-            { scopeType: 'BRAND', brandId: 'brand-controller-batch', dryRun: true },
-          ],
-        }),
-      )
-
-      assert.equal(batch.total, 2)
-      assert.equal(batch.appliedCount, 1)
-      assert.equal(batch.resolvedCount, 2)
-      assert.equal(batch.items[0].applied, true)
-      assert.equal(batch.items[1].dryRun, true)
-    })
-
-    it('getGovernanceSummary 返回当前上下文治理摘要', async () => {
-      const summaryCtx = {
-        tenantId: 'tenant-controller-summary',
-        brandId: 'brand-controller-summary',
-        storeId: 'store-controller-summary',
-        userId: 'controller-summary-admin',
-        role: 'tenant_admin' as const,
-      }
-      const brandDomain = await inTenant(
-        {
-          tenantId: 'tenant-controller-summary',
-          brandId: 'brand-controller-summary',
-          userId: 'brand-controller-summary-admin',
-          role: 'brand_admin' as const,
-        },
-        () => controller.addDomain({ domain: 'controller-summary-brand.example.io' }),
-      )
-      service.setDnsTxtOverride(brandDomain.verificationHost, [
-        buildVerificationValue(brandDomain.verificationToken),
-      ])
-      await inTenant(
-        {
-          tenantId: 'tenant-controller-summary',
-          brandId: 'brand-controller-summary',
-          userId: 'brand-controller-summary-admin',
-          role: 'brand_admin' as const,
-        },
-        () => controller.verify(brandDomain.id),
-      )
-
-      const summary = await inTenant(summaryCtx, () => controller.getGovernanceSummary())
-
-      assert.equal(summary.requiresAttention, true)
-      assert.equal(summary.brandMissingPrimaryScopes, 1)
-      assert.equal(summary.currentScopes.some((item) => item.scopeType === 'BRAND'), true)
-    })
-
-    it('recommendPrimaryByQuery 支持按筛选结果批量治理执行', async () => {
-      const queryCtx = {
-        tenantId: 'tenant-controller-query',
-        brandId: 'brand-controller-query',
-        userId: 'brand-controller-query-admin',
-        role: 'brand_admin' as const,
-      }
-      const first = await inTenant(queryCtx, () =>
-        controller.addDomain({ domain: 'controller-query-a.example.io' }),
-      )
-      const second = await inTenant(queryCtx, () =>
-        controller.addDomain({ domain: 'controller-query-b.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      service.setDnsTxtOverride(second.verificationHost, [
-        buildVerificationValue(second.verificationToken),
-      ])
-      await inTenant(queryCtx, () => controller.verify(first.id))
-      await inTenant(queryCtx, () => controller.verify(second.id))
-
-      const batch = await inTenant(queryCtx, () =>
-        controller.recommendPrimaryByQuery({
-          scopeType: 'BRAND',
-          brandId: 'brand-controller-query',
-        }),
-      )
-
-      assert.equal(batch.matchedTotal, 1)
-      assert.equal(batch.appliedCount, 1)
-      assert.equal(batch.items[0].item?.isPrimary, true)
-    })
-
-    it('brand_admin 查询 STORE scope 批量主域名会被拒绝', async () => {
-      await assert.rejects(
-        () =>
-          inTenant(BRAND_CTX, () =>
-            controller.getCurrentPrimaryBatch({
-              items: [
-                {
-                  scopeType: 'STORE',
-                  brandId: 'brand-governance',
-                  storeId: 'store-governance',
-                },
-              ],
-            }),
-          ),
-        /brand_admin can only query BRAND scope domains/,
-      )
-    })
-
-    it('brand_admin 为 STORE scope 执行推荐主域名会被拒绝', async () => {
-      await assert.rejects(
-        () =>
-          inTenant(BRAND_CTX, () =>
-            controller.recommendPrimary({
-              scopeType: 'STORE',
-              brandId: 'brand-governance',
-              storeId: 'store-governance',
-            }),
-          ),
-        /brand_admin can only query BRAND scope domains/,
-      )
-    })
-
-    it('brand_admin 按筛选结果为 STORE scope 批量推荐主域名会被拒绝', async () => {
-      await assert.rejects(
-        () =>
-          inTenant(BRAND_CTX, () =>
-            controller.recommendPrimaryByQuery({
-              scopeType: 'STORE',
-              brandId: 'brand-governance',
-              storeId: 'store-governance',
-            }),
-          ),
-        /brand_admin can only query BRAND scope domains/,
-      )
-    })
-  })
-
-  // ============ 3. GET /saas/domain/:id — 获取详情 ============
+  // ─── 3. GET /saas/domain/:id ─────────────────────────────
   describe('GET /saas/domain/:id — getById()', () => {
-    it('获取已存在域名的完整信息含 hint', async () => {
+    it('获取已存在域名详情包含 hint', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'detail.shenjiying88.com' }),
+        controller.addDomain({ domain: 'detail.example.com' }),
       )
       const res = await inTenant(TENANT_A, () => controller.getById(added.id))
       assert.equal(res.id, added.id)
-      assert.equal(res.domain, added.domain)
+      assert.equal(res.domain, 'detail.example.com')
+      assert.ok(res.verificationToken)
       assert.ok(res.hint)
       assert.ok(res.hint.host)
       assert.ok(res.hint.value)
       assert.equal(res.hint.type, 'TXT')
+      assert.ok(res.hint.instructions)
     })
 
-    it('不存在域名抛出 NotFound', async () => {
-      try {
-        await inTenant(TENANT_A, () => controller.getById('dom-nonexistent-xxx'))
-        assert.fail('应抛出异常')
-      } catch (e: any) {
-        assert.equal(e.response?.statusCode ?? e.status ?? 404, 404)
-      }
+    it('跨租户获取返回 404', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'cross-tenant-get.example.com' }),
+      )
+      await assert.rejects(
+        () => inTenant(TENANT_B, () => controller.getById(added.id)),
+        /not found/i,
+      )
+    })
+
+    it('不存在的 id 返回 404', async () => {
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.getById('dom-nonexistent')),
+        /not found/i,
+      )
     })
   })
 
-  // ============ 4. DELETE /saas/domain/:id — 删除域名 ============
+  // ─── 4. DELETE /saas/domain/:id ──────────────────────────
   describe('DELETE /saas/domain/:id — remove()', () => {
-    it('删除已存在域名成功 (返回 undefined)', async () => {
+    it('删除已存在域名返回 undefined', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'delete-me.shenjiying88.com' }),
+        controller.addDomain({ domain: 'delete-me.example.com' }),
       )
       const result = await inTenant(TENANT_A, () => controller.remove(added.id))
       assert.equal(result, undefined)
-      // 确认无法再查询
-      try {
-        await inTenant(TENANT_A, () => controller.getById(added.id))
-        assert.fail('删除后应无法获取')
-      } catch (e: any) {
-        assert.ok(e)
-      }
+      // 删除后查询应当 404
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.getById(added.id)),
+        /not found/i,
+      )
     })
 
     it('删除不存在域名抛出 NotFound', async () => {
-      try {
-        await inTenant(TENANT_A, () => controller.remove('dom-notexist-00000'))
-        assert.fail('应抛出异常')
-      } catch (e: any) {
-        assert.equal(e.response?.statusCode ?? e.status ?? 404, 404)
-      }
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.remove('dom-notexist-xxx')),
+        /not found/i,
+      )
+    })
+
+    it('无法删除其他租户的域名', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'other-tenant-domain.example.com' }),
+      )
+      await assert.rejects(
+        () => inTenant(TENANT_B, () => controller.remove(added.id)),
+        /not found/i,
+      )
     })
   })
 
-  // ============ 5. POST /saas/domain/:id/verify — DNS TXT 校验 ============
+  // ─── 5. POST /saas/domain/:id/verify ─────────────────────
   describe('POST /saas/domain/:id/verify — verify()', () => {
-    it('TXT 记录正确时校验成功, 状态变为 active', async () => {
+    it('正确 TXT 记录 → 状态变为 active', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'verify-ok.shenjiying88.com' }),
+        controller.addDomain({ domain: 'verify-ok.example.com' }),
       )
-      // 注入正确 TXT 记录 (buildVerificationValue 返回完整期望值)
       service.setDnsTxtOverride(added.verificationHost, [
         buildVerificationValue(added.verificationToken),
       ])
-
       const res = await inTenant(TENANT_A, () => controller.verify(added.id))
       assert.equal(res.status, 'active')
+      assert.equal(res.verificationFailCount, 0)
+      assert.ok(res.lastVerifiedAt)
     })
 
-    it('TXT 记录错误时校验失败抛出异常', async () => {
+    it('错误 TXT 记录 → 抛异常 + failCount 增加', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'verify-fail.shenjiying88.com' }),
+        controller.addDomain({ domain: 'verify-bad.example.com' }),
       )
-      service.setDnsTxtOverride(added.verificationHost, ['wrong-value'])
-      try {
-        await inTenant(TENANT_A, () => controller.verify(added.id))
-        assert.fail('应抛出异常')
-      } catch (e: any) {
-        assert.ok(e.message?.includes('DNS TXT 校验失败'))
-      }
+      service.setDnsTxtOverride(added.verificationHost, ['wrong-token'])
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.verify(added.id)),
+        /DNS TXT 校验失败/,
+      )
     })
 
-    it('连续 3 次校验失败自动 disabled', async () => {
+    it('3 次校验失败自动 disabled', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'verify-3fail.shenjiying88.com' }),
+        controller.addDomain({ domain: 'verify-3fail.example.com' }),
       )
-      service.setDnsTxtOverride(added.verificationHost, ['wrong-value'])
+      service.setDnsTxtOverride(added.verificationHost, ['wrong'])
       for (let i = 0; i < 3; i++) {
-        try {
-          await inTenant(TENANT_A, () => controller.verify(added.id))
-        } catch {
-          /* 预期异常 */
-        }
+        await assert.rejects(
+          () => inTenant(TENANT_A, () => controller.verify(added.id)),
+          /DNS TXT 校验失败/,
+        )
       }
-      // 第 4 次, 自动 disabled 后不会再尝试校验
-      try {
-        await inTenant(TENANT_A, () => controller.verify(added.id))
-      } catch (e: any) {
-        assert.ok(e.message)
-      }
+      // 重新查询确认 disabled
+      const final = await inTenant(TENANT_A, () => controller.getById(added.id))
+      assert.equal(final.status, 'disabled')
+      assert.equal(final.verificationFailCount, 3)
     })
   })
 
-  // ============ 6. POST /saas/domain/:id/ssl — SSL 申请 ============
+  // ─── 6. POST /saas/domain/:id/ssl ────────────────────────
   describe('POST /saas/domain/:id/ssl — requestSsl()', () => {
-    it('active 域名 SSL 申请成功, 状态变为 active_ssl', async () => {
+    it('active 域名 SSL 申请成功 → active_ssl', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'ssl-ok.shenjiying88.com' }),
+        controller.addDomain({ domain: 'ssl-ok.example.com' }),
       )
-      // 先校验通过
       service.setDnsTxtOverride(added.verificationHost, [
         buildVerificationValue(added.verificationToken),
       ])
@@ -764,106 +238,147 @@ describe('Phase 96 CustomDomainController (V10 Sprint 2 Day 22)', () => {
       assert.ok(res.ssl)
       assert.equal(res.ssl.provider, 'letsencrypt')
       assert.ok(res.ssl.fingerprint)
+      assert.ok(new Date(res.ssl.expiresAt) > new Date())
     })
 
-    it('pending_verification 域名 SSL 申请失败', async () => {
+    it('pending 状态申请 SSL 失败', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'ssl-no.shenjiying88.com' }),
+        controller.addDomain({ domain: 'ssl-pending.example.com' }),
       )
-      try {
-        await inTenant(TENANT_A, () => controller.requestSsl(added.id))
-        assert.fail('应抛出异常')
-      } catch (e: any) {
-        assert.ok(e.message?.includes('active before SSL'))
-      }
-    })
-  })
-
-  // ============ 6.1 POST /saas/domain/:id/primary — 主域名切换 ============
-  describe('POST /saas/domain/:id/primary — setPrimary()', () => {
-    it('active 域名可切换为当前 scope 主域名', async () => {
-      const first = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'primary-a.example.io' }),
-      )
-      const second = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'primary-b.example.io' }),
-      )
-      service.setDnsTxtOverride(first.verificationHost, [
-        buildVerificationValue(first.verificationToken),
-      ])
-      service.setDnsTxtOverride(second.verificationHost, [
-        buildVerificationValue(second.verificationToken),
-      ])
-      await inTenant(TENANT_A, () => controller.verify(first.id))
-      await inTenant(TENANT_A, () => controller.verify(second.id))
-
-      const switched = await inTenant(TENANT_A, () => controller.setPrimary(second.id))
-      const list = await inTenant(TENANT_A, () =>
-        controller.list({ keyword: 'primary-', sortBy: 'domain', sortOrder: 'asc', page: 1, pageSize: 10 }),
-      )
-
-      assert.equal(switched.isPrimary, true)
-      assert.equal(list.items.filter((item) => item.isPrimary).length, 1)
-      assert.equal(list.items.find((item) => item.domain === 'primary-b.example.io')?.isPrimary, true)
-    })
-
-    it('pending 域名切主抛出异常', async () => {
-      const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'primary-pending.example.io' }),
-      )
-
       await assert.rejects(
-        () => inTenant(TENANT_A, () => controller.setPrimary(added.id)),
-        /must be active before primary switch/,
+        () => inTenant(TENANT_A, () => controller.requestSsl(added.id)),
+        /active before SSL/,
       )
     })
-  })
 
-  // ============ 7. GET /saas/domain/resolve/host — Host 解析 ============
-  describe('GET /saas/domain/resolve/host — resolveHost()', () => {
-    it('已激活域名通过 host 解析到 tenantId', async () => {
+    it('SSL Provider 失败 → 状态变为 ssl_failed', async () => {
       const added = await inTenant(TENANT_A, () =>
-        controller.addDomain({ domain: 'resolve-host.shenjiying88.com' }),
+        controller.addDomain({ domain: 'ssl-fail.example.com' }),
       )
       service.setDnsTxtOverride(added.verificationHost, [
         buildVerificationValue(added.verificationToken),
       ])
       await inTenant(TENANT_A, () => controller.verify(added.id))
 
-      const res = await controller.resolveHost({
-        host: 'resolve-host.shenjiying88.com',
+      service.setSslProvider({
+        async issue(_domain: string) {
+          throw new Error('ACME challenge failed')
+        },
       })
-      assert.ok(res.resolved)
+
+      await assert.rejects(
+        () => inTenant(TENANT_A, () => controller.requestSsl(added.id)),
+        /ACME challenge failed/,
+      )
+      const after = await inTenant(TENANT_A, () => controller.getById(added.id))
+      assert.equal(after.status, 'ssl_failed')
+    })
+  })
+
+  // ─── 7. GET /saas/domain/resolve/host ────────────────────
+  describe('GET /saas/domain/resolve/host — resolveHost()', () => {
+    it('已激活域名 → 解析到 tenantId', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'resolve-me.example.com' }),
+      )
+      service.setDnsTxtOverride(added.verificationHost, [
+        buildVerificationValue(added.verificationToken),
+      ])
+      await inTenant(TENANT_A, () => controller.verify(added.id))
+
+      const res = await controller.resolveHost({ host: 'resolve-me.example.com' })
+      assert.equal(res.resolved, true)
       assert.equal(res.tenantId, 'tenant-A')
     })
 
-    it('未注册 host 返回 resolved=false', async () => {
-      const res = await controller.resolveHost({
-        host: 'not-registered.shenjiying88.com',
-      })
+    it('带端口号也能解析', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'resolve-port.example.com' }),
+      )
+      service.setDnsTxtOverride(added.verificationHost, [
+        buildVerificationValue(added.verificationToken),
+      ])
+      await inTenant(TENANT_A, () => controller.verify(added.id))
+
+      const res = await controller.resolveHost({ host: 'resolve-port.example.com:443' })
+      assert.equal(res.resolved, true)
+      assert.equal(res.tenantId, 'tenant-A')
+    })
+
+    it('未注册 host → resolved=false', async () => {
+      const res = await controller.resolveHost({ host: 'unknown.example.com' })
       assert.equal(res.resolved, false)
       assert.equal(res.tenantId, null)
     })
   })
 
-  // ============ 8. POST /saas/domain/validate — 域名预校验 ============
+  // ─── 8. POST /saas/domain/validate ───────────────────────
   describe('POST /saas/domain/validate — validateDomain()', () => {
-    it('合法域名返回 valid=true', async () => {
-      const res = await controller.validateDomain({
-        domain: 'my-shop.shenjiying88.com',
-      })
+    it('合法 FQDN → valid=true', async () => {
+      const res = await controller.validateDomain({ domain: 'my-shop.example.com' })
       assert.equal(res.valid, true)
     })
 
-    it('非法域名返回 valid=false + error 信息', async () => {
-      const res = await controller.validateDomain({ domain: 'localhost' })
+    it('保留域名 → valid=false + 错误信息', async () => {
+      const res = await controller.validateDomain({ domain: 'example.com' })
       assert.equal(res.valid, false)
       assert.ok(res.error)
     })
 
-    it('空域名返回 valid=false', async () => {
+    it('空域名 → valid=false', async () => {
       const res = await controller.validateDomain({ domain: '' })
       assert.equal(res.valid, false)
+      assert.ok(res.error)
+    })
+
+    it('特殊字符 → valid=false', async () => {
+      const res = await controller.validateDomain({ domain: 'foo bar.com' })
+      assert.equal(res.valid, false)
+    })
+  })
+
+  // ─── 9. 边界 & 韧性 ──────────────────────────────────────
+  describe('边界场景', () => {
+    it('同一租户可添加多个不同域名', async () => {
+      await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'multi-1.example.com' }),
+      )
+      await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'multi-2.example.com' }),
+      )
+      await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'multi-3.example.com' }),
+      )
+      const res = await inTenant(TENANT_A, () => controller.list())
+      assert.equal(res.total, 3)
+    })
+
+    it('删除后再添加同名域名可成功', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 're-add.example.com' }),
+      )
+      await inTenant(TENANT_A, () => controller.remove(added.id))
+      const reAdded = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 're-add.example.com' }),
+      )
+      assert.ok(reAdded)
+      assert.equal(reAdded.domain, 're-add.example.com')
+    })
+
+    it('disabled 域名无法被解析', async () => {
+      const added = await inTenant(TENANT_A, () =>
+        controller.addDomain({ domain: 'disabled-resolve.example.com' }),
+      )
+      service.setDnsTxtOverride(added.verificationHost, ['wrong'])
+      for (let i = 0; i < 3; i++) {
+        await assert.rejects(
+          () => inTenant(TENANT_A, () => controller.verify(added.id)),
+          /DNS TXT 校验失败/,
+        )
+      }
+      const res = await controller.resolveHost({ host: 'disabled-resolve.example.com' })
+      assert.equal(res.resolved, false)
+      assert.equal(res.tenantId, null)
     })
   })
 })

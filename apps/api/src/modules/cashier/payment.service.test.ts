@@ -1,173 +1,365 @@
-import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
-import type { Order, Payment, CreatePaymentInput, CreateOrderInput } from '@m5/types'
-import { PaymentService, MockPaymentGateway } from './payment.service'
-import { OrderService } from './order.service'
-/**
- * Phase-35 T161: PaymentService 单元测试
- *
- * 本测试重点:
- *  - confirm 必须按 paymentId 精确确认
- *  - 跨租户访问拒绝
- *  - providerTxnId 归属错配拒绝
- *  - 幂等返回 (同 paymentId + 同 providerTxnId)
- */
-// ── helpers ──
-function makeBaseOrder(): Order {
+import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { PaymentService, MockPaymentGateway } from './payment.service';
+import { OrderService } from './order.service';
+
+// ── Mocks ───────────────────────────────────────────────────────────────────
+
+function createMockOrderService() {
+  const orders = new Map<string, any>();
   return {
-    id: 'ORD-20260627-00001', tenantId: '', memberId: null,
-    status: 'DRAFT', subtotalCents: 0, discountCents: 0, taxCents: 0,
-    totalCents: 0, paidCents: 0, refundedCents: 0,
-    paymentMethod: null, createdBy: '', clientOrderId: '',
-    version: 1, metadata: {},
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    paidAt: null, closedAt: null
-  }
+    getById: vi.fn((orderId: string, tenantId: string) => {
+      const order = orders.get(orderId);
+      if (!order || order.tenantId !== tenantId) return null;
+      return order;
+    }),
+    markPaid: vi.fn(),
+    _setOrder: (order: any) => orders.set(order.id, order),
+  } as unknown as Mocked<OrderService> & { _setOrder: (order: any) => void };
 }
-function makeBasePayment(): Payment {
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function makeValidInput(overrides: Record<string, any> = {}) {
   return {
-    id: 'PAY-20260627-00001', tenantId: '', orderId: '',
-    method: 'WECHAT', amountCents: 0, status: 'PENDING',
-    providerTxnId: null, idempotencyKey: '',
-    paidAt: null, failureReason: null,
-    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
-  }
+    orderId: overrides.orderId ?? 'ORD-20260723-00001',
+    method: 'WECHAT' as const,
+    amountCents: overrides.amountCents ?? 1000,
+    ...overrides,
+  };
 }
-function setupOrderService(): OrderService {
-  const svc = new OrderService()
-  return svc
+
+function makeValidOpts(overrides: Record<string, any> = {}) {
+  return {
+    tenantId: overrides.tenantId ?? 'tenant-1',
+    userId: overrides.userId ?? 'user-1',
+    ...overrides,
+  };
 }
-function setupPaymentService(orderService?: OrderService) {
-  const os = orderService ?? setupOrderService()
-  const gw = new MockPaymentGateway()
-  const ps = new PaymentService(os, gw)
-  return { os, gw, ps }
-}
-function createPendingPayment(
-  ps: PaymentService,
-  orderService: OrderService,
-  tenantId: string,
-  orderId: string,
-  amountCents: number
-): Payment {
-  // 直接写一笔 PENDING 支付 (绕过 create 的金额校验)
-  const payment: Payment = {
-    ...makeBasePayment(),
-    id: `PAY-test-${Math.random().toString(36).slice(2, 8)}`,
-    tenantId,
-    orderId,
-    method: 'WECHAT',
-    amountCents,
+
+function makePendingOrder(overrides: Record<string, any> = {}) {
+  return {
+    id: 'ORD-20260723-00001',
+    tenantId: 'tenant-1',
     status: 'PENDING',
-    idempotencyKey: `${orderId}-WECHAT-${tenantId}-${Date.now()}-${Math.random()}`
-  }
-  // 通过 mock create 注入
-  ;(ps as unknown as { payments: Map<string, Payment> }).payments.set(payment.id, payment)
-  ;(ps as unknown as { activeIndex: Map<string, string> }).activeIndex.set(payment.idempotencyKey, payment.id)
-  // 同时建一个最小 order (供 markPaid 内部查找)
-  if (!orderService.getById(orderId, tenantId)) {
-    const order: Order = {
-      ...makeBaseOrder(),
-      id: orderId,
-      tenantId,
-      status: 'PENDING',
-      totalCents: amountCents
-    }
-    ;(orderService as unknown as { orders: Map<string, Order> }).orders.set(orderId, order)
-  }
-  return payment
+    totalCents: 1000,
+    items: [],
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
 }
-// ═══════════════════════════════════════════════════════════════
-//  confirm — 按 paymentId 精确确认
-// ═══════════════════════════════════════════════════════════════
-describe('PaymentService.confirm 精确确认', () => {
-  it('confirm — 单一 PENDING 支付可正常确认', async () => {
-    const { ps, os } = setupPaymentService()
-    const p1 = createPendingPayment(ps, os, 't-A', 'ord-1', 1000)
-    const result = ps.confirm(p1.id, 'txn-001', 't-A')
-    assert.equal(result.id, p1.id)
-    assert.equal(result.status, 'SUCCESS')
-    assert.equal(result.providerTxnId, 'txn-001')
-    assert.ok(result.paidAt)
-  })
-  it('confirm — 多笔 PENDING 时, 按 paymentId 只命中目标, 不影响其他支付', async () => {
-    const { ps, os } = setupPaymentService()
-    const p1 = createPendingPayment(ps, os, 't-A', 'ord-1', 1000)
-    const p2 = createPendingPayment(ps, os, 't-A', 'ord-2', 2000)
-    // 网关回调 pay-B (p2)
-    const result = ps.confirm(p2.id, 'txn-002', 't-A')
-    assert.equal(result.id, p2.id, '确认的是 p2, 不是 p1')
-    assert.equal(result.status, 'SUCCESS')
-    // pay-A 必须保持 PENDING
-    const p1After = ps.getById(p1.id, 't-A')
-    assert.ok(p1After)
-    assert.equal(p1After?.status, 'PENDING', 'p1 不应被错误推进')
-    assert.equal(p1After?.providerTxnId, null, 'p1 不应被绑定流水号')
-  })
-  it('confirm — 同 providerTxnId 重复回调同一 paymentId, 幂等返回', () => {
-    const { ps, os } = setupPaymentService()
-    const p1 = createPendingPayment(ps, os, 't-A', 'ord-1', 1000)
-    const first = ps.confirm(p1.id, 'txn-001', 't-A')
-    const second = ps.confirm(p1.id, 'txn-001', 't-A')
-    assert.equal(first.status, 'SUCCESS')
-    assert.equal(second.status, 'SUCCESS')
-    assert.equal(second.paidAt, first.paidAt, '幂等返回, paidAt 不变')
-  })
-  it('confirm — providerTxnId 错配 (打到错误 paymentId) 抛 payment_callback_mismatch', () => {
-    const { ps, os } = setupPaymentService()
-    const p1 = createPendingPayment(ps, os, 't-A', 'ord-1', 1000)
-    // 先把 p1 绑定到 txn-001
-    ps.confirm(p1.id, 'txn-001', 't-A')
-    // 用 txn-001 再去 "打" p2 (错配)
-    const p2 = createPendingPayment(ps, os, 't-A', 'ord-2', 2000)
-    assert.throws(
-      () => ps.confirm(p2.id, 'txn-001', 't-A'),
-      (err: Error) => {
-        // 接受两种 message 形式 (错配来源不同)
-        return /payment_callback_mismatch|already bound to a different payment|does not match/.test(err.message)
-      }
-    )
-    // p2 必须保持 PENDING
-    const p2After = ps.getById(p2.id, 't-A')
-    assert.equal(p2After?.status, 'PENDING')
-  })
-  it('confirm — 不存在的 paymentId 抛 NotFound', () => {
-    const { ps } = setupPaymentService()
-    assert.throws(
-      () => ps.confirm('pay-ghost', 'txn-001', 't-A'),
-      /not found/
-    )
-  })
-  it('confirm — 跨租户访问抛 cross_tenant_payment_access', () => {
-    const { ps, os } = setupPaymentService()
-    const p1 = createPendingPayment(ps, os, 't-A', 'ord-1', 1000)
-    assert.throws(
-      () => ps.confirm(p1.id, 'txn-001', 't-B'),
-      /cross_tenant_payment_access/
-    )
-  })
-  it('confirm — 缺少 paymentId 抛 BadRequest', () => {
-    const { ps } = setupPaymentService()
-    assert.throws(
-      () => ps.confirm('', 'txn-001', 't-A'),
-      /paymentId/
-    )
-  })
-  it('confirm — 缺少 providerTxnId 抛 BadRequest', () => {
-    const { ps } = setupPaymentService()
-    assert.throws(
-      () => ps.confirm('pay-1', '', 't-A'),
-      /providerTxnId/
-    )
-  })
-  it('confirm — 确认后必须联动 Order 进入 PAID', () => {
-    const { ps, os } = setupPaymentService()
-    const p1 = createPendingPayment(ps, os, 't-A', 'ord-1', 1000)
-    ps.confirm(p1.id, 'txn-001', 't-A')
-    const order = os.getById('ord-1', 't-A')
-    assert.ok(order)
-    assert.equal(order?.status, 'PAID', '订单必须联动进入 PAID')
-    assert.equal(order?.paidCents, 1000)
-  })
-})
+
+// ── Tests ───────────────────────────────────────────────────────────────────
+
+describe('PaymentService', () => {
+  let service: PaymentService;
+  let orderService: ReturnType<typeof createMockOrderService>;
+  let gateway: MockPaymentGateway;
+
+  beforeEach(() => {
+    orderService = createMockOrderService();
+    gateway = new MockPaymentGateway();
+    service = new PaymentService(orderService, gateway, undefined, undefined);
+  });
+
+  afterEach(() => {
+    service._clear();
+    vi.clearAllMocks();
+  });
+
+  // ── create ──────────────────────────────────────────────────────────────
+
+  describe('create', () => {
+    it('should create a payment successfully', async () => {
+      orderService._setOrder(makePendingOrder());
+
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      expect(payment).toBeDefined();
+      expect(payment.id).toMatch(/^PAY-/);
+      expect(payment.status).toBe('PENDING');
+      expect(payment.orderId).toBe('ORD-20260723-00001');
+      expect(payment.tenantId).toBe('tenant-1');
+    });
+
+    it('should throw BadRequestException when tenantId is empty', async () => {
+      await expect(
+        service.create(makeValidInput(), makeValidOpts({ tenantId: '' })),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when orderId is empty', async () => {
+      await expect(
+        service.create(makeValidInput({ orderId: '' }), makeValidOpts()),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when amountCents is zero', async () => {
+      await expect(
+        service.create(makeValidInput({ amountCents: 0 }), makeValidOpts()),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when amountCents is negative', async () => {
+      await expect(
+        service.create(makeValidInput({ amountCents: -100 }), makeValidOpts()),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when order does not exist', async () => {
+      await expect(
+        service.create(makeValidInput(), makeValidOpts()),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for cross-tenant payment access (order not visible)', async () => {
+      orderService._setOrder(makePendingOrder({ tenantId: 'tenant-2' }));
+
+      await expect(
+        service.create(makeValidInput(), makeValidOpts()),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when order is not PENDING', async () => {
+      orderService._setOrder(makePendingOrder({ status: 'PAID' }));
+
+      await expect(
+        service.create(makeValidInput(), makeValidOpts()),
+      ).rejects.toThrow(/order.*PENDING/i);
+    });
+
+    it('should throw BadRequestException on amount mismatch', async () => {
+      orderService._setOrder(makePendingOrder({ totalCents: 2000 }));
+
+      await expect(
+        service.create(makeValidInput({ amountCents: 1000 }), makeValidOpts()),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should be idempotent (same orderId + method returns same payment)', async () => {
+      orderService._setOrder(makePendingOrder());
+
+      const p1 = await service.create(makeValidInput(), makeValidOpts());
+      const p2 = await service.create(makeValidInput(), makeValidOpts());
+
+      expect(p1.id).toBe(p2.id);
+    });
+
+    it('should handle different payment methods', async () => {
+      orderService._setOrder(makePendingOrder());
+
+      const p1 = await service.create(
+        makeValidInput({ method: 'WECHAT' }),
+        makeValidOpts(),
+      );
+      const p2 = await service.create(
+        makeValidInput({ method: 'ALIPAY' }),
+        makeValidOpts(),
+      );
+
+      expect(p1.id).not.toBe(p2.id);
+      expect(p1.method).toBe('WECHAT');
+      expect(p2.method).toBe('ALIPAY');
+    });
+
+    it('should return existing payment when same idem key has SUCCESS status', async () => {
+      orderService._setOrder(makePendingOrder());
+
+      const p1 = await service.create(makeValidInput(), makeValidOpts());
+      service.confirm(p1.id, 'txn-123', 'tenant-1');
+
+      const p2 = await service.create(makeValidInput(), makeValidOpts());
+      expect(p2.id).toBe(p1.id);
+      expect(p2.status).toBe('SUCCESS');
+    });
+  });
+
+  // ── confirm ─────────────────────────────────────────────────────────────
+
+  describe('confirm', () => {
+    it('should confirm a PENDING payment', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      const confirmed = service.confirm(payment.id, 'txn-001', 'tenant-1');
+
+      expect(confirmed.status).toBe('SUCCESS');
+      expect(confirmed.providerTxnId).toBe('txn-001');
+      expect(confirmed.paidAt).toBeDefined();
+      expect(orderService.markPaid).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when paymentId is empty', () => {
+      expect(() => service.confirm('', 'txn-001', 'tenant-1')).toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when providerTxnId is empty', () => {
+      expect(() => service.confirm('PAY-xxx', '', 'tenant-1')).toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when payment not found', () => {
+      expect(() => service.confirm('NONEXISTENT', 'txn-001', 'tenant-1')).toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for cross-tenant confirm', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      expect(() => service.confirm(payment.id, 'txn-001', 'tenant-2')).toThrow('cross_tenant_payment_access');
+    });
+
+    it('should be idempotent when called twice with same params', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      const c1 = service.confirm(payment.id, 'txn-001', 'tenant-1');
+      const c2 = service.confirm(payment.id, 'txn-001', 'tenant-1');
+
+      expect(c1.id).toBe(c2.id);
+      expect(c2.status).toBe('SUCCESS');
+    });
+
+    it('should throw when providerTxnId is already bound to a different payment', async () => {
+      orderService._setOrder(makePendingOrder({ id: 'ORD-20260723-00001' }));
+      const p1 = await service.create(makeValidInput({ orderId: 'ORD-20260723-00001' }), makeValidOpts());
+      service.confirm(p1.id, 'txn-001', 'tenant-1');
+
+      orderService._setOrder(makePendingOrder({ id: 'ORD-20260723-00002' }));
+      const p2 = await service.create(
+        makeValidInput({ orderId: 'ORD-20260723-00002' }),
+        makeValidOpts({ tenantId: 'tenant-1' }),
+      );
+
+      expect(() => service.confirm(p2.id, 'txn-001', 'tenant-1')).toThrow(/already bound/);
+    });
+  });
+
+  // ── query ───────────────────────────────────────────────────────────────
+
+  describe('query', () => {
+    it('should return payment as-is when status is not PENDING', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+      service.confirm(payment.id, 'txn-001', 'tenant-1');
+
+      const q = await service.query(payment.id, 'tenant-1');
+      expect(q.status).toBe('SUCCESS');
+    });
+
+    it('should throw NotFoundException for non-existent payment', async () => {
+      await expect(service.query('NONEXISTENT', 'tenant-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for cross-tenant query', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      await expect(service.query(payment.id, 'tenant-2')).rejects.toThrow('cross_tenant_payment_access');
+    });
+  });
+
+  // ── getById ─────────────────────────────────────────────────────────────
+
+  describe('getById', () => {
+    it('should return null for non-existent payment', () => {
+      expect(service.getById('NONEXISTENT', 'tenant-1')).toBeNull();
+    });
+
+    it('should return null for cross-tenant access', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      expect(service.getById(payment.id, 'tenant-2')).toBeNull();
+    });
+
+    it('should return the payment when found', async () => {
+      orderService._setOrder(makePendingOrder());
+      const payment = await service.create(makeValidInput(), makeValidOpts());
+
+      const found = service.getById(payment.id, 'tenant-1');
+      expect(found).not.toBeNull();
+      expect(found!.id).toBe(payment.id);
+    });
+  });
+
+  // ── listByOrder ──────────────────────────────────────────────────────────
+
+  describe('listByOrder', () => {
+    it('should return payments for an order sorted by createdAt desc', async () => {
+      orderService._setOrder(makePendingOrder());
+      const p1 = await service.create(makeValidInput({ method: 'WECHAT' }), makeValidOpts());
+      const p2 = await service.create(makeValidInput({ method: 'ALIPAY' }), makeValidOpts());
+
+      const list = service.listByOrder('ORD-20260723-00001', 'tenant-1');
+      expect(list).toHaveLength(2);
+      // newest first
+      expect(list[0].createdAt >= list[1].createdAt).toBe(true);
+    });
+
+    it('should return empty array for non-existent order', () => {
+      expect(service.listByOrder('NONEXISTENT', 'tenant-1')).toEqual([]);
+    });
+  });
+
+  // ── MockPaymentGateway ────────────────────────────────────────────────────
+
+  describe('DevPaymentGateway', () => {
+    it('should create prepay with real payment URL', async () => {
+      const mg = new MockPaymentGateway();
+      const result = await mg.createPrepay({ id: 'ORD-001', totalCents: 1000 }, 'WECHAT');
+
+      expect(result.prepayId).toMatch(/^dev_prepay_/);
+      expect(result.codeUrl).toMatch(/^http/);
+      expect(result.codeUrl).toContain('ORD-001');
+      expect(result.expiresAt).toBeDefined();
+    });
+
+    it('should query with SUCCESS status', async () => {
+      const mg = new MockPaymentGateway();
+      const result = await mg.query('txn-001');
+
+      expect(result.status).toBe('SUCCESS');
+      expect(result.paidAt).toBeDefined();
+    });
+
+    it('should refund with providerRefundId', async () => {
+      const mg = new MockPaymentGateway();
+      const result = await mg.refund({
+        paymentId: 'PAY-xxx',
+        amountCents: 500,
+        reason: 'customer_request',
+      });
+
+      expect(result.providerRefundId).toMatch(/^dev_refund_/);
+    });
+
+    it('should only return codeUrl for WECHAT/ALIPAY', async () => {
+      const mg = new MockPaymentGateway();
+
+      const wechat = await mg.createPrepay({ id: 'O1', totalCents: 1000 }, 'WECHAT');
+      expect(wechat.codeUrl).toBeDefined();
+
+      const alipay = await mg.createPrepay({ id: 'O2', totalCents: 1000 }, 'ALIPAY');
+      expect(alipay.codeUrl).toBeDefined();
+
+      const cash = await mg.createPrepay({ id: 'O3', totalCents: 1000 }, 'CASH');
+      expect(cash.codeUrl).toBeUndefined();
+
+      const card = await mg.createPrepay({ id: 'O4', totalCents: 1000 }, 'CARD');
+      expect(card.codeUrl).toBeUndefined();
+    });
+  });
+
+  // ── _clear / _size ───────────────────────────────────────────────────────
+
+  describe('test helpers', () => {
+    it('_clear should remove all payments', async () => {
+      orderService._setOrder(makePendingOrder());
+      await service.create(makeValidInput(), makeValidOpts());
+      expect(service._size()).toBe(1);
+
+      service._clear();
+      expect(service._size()).toBe(0);
+    });
+  });
+});

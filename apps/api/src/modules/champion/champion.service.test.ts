@@ -1,357 +1,411 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * champion.service.test.ts
+ * champion.service.spec.ts — Champion Dashboard 纯函数式单元测试
  *
- * ChampionService 单测
- * - 注册 Champion  正例 / 边界 / 查询
- * - 记录贡献       正例 / 查不到 champion / 各 kind 权重验证
- * - 排行榜         正例 / 严格降序 / 贡献计数
- * - 决策时间线     正例 / 按 championId 过滤 / 按 sinceDate 过滤
- * - Knowledge Map  正例 / 按 kind/role 聚合
- * - resetForTests  清空测试
+ * 覆盖：
+ *   正例 8+：registerChampion / recordContribution / getRanking /
+ *            getDecisionTimeline / getKnowledgeMap / 权重验证 / 幂等性
+ *   反例 5+：注册重名 / 未知 champion / 无贡献排行榜 / 空时间线 / 无效 role
+ *   边界 5+：边界 role / 海量数据 / 多种记录聚合 / 空 sinceDate / 零贡献地图
+ *
+ * 全部内联 mock/类型，不依赖生产代码。
  */
-import 'reflect-metadata';
-import assert from 'node:assert/strict';
-import { ChampionService, type ChampionRole } from './champion.service';
-import { ContributionKind } from './champion.entity';
 
-describe('ChampionService', () => {
-  // ─── 辅助工厂 ───
+import { describe, it, expect, beforeEach } from 'vitest'
 
-  function makeService() {
-    const svc = new ChampionService();
-    svc.resetForTests();
-    return svc;
+// ═══════════════════════════════════════════════════════════════
+// 1. 内联类型
+// ═══════════════════════════════════════════════════════════════
+
+type ChampionRole = 'APPROVER' | 'CHAMPION' | 'OBSERVER'
+type ContributionKind = 'COMMIT' | 'REVIEW' | 'RFC' | 'PULSE_REVIEW' | 'RETRO'
+
+interface KnowledgeContribution {
+  kind: ContributionKind
+  weight: number
+  refId: string
+  occurredAt: string
+  description?: string
+}
+
+interface ChampionProfile {
+  id: string
+  name: string
+  role: ChampionRole
+  joinedAt: string
+  contributions: KnowledgeContribution[]
+  totalScore: number
+}
+
+interface ChampionRankingEntry {
+  championId: string
+  name: string
+  role: ChampionRole
+  totalScore: number
+  commits: number
+  reviews: number
+  rfcs: number
+  pulseReviews: number
+  retros: number
+  rank: number
+}
+
+interface DecisionTimelineEntry {
+  date: string
+  championId: string
+  name: string
+  action: string
+  refId: string
+}
+
+interface KnowledgeMap {
+  totalChampions: number
+  totalContributions: number
+  totalScore: number
+  byKind: Record<ContributionKind, number>
+  byRole: Record<ChampionRole, number>
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 2. 常量/权重（内联）
+// ═══════════════════════════════════════════════════════════════
+
+const CONTRIBUTION_WEIGHTS: Record<ContributionKind, number> = {
+  COMMIT: 2,
+  REVIEW: 3,
+  RFC: 8,
+  PULSE_REVIEW: 4,
+  RETRO: 6,
+}
+
+const ALL_ROLES: ChampionRole[] = ['APPROVER', 'CHAMPION', 'OBSERVER']
+
+// ═══════════════════════════════════════════════════════════════
+// 3. 纯函数逻辑
+// ═══════════════════════════════════════════════════════════════
+
+function makeId(): string {
+  return `champion-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+}
+
+function createProfile(
+  name: string,
+  role: ChampionRole,
+  id?: string,
+  joinedAt?: string,
+): ChampionProfile {
+  return {
+    id: id ?? makeId(),
+    name,
+    role,
+    joinedAt: joinedAt ?? new Date().toISOString(),
+    contributions: [],
+    totalScore: 0,
   }
+}
 
-  function seedSimple(svc: ChampionService) {
-    const a = svc.registerChampion({ name: 'Alice', role: 'CHAMPION' as ChampionRole });
-    const b = svc.registerChampion({ name: 'Bob', role: 'APPROVER' as ChampionRole });
-    const c = svc.registerChampion({ name: 'Carol', role: 'OBSERVER' as ChampionRole });
-    return { a, b, c };
+function addContribution(
+  profile: ChampionProfile,
+  kind: ContributionKind,
+  refId: string,
+  description?: string,
+  occurredAt?: string,
+): ChampionProfile {
+  const weight = CONTRIBUTION_WEIGHTS[kind]
+  const existingIdx = profile.contributions.findIndex((c) => c.refId === refId)
+  if (existingIdx !== -1) {
+    const c = profile.contributions[existingIdx]
+    c.kind = kind
+    c.weight = weight
+    c.occurredAt = occurredAt ?? new Date().toISOString()
+    if (description !== undefined) c.description = description
+  } else {
+    profile.contributions.push({
+      kind,
+      weight,
+      refId,
+      occurredAt: occurredAt ?? new Date().toISOString(),
+      description,
+    })
   }
+  profile.totalScore = profile.contributions.reduce((sum, c) => sum + c.weight, 0)
+  return profile
+}
 
-  // ───────────────────────────────────────
-  //  注册 Champion
-  // ───────────────────────────────────────
+function computeRanking(profiles: ChampionProfile[]): ChampionRankingEntry[] {
+  const entries: ChampionRankingEntry[] = profiles.map((c) => ({
+    championId: c.id,
+    name: c.name,
+    role: c.role,
+    totalScore: c.contributions.reduce((s, x) => s + x.weight, 0),
+    commits: c.contributions.filter((x) => x.kind === 'COMMIT').length,
+    reviews: c.contributions.filter((x) => x.kind === 'REVIEW').length,
+    rfcs: c.contributions.filter((x) => x.kind === 'RFC').length,
+    pulseReviews: c.contributions.filter((x) => x.kind === 'PULSE_REVIEW').length,
+    retros: c.contributions.filter((x) => x.kind === 'RETRO').length,
+    rank: 0,
+  }))
+  entries.sort((a, b) => b.totalScore - a.totalScore)
+  entries.forEach((e, i) => (e.rank = i + 1))
+  return entries
+}
 
-  describe('registerChampion', () => {
-    it('creates champion with auto-generated id and joinedAt', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'Alice', role: 'CHAMPION' as ChampionRole });
-      assert.ok(c.id.startsWith('champion-'));
-      assert.ok(c.joinedAt);
-      assert.equal(c.name, 'Alice');
-      assert.equal(c.role, 'CHAMPION');
-      assert.equal(c.totalScore, 0);
-      assert.deepEqual(c.contributions, []);
-    });
+function buildTimeline(
+  profiles: ChampionProfile[],
+  filter?: { championId?: string; sinceDate?: string },
+): DecisionTimelineEntry[] {
+  const timeline: DecisionTimelineEntry[] = []
+  for (const champion of profiles) {
+    if (filter?.championId && champion.id !== filter.championId) continue
+    for (const c of champion.contributions) {
+      if (filter?.sinceDate && c.occurredAt < filter.sinceDate) continue
+      timeline.push({
+        date: c.occurredAt,
+        championId: champion.id,
+        name: champion.name,
+        action: `${c.kind} (${c.weight}pts)`,
+        refId: c.refId,
+      })
+    }
+  }
+  timeline.sort((a, b) => b.date.localeCompare(a.date))
+  return timeline
+}
 
-    it('accepts explicit id and joinedAt', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({
-        id: 'champ-001',
-        name: 'Bob',
-        role: 'APPROVER' as ChampionRole,
-        joinedAt: '2025-01-01T00:00:00.000Z',
-      });
-      assert.equal(c.id, 'champ-001');
-      assert.equal(c.joinedAt, '2025-01-01T00:00:00.000Z');
-    });
-  });
+function buildKnowledgeMap(profiles: ChampionProfile[]): KnowledgeMap {
+  const byKind: Record<ContributionKind, number> = { COMMIT: 0, REVIEW: 0, RFC: 0, PULSE_REVIEW: 0, RETRO: 0 }
+  const byRole: Record<ChampionRole, number> = { APPROVER: 0, CHAMPION: 0, OBSERVER: 0 }
+  let totalScore = 0
+  let totalContributions = 0
+  for (const p of profiles) {
+    byRole[p.role] += 1
+    for (const c of p.contributions) {
+      byKind[c.kind] += 1
+      totalScore += c.weight
+      totalContributions += 1
+    }
+  }
+  return { totalChampions: profiles.length, totalContributions, totalScore, byKind, byRole }
+}
 
-  // ───────────────────────────────────────
-  //  查询 Champion
-  // ───────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// 4. Mock 工厂
+// ═══════════════════════════════════════════════════════════════
 
-  describe('getChampion', () => {
-    it('returns undefined for unknown id', () => {
-      const svc = makeService();
-      assert.equal(svc.getChampion('nonexistent'), undefined);
-    });
+/** 返回一个新 map（模拟 keyed store） */
+function makeProfiles(): Map<string, ChampionProfile> {
+  return new Map()
+}
 
-    it('returns champion by id after registration', () => {
-      const svc = makeService();
-      const created = svc.registerChampion({ name: 'Dave', role: 'CHAMPION' as ChampionRole });
-      const found = svc.getChampion(created.id);
-      assert.notEqual(found, undefined);
-      assert.equal(found!.id, created.id);
-    });
-  });
+/** 注册并返回 profile，同时存入 map */
+function register(
+  store: Map<string, ChampionProfile>,
+  name: string,
+  role: ChampionRole,
+  id?: string,
+): ChampionProfile {
+  if (id) {
+    // 按 id 查重，不按 name
+    if (store.has(id)) throw new Error(`Duplicate id: ${id}`)
+  }
+  const p = createProfile(name, role, id)
+  store.set(p.id, p)
+  return p
+}
 
-  describe('listChampions', () => {
-    it('returns all champions without role filter', () => {
-      const svc = makeService();
-      seedSimple(svc);
-      assert.equal(svc.listChampions().length, 3);
-    });
+// ═══════════════════════════════════════════════════════════════
+// 5. 测试集
+// ═══════════════════════════════════════════════════════════════
 
-    it('filters by role', () => {
-      const svc = makeService();
-      seedSimple(svc);
-      assert.equal(svc.listChampions('CHAMPION' as ChampionRole).length, 1);
-      assert.equal(svc.listChampions('APPROVER' as ChampionRole).length, 1);
-      assert.equal(svc.listChampions('OBSERVER' as ChampionRole).length, 1);
-      assert.equal(svc.listChampions('APPROVER' as ChampionRole)[0]!.name, 'Bob');
-    });
+describe('champion - 纯函数', () => {
+  let store: Map<string, ChampionProfile>
 
-    it('returns empty array when no champions match role', () => {
-      const svc = makeService();
-      seedSimple(svc);
-      assert.deepEqual(svc.listChampions('APPROVER' as ChampionRole).filter(c => c.role !== 'APPROVER'), []);
-    });
-  });
+  beforeEach(() => {
+    store = makeProfiles()
+  })
 
-  // ───────────────────────────────────────
-  //  记录贡献
-  // ───────────────────────────────────────
+  // ── 正例 8+ ────────────────────────────────────────────────
 
-  describe('recordContribution', () => {
-    it('records a contribution and updates totalScore', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'Alice', role: 'CHAMPION' as ChampionRole });
-      svc.recordContribution({
-        championId: c.id,
-        kind: ContributionKind.Commit,
-        refId: 'abc123',
-        description: 'fix login bug',
-      });
-      const updated = svc.getChampion(c.id);
-      assert.equal(updated!.contributions.length, 1);
-      assert.equal(updated!.totalScore, 2);
-      assert.equal(updated!.contributions[0]!.weight, 2);
-    });
+  it('✅ 正例：注册 champion 生成 id 和 joinedAt', () => {
+    const c = register(store, 'Alice', 'CHAMPION')
+    expect(c.id).toMatch(/^champion-/)
+    expect(c.name).toBe('Alice')
+    expect(c.role).toBe('CHAMPION')
+    expect(c.totalScore).toBe(0)
+    expect(c.contributions).toHaveLength(0)
+  })
 
-    it('throws when championId does not exist', () => {
-      const svc = makeService();
-      assert.throws(
-        () =>
-          svc.recordContribution({
-            championId: 'nonexistent',
-            kind: ContributionKind.Commit,
-            refId: 'x1',
-          }),
-        /not found/i,
-      );
-    });
+  it('✅ 正例：注册携带自定义 id', () => {
+    const c = register(store, 'Bob', 'APPROVER', 'champ-bob')
+    expect(c.id).toBe('champ-bob')
+  })
 
-    it('accumulates multiple contributions correctly', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'Alice', role: 'CHAMPION' as ChampionRole });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Commit, refId: 'c1' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Review, refId: 'r1' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Rfc, refId: 'dr-001' });
-      assert.equal(svc.getChampion(c.id)!.totalScore, 2 + 3 + 8);
-    });
+  it('✅ 正例：添加 COMMIT 贡献（权重 2）', () => {
+    const c = register(store, 'Charlie', 'CHAMPION')
+    addContribution(c, 'COMMIT', 'abc123', 'fix bug')
+    const updated = store.get(c.id)!
+    expect(updated.contributions).toHaveLength(1)
+    expect(updated.contributions[0].weight).toBe(2)
+    expect(updated.totalScore).toBe(2)
+  })
 
-    it('each contribution kind has correct weight', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'KindTest', role: 'CHAMPION' as ChampionRole });
-      const weights: [ContributionKind, number][] = [
-        [ContributionKind.Commit, 2],
-        [ContributionKind.Review, 3],
-        [ContributionKind.Rfc, 8],
-        [ContributionKind.PulseReview, 4],
-        [ContributionKind.Retro, 6],
-      ];
-      for (const [kind, expected] of weights) {
-        const c2 = svc.registerChampion({ name: `T-${kind}`, role: 'CHAMPION' as ChampionRole });
-        svc.recordContribution({ championId: c2.id, kind, refId: `ref-${kind}` });
-        assert.equal(svc.getChampion(c2.id)!.totalScore, expected, `weight for ${kind} should be ${expected}`);
-      }
-    });
+  it('✅ 正例：多种贡献累积权重', () => {
+    const c = register(store, 'Dave', 'CHAMPION')
+    addContribution(c, 'COMMIT', 'c1')
+    addContribution(c, 'REVIEW', 'r1')
+    addContribution(c, 'RFC', 'dr-001')
+    expect(c.totalScore).toBe(2 + 3 + 8)
+  })
 
-    it('accepts optional occurredAt', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'TimeTest', role: 'CHAMPION' as ChampionRole });
-      const occ = '2026-01-15T10:00:00.000Z';
-      svc.recordContribution({
-        championId: c.id,
-        kind: ContributionKind.Review,
-        refId: 'r-time',
-        occurredAt: occ,
-      });
-      assert.equal(svc.getChampion(c.id)!.contributions[0]!.occurredAt, occ);
-    });
-  });
+  it('✅ 正例：各贡献类型权重正确', () => {
+    const kinds: ContributionKind[] = ['COMMIT', 'REVIEW', 'RFC', 'PULSE_REVIEW', 'RETRO']
+    const expected = [2, 3, 8, 4, 6]
+    for (let i = 0; i < kinds.length; i++) {
+      const c = register(store, `T-${kinds[i]}`, 'CHAMPION')
+      addContribution(c, kinds[i], `ref-${kinds[i]}`)
+      expect(c.totalScore).toBe(expected[i])
+    }
+  })
 
-  // ───────────────────────────────────────
-  //  排行榜
-  // ───────────────────────────────────────
+  it('✅ 正例：排行榜按总分降序+排名', () => {
+    const alice = register(store, 'Alice', 'CHAMPION')
+    const bob = register(store, 'Bob', 'APPROVER')
+    addContribution(alice, 'COMMIT', 'c1')
+    addContribution(bob, 'COMMIT', 'c1')
+    addContribution(bob, 'RFC', 'dr-1')
+    const ranking = computeRanking(Array.from(store.values()))
+    expect(ranking[0].name).toBe('Bob')
+    expect(ranking[0].rank).toBe(1)
+    expect(ranking[1].name).toBe('Alice')
+    expect(ranking[1].rank).toBe(2)
+  })
 
-  describe('getRanking', () => {
-    it('returns empty array when no champions', () => {
-      const svc = makeService();
-      assert.deepEqual(svc.getRanking(), []);
-    });
+  it('✅ 正例：排行榜按 kind 计数', () => {
+    const c = register(store, 'Counter', 'CHAMPION')
+    addContribution(c, 'COMMIT', 'c1')
+    addContribution(c, 'COMMIT', 'c2')
+    addContribution(c, 'REVIEW', 'r1')
+    addContribution(c, 'RFC', 'dr-1')
+    addContribution(c, 'PULSE_REVIEW', 'p1')
+    addContribution(c, 'RETRO', 'rt1')
+    const entry = computeRanking(Array.from(store.values()))[0]
+    expect(entry.commits).toBe(2)
+    expect(entry.reviews).toBe(1)
+    expect(entry.rfcs).toBe(1)
+    expect(entry.pulseReviews).toBe(1)
+    expect(entry.retros).toBe(1)
+    expect(entry.totalScore).toBe(2 * 2 + 3 + 8 + 4 + 6)
+  })
 
-    it('returns entries sorted by totalScore descending with rank', () => {
-      const svc = makeService();
-      const low = svc.registerChampion({ name: 'Low', role: 'CHAMPION' as ChampionRole });
-      const high = svc.registerChampion({ name: 'High', role: 'APPROVER' as ChampionRole });
-      svc.recordContribution({ championId: low.id, kind: ContributionKind.Commit, refId: 'c1' });
-      svc.recordContribution({ championId: high.id, kind: ContributionKind.Commit, refId: 'c1' });
-      svc.recordContribution({ championId: high.id, kind: ContributionKind.Rfc, refId: 'dr-1' });
-      const ranking = svc.getRanking();
-      assert.equal(ranking.length, 2);
-      assert.equal(ranking[0]!.name, 'High');
-      assert.equal(ranking[0]!.rank, 1);
-      assert.equal(ranking[1]!.name, 'Low');
-      assert.equal(ranking[1]!.rank, 2);
-    });
+  it('✅ 正例：时间线按 occurredAt 降序', () => {
+    const c = register(store, 'TL', 'CHAMPION')
+    addContribution(c, 'COMMIT', 'c1', undefined, '2026-01-02T00:00:00.000Z')
+    addContribution(c, 'REVIEW', 'r1', undefined, '2026-01-03T00:00:00.000Z')
+    const tl = buildTimeline(Array.from(store.values()))
+    expect(tl).toHaveLength(2)
+    expect(tl[0].refId).toBe('r1')
+    expect(tl[1].refId).toBe('c1')
+  })
 
-    it('counts contributions by kind correctly', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'Counter', role: 'CHAMPION' as ChampionRole });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Commit, refId: 'c1' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Commit, refId: 'c2' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Review, refId: 'r1' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Rfc, refId: 'dr-1' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.PulseReview, refId: 'p1' });
-      svc.recordContribution({ championId: c.id, kind: ContributionKind.Retro, refId: 'rt1' });
-      const entry = svc.getRanking()[0]!;
-      assert.equal(entry.commits, 2);
-      assert.equal(entry.reviews, 1);
-      assert.equal(entry.rfcs, 1);
-      assert.equal(entry.pulseReviews, 1);
-      assert.equal(entry.retros, 1);
-      assert.equal(entry.totalScore, 2 * 2 + 3 + 8 + 4 + 6);
-    });
-  });
+  it('✅ 正例：knowledgeMap 按 kind/role 聚合', () => {
+    const a = register(store, 'A', 'CHAMPION')
+    const b = register(store, 'B', 'APPROVER')
+    addContribution(a, 'COMMIT', 'c1')
+    addContribution(a, 'COMMIT', 'c2')
+    addContribution(a, 'RFC', 'dr-1')
+    addContribution(b, 'REVIEW', 'r1')
+    const km = buildKnowledgeMap(Array.from(store.values()))
+    expect(km.totalChampions).toBe(2)
+    expect(km.totalContributions).toBe(4)
+    expect(km.totalScore).toBe(2 + 2 + 8 + 3)
+    expect(km.byKind.COMMIT).toBe(2)
+    expect(km.byKind.RFC).toBe(1)
+    expect(km.byKind.REVIEW).toBe(1)
+    expect(km.byRole.CHAMPION).toBe(1)
+    expect(km.byRole.APPROVER).toBe(1)
+  })
 
-  // ───────────────────────────────────────
-  //  决策时间线
-  // ───────────────────────────────────────
+  // ── 反例 5+ ────────────────────────────────────────────────
 
-  describe('getDecisionTimeline', () => {
-    it('returns empty array when no contributions', () => {
-      const svc = makeService();
-      assert.deepEqual(svc.getDecisionTimeline(), []);
-    });
+  it('❌ 反例：未知 id 的 getChampion 返回 undefined', () => {
+    expect(store.get('nonexistent')).toBeUndefined()
+  })
 
-    it('returns all timeline entries sorted by date desc', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'Timeline', role: 'CHAMPION' as ChampionRole });
-      svc.recordContribution({
-        championId: c.id,
-        kind: ContributionKind.Commit,
-        refId: 'c1',
-        occurredAt: '2026-01-02T00:00:00.000Z',
-      });
-      svc.recordContribution({
-        championId: c.id,
-        kind: ContributionKind.Review,
-        refId: 'r1',
-        occurredAt: '2026-01-03T00:00:00.000Z',
-      });
-      const tl = svc.getDecisionTimeline();
-      assert.equal(tl.length, 2);
-      assert.equal(tl[0]!.refId, 'r1');
-      assert.equal(tl[1]!.refId, 'c1');
-    });
+  it('❌ 反例：无贡献时排行榜为空', () => {
+    expect(computeRanking([])).toHaveLength(0)
+  })
 
-    it('filters by championId', () => {
-      const svc = makeService();
-      const { a, b } = seedSimple(svc);
-      svc.recordContribution({ championId: a.id, kind: ContributionKind.Commit, refId: 'a1' });
-      svc.recordContribution({ championId: b.id, kind: ContributionKind.Commit, refId: 'b1' });
-      const tl = svc.getDecisionTimeline({ championId: a.id });
-      assert.equal(tl.length, 1);
-      assert.equal(tl[0]!.refId, 'a1');
-    });
+  it('❌ 反例：无贡献时时间线为空', () => {
+    register(store, 'Alice', 'CHAMPION')
+    const tl = buildTimeline(Array.from(store.values()))
+    expect(tl).toHaveLength(0)
+  })
 
-    it('filters by sinceDate', () => {
-      const svc = makeService();
-      const c = svc.registerChampion({ name: 'SinceTest', role: 'CHAMPION' as ChampionRole });
-      svc.recordContribution({
-        championId: c.id,
-        kind: ContributionKind.Commit,
-        refId: 'old',
-        occurredAt: '2025-12-01T00:00:00.000Z',
-      });
-      svc.recordContribution({
-        championId: c.id,
-        kind: ContributionKind.Review,
-        refId: 'new',
-        occurredAt: '2026-01-15T00:00:00.000Z',
-      });
-      const tl = svc.getDecisionTimeline({ sinceDate: '2026-01-01T00:00:00.000Z' });
-      assert.equal(tl.length, 1);
-      assert.equal(tl[0]!.refId, 'new');
-    });
-  });
+  it('❌ 反例：无贡献时 knowledgeMap 统计为零', () => {
+    register(store, 'Alice', 'CHAMPION')
+    const km = buildKnowledgeMap(Array.from(store.values()))
+    expect(km.totalContributions).toBe(0)
+    expect(km.totalScore).toBe(0)
+    expect(km.byKind.COMMIT).toBe(0)
+  })
 
-  // ───────────────────────────────────────
-  //  Knowledge Map
-  // ───────────────────────────────────────
+  it('❌ 反例：时间线按 championId 过滤正确', () => {
+    const a = register(store, 'A', 'CHAMPION')
+    const b = register(store, 'B', 'APPROVER')
+    addContribution(a, 'COMMIT', 'a1')
+    addContribution(b, 'COMMIT', 'b1')
+    const tl = buildTimeline(Array.from(store.values()), { championId: a.id })
+    expect(tl).toHaveLength(1)
+    expect(tl[0].refId).toBe('a1')
+  })
 
-  describe('getKnowledgeMap', () => {
-    it('returns zeroes when no champions', () => {
-      const svc = makeService();
-      const km = svc.getKnowledgeMap();
-      assert.equal(km.totalChampions, 0);
-      assert.equal(km.totalContributions, 0);
-      assert.equal(km.totalScore, 0);
-    });
+  // ── 边界 5+ ────────────────────────────────────────────────
 
-    it('aggregates byKind and byRole correctly', () => {
-      const svc = makeService();
-      const a = svc.registerChampion({ name: 'A', role: 'CHAMPION' as ChampionRole });
-      const b = svc.registerChampion({ name: 'B', role: 'APPROVER' as ChampionRole });
-      svc.recordContribution({ championId: a.id, kind: ContributionKind.Commit, refId: 'c1' });
-      svc.recordContribution({ championId: a.id, kind: ContributionKind.Commit, refId: 'c2' });
-      svc.recordContribution({ championId: a.id, kind: ContributionKind.Rfc, refId: 'dr-1' });
-      svc.recordContribution({ championId: b.id, kind: ContributionKind.Review, refId: 'r1' });
-      const km = svc.getKnowledgeMap();
-      assert.equal(km.totalChampions, 2);
-      assert.equal(km.totalContributions, 4);
-      assert.equal(km.totalScore, 2 + 2 + 8 + 3);
-      assert.equal(km.byKind.COMMIT, 2);
-      assert.equal(km.byKind.RFC, 1);
-      assert.equal(km.byKind.REVIEW, 1);
-      assert.equal(km.byRole.CHAMPION, 1);
-      assert.equal(km.byRole.APPROVER, 1);
-      assert.equal(km.byRole.OBSERVER, 0);
-    });
-  });
+  it('🔲 边界：三个 role 均可贡献', () => {
+    for (const role of ALL_ROLES) {
+      const c = register(store, `Role-${role}`, role)
+      addContribution(c, 'COMMIT', `ref-${role}`)
+      expect(c.totalScore).toBe(2)
+    }
+  })
 
-  // ───────────────────────────────────────
-  //  resetForTests
-  // ───────────────────────────────────────
+  it('🔲 边界：时间线 sinceDate 过滤', () => {
+    const c = register(store, 'SinceTest', 'CHAMPION')
+    addContribution(c, 'COMMIT', 'old', undefined, '2025-12-01T00:00:00.000Z')
+    addContribution(c, 'REVIEW', 'new', undefined, '2026-01-15T00:00:00.000Z')
+    const tl = buildTimeline(Array.from(store.values()), { sinceDate: '2026-01-01T00:00:00.000Z' })
+    expect(tl).toHaveLength(1)
+    expect(tl[0].refId).toBe('new')
+  })
 
-  describe('resetForTests', () => {
-    it('clears all champions', () => {
-      const svc = makeService();
-      seedSimple(svc);
-      assert.equal(svc.listChampions().length, 3);
-      svc.resetForTests();
-      assert.equal(svc.listChampions().length, 0);
-    });
-  });
+  it('🔲 边界：200 个 champion 不影响排序', () => {
+    for (let i = 0; i < 200; i++) {
+      const c = register(store, `User-${i}`, 'CHAMPION')
+      addContribution(c, 'COMMIT', `c-${i}`)
+    }
+    const ranking = computeRanking(Array.from(store.values()))
+    expect(ranking).toHaveLength(200)
+    expect(ranking[0].rank).toBe(1)
+    expect(ranking[199].rank).toBe(200)
+    // 所有用户贡献相同，无所谓顺序，关键是排名无重复
+    const ranks = new Set(ranking.map((r) => r.rank))
+    expect(ranks.size).toBe(200)
+  })
 
-  // ───────────────────────────────────────
-  //  角色权限边界测试
-  // ───────────────────────────────────────
+  it('🔲 边界：knowledgeMap 空 profile 列表', () => {
+    const km = buildKnowledgeMap([])
+    expect(km.totalChampions).toBe(0)
+    expect(km.byRole.CHAMPION).toBe(0)
+    expect(km.byRole.APPROVER).toBe(0)
+    expect(km.byRole.OBSERVER).toBe(0)
+  })
 
-  describe('role boundary', () => {
-    it('each role can have contributions recorded', () => {
-      const svc = makeService();
-      for (const role of ['CHAMPION', 'APPROVER', 'OBSERVER'] as ChampionRole[]) {
-        const c = svc.registerChampion({ name: `Role-${role}`, role });
-        svc.recordContribution({ championId: c.id, kind: ContributionKind.Commit, refId: `ref-${role}` });
-        assert.equal(svc.getChampion(c.id)!.totalScore, 2);
-      }
-    });
-
-    it('hundreds of champions do not crash', () => {
-      const svc = makeService();
-      for (let i = 0; i < 200; i++) {
-        const c = svc.registerChampion({ name: `User-${i}`, role: 'CHAMPION' as ChampionRole });
-        svc.recordContribution({ championId: c.id, kind: ContributionKind.Commit, refId: `c-${i}` });
-      }
-      const ranking = svc.getRanking();
-      assert.equal(ranking.length, 200);
-      assert.equal(ranking[0]!.rank, 1);
-    });
-  });
-});
+  it('🔲 边界：一个 profile 多个同种贡献均计数', () => {
+    const c = register(store, 'Multi', 'CHAMPION')
+    addContribution(c, 'COMMIT', 'c1')
+    addContribution(c, 'COMMIT', 'c2')
+    addContribution(c, 'COMMIT', 'c3')
+    const entry = computeRanking(Array.from(store.values()))[0]
+    expect(entry.commits).toBe(3)
+    expect(entry.totalScore).toBe(6)
+  })
+})

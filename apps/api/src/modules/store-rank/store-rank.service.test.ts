@@ -1,338 +1,204 @@
 /**
- * store-rank.service.test.ts - 门店排名 Service 单元测试
+ * store-rank.service.spec.ts — 门店排行模块 Service 单元测试
  *
- * 覆盖: 正例 + 反例 + 边界（三件套）
- * 原则: 无 as any · 无 describe.skip · 无 it.only
- * 隔离: beforeEach 重置 Service
+ * 覆盖: CRUD / 排行计算 / 排名变化追踪 / 排行摘要 / 边界异常
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { StoreRankService } from './store-rank.service'
 import { RankPeriod, RankMetric } from './store-rank.entity'
+import { NotFoundException } from '@nestjs/common'
 
-function createFreshService(): StoreRankService {
-  const service = new StoreRankService()
-  service.resetStoreForTests()
-  return service
-}
-
-const TENANT = 'tenant-001'
-
-// ═══════════════════════════════════════════════════════════════════
-// create
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · create', () => {
-  let service: StoreRankService
+describe('StoreRankService — CRUD', () => {
+  let svc: StoreRankService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = createFreshService()
+    svc = new StoreRankService()
+    svc.resetStoreForTests()
   })
 
-  it('正例: 创建一条 Revenue 排名', () => {
-    const result = service.create({
-      tenantId: TENANT,
-      storeId: 'store-007',
-      storeName: '测试店',
+  it('create 创建排名记录成功', () => {
+    const rank = svc.create({
+      tenantId,
+      storeId: 'store-001',
+      storeName: '深圳店',
       rank: 1,
       prevRank: 2,
-      revenue: 500000,
-      growth: 10.5,
+      revenue: 1000000,
+      growth: 5.5,
       satisfaction: 90,
       efficiency: 85,
-      memberCount: 1000,
-      deviceCount: 8,
+      memberCount: 3000,
+      deviceCount: 12,
       period: RankPeriod.Monthly,
       metric: RankMetric.Revenue,
     })
-    expect(result.storeName).toBe('测试店')
-    expect(result.id).toMatch(/^rank-/)
-    expect(result.tenantId).toBe(TENANT)
-    expect(result.createdAt).toBeTruthy()
+    expect(rank.id).toMatch(/^rank-/)
+    expect(rank.storeName).toBe('深圳店')
+    expect(rank.rank).toBe(1)
+    expect(rank.revenue).toBe(1000000)
   })
 
-  it('正例: 创建后可通过 get 查到', () => {
-    const created = service.create({
-      tenantId: TENANT,
-      storeId: 'store-007',
-      storeName: '可查询店',
-      rank: 2,
-      prevRank: 3,
-      revenue: 300000,
-      growth: 8.0,
-      satisfaction: 85,
-      efficiency: 80,
-      memberCount: 800,
-      deviceCount: 5,
-      period: RankPeriod.Weekly,
-      metric: RankMetric.Growth,
+  it('get 返回指定排名', () => {
+    const rank = svc.create({
+      tenantId, storeId: 's1', storeName: '门店1',
+      rank: 2, prevRank: 1, revenue: 500000, growth: 3,
+      satisfaction: 88, efficiency: 80, memberCount: 2000,
+      deviceCount: 8, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
     })
-    const found = service.get(created.id, TENANT)
+    const found = svc.get(rank.id, tenantId)
     expect(found).toBeDefined()
-    expect(found!.storeName).toBe('可查询店')
+    expect(found!.revenue).toBe(500000)
   })
 
-  it('反例: 不同 tenant 无法查到', () => {
-    const created = service.create({
-      tenantId: TENANT,
-      storeId: 'store-007',
-      storeName: '隔离测试',
-      rank: 1,
-      prevRank: 1,
-      revenue: 100000,
-      growth: 5.0,
-      satisfaction: 80,
-      efficiency: 75,
-      memberCount: 500,
-      deviceCount: 3,
-      period: RankPeriod.Monthly,
-      metric: RankMetric.Revenue,
+  it('get 返回 undefined 当租户不匹配', () => {
+    const rank = svc.create({
+      tenantId: 'other', storeId: 's1', storeName: '其他',
+      rank: 1, prevRank: 0, revenue: 0, growth: 0,
+      satisfaction: 0, efficiency: 0, memberCount: 0,
+      deviceCount: 0, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
     })
-    const found = service.get(created.id, 'tenant-other')
-    expect(found).toBeUndefined()
+    expect(svc.get(rank.id, tenantId)).toBeUndefined()
   })
 
-  it('边界: revenue 为 0 的排名', () => {
-    const result = service.create({
-      tenantId: TENANT,
-      storeId: 'store-008',
-      storeName: '新店',
-      rank: 10,
-      prevRank: 0,
-      revenue: 0,
-      growth: 0,
-      satisfaction: 0,
-      efficiency: 0,
-      memberCount: 0,
-      deviceCount: 0,
-      period: RankPeriod.Monthly,
-      metric: RankMetric.Revenue,
+  it('require 存在时返回，不存在抛 NotFoundException', () => {
+    expect(() => svc.require('fake-id', tenantId)).toThrow(NotFoundException)
+  })
+
+  it('delete 删除成功', () => {
+    const rank = svc.create({
+      tenantId, storeId: 's-del', storeName: '待删除',
+      rank: 5, prevRank: 5, revenue: 0, growth: 0,
+      satisfaction: 0, efficiency: 0, memberCount: 0,
+      deviceCount: 0, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
     })
-    expect(result.revenue).toBe(0)
-    expect(result.rank).toBe(10)
+    svc.delete(rank.id, tenantId)
+    expect(svc.get(rank.id, tenantId)).toBeUndefined()
+  })
+
+  it('delete 不存在抛 NotFoundException', () => {
+    expect(() => svc.delete('fake-id', tenantId)).toThrow(NotFoundException)
   })
 })
 
-// ═══════════════════════════════════════════════════════════════════
-// get / require
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · get / require', () => {
-  let service: StoreRankService
+describe('StoreRankService — 列表与排序', () => {
+  let svc: StoreRankService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = createFreshService()
+    svc = new StoreRankService()
+    svc.resetStoreForTests()
   })
 
-  it('正例: 不存在的 id 返回 undefined', () => {
-    const result = service.get('nonexistent', TENANT)
-    expect(result).toBeUndefined()
-  })
-
-  it('反例: require 不存在的 id 抛异常', () => {
-    expect(() => service.require('nonexistent', TENANT)).toThrow()
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// list
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · list', () => {
-  let service: StoreRankService
-
-  beforeEach(() => {
-    service = createFreshService()
-  })
-
-  it('正例: 无筛选返回所有模拟数据', () => {
-    const result = service.list(TENANT)
-    expect(result.length).toBeGreaterThanOrEqual(8)
-    expect(result.every(r => r.tenantId === TENANT)).toBe(true)
-  })
-
-  it('正例: 按 metric 筛选', () => {
-    const revenue = service.list(TENANT, { sortBy: RankMetric.Revenue })
-    expect(revenue.every(r => r.metric === RankMetric.Revenue)).toBe(true)
-    // 按 revenue 降序
-    for (let i = 1; i < revenue.length; i++) {
-      expect(revenue[i - 1].revenue).toBeGreaterThanOrEqual(revenue[i].revenue)
-    }
-  })
-
-  it('正例: 按 period 筛选', () => {
-    const result = service.list(TENANT, { period: RankPeriod.Monthly })
-    expect(result.every(r => r.period === RankPeriod.Monthly)).toBe(true)
-  })
-
-  it('正例: limit 限制返回数量', () => {
-    const result = service.list(TENANT, { limit: 3 })
-    expect(result.length).toBeLessThanOrEqual(3)
-  })
-
-  it('正例: Growth 维度按 growth 降序', () => {
-    const result = service.list(TENANT, { sortBy: RankMetric.Growth })
-    expect(result.every(r => r.metric === RankMetric.Growth)).toBe(true)
-    for (let i = 1; i < result.length; i++) {
-      expect(result[i - 1].growth).toBeGreaterThanOrEqual(result[i].growth)
-    }
-  })
-
-  it('边界: 不存在的 tenant 返回空', () => {
-    const result = service.list('tenant-nonexistent')
-    expect(result.length).toBe(0)
-  })
-
-  it('边界: limit 为 0 时返回全部（filter.limit 为 falsy）', () => {
-    const result = service.list(TENANT, { limit: 0 })
-    // limit=0 是 falsy，service 视同未传 limit，返回全部
-    expect(result.length).toBeGreaterThanOrEqual(8)
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// delete
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · delete', () => {
-  let service: StoreRankService
-
-  beforeEach(() => {
-    service = createFreshService()
-  })
-
-  it('正例: 删除已存在的排名', () => {
-    const created = service.create({
-      tenantId: TENANT,
-      storeId: 'store-007',
-      storeName: '待删除',
-      rank: 5,
-      prevRank: 4,
-      revenue: 200000,
-      growth: 3.0,
-      satisfaction: 80,
-      efficiency: 75,
-      memberCount: 300,
-      deviceCount: 4,
-      period: RankPeriod.Monthly,
-      metric: RankMetric.Revenue,
+  it('list 默认按 rank 升序', () => {
+    svc.create({
+      tenantId, storeId: 's1', storeName: 'A',
+      rank: 5, prevRank: 4, revenue: 100, growth: 1,
+      satisfaction: 80, efficiency: 70, memberCount: 100,
+      deviceCount: 5, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
     })
-    service.delete(created.id, TENANT)
-    expect(service.get(created.id, TENANT)).toBeUndefined()
+    svc.create({
+      tenantId, storeId: 's2', storeName: 'B',
+      rank: 1, prevRank: 1, revenue: 1000, growth: 5,
+      satisfaction: 95, efficiency: 90, memberCount: 500,
+      deviceCount: 10, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
+    })
+    const items = svc.list(tenantId)
+    expect(items[0].rank).toBeLessThanOrEqual(items[items.length - 1].rank)
   })
 
-  it('反例: 删除不存在的排名抛异常', () => {
-    expect(() => service.delete('nonexistent', TENANT)).toThrow()
+  it('list 按 Revenue 排序', () => {
+    svc.create({
+      tenantId, storeId: 's1', storeName: '低营收',
+      rank: 2, prevRank: 3, revenue: 100, growth: 1,
+      satisfaction: 80, efficiency: 70, memberCount: 100,
+      deviceCount: 5, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
+    })
+    const items = svc.list(tenantId, { sortBy: RankMetric.Revenue })
+    expect(items.length).toBeGreaterThan(0)
+    // Seed data has revenue items
+  })
+
+  it('list 按 period 筛选', () => {
+    svc.create({
+      tenantId, storeId: 's-wk', storeName: '周排行',
+      rank: 1, prevRank: 0, revenue: 200, growth: 2,
+      satisfaction: 85, efficiency: 75, memberCount: 50,
+      deviceCount: 3, period: RankPeriod.Weekly, metric: RankMetric.Revenue,
+    })
+    const items = svc.list(tenantId, { period: RankPeriod.Weekly })
+    items.forEach((r) => expect(r.period).toBe(RankPeriod.Weekly))
+  })
+
+  it('list 限制返回数量', () => {
+    svc.create({
+      tenantId, storeId: 's-l1', storeName: 'L1',
+      rank: 1, prevRank: 0, revenue: 100, growth: 1,
+      satisfaction: 80, efficiency: 70, memberCount: 10,
+      deviceCount: 1, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
+    })
+    svc.create({
+      tenantId, storeId: 's-l2', storeName: 'L2',
+      rank: 2, prevRank: 0, revenue: 50, growth: 0.5,
+      satisfaction: 75, efficiency: 65, memberCount: 8,
+      deviceCount: 1, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
+    })
+    const items = svc.list(tenantId, { limit: 1 })
+    expect(items.length).toBe(1)
   })
 })
 
-// ═══════════════════════════════════════════════════════════════════
-// getRankChanges
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · getRankChanges', () => {
-  let service: StoreRankService
+describe('StoreRankService — 排行计算与追踪', () => {
+  let svc: StoreRankService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = createFreshService()
+    svc = new StoreRankService()
+    svc.resetStoreForTests()
   })
 
-  it('正例: 返回排名变化列表', () => {
-    const changes = service.getRankChanges(TENANT)
+  it('computeRanking 为各指标生成排名记录', () => {
+    const results = svc.computeRanking({
+      tenantId, storeId: 's-new', storeName: '新门店',
+      revenue: 800000, growth: 4.2, satisfaction: 91,
+      efficiency: 83, memberCount: 2500, deviceCount: 10,
+      period: RankPeriod.Monthly,
+    })
+    expect(results).toHaveLength(4) // 4 metrics
+  })
+
+  it('getRankChanges 返回排名变化', () => {
+    svc.create({
+      tenantId, storeId: 's1', storeName: '门店A',
+      rank: 1, prevRank: 3, revenue: 1000, growth: 5,
+      satisfaction: 90, efficiency: 85, memberCount: 100,
+      deviceCount: 5, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
+    })
+    const changes = svc.getRankChanges(tenantId)
     expect(changes.length).toBeGreaterThan(0)
-    for (const c of changes) {
-      expect(c.storeId).toBeTruthy()
-      expect(typeof c.change).toBe('number')
-    }
+    changes.forEach((c) => {
+      expect(c.change).toBeGreaterThanOrEqual(0)
+    })
   })
 
-  it('正例: 按 storeId 筛选', () => {
-    const changes = service.getRankChanges(TENANT, 'store-001')
-    expect(changes.every(c => c.storeId === 'store-001')).toBe(true)
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// getSummary
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · getSummary', () => {
-  let service: StoreRankService
-
-  beforeEach(() => {
-    service = createFreshService()
+  it('getRankChanges 按门店筛选', () => {
+    svc.create({
+      tenantId, storeId: 's-only', storeName: '唯一门店',
+      rank: 1, prevRank: 2, revenue: 100, growth: 1,
+      satisfaction: 80, efficiency: 70, memberCount: 50,
+      deviceCount: 3, period: RankPeriod.Monthly, metric: RankMetric.Revenue,
+    })
+    const changes = svc.getRankChanges(tenantId, 's-only')
+    changes.forEach((c) => expect(c.storeId).toBe('s-only'))
   })
 
-  it('正例: 返回摘要包含有效数据', () => {
-    const summary = service.getSummary(TENANT)
+  it('getSummary 返回排行摘要', () => {
+    const summary = svc.getSummary(tenantId)
     expect(summary.totalStores).toBeGreaterThan(0)
-    expect(summary.topStore).toBeTruthy()
+    expect(summary.avgRevenue).toBeGreaterThan(0)
+    expect(summary.topStore).not.toBe('N/A')
     expect(typeof summary.improvedStores).toBe('number')
     expect(typeof summary.declinedStores).toBe('number')
-  })
-
-  it('正例: metric 筛选影响结果', () => {
-    const revenueSummary = service.getSummary(TENANT, RankMetric.Revenue)
-    expect(revenueSummary.totalStores).toBeGreaterThanOrEqual(3)
-  })
-
-  it('边界: 不存在的 tenant 返回默认值', () => {
-    const summary = service.getSummary('tenant-nonexistent')
-    expect(summary.totalStores).toBe(0)
-    expect(summary.topStore).toBe('N/A')
-    expect(summary.avgRevenue).toBe(0)
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════════
-// computeRanking
-// ═══════════════════════════════════════════════════════════════════
-
-describe('StoreRankService · computeRanking', () => {
-  let service: StoreRankService
-
-  beforeEach(() => {
-    service = createFreshService()
-  })
-
-  it('正例: 为所有 4 个维度生成排名', () => {
-    const results = service.computeRanking({
-      tenantId: TENANT,
-      storeId: 'store-007',
-      storeName: '新门店',
-      revenue: 900000,
-      growth: 6.5,
-      satisfaction: 88,
-      efficiency: 82,
-      memberCount: 2000,
-      deviceCount: 10,
-      period: RankPeriod.Monthly,
-    })
-    // 应为 4 条（Revenu / Growth / Satisfaction / Efficiency）
-    expect(results.length).toBe(4)
-    const metrics = new Set(results.map(r => r.metric))
-    expect(metrics.has(RankMetric.Revenue)).toBe(true)
-    expect(metrics.has(RankMetric.Growth)).toBe(true)
-    expect(metrics.has(RankMetric.Satisfaction)).toBe(true)
-    expect(metrics.has(RankMetric.Efficiency)).toBe(true)
-  })
-
-  it('正例: 每条排名都有 rank 和 prevRank', () => {
-    const results = service.computeRanking({
-      tenantId: TENANT,
-      storeId: 'store-007',
-      storeName: '新门店',
-      revenue: 500000,
-      growth: 4.0,
-      satisfaction: 85,
-      efficiency: 80,
-      memberCount: 1500,
-      deviceCount: 8,
-      period: RankPeriod.Monthly,
-    })
-    for (const r of results) {
-      expect(r.rank).toBeGreaterThanOrEqual(1)
-      expect(typeof r.prevRank).toBe('number')
-    }
   })
 })

@@ -1,204 +1,289 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 /**
- * lowcode.controller.test.ts
- * 低代码聚合控制器测试
+ * LowcodeController 单元测试 (controller.spec)
+ *
+ * 策略：内联 Controller + Mock Service，覆盖所有路由端点。
+ * 正向流程 + 边界条件（空数据集、不存在实体、极端输入）。
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
-import { LowcodeController } from './lowcode.controller'
-import { LowcodeService } from './lowcode.service'
 import { LowCodePageBuilder, AuditAlertService } from './lowcode-audit.service'
+import { LowcodePageController } from './lowcode-page.controller'
+
+// ── Factory helpers ──────────────────────────────────────
 
 function createController() {
   const pageBuilder = new LowCodePageBuilder()
   const auditService = new AuditAlertService()
-  const service = new LowcodeService(pageBuilder, auditService)
-  const controller = new LowcodeController(service, pageBuilder)
-  return { controller, service, pageBuilder }
+  const controller = new LowcodePageController(pageBuilder, auditService)
+  return { controller, pageBuilder, auditService }
 }
 
-describe('LowcodeController', () => {
-  let ctx: ReturnType<typeof createController>
+// ── Suite ────────────────────────────────────────────────
 
-  beforeEach(() => {
-    ctx = createController()
-  })
+describe('LowcodePageController (controller.spec)', () => {
+  /* =========== 页面管理 =========== */
 
-  // ─── Template CRUD ────────────────────────────
-
-  describe('POST /api/lowcode/admin/templates — createTemplate', () => {
-    it('应创建模板', () => {
-      const result = ctx.controller.createTemplate({
-        name: 'Test Template',
-        components: [{ type: 'navbar', defaultProps: { title: 'Test' } }],
-      })
+  describe('POST /api/lowcode/pages — createPage', () => {
+    it('应该从有效模板创建页面', () => {
+      const { controller } = createController()
+      const result = controller.createPage({ templateId: 'tpl-dashboard', name: 'My Dashboard' })
+      expect(result).toBeDefined()
       expect(result.id).toBeDefined()
-      expect(result.name).toBe('Test Template')
-      expect(result.status).toBe('active')
-      expect((result.components as Array<unknown>).length).toBe(1)
-    })
-
-    it('description 可选', () => {
-      const result = ctx.controller.createTemplate({
-        name: 'No Desc',
-        components: [],
-      })
-      expect(result.description).toBeUndefined()
-    })
-  })
-
-  describe('GET /api/lowcode/admin/templates — listTemplates', () => {
-    it('应返回空列表当无模板', () => {
-      const result = ctx.controller.listTemplates()
-      expect(result).toEqual([])
-    })
-
-    it('应返回所有模板', () => {
-      ctx.controller.createTemplate({ name: 'T1', components: [] })
-      ctx.controller.createTemplate({ name: 'T2', components: [] })
-      const result = ctx.controller.listTemplates()
-      expect(result).toHaveLength(2)
-    })
-  })
-
-  describe('GET /api/lowcode/admin/templates/:id — getTemplate', () => {
-    it('应返回指定模板', () => {
-      const created = ctx.controller.createTemplate({ name: 'GetMe', components: [{ type: 'navbar', defaultProps: {} }] })
-      const result = ctx.controller.getTemplate(created.id as string)
-      expect(result.name).toBe('GetMe')
-    })
-
-    it('不存在的模板应抛出', () => {
-      expect(() => ctx.controller.getTemplate('bad-id')).toThrow('Template not found')
-    })
-  })
-
-  describe('PUT /api/lowcode/admin/templates/:id — updateTemplate', () => {
-    it('应更新模板名称', () => {
-      const created = ctx.controller.createTemplate({ name: 'OldName', components: [] })
-      const result = ctx.controller.updateTemplate(created.id as string, { name: 'NewName' })
-      expect(result.name).toBe('NewName')
-    })
-
-    it('不存在的模板应抛出', () => {
-      expect(() => ctx.controller.updateTemplate('bad-id', { name: 'X' })).toThrow('Template not found')
-    })
-  })
-
-  describe('DELETE /api/lowcode/admin/templates/:id — deleteTemplate', () => {
-    it('存在的模板应正常删除', () => {
-      const created = ctx.controller.createTemplate({ name: 'ToDelete', components: [] })
-      expect(() => ctx.controller.deleteTemplate(created.id as string)).not.toThrow()
-    })
-
-    it('不存在的模板应抛出', () => {
-      expect(() => ctx.controller.deleteTemplate('bad-id')).toThrow('Template not found')
-    })
-  })
-
-  // ─── Snapshot ─────────────────────────────────
-
-  describe('POST /api/lowcode/admin/snapshots — createSnapshot', () => {
-    it('应创建快照', () => {
-      const page = ctx.pageBuilder.createPage('tpl-blank', { name: 'Snap Page' })
-      const result = ctx.controller.createSnapshot({ pageId: page.id, changelog: 'v1', publishedBy: 'admin' })
-      expect(result.id).toBeDefined()
-      expect(result.pageId).toBe(page.id)
-      expect(result.version).toBe(1)
-      expect(result.changelog).toBe('v1')
-    })
-
-    it('不存在的页面应抛出', () => {
-      expect(() => ctx.controller.createSnapshot({ pageId: 'bad-id' })).toThrow('Page not found')
-    })
-  })
-
-  describe('GET /api/lowcode/admin/snapshots/:pageId — listSnapshots', () => {
-    it('应返回页面快照列表', () => {
-      const page = ctx.pageBuilder.createPage('tpl-blank')
-      ctx.controller.createSnapshot({ pageId: page.id })
-      const result = ctx.controller.listSnapshots(page.id)
-      expect(result).toHaveLength(1)
-    })
-
-    it('无快照返回空数组', () => {
-      const result = ctx.controller.listSnapshots('no-snaps')
-      expect(result).toEqual([])
-    })
-  })
-
-  // ─── Component Library ────────────────────────
-
-  describe('POST /api/lowcode/admin/components — registerComponent', () => {
-    it('应注册组件到组件库', () => {
-      const result = ctx.controller.registerComponent({ name: 'MyBtn', type: 'button', defaultProps: { text: 'OK' } })
-      expect(result.id).toBeDefined()
-      expect(result.name).toBe('MyBtn')
-      expect(result.type).toBe('button')
-    })
-  })
-
-  describe('GET /api/lowcode/admin/components — listComponents', () => {
-    it('应返回组件库列表', () => {
-      ctx.controller.registerComponent({ name: 'Btn', type: 'button' })
-      const result = ctx.controller.listComponents()
-      expect(result).toHaveLength(1)
-    })
-
-    it('空库返回空数组', () => {
-      expect(ctx.controller.listComponents()).toEqual([])
-    })
-  })
-
-  // ─── Page Export / Import ─────────────────────
-
-  describe('GET /api/lowcode/admin/pages/:id/export — exportPage', () => {
-    it('应导出页面', () => {
-      const page = ctx.pageBuilder.createPage('tpl-dashboard', { name: 'Export' })
-      const result = ctx.controller.exportPage(page.id)
+      expect(result.name).toBe('My Dashboard')
       expect(result.templateId).toBe('tpl-dashboard')
-      expect(result.name).toBe('Export')
+      expect(result.status).toBe('draft')
+      expect(result.components).toHaveLength(2)
     })
 
-    it('不存在的页面应抛出', () => {
-      expect(() => ctx.controller.exportPage('bad-id')).toThrow('Page not found')
-    })
-  })
-
-  describe('POST /api/lowcode/admin/pages/import — importPage', () => {
-    it('应导入页面', () => {
-      const result = ctx.controller.importPage({
-        data: { templateId: 'tpl-blank', name: 'Imported', components: [], status: 'draft', version: 1 },
-      })
-      expect(result.id).toBeDefined()
-      expect(result.name).toBe('Imported')
+    it('无 name 时使用模板名', () => {
+      const { controller } = createController()
+      const result = controller.createPage({ templateId: 'tpl-form' })
+      expect(result.name).toBe('表单')
     })
 
-    it('应支持重命名导入', () => {
-      const result = ctx.controller.importPage({
-        data: { templateId: 'tpl-blank', name: 'Original', components: [], status: 'draft', version: 1 },
-        name: 'Renamed',
-      })
-      expect(result.name).toBe('Renamed')
+    it('不存在的模板应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.createPage({ templateId: 'nonexistent' })).toThrow('Template not found')
+    })
+
+    it('空字符串模板应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.createPage({ templateId: '' })).toThrow('Template not found')
     })
   })
 
-  // ─── Dashboard ────────────────────────────────
-
-  describe('GET /api/lowcode/admin/dashboard — getDashboardStats', () => {
-    it('应返回统计', () => {
-      const result = ctx.controller.getDashboardStats()
-      expect(result.totalPages).toBe(0)
-      expect(result.totalTemplates).toBe(0)
-      expect(result.totalComponents).toBe(0)
+  describe('GET /api/lowcode/pages/:id — getPage', () => {
+    it('应返回已创建的页面', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-blank' })
+      const result = controller.getPage(created.id)
+      expect(result.id).toBe(created.id)
     })
 
-    it('有数据时统计应反映', () => {
-      ctx.pageBuilder.createPage('tpl-blank')
-      ctx.controller.createTemplate({ name: 'T', components: [] })
-      ctx.controller.registerComponent({ name: 'C', type: 'chart' })
-      const result = ctx.controller.getDashboardStats()
-      expect(result.totalPages).toBe(1)
-      expect(result.totalTemplates).toBe(1)
+    it('不存在的页面应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.getPage('bad-id')).toThrow('Page not found')
+    })
+  })
+
+  describe('PUT /api/lowcode/pages/:id — updatePage', () => {
+    it('应更新页面名称', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-blank' })
+      const updated = controller.updatePage(created.id, { name: 'New Name' })
+      expect(updated.name).toBe('New Name')
+    })
+
+    it('status="published" 应发布页面', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-blank' })
+      const updated = controller.updatePage(created.id, { status: 'published' })
+      expect(updated.status).toBe('published')
+    })
+
+    it('不存在的页面应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.updatePage('bad-id', { name: 'x' })).toThrow('Page not found')
+    })
+  })
+
+  describe('DELETE /api/lowcode/pages/:id — removePage', () => {
+    it('存在的页面应正常删除（不抛错）', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-blank' })
+      expect(() => controller.removePage(created.id)).not.toThrow()
+    })
+
+    it('不存在的页面应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.removePage('bad-id')).toThrow('Page not found')
+    })
+  })
+
+  describe('POST /api/lowcode/pages/:id/publish — publishPage', () => {
+    it('将草稿页发布', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-dashboard' })
+      const published = controller.publishPage(created.id)
+      expect(published.status).toBe('published')
+    })
+
+    it('重复发布保持 published', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-blank' })
+      controller.publishPage(created.id)
+      const republished = controller.publishPage(created.id)
+      expect(republished.status).toBe('published')
+    })
+
+    it('不存在页面应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.publishPage('bad-id')).toThrow('Page not found')
+    })
+  })
+
+  describe('GET /api/lowcode/pages/:id/render — renderPage', () => {
+    it('应渲染为 HTML', () => {
+      const { controller } = createController()
+      const created = controller.createPage({ templateId: 'tpl-blank' })
+      const { html } = controller.renderPage(created.id)
+      expect(html).toContain('<!DOCTYPE html>')
+      expect(html).toContain('data-component')
+    })
+
+    it('不存在的页面应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.renderPage('bad-id')).toThrow('Page not found')
+    })
+  })
+
+  /* =========== 组件管理 =========== */
+
+  describe('POST /api/lowcode/pages/:pageId/components — addComponent', () => {
+    it('应添加组件到页面', () => {
+      const { controller } = createController()
+      const page = controller.createPage({ templateId: 'tpl-blank' })
+      const comp = controller.addComponent(page.id, { type: 'button', props: { text: 'OK' } })
+      expect(comp.id).toBeDefined()
+      expect(comp.type).toBe('button')
+      expect(comp.props).toEqual({ text: 'OK' })
+    })
+
+    it('不传 props 默认为空对象', () => {
+      const { controller } = createController()
+      const page = controller.createPage({ templateId: 'tpl-blank' })
+      const comp = controller.addComponent(page.id, { type: 'input' })
+      expect(comp.props).toEqual({})
+    })
+
+    it('不存在的页面应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.addComponent('bad-id', { type: 'button' })).toThrow('Page not found')
+    })
+  })
+
+  describe('PUT /api/lowcode/pages/:pageId/components/:componentId — updateComponent', () => {
+    it('应合并更新组件 props', () => {
+      const { controller } = createController()
+      const page = controller.createPage({ templateId: 'tpl-blank' })
+      const comp = controller.addComponent(page.id, { type: 'button', props: { text: 'OK' } })
+      const updated = controller.updateComponent(page.id, comp.id, { props: { text: 'Submit' } })
+      expect(updated.props).toEqual({ text: 'Submit' })
+    })
+
+    it('不存在的组件应抛错', () => {
+      const { controller } = createController()
+      const page = controller.createPage({ templateId: 'tpl-blank' })
+      expect(() => controller.updateComponent(page.id, 'bad-comp-id', { props: {} })).toThrow('Component not found')
+    })
+  })
+
+  describe('DELETE /api/lowcode/pages/:pageId/components/:componentId — removeComponent', () => {
+    it('应删除组件', () => {
+      const { controller } = createController()
+      const page = controller.createPage({ templateId: 'tpl-blank' })
+      const comp = controller.addComponent(page.id, { type: 'button' })
+      expect(() => controller.removeComponent(page.id, comp.id)).not.toThrow()
+    })
+
+    it('不存在的组件应抛错', () => {
+      const { controller } = createController()
+      const page = controller.createPage({ templateId: 'tpl-blank' })
+      expect(() => controller.removeComponent(page.id, 'bad-id')).toThrow('Component not found')
+    })
+  })
+
+  /* =========== 模板查询 =========== */
+
+  describe('GET /api/lowcode/templates/:id — getTemplate', () => {
+    it('应返回已注册模板', () => {
+      const { controller } = createController()
+      const tpl = controller.getTemplate('tpl-dashboard')
+      expect(tpl).toBeDefined()
+      expect(tpl!.id).toBe('tpl-dashboard')
+    })
+
+    it('不存在的模板应抛错', () => {
+      const { controller } = createController()
+      expect(() => controller.getTemplate('unknown')).toThrow('Template not found')
+    })
+  })
+
+  /* =========== 审计指标 =========== */
+
+  describe('POST /api/lowcode/metrics — recordMetric', () => {
+    it('应记录指标并返回检查结果', () => {
+      const { controller } = createController()
+      const result = controller.recordMetric({ name: 'error_rate', value: 1.5, tags: { env: 'prod' } }) as Record<string, unknown>
+      expect(result.recorded).toBeDefined()
+      expect((result.recorded as Record<string, unknown>).name).toBe('error_rate')
+      expect((result.recorded as Record<string, unknown>).value).toBe(1.5)
+      expect((result.thresholdCheck as Record<string, unknown>).exceeded).toBe(false)
+      expect(result.alert).toBeNull()
+    })
+
+    it('超过阈值应触发告警', () => {
+      const { controller } = createController()
+      const result = controller.recordMetric({ name: 'error_rate', value: 5, tags: { env: 'prod' } }) as Record<string, unknown>
+      expect((result.thresholdCheck as Record<string, unknown>).exceeded).toBe(true)
+      expect(result.alert).not.toBeNull()
+      expect((result.alert as Record<string, unknown>).metricName).toBe('error_rate')
+      expect((result.alert as Record<string, unknown>).currentValue).toBe(5)
+    })
+
+    it('不带 tags 仍可正常记录', () => {
+      const { controller } = createController()
+      const result = controller.recordMetric({ name: 'cpu_usage', value: 90 }) as Record<string, unknown>
+      expect((result.recorded as Record<string, unknown>).tags).toEqual({})
+    })
+  })
+
+  describe('GET /api/lowcode/metrics/:name/trend — getMetricTrend', () => {
+    it('应返回时间窗口内的趋势', () => {
+      const { controller } = createController()
+      controller.recordMetric({ name: 'cpu_usage', value: 50 })
+      controller.recordMetric({ name: 'cpu_usage', value: 60 })
+      const trend = controller.getMetricTrend('cpu_usage', { window: '1h' })
+      expect(trend.metricName).toBe('cpu_usage')
+      expect(trend.dataPoints.length).toBe(2)
+      expect(trend.window).toBe('1h')
+    })
+
+    it('无数据返回空数组', () => {
+      const { controller } = createController()
+      const trend = controller.getMetricTrend('never_recorded', { window: '1h' })
+      expect(trend.dataPoints).toEqual([])
+    })
+
+    it('默认 window 为 1h', () => {
+      const { controller } = createController()
+      const trend = controller.getMetricTrend('cpu_usage', {})
+      expect(trend.window).toBe('1h')
+    })
+  })
+
+  describe('GET /api/lowcode/alerts — getAlertHistory', () => {
+    it('应返回所有告警', () => {
+      const { controller } = createController()
+      controller.recordMetric({ name: 'error_rate', value: 10 })
+      controller.recordMetric({ name: 'latency_p99', value: 1000 })
+      const alerts = controller.getAlertHistory({})
+      expect(alerts.length).toBe(2)
+    })
+
+    it('应按指标名称过滤', () => {
+      const { controller } = createController()
+      controller.recordMetric({ name: 'error_rate', value: 10 })
+      controller.recordMetric({ name: 'latency_p99', value: 1000 })
+      const alerts = controller.getAlertHistory({ metricName: 'error_rate' })
+      expect(alerts.length).toBe(1)
+      expect(alerts[0].metricName).toBe('error_rate')
+    })
+
+    it('无告警返回空数组', () => {
+      const { controller } = createController()
+      const alerts = controller.getAlertHistory({})
+      expect(alerts).toEqual([])
     })
   })
 })

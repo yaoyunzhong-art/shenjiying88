@@ -1,242 +1,383 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ContentService } from './content.service';
-import type { ContentEntity } from './content.entity';
+/**
+ * content.service.spec.ts — 内容管理 Service 纯函数式单元测试
+ *
+ * 覆盖 ContentService 六大方法：
+ *   正例 — 创建 / 查询 / 更新 / 发布 / 归档 / 软删除 / 硬删除 / 分页搜索
+ *   反例 — 不存在 / 重复 slug / 硬删除不存在
+ *   边界 — 空搜索 / 极限分页 / 多条件组合过滤
+ *
+ * ≥ 20 项测试，纯内联 mock（基于 Map 的内存存储）
+ */
+
+import { describe, it, expect, beforeEach } from 'vitest'
+import { ContentService } from './content.service'
+import type { ContentCategory, ContentStatus } from './content.entity'
 
 describe('ContentService', () => {
-  let service: ContentService;
+  let svc: ContentService
 
   beforeEach(() => {
-    service = new ContentService();
-  });
+    svc = new ContentService()
+    svc.__reset()
+  })
 
-  const createInput = {
-    title: '测试内容',
-    slug: 'test-content',
-    summary: '测试摘要',
-    body: '这是完整的内容正文...',
-    category: 'notice' as const,
-    authorId: 'user_001',
-  };
+  // ── 正例：创建 ──────────────────────────────────────────────
 
   describe('create', () => {
-    it('should create content and return entity with id', async () => {
-      const entity = await service.create(createInput);
+    it('正例: 创建内容返回完整实体', async () => {
+      const entity = await svc.create({
+        title: '测试文章',
+        slug: 'test-article',
+        summary: '这是一篇测试文章',
+        body: '# Hello World',
+        category: 'news',
+        authorId: 'author-1',
+      })
 
-      expect(entity.id).toBeDefined();
-      expect(entity.id.startsWith('content_')).toBe(true);
-      expect(entity.title).toBe('测试内容');
-      expect(entity.slug).toBe('test-content');
-      expect(entity.status).toBe('draft');
-      expect(entity.createdAt).toBeInstanceOf(Date);
-      expect(entity.updatedAt).toBeInstanceOf(Date);
-    });
+      expect(entity.id).toBeTruthy()
+      expect(entity.title).toBe('测试文章')
+      expect(entity.slug).toBe('test-article')
+      expect(entity.summary).toBe('这是一篇测试文章')
+      expect(entity.body).toBe('# Hello World')
+      expect(entity.category).toBe('news')
+      expect(entity.authorId).toBe('author-1')
+      expect(entity.status).toBe('draft')
+      expect(entity.createdAt).toBeInstanceOf(Date)
+      expect(entity.updatedAt).toBeInstanceOf(Date)
+    })
 
-    it('should throw error when slug already exists', async () => {
-      await service.create(createInput);
-      await expect(service.create(createInput)).rejects.toThrow('Slug "test-content" already exists');
-    });
+    it('正例: 创建内容时可传入 metadata', async () => {
+      const entity = await svc.create({
+        title: '带元数据',
+        slug: 'with-meta',
+        body: 'body',
+        category: 'guide',
+        authorId: 'author-1',
+        metadata: { tags: ['tag1', 'tag2'], version: 2 },
+      })
 
-    it('should accept content with all optional fields', async () => {
-      const entity = await service.create({
-        ...createInput,
-        coverImageUrl: 'https://example.com/cover.jpg',
-        metadata: { tags: ['测试'], version: 1 },
-      });
+      expect(entity.metadata).toEqual({ tags: ['tag1', 'tag2'], version: 2 })
+    })
 
-      expect(entity.coverImageUrl).toBe('https://example.com/cover.jpg');
-      expect(entity.metadata?.tags).toContain('测试');
-      expect(entity.metadata?.version).toBe(1);
-    });
-  });
+    it('反例: 重复 slug 抛出错误', async () => {
+      await svc.create({
+        title: '第一篇文章',
+        slug: 'duplicate-slug',
+        body: 'body',
+        category: 'notice',
+        authorId: 'author-1',
+      })
+
+      await expect(
+        svc.create({
+          title: '第二篇文章',
+          slug: 'duplicate-slug',
+          body: 'body',
+          category: 'notice',
+          authorId: 'author-1',
+        }),
+      ).rejects.toThrow(/already exists/)
+    })
+  })
+
+  // ── 正例：查询 ──────────────────────────────────────────────
 
   describe('findById', () => {
-    it('should return content by id', async () => {
-      const created = await service.create(createInput);
-      const found = await service.findById(created.id);
+    it('正例: 根据 ID 查询已存在的内容', async () => {
+      const created = await svc.create({
+        title: '查询测试',
+        slug: 'find-by-id',
+        body: 'body',
+        category: 'news',
+        authorId: 'author-1',
+      })
 
-      expect(found).not.toBeNull();
-      expect(found!.id).toBe(created.id);
-      expect(found!.title).toBe('测试内容');
-    });
+      const found = await svc.findById(created.id)
+      expect(found).not.toBeNull()
+      expect(found!.title).toBe('查询测试')
+    })
 
-    it('should return null for non-existent id', async () => {
-      const found = await service.findById('nonexistent');
-      expect(found).toBeNull();
-    });
-  });
+    it('反例: 查询不存在的内容返回 null', async () => {
+      const found = await svc.findById('non-existent-id')
+      expect(found).toBeNull()
+    })
+  })
 
   describe('findBySlug', () => {
-    it('should return content by slug', async () => {
-      await service.create(createInput);
-      const found = await service.findBySlug('test-content');
+    it('正例: 根据 slug 查询', async () => {
+      await svc.create({
+        title: 'Slug 查询',
+        slug: 'my-unique-slug',
+        body: 'body',
+        category: 'promotion',
+        authorId: 'author-1',
+      })
 
-      expect(found).not.toBeNull();
-      expect(found!.title).toBe('测试内容');
-    });
+      const found = await svc.findBySlug('my-unique-slug')
+      expect(found).not.toBeNull()
+      expect(found!.title).toBe('Slug 查询')
+    })
 
-    it('should return null for non-existent slug', async () => {
-      const found = await service.findBySlug('nonexistent-slug');
-      expect(found).toBeNull();
-    });
-  });
+    it('反例: 查询不存在的 slug 返回 null', async () => {
+      const found = await svc.findBySlug('never-existed')
+      expect(found).toBeNull()
+    })
+  })
+
+  // ── 分页查询 ──────────────────────────────────────────────
 
   describe('query', () => {
-    it('should return all contents when no filter applied', async () => {
-      await service.create({ ...createInput, slug: 'content-1' });
-      await service.create({ ...createInput, slug: 'content-2', title: '内容2' });
-      await service.create({ ...createInput, slug: 'content-3', title: '内容3' });
-
-      const result = await service.query({});
-      expect(result.items.length).toBe(3);
-      expect(result.total).toBe(3);
-    });
-
-    it('should filter by category', async () => {
-      await service.create({ ...createInput, slug: 'notice-1', category: 'notice' });
-      await service.create({ ...createInput, slug: 'activity-1', category: 'activity', title: '活动' });
-
-      const result = await service.query({ category: 'activity' });
-      expect(result.items.length).toBe(1);
-      expect(result.items[0].category).toBe('activity');
-    });
-
-    it('should filter by status', async () => {
-      const created = await service.create(createInput);
-      await service.publish(created.id);
-
-      const result = await service.query({ status: 'published' });
-      expect(result.items.length).toBe(1);
-      expect(result.items[0].status).toBe('published');
-    });
-
-    it('should search by title or body', async () => {
-      await service.create({ ...createInput, slug: 'a', title: '春节活动' });
-      await service.create({ ...createInput, slug: 'b', title: '普通通知', body: '包含春节字样' });
-
-      const result = await service.query({ search: '春节' });
-      expect(result.items.length).toBe(2);
-    });
-
-    it('should filter by authorId', async () => {
-      await service.create({ ...createInput, slug: 'a', authorId: 'user_a' });
-      await service.create({ ...createInput, slug: 'b', authorId: 'user_b' });
-
-      const result = await service.query({ authorId: 'user_a' });
-      expect(result.items.length).toBe(1);
-      expect(result.items[0].authorId).toBe('user_a');
-    });
-
-    it('should support pagination', async () => {
-      for (let i = 1; i <= 10; i++) {
-        await service.create({ ...createInput, slug: `content-${i}`, title: `内容${i}` });
+    beforeEach(async () => {
+      // 插入 5 条测试数据
+      const categories: ContentCategory[] = ['news', 'guide', 'notice', 'promotion', 'activity']
+      for (let i = 0; i < 5; i++) {
+        await svc.create({
+          title: `文章${i + 1}`,
+          slug: `article-${i + 1}`,
+          body: `这是第${i + 1}篇文章的内容`,
+          category: categories[i],
+          authorId: i < 3 ? 'author-1' : 'author-2',
+        })
       }
+    })
 
-      const page1 = await service.query({ limit: 3, offset: 0 });
-      expect(page1.items.length).toBe(3);
-      expect(page1.total).toBe(10);
+    it('正例: 无参数查询返回全部', async () => {
+      const result = await svc.query({})
+      expect(result.items).toHaveLength(5)
+      expect(result.total).toBe(5)
+    })
 
-      const page2 = await service.query({ limit: 3, offset: 3 });
-      expect(page2.items.length).toBe(3);
-      expect(page2.items[0].id).not.toBe(page1.items[0].id);
-    });
+    it('正例: 按分类过滤', async () => {
+      const result = await svc.query({ category: 'news' })
+      expect(result.items).toHaveLength(1)
+      expect(result.items[0].category).toBe('news')
+    })
 
-    it('should return empty array for no results', async () => {
-      const result = await service.query({ category: 'guide' });
-      expect(result.items.length).toBe(0);
-      expect(result.total).toBe(0);
-    });
-  });
+    it('正例: 按作者过滤', async () => {
+      const result = await svc.query({ authorId: 'author-2' })
+      expect(result.items).toHaveLength(2)
+    })
+
+    it('正例: 关键词搜索（标题）', async () => {
+      const result = await svc.query({ search: '文章1' })
+      expect(result.items.length).toBeGreaterThanOrEqual(1)
+      expect(result.items[0].title).toContain('文章1')
+    })
+
+    it('正例: 关键词搜索（正文）', async () => {
+      const result = await svc.query({ search: '第3篇' })
+      expect(result.items.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('正例: 分页参数 - limit', async () => {
+      const result = await svc.query({ limit: 2 })
+      expect(result.items).toHaveLength(2)
+      expect(result.limit).toBe(2)
+      expect(result.total).toBe(5)
+    })
+
+    it('正例: 分页参数 - offset', async () => {
+      const result = await svc.query({ offset: 3, limit: 10 })
+      expect(result.items).toHaveLength(2)
+      expect(result.offset).toBe(3)
+    })
+
+    it('正例: 多条件组合过滤', async () => {
+      const result = await svc.query({
+        authorId: 'author-1',
+        category: 'news',
+      })
+      expect(result.items).toHaveLength(1)
+    })
+
+    it('边界: 空搜索词返回全部', async () => {
+      const result = await svc.query({ search: '' })
+      expect(result.items).toHaveLength(5)
+    })
+
+    it('边界: 搜索无匹配返回空', async () => {
+      const result = await svc.query({ search: 'zzz_no_match_999' })
+      expect(result.items).toHaveLength(0)
+      expect(result.total).toBe(0)
+    })
+
+    it('边界: 超大 offset 返回空', async () => {
+      const result = await svc.query({ offset: 999, limit: 10 })
+      expect(result.items).toHaveLength(0)
+      expect(result.total).toBe(5)
+    })
+  })
+
+  // ── 更新 ──────────────────────────────────────────────────
 
   describe('update', () => {
-    it('should update content fields', async () => {
-      const created = await service.create(createInput);
-      const updated = await service.update(created.id, {
-        title: '新标题',
-        summary: '新摘要',
-      });
+    it('正例: 更新标题', async () => {
+      const created = await svc.create({
+        title: '旧标题',
+        slug: 'old-title',
+        body: 'body',
+        category: 'news',
+        authorId: 'author-1',
+      })
 
-      expect(updated).not.toBeNull();
-      expect(updated!.title).toBe('新标题');
-      expect(updated!.summary).toBe('新摘要');
-      expect(updated!.updatedAt.getTime()).toBeGreaterThanOrEqual(created.updatedAt.getTime());
-    });
+      const updated = await svc.update(created.id, { title: '新标题' })
+      expect(updated).not.toBeNull()
+      expect(updated!.title).toBe('新标题')
+      expect(updated!.slug).toBe('old-title') // 其他字段不变
+    })
 
-    it('should return null for non-existent id', async () => {
-      const result = await service.update('nonexistent', { title: '新标题' });
-      expect(result).toBeNull();
-    });
+    it('正例: 更新多个字段', async () => {
+      const created = await svc.create({
+        title: '原始',
+        slug: 'original',
+        body: '原始正文',
+        category: 'news',
+        authorId: 'author-1',
+      })
 
-    it('should throw when updating to an existing slug', async () => {
-      await service.create({ ...createInput, slug: 'first' });
-      const second = await service.create({ ...createInput, slug: 'second' });
+      const updated = await svc.update(created.id, {
+        title: '更新后',
+        body: '更新正文',
+        category: 'guide',
+        status: 'published' as ContentStatus,
+      })
+      expect(updated!.title).toBe('更新后')
+      expect(updated!.body).toBe('更新正文')
+      expect(updated!.category).toBe('guide')
+      expect(updated!.status).toBe('published')
+    })
 
-      await expect(service.update(second.id, { slug: 'first' })).rejects.toThrow(
-        'Slug "first" already exists',
-      );
-    });
-  });
+    it('反例: 更新不存在的内容返回 null', async () => {
+      const result = await svc.update('non-existent', { title: '新标题' })
+      expect(result).toBeNull()
+    })
+
+    it('反例: 更新 slug 冲突抛出错误', async () => {
+      await svc.create({
+        title: 'A',
+        slug: 'slug-a',
+        body: 'body',
+        category: 'news',
+        authorId: 'author-1',
+      })
+      const b = await svc.create({
+        title: 'B',
+        slug: 'slug-b',
+        body: 'body',
+        category: 'news',
+        authorId: 'author-1',
+      })
+
+      await expect(svc.update(b.id, { slug: 'slug-a' })).rejects.toThrow(/already exists/)
+    })
+  })
+
+  // ── 发布 ──────────────────────────────────────────────────
 
   describe('publish', () => {
-    it('should set status to published and set publishedAt', async () => {
-      const created = await service.create(createInput);
-      const published = await service.publish(created.id);
+    it('正例: 发布内容状态变为 published', async () => {
+      const created = await svc.create({
+        title: '待发布',
+        slug: 'to-publish',
+        body: 'body',
+        category: 'news',
+        authorId: 'author-1',
+      })
 
-      expect(published).not.toBeNull();
-      expect(published!.status).toBe('published');
-      expect(published!.publishedAt).toBeInstanceOf(Date);
-    });
+      const published = await svc.publish(created.id)
+      expect(published).not.toBeNull()
+      expect(published!.status).toBe('published')
+      expect(published!.publishedAt).toBeInstanceOf(Date)
+    })
 
-    it('should return null for non-existent id', async () => {
-      const result = await service.publish('nonexistent');
-      expect(result).toBeNull();
-    });
+    it('正例: 发布时指定发布时间', async () => {
+      const created = await svc.create({
+        title: '定时发布',
+        slug: 'scheduled',
+        body: 'body',
+        category: 'news',
+        authorId: 'author-1',
+      })
+      const future = new Date('2026-12-31T00:00:00Z')
+      const published = await svc.publish(created.id, future)
+      expect(published!.publishedAt!.toISOString()).toBe(future.toISOString())
+    })
 
-    it('should accept custom publishAt date', async () => {
-      const created = await service.create(createInput);
-      const futureDate = new Date('2026-12-31');
-      const published = await service.publish(created.id, futureDate);
+    it('反例: 发布不存在的内容返回 null', async () => {
+      const result = await svc.publish('non-existent')
+      expect(result).toBeNull()
+    })
+  })
 
-      expect(published!.publishedAt!.getTime()).toBe(futureDate.getTime());
-    });
-  });
+  // ── 归档 ──────────────────────────────────────────────────
 
   describe('archive', () => {
-    it('should set status to archived', async () => {
-      const created = await service.create(createInput);
-      await service.publish(created.id);
-      const archived = await service.archive(created.id);
+    it('正例: 归档内容状态变为 archived', async () => {
+      const created = await svc.create({
+        title: '待归档',
+        slug: 'to-archive',
+        body: 'body',
+        category: 'notice',
+        authorId: 'author-1',
+      })
 
-      expect(archived).not.toBeNull();
-      expect(archived!.status).toBe('archived');
-    });
-  });
+      const archived = await svc.archive(created.id)
+      expect(archived).not.toBeNull()
+      expect(archived!.status).toBe('archived')
+    })
 
-  describe('softDelete / hardDelete', () => {
-    it('should soft delete by setting status to deleted', async () => {
-      const created = await service.create(createInput);
-      const result = await service.softDelete(created.id);
+    it('反例: 归档不存在的内容返回 null', async () => {
+      const result = await svc.archive('non-existent')
+      expect(result).toBeNull()
+    })
+  })
 
-      expect(result).toBe(true);
+  // ── 删除 ──────────────────────────────────────────────────
 
-      const found = await service.findById(created.id);
-      expect(found!.status).toBe('deleted');
-    });
+  describe('softDelete', () => {
+    it('正例: 软删除内容状态变为 deleted', async () => {
+      const created = await svc.create({
+        title: '待删除',
+        slug: 'to-delete',
+        body: 'body',
+        category: 'other',
+        authorId: 'author-1',
+      })
 
-    it('should hard delete by removing from store', async () => {
-      const created = await service.create(createInput);
-      const result = await service.hardDelete(created.id);
+      const result = await svc.softDelete(created.id)
+      expect(result).toBe(true)
 
-      expect(result).toBe(true);
-      const found = await service.findById(created.id);
-      expect(found).toBeNull();
-    });
+      const deleted = await svc.findById(created.id)
+      expect(deleted).not.toBeNull()
+      expect(deleted!.status).toBe('deleted')
+    })
 
-    it('should return false when deleting non-existent content', async () => {
-      const softResult = await service.softDelete('nonexistent');
-      expect(softResult).toBe(false);
+    it('反例: 软删除不存在的内容返回 false', async () => {
+      const result = await svc.softDelete('non-existent')
+      expect(result).toBe(false)
+    })
+  })
 
-      const hardResult = await service.hardDelete('nonexistent');
-      expect(hardResult).toBe(false);
-    });
-  });
-});
+  describe('hardDelete', () => {
+    it('正例: 硬删除成功返回 true', async () => {
+      const created = await svc.create({
+        title: '硬删除',
+        slug: 'hard-delete',
+        body: 'body',
+        category: 'other',
+        authorId: 'author-1',
+      })
+
+      const deleted = await svc.hardDelete(created.id)
+      expect(deleted).toBe(true)
+
+      const found = await svc.findById(created.id)
+      expect(found).toBeNull()
+    })
+
+    it('反例: 硬删除不存在的内容返回 false', async () => {
+      const result = await svc.hardDelete('non-existent')
+      expect(result).toBe(false)
+    })
+  })
+})

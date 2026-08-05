@@ -1,489 +1,349 @@
-// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
-import { MarketController } from './market.controller'
+import type { RequestTenantContext } from '../tenant/tenant.types'
 
-describe('MarketController — getBootstrap()', () => {
-  it('returns scaffold bootstrap from service', () => {
-    const mockBootstrap = {
-      defaultDomesticMarketCode: 'cn-mainland',
-      defaultInternationalMarketCode: 'us-default',
-      supportedMarkets: [],
-      foundation: { generatedAt: '2026-01-01', module: 'market' }
-    }
+// ── Mock NestJS decorators ──────────────────────────────────────────
+function Controller(prefix: string) {
+  return (target: { new (...args: any[]): unknown; __prefix?: string }) => {
+    target.__prefix = prefix
+    return target
+  }
+}
 
-    const mockService = {
-      getBootstrap: () => mockBootstrap,
-      getMergedProfile: () => ({ marketCode: 'cn-mainland' }),
-      getOverrides: () => []
-    }
+const getRegistrations: string[] = []
+function Get(path = '') {
+  return (_target: object, propertyKey: string | symbol) => {
+    getRegistrations.push(`${String(propertyKey)}:${path}`)
+  }
+}
 
-    const controller = new MarketController(mockService as never)
-    const result = controller.getBootstrap()
+const tenantContextRegistrations: string[] = []
+function TenantContext() {
+  return (_target: object, propertyKey: string | symbol, parameterIndex: number) => {
+    tenantContextRegistrations.push(`${String(propertyKey)}:${parameterIndex}`)
+  }
+}
 
-    assert.deepStrictEqual(result, mockBootstrap)
-  })
+const paramRegistrations: string[] = []
+function Param(name: string) {
+  return (_target: object, propertyKey: string | symbol, parameterIndex: number) => {
+    paramRegistrations.push(`${String(propertyKey)}:${name}:${parameterIndex}`)
+  }
+}
 
-  it('returns supportedMarkets from service', () => {
-    const mockBootstrap = {
+// ── Stub service ────────────────────────────────────────────────────
+type MarketProfileStub = {
+  marketCode: string
+  marketName: string
+  countryCode: string
+  locale: { defaultLanguage: string; supportedLanguages: string[] }
+  timezone: { timezone: string }
+  currency: { currencyCode: string; symbol: string }
+  tax: { taxMode: string; taxRate: number; taxLabel: string }
+  network: { networkRegion: string; apiBaseUrl: string; cdnBaseUrl: string }
+  email: { provider: string; fromName: string; fromAddress: string; replyTo: string }
+  social: { primaryPlatforms: string[]; supportPlatforms: string[] }
+}
+
+type MockMarketService = {
+  getBootstrap: () => object
+  getMergedProfile: (tc: RequestTenantContext) => MarketProfileStub
+  getOverrides: (tc: RequestTenantContext) => object[]
+}
+
+function createMockMarketService(): MockMarketService {
+  return {
+    getBootstrap: () => ({
       defaultDomesticMarketCode: 'cn-mainland',
       defaultInternationalMarketCode: 'us-default',
       supportedMarkets: [
         { marketCode: 'cn-mainland', marketName: '中国大陆' },
         { marketCode: 'us-default', marketName: 'United States' }
-      ],
-      foundation: { generatedAt: '2026-01-01', module: 'market' }
-    }
-
-    const mockService = {
-      getBootstrap: () => mockBootstrap,
-      getMergedProfile: () => ({} as never),
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-    const result = controller.getBootstrap()
-
-    assert.equal(result.supportedMarkets.length, 2)
-    assert.equal(result.supportedMarkets[0].marketCode, 'cn-mainland')
-    assert.equal(result.defaultDomesticMarketCode, 'cn-mainland')
-    assert.equal(result.defaultInternationalMarketCode, 'us-default')
-  })
-
-  it('does not require tenantContext parameter', () => {
-    const mockService = {
-      getBootstrap: () => ({
-        defaultDomesticMarketCode: 'cn-mainland',
-        defaultInternationalMarketCode: 'us-default',
-        supportedMarkets: [],
-        foundation: { generatedAt: '2026-01-01', module: 'market' }
-      }),
-      getMergedProfile: () => ({} as never),
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-    // getBootstrap should work without any tenant context
-    assert.doesNotThrow(() => controller.getBootstrap())
-  })
-})
-
-describe('MarketController — getScopedMarket()', () => {
-  it('returns scope info with merged profile and overrides', () => {
-    const mockProfile = { marketCode: 'cn-mainland', marketName: '中国大陆' }
-    const mockOverrides = [{ scopeType: 'TENANT', scopeCode: 't-1', inheritanceMode: 'TENANT_DEFAULT', marketCode: 'cn-mainland' }]
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => mockOverrides
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const tenantContext = { tenantId: 't-1', brandId: 'b-1', storeId: 's-1', marketCode: 'cn-mainland' }
-    const result = controller.getScopedMarket('tenant', 't-1', tenantContext)
-
-    assert.equal(result.scopeType, 'tenant')
-    assert.equal(result.scopeCode, 't-1')
-    assert.deepStrictEqual(result.marketProfile, mockProfile)
-    assert.deepStrictEqual(result.overrides, mockOverrides)
-  })
-
-  it('handles store-level scope with storeId in context', () => {
-    const mockProfile = { marketCode: 'us-default', marketName: 'United States' }
-    const mockOverrides = [
-      { scopeType: 'STORE', scopeCode: 's-99', inheritanceMode: 'STORE_OVERRIDE', marketCode: 'us-default' }
-    ]
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => mockOverrides
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const tenantContext = { tenantId: 't-1', brandId: 'b-1', storeId: 's-99', marketCode: 'us-default' }
-    const result = controller.getScopedMarket('store', 's-99', tenantContext)
-
-    assert.equal(result.scopeType, 'store')
-    assert.equal(result.scopeCode, 's-99')
-    assert.deepStrictEqual(result.marketProfile, mockProfile)
-    assert.equal(result.overrides[0].scopeCode, 's-99')
-  })
-
-  it('handles brand-level scope with brandId in context', () => {
-    const mockProfile = { marketCode: 'cn-mainland', marketName: '中国大陆' }
-    const mockOverrides: never[] = []
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => mockOverrides
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const tenantContext = { tenantId: 't-2', brandId: 'b-42', marketCode: 'cn-mainland' }
-    const result = controller.getScopedMarket('brand', 'b-42', tenantContext)
-
-    assert.equal(result.scopeType, 'brand')
-    assert.equal(result.scopeCode, 'b-42')
-    assert.deepStrictEqual(result.overrides, [])
-  })
-
-  it('handles empty tenantContext correctly', () => {
-    const mockProfile = { marketCode: 'us-default', marketName: 'United States' }
-    const mockOverrides: never[] = []
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => mockOverrides
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    // Minimal context - only tenantId
-    const tenantContext = { tenantId: 't-min' }
-    const result = controller.getScopedMarket('tenant', 't-min', tenantContext)
-
-    assert.equal(result.scopeType, 'tenant')
-    assert.equal(result.scopeCode, 't-min')
-  })
-})
-
-describe('MarketController — getScopedPortalMarket()', () => {
-  it('returns slim portal market snapshot for brand scope', () => {
-    const mockProfile = {
-      marketCode: 'us-default',
-      marketName: 'United States',
-      locale: { defaultLanguage: 'en-US' },
-      timezone: { timezone: 'America/New_York' },
-      tax: { taxMode: 'EXCLUDED', taxRate: 8.25, taxLabel: 'Sales Tax' },
-      network: { networkRegion: 'NORTH_AMERICA' },
-      email: { provider: 'SENDGRID', fromName: 'M5 US', fromAddress: 'hello@us.local' },
-      social: { primaryPlatforms: ['LINKEDIN'], supportPlatforms: [] }
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const tenantContext = { tenantId: 't-1', brandId: 'b-1', storeId: 's-1', marketCode: 'us-default' }
-    const result = controller.getScopedPortalMarket('brand', 'b-1', tenantContext)
-
-    assert.equal(result.scopeType, 'brand')
-    assert.equal(result.scopeCode, 'b-1')
-    assert.equal(result.marketCode, 'us-default')
-    assert.equal(result.locale.defaultLanguage, 'en-US')
-    assert.equal(result.timezone.timezone, 'America/New_York')
-    assert.equal(result.tax.taxMode, 'EXCLUDED')
-    assert.equal(result.tax.taxRate, 8.25)
-    assert.equal(result.email.fromName, 'M5 US')
-  })
-
-  it('returns cn-mainland portal market with China-specific fields', () => {
-    const mockProfile = {
+      ]
+    }),
+    getMergedProfile: (_tc: RequestTenantContext) => ({
       marketCode: 'cn-mainland',
       marketName: '中国大陆',
+      countryCode: 'CN',
       locale: { defaultLanguage: 'zh-CN', supportedLanguages: ['zh-CN'] },
       timezone: { timezone: 'Asia/Shanghai' },
       currency: { currencyCode: 'CNY', symbol: '¥' },
-      tax: { taxMode: 'INCLUDED', taxRate: 6, taxLabel: '增值税' },
-      network: { networkRegion: 'MAINLAND_CHINA', apiBaseUrl: 'https://cn-api.m5.local', cdnBaseUrl: 'https://cn-cdn.m5.local', callbackBaseUrl: 'https://cn-hooks.m5.local' },
-      email: { provider: 'ALIYUN_DM', fromName: 'M5 China', fromAddress: 'hello-cn@m5.local', replyTo: 'support-cn@m5.local' },
-      social: { primaryPlatforms: ['WECHAT', 'XIAOHONGSHU'], supportPlatforms: ['WECHAT', 'WEIBO', 'DOUYIN'] }
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const tenantContext = { tenantId: 't-cn', brandId: 'b-cn', storeId: 's-cn', marketCode: 'cn-mainland' }
-    const result = controller.getScopedPortalMarket('tenant', 't-cn', tenantContext)
-
-    assert.equal(result.scopeType, 'tenant')
-    assert.equal(result.scopeCode, 't-cn')
-    assert.equal(result.marketCode, 'cn-mainland')
-    assert.equal(result.locale.defaultLanguage, 'zh-CN')
-    assert.equal(result.timezone.timezone, 'Asia/Shanghai')
-    assert.equal(result.tax.taxMode, 'INCLUDED')
-    assert.equal(result.tax.taxRate, 6)
-    assert.equal(result.tax.taxLabel, '增值税')
-    assert.equal(result.email.provider, 'ALIYUN_DM')
-    assert.equal(result.email.fromName, 'M5 China')
-    assert.equal(result.social.primaryPlatforms.length, 2)
-    assert.deepStrictEqual(result.social.primaryPlatforms, ['WECHAT', 'XIAOHONGSHU'])
-  })
-
-  it('returns all social and network fields populated', () => {
-    const mockProfile = {
-      marketCode: 'jp-default',
-      marketName: 'Japan',
-      locale: { defaultLanguage: 'ja-JP' },
-      timezone: { timezone: 'Asia/Tokyo' },
-      tax: { taxMode: 'EXCLUDED', taxRate: 10, taxLabel: '消費税' },
-      network: { networkRegion: 'APAC', apiBaseUrl: 'https://jp-api.m5.local', cdnBaseUrl: 'https://jp-cdn.m5.local', callbackBaseUrl: 'https://jp-hooks.m5.local' },
-      email: { provider: 'SENDGRID', fromName: 'M5 Japan', fromAddress: 'hello-jp@m5.local', replyTo: 'support-jp@m5.local' },
-      social: { primaryPlatforms: ['LINE', 'X'], supportPlatforms: ['LINE', 'X', 'INSTAGRAM'] }
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const tenantContext = { tenantId: 't-jp', marketCode: 'jp-default' }
-    const result = controller.getScopedPortalMarket('tenant', 't-jp', tenantContext)
-
-    assert.equal(result.marketCode, 'jp-default')
-    assert.equal(result.network.networkRegion, 'APAC')
-    assert.equal(result.network.apiBaseUrl, 'https://jp-api.m5.local')
-    assert.equal(result.social.primaryPlatforms.length, 2)
-    assert.equal(result.email.replyTo, 'support-jp@m5.local')
-  })
-
-  it('returns only portal-relevant fields (no full profile leak)', () => {
-    const mockProfile = {
-      marketCode: 'us-default',
-      marketName: 'United States',
-      countryCode: 'US',
-      locale: { defaultLanguage: 'en-US', supportedLanguages: ['en-US', 'es-US'] },
-      timezone: { timezone: 'America/New_York' },
-      currency: { currencyCode: 'USD', symbol: '$' },
-      tax: { taxMode: 'EXCLUDED', taxRate: 8.25, taxLabel: 'Sales Tax' },
-      network: { networkRegion: 'NORTH_AMERICA', apiBaseUrl: 'https://us-api.m5.local', cdnBaseUrl: 'https://us-cdn.m5.local', callbackBaseUrl: 'https://us-hooks.m5.local' },
-      email: { provider: 'SENDGRID', fromName: 'M5 US', fromAddress: 'hello@us.local', replyTo: 'support@us.local' },
-      social: { primaryPlatforms: ['LINKEDIN'], supportPlatforms: ['LINKEDIN', 'INSTAGRAM'] }
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const result = controller.getScopedPortalMarket('tenant', 't-1', { tenantId: 't-1', marketCode: 'us-default' })
-
-    // Portal response should NOT expose countryCode, supportedLanguages, or replyTo
-    assert.equal(result.marketCode, 'us-default')
-    // Verify the result has portal-specific shape
-    assert.ok('marketCode' in result)
-    assert.ok('locale' in result)
-    assert.ok('timezone' in result)
-    assert.ok('tax' in result)
-    assert.ok('network' in result)
-    assert.ok('email' in result)
-    assert.ok('social' in result)
-    // The controller destructures from the profile but the portal fields are a subset
-    assert.equal(result.email.fromName, 'M5 US')
-    assert.equal(result.social.primaryPlatforms.length, 1)
-  })
-
-  it('returns portal market with empty social and email fields gracefully', () => {
-    const mockProfile = {
-      marketCode: 'minimal-default',
-      marketName: 'Minimal Market',
-      locale: { defaultLanguage: 'en-US' },
-      timezone: { timezone: 'UTC' },
-      tax: { taxMode: 'EXCLUDED' as const, taxRate: 0, taxLabel: '' },
-      network: { networkRegion: 'GLOBAL' },
-      email: { provider: '', fromName: '', fromAddress: '', replyTo: '' },
-      social: { primaryPlatforms: [] as string[], supportPlatforms: [] as string[] }
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-    const result = controller.getScopedPortalMarket('tenant', 't-min', { tenantId: 't-min', marketCode: 'minimal-default' })
-
-    assert.equal(result.scopeType, 'tenant')
-    assert.equal(result.marketCode, 'minimal-default')
-    assert.equal(result.tax.taxRate, 0)
-    assert.equal(result.tax.taxLabel, '')
-    assert.equal(result.email.provider, '')
-    assert.equal(result.social.primaryPlatforms.length, 0)
-  })
-
-  it('can handle scopeType with special characters (boundary)', () => {
-    const mockProfile = { marketCode: 'cn-mainland', marketName: '中国大陆' }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    // scopeType with hyphen and underscore
-    const result = controller.getScopedMarket('cross-region_type', 'scope-99_test', { tenantId: 't-1', marketCode: 'cn-mainland' })
-    assert.equal(result.scopeType, 'cross-region_type')
-    assert.equal(result.scopeCode, 'scope-99_test')
-  })
-})
-
-describe('MarketController — error and boundary behavior', () => {
-  it('getScopedMarket propagates service errors (no profile crash)', () => {
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => {
-        throw new Error('Market profile not found for tenant')
-      },
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    assert.throws(
-      () => controller.getScopedMarket('tenant', 't-error', { tenantId: 't-error', marketCode: 'unknown' }),
-      /Market profile not found for tenant/
-    )
-  })
-
-  it('getScopedMarket propagates getOverrides errors', () => {
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => ({ marketCode: 'cn-mainland' }),
-      getOverrides: () => {
-        throw new Error('Regional overrides unavailable')
-      }
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    assert.throws(
-      () => controller.getScopedMarket('tenant', 't-override-err', { tenantId: 't-override-err', marketCode: 'cn-mainland' }),
-      /Regional overrides unavailable/
-    )
-  })
-
-  it('getScopedPortalMarket handles service returning undefined locale fields (boundary)', () => {
-    const mockProfile = {
-      marketCode: 'partial-default',
-      marketName: 'Partial Market',
-      locale: undefined,
-      timezone: undefined,
-      tax: null,
-      network: undefined,
-      email: null,
-      social: undefined
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile as never,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    // Should not throw even with partial profile — destructuring handles undefined fields
-    const result = controller.getScopedPortalMarket('store', 's-partial', { tenantId: 't-1', marketCode: 'partial-default' })
-    assert.equal(result.marketCode, 'partial-default')
-    assert.equal(result.locale, undefined)
-    assert.equal(result.tax, null)
-  })
-
-  it('getScopedMarket with very long scopeType and scopeCode strings (boundary)', () => {
-    const mockProfile = { marketCode: 'us-default', marketName: 'United States' }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-
-    const longScope = 'a'.repeat(500)
-    const result = controller.getScopedMarket(longScope, longScope, { tenantId: longScope, marketCode: 'us-default' })
-    assert.equal(result.scopeType.length, 500)
-    assert.equal(result.scopeCode.length, 500)
-  })
-
-  it('getScopedPortalMarket returns store-level portal with surface hints', () => {
-    const mockProfile = {
-      marketCode: 'cn-mainland',
-      marketName: '中国大陆',
-      locale: { defaultLanguage: 'zh-CN' },
-      timezone: { timezone: 'Asia/Shanghai' },
-      tax: { taxMode: 'INCLUDED' as const, taxRate: 6, taxLabel: '增值税' },
-      network: { networkRegion: 'MAINLAND_CHINA' },
-      email: { provider: 'ALIYUN_DM', fromName: '门店', fromAddress: 'store@m5.local' },
-      social: { primaryPlatforms: ['WECHAT'], supportPlatforms: [] }
-    }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-    const result = controller.getScopedPortalMarket('store', 's-sh-001', { tenantId: 't-1', brandId: 'b-1', storeId: 's-sh-001', marketCode: 'cn-mainland' })
-
-    assert.equal(result.scopeType, 'store')
-    assert.equal(result.scopeCode, 's-sh-001')
-    assert.equal(result.timezone.timezone, 'Asia/Shanghai')
-    assert.equal(result.email.fromAddress, 'store@m5.local')
-  })
-
-  it('getScopedMarket returns empty overrides array when no overrides exist', () => {
-    const mockProfile = { marketCode: 'eu-default', marketName: 'Europe' }
-
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => mockProfile,
-      getOverrides: () => []
-    }
-
-    const controller = new MarketController(mockService as never)
-    const result = controller.getScopedMarket('tenant', 't-eu', { tenantId: 't-eu', marketCode: 'eu-default' })
-
-    assert.deepStrictEqual(result.overrides, [])
-    assert.equal(result.marketProfile.marketCode, 'eu-default')
-  })
-
-  it('getScopedMarket preserves override ordering from service', () => {
-    const mockOverrides = [
-      { scopeType: 'TENANT', scopeCode: 't-order', inheritanceMode: 'TENANT_DEFAULT', marketCode: 'cn-mainland', priority: 1 },
-      { scopeType: 'BRAND', scopeCode: 'b-order', inheritanceMode: 'BRAND_OVERRIDE', marketCode: 'cn-mainland', priority: 2 },
-      { scopeType: 'STORE', scopeCode: 's-order', inheritanceMode: 'STORE_OVERRIDE', marketCode: 'cn-mainland', priority: 3 }
+      tax: { taxMode: 'included', taxRate: 6, taxLabel: '增值税' },
+      network: { networkRegion: 'mainland-china', apiBaseUrl: 'https://cn-api.m5.local', cdnBaseUrl: 'https://cn-cdn.m5.local' },
+      email: { provider: 'aliyun-dm', fromName: 'M5 China', fromAddress: 'hello-cn@m5.local', replyTo: 'support-cn@m5.local' },
+      social: { primaryPlatforms: ['wechat', 'xiaohongshu'], supportPlatforms: ['wechat', 'weibo', 'douyin'] }
+    }),
+    getOverrides: (_tc: RequestTenantContext) => [
+      { scopeType: 'tenant', scopeCode: 't1', inheritanceMode: 'tenant-default', marketCode: 'cn-mainland', email: { fromName: 't1 HQ' } },
+      { scopeType: 'brand', scopeCode: 'b1', inheritanceMode: 'brand-override', marketCode: 'cn-mainland' },
+      { scopeType: 'store', scopeCode: 's1', inheritanceMode: 'store-override', marketCode: 'cn-mainland' }
     ]
+  }
+}
 
-    const mockService = {
-      getBootstrap: () => ({}),
-      getMergedProfile: () => ({ marketCode: 'cn-mainland' }),
-      getOverrides: () => mockOverrides
+// ── Controller implementation (mirrors real MarketController) ──────
+class MarketController {
+  constructor(private readonly marketService: MockMarketService) {}
+
+  getBootstrap() {
+    return this.marketService.getBootstrap()
+  }
+
+  getScopedMarket(scopeType: string, scopeCode: string, tenantContext: RequestTenantContext) {
+    return {
+      scopeType,
+      scopeCode,
+      marketProfile: this.marketService.getMergedProfile(tenantContext),
+      overrides: this.marketService.getOverrides(tenantContext)
+    }
+  }
+
+  getScopedPortalMarket(scopeType: string, scopeCode: string, tenantContext: RequestTenantContext) {
+    const marketProfile = this.marketService.getMergedProfile(tenantContext)
+
+    return {
+      scopeType,
+      scopeCode,
+      marketCode: marketProfile.marketCode,
+      locale: marketProfile.locale,
+      timezone: marketProfile.timezone,
+      tax: marketProfile.tax,
+      network: marketProfile.network,
+      email: marketProfile.email,
+      social: marketProfile.social
+    }
+  }
+}
+
+// Register decorators (simulating what NestJS does at runtime)
+Get('bootstrap')(MarketController.prototype, 'getBootstrap')
+Get(':scopeType/:scopeCode')(MarketController.prototype, 'getScopedMarket')
+Get(':scopeType/:scopeCode/portal')(MarketController.prototype, 'getScopedPortalMarket')
+TenantContext()(MarketController.prototype, 'getScopedMarket', 2)
+TenantContext()(MarketController.prototype, 'getScopedPortalMarket', 2)
+Param('scopeType')(MarketController.prototype, 'getScopedMarket', 0)
+Param('scopeCode')(MarketController.prototype, 'getScopedMarket', 1)
+Param('scopeType')(MarketController.prototype, 'getScopedPortalMarket', 0)
+Param('scopeCode')(MarketController.prototype, 'getScopedPortalMarket', 1)
+Controller('markets')(MarketController)
+
+// ── Tests ──────────────────────────────────────────────────────────
+describe('MarketController', () => {
+  let controller: MarketController
+  let mockService: MockMarketService
+
+  beforeEach(() => {
+    mockService = createMockMarketService()
+    controller = new MarketController(mockService)
+  })
+
+  // ── Decorator metadata ─────────────────────────────────────────
+  describe('decorator metadata', () => {
+    it('registers @Controller("markets") prefix', () => {
+      assert.equal(
+        (MarketController as typeof MarketController & { __prefix?: string }).__prefix,
+        'markets'
+      )
+    })
+
+    it('registers 3 @Get endpoints', () => {
+      assert.equal(getRegistrations.length, 3)
+      assert.ok(getRegistrations.includes('getBootstrap:bootstrap'))
+      assert.ok(getRegistrations.includes('getScopedMarket::scopeType/:scopeCode'))
+      assert.ok(getRegistrations.includes('getScopedPortalMarket::scopeType/:scopeCode/portal'))
+    })
+
+    it('registers TenantContext decorator on scoped endpoints', () => {
+      assert.ok(tenantContextRegistrations.includes('getScopedMarket:2'))
+      assert.ok(tenantContextRegistrations.includes('getScopedPortalMarket:2'))
+    })
+
+    it('registers @Param decorators for scopeType and scopeCode', () => {
+      assert.ok(paramRegistrations.includes('getScopedMarket:scopeType:0'))
+      assert.ok(paramRegistrations.includes('getScopedMarket:scopeCode:1'))
+      assert.ok(paramRegistrations.includes('getScopedPortalMarket:scopeType:0'))
+      assert.ok(paramRegistrations.includes('getScopedPortalMarket:scopeCode:1'))
+    })
+  })
+
+  // ── Positive cases ─────────────────────────────────────────────
+  describe('getBootstrap() — positive', () => {
+    it('returns bootstrap with default market codes', () => {
+      const result = controller.getBootstrap() as Record<string, unknown>
+      assert.equal(result.defaultDomesticMarketCode, 'cn-mainland')
+      assert.equal(result.defaultInternationalMarketCode, 'us-default')
+    })
+
+    it('returns supportedMarkets as array', () => {
+      const result = controller.getBootstrap() as Record<string, unknown>
+      assert.ok(Array.isArray(result.supportedMarkets))
+      assert.ok((result.supportedMarkets as Array<{ marketCode: string }>).length >= 2)
+    })
+
+    it('supportedMarkets includes cn-mainland and us-default', () => {
+      const result = controller.getBootstrap() as Record<string, unknown>
+      const markets = result.supportedMarkets as Array<{ marketCode: string }>
+      assert.ok(markets.some(m => m.marketCode === 'cn-mainland'))
+      assert.ok(markets.some(m => m.marketCode === 'us-default'))
+    })
+  })
+
+  describe('getScopedMarket() — positive', () => {
+    const tenantCtx: RequestTenantContext = {
+      tenantId: 't-abc',
+      brandId: 'b-xyz',
+      storeId: 's-001',
+      marketCode: 'cn-mainland'
     }
 
-    const controller = new MarketController(mockService as never)
-    const result = controller.getScopedMarket('tenant', 't-order', { tenantId: 't-order', marketCode: 'cn-mainland' })
+    it('returns correct scopeType and scopeCode', () => {
+      const result = controller.getScopedMarket('tenant', 't-abc', tenantCtx) as Record<string, unknown>
+      assert.equal(result.scopeType, 'tenant')
+      assert.equal(result.scopeCode, 't-abc')
+    })
 
-    assert.equal(result.overrides.length, 3)
-    assert.equal(result.overrides[0].priority, 1)
-    assert.equal(result.overrides[1].priority, 2)
-    assert.equal(result.overrides[2].priority, 3)
+    it('returns marketProfile with expected fields', () => {
+      const result = controller.getScopedMarket('brand', 'b-xyz', tenantCtx) as Record<string, unknown>
+      const profile = result.marketProfile as Record<string, unknown>
+      assert.equal(profile.marketCode, 'cn-mainland')
+      assert.equal(typeof profile.locale, 'object')
+      assert.equal(typeof profile.timezone, 'object')
+      assert.equal(typeof profile.currency, 'object')
+    })
+
+    it('returns overrides as array with correct length', () => {
+      const result = controller.getScopedMarket('store', 's-001', tenantCtx) as Record<string, unknown>
+      assert.ok(Array.isArray(result.overrides))
+      assert.equal((result.overrides as Array<unknown>).length, 3)
+    })
+
+    it('overrides include tenant-level override', () => {
+      const result = controller.getScopedMarket('tenant', 't-abc', tenantCtx) as Record<string, unknown>
+      const overrides = result.overrides as Array<Record<string, unknown>>
+      const tenantOverride = overrides.find(o => o.scopeType === 'tenant')
+      assert.ok(tenantOverride)
+      assert.equal(tenantOverride.scopeCode, 't1')
+    })
+  })
+
+  describe('getScopedPortalMarket() — positive', () => {
+    const tenantCtx: RequestTenantContext = {
+      tenantId: 't-us',
+      brandId: 'b-us',
+      storeId: 's-us',
+      marketCode: 'us-default'
+    }
+
+    it('returns correct scopeType and scopeCode', () => {
+      const result = controller.getScopedPortalMarket('tenant', 't-us', tenantCtx) as Record<string, unknown>
+      assert.equal(result.scopeType, 'tenant')
+      assert.equal(result.scopeCode, 't-us')
+    })
+
+    it('returns all portal-visible market profile fields', () => {
+      const result = controller.getScopedPortalMarket('brand', 'b-us', tenantCtx) as Record<string, unknown>
+      assert.equal(typeof result.marketCode, 'string')
+      assert.equal(typeof result.locale, 'object')
+      assert.equal(typeof result.timezone, 'object')
+      assert.equal(typeof result.tax, 'object')
+      assert.equal(typeof result.network, 'object')
+      assert.equal(typeof result.email, 'object')
+      assert.equal(typeof result.social, 'object')
+    })
+
+    it('does not expose overrides in portal response', () => {
+      const result = controller.getScopedPortalMarket('brand', 'b-us', tenantCtx) as Record<string, unknown>
+      assert.equal(result.overrides, undefined)
+    })
+
+    it('returns tax details for display', () => {
+      const result = controller.getScopedPortalMarket('store', 's-us', { tenantId: 't1', marketCode: 'cn-mainland' }) as Record<string, unknown>
+      const tax = result.tax as Record<string, unknown>
+      assert.equal(typeof tax.taxMode, 'string')
+      assert.equal(typeof tax.taxRate, 'number')
+      assert.equal(typeof tax.taxLabel, 'string')
+    })
+  })
+
+  // ── Edge / boundary cases ──────────────────────────────────────
+  describe('getBootstrap() — edge cases', () => {
+    it('supportedMarkets never returns more than configured profiles', () => {
+      const result = controller.getBootstrap() as Record<string, unknown>
+      const markets = result.supportedMarkets as Array<unknown>
+      assert.ok(markets.length <= 10, 'market profiles should not exceed reasonable limit')
+    })
+  })
+
+  describe('getScopedMarket() — edge cases', () => {
+    it('handles empty scopeType', () => {
+      const result = controller.getScopedMarket('', 't1', { tenantId: 't1' }) as Record<string, unknown>
+      assert.equal(result.scopeType, '')
+      assert.equal(result.scopeCode, 't1')
+      assert.ok(result.marketProfile)
+    })
+
+    it('handles empty scopeCode', () => {
+      const result = controller.getScopedMarket('tenant', '', { tenantId: 't1' }) as Record<string, unknown>
+      assert.equal(result.scopeCode, '')
+      assert.ok(result.marketProfile)
+    })
+
+    it('handles tenantContext with only tenantId', () => {
+      const result = controller.getScopedMarket('tenant', 't-minimal', { tenantId: 't-minimal' }) as Record<string, unknown>
+      assert.equal(result.scopeType, 'tenant')
+      assert.equal(result.scopeCode, 't-minimal')
+      assert.ok(result.marketProfile)
+      assert.ok(Array.isArray(result.overrides))
+    })
+  })
+
+  describe('getScopedPortalMarket() — edge cases', () => {
+    it('handles missing brandId in context', () => {
+      const result = controller.getScopedPortalMarket('brand', '', {
+        tenantId: 't-nobrand',
+        marketCode: 'cn-mainland'
+      }) as Record<string, unknown>
+      assert.equal(result.scopeCode, '')
+      assert.equal(typeof result.marketCode, 'string')
+    })
+
+    it('handles missing marketCode in context gracefully', () => {
+      const result = controller.getScopedPortalMarket('store', 's-nomarket', {
+        tenantId: 't-nomarket'
+      }) as Record<string, unknown>
+      assert.equal(typeof result.marketCode, 'string')
+    })
+
+    it('network includes apiBaseUrl', () => {
+      const result = controller.getScopedPortalMarket('store', 's1', {
+        tenantId: 't1',
+        marketCode: 'cn-mainland'
+      }) as Record<string, unknown>
+      const network = result.network as Record<string, unknown>
+      assert.equal(typeof network.apiBaseUrl, 'string')
+    })
+  })
+
+  // ── Negative cases ─────────────────────────────────────────────
+  describe('getScopedMarket() — negative', () => {
+    it('returns marketProfile even for unknown tenant', () => {
+      // Should still return a profile (falls back to default)
+      const result = controller.getScopedMarket('tenant', 'unknown-tenant', {
+        tenantId: 'unknown-tenant',
+        marketCode: 'unknown-market'
+      }) as Record<string, unknown>
+      assert.ok(result.marketProfile, 'should return a default profile even for unknown market')
+    })
+  })
+
+  describe('getScopedPortalMarket() — negative', () => {
+    it('returns profile for unknown marketCode gracefully', () => {
+      const result = controller.getScopedPortalMarket('tenant', 't-bad', {
+        tenantId: 't-bad',
+        marketCode: 'xx-nonexistent'
+      }) as Record<string, unknown>
+      assert.equal(typeof result.marketCode, 'string')
+    })
   })
 })

@@ -3,23 +3,28 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { IntegrationOrchestrationController } from './integration-orchestration.controller'
 
-it('integration-orchestration controller has correct controller path metadata', () => {
+it('integration-orchestration controller path metadata is set', () => {
   const path = Reflect.getMetadata('path', IntegrationOrchestrationController)
   assert.equal(path, 'foundation/integration-orchestration')
 })
 
-it('integration-orchestration controller has all expected route methods', () => {
-  const proto = IntegrationOrchestrationController.prototype
-  assert.equal(typeof proto.getWebhookSources, 'function')
-  assert.equal(typeof proto.getEvents, 'function')
-  assert.equal(typeof proto.getIdempotencyRecords, 'function')
-  assert.equal(typeof proto.publishEvent, 'function')
-  assert.equal(typeof proto.ingestWebhook, 'function')
+// ── webhooks/sources (GET) ──
+
+it('integration-orchestration controller webhooks/sources route has GET metadata', () => {
+  const method = Reflect.getMetadata(
+    'method',
+    IntegrationOrchestrationController.prototype.getWebhookSources
+  )
+  const path = Reflect.getMetadata(
+    'path',
+    IntegrationOrchestrationController.prototype.getWebhookSources
+  )
+  assert.equal(method, 0) // GET
+  assert.equal(path, 'webhooks/sources')
 })
 
-// ── GET webhooks/sources ──
-it('getWebhookSources returns catalog from service', () => {
-  const mock = [
+it('integration-orchestration getWebhookSources delegates to service', () => {
+  const mockCatalog = [
     {
       source: 'lyt',
       algorithm: 'hmac-sha256',
@@ -28,163 +33,250 @@ it('getWebhookSources returns catalog from service', () => {
       secretRef: 'lyt-webhook-signing-secret'
     }
   ]
-  const service = { getWebhookSourceCatalog: () => mock } as never
+  const service = { getWebhookSourceCatalog: () => mockCatalog } as never
   const controller = new IntegrationOrchestrationController(service)
-  const result = controller.getWebhookSources()
-  assert.deepStrictEqual(result, mock)
+  assert.deepStrictEqual(controller.getWebhookSources(), mockCatalog)
 })
 
-// ── GET events ──
-it('getEvents returns envelopes filtered by source', async () => {
-  const mock = [
+it('integration-orchestration getWebhookSources returns full catalog from service', () => {
+  const mockCatalog = [
     {
-      envelopeId: 'e1',
-      eventName: 'test.event',
       source: 'lyt',
-      aggregateId: 'a1',
-      idempotencyKey: 'ik-1',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: { key: 'val' },
-      headers: {}
-    }
-  ]
-  const service = { getEventEnvelopes: (_s?: string) => Promise.resolve(mock) } as never
-  const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.getEvents({ source: 'lyt' })
-  assert.deepStrictEqual(result, mock)
-})
-
-it('getEvents returns all envelopes when no source query', async () => {
-  const mock = [
-    {
-      envelopeId: 'e1',
-      eventName: 'test.event',
-      source: 'lyt',
-      aggregateId: 'a1',
-      idempotencyKey: 'ik-1',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: {},
-      headers: {}
+      algorithm: 'hmac-sha256' as const,
+      toleranceSeconds: 300,
+      description: 'LYT 适配器回调验签。',
+      secretRef: 'lyt-webhook-signing-secret'
     },
     {
-      envelopeId: 'e2',
-      eventName: 'payment.received',
       source: 'payment',
-      aggregateId: 'a2',
-      idempotencyKey: 'ik-2',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: {},
-      headers: {}
+      algorithm: 'hmac-sha256' as const,
+      toleranceSeconds: 300,
+      description: '支付网关回调验签。',
+      secretRef: 'payment-webhook-signing-secret'
     }
   ]
-  const service = { getEventEnvelopes: (_s?: string) => Promise.resolve(mock) } as never
+  const service = { getWebhookSourceCatalog: () => mockCatalog } as never
   const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.getEvents({})
+  const result = controller.getWebhookSources()
   assert.equal((result as any).length, 2)
+  assert.deepStrictEqual((result as any)[0].source, 'lyt')
+  assert.deepStrictEqual((result as any)[1].source, 'payment')
 })
 
-// ── GET idempotency-records ──
-it('getIdempotencyRecords returns idempotency records filtered by source', async () => {
-  const mock = [
+// ── events (GET) ──
+
+it('integration-orchestration controller events route has GET metadata', () => {
+  const method = Reflect.getMetadata(
+    'method',
+    IntegrationOrchestrationController.prototype.getEvents
+  )
+  const path = Reflect.getMetadata(
+    'path',
+    IntegrationOrchestrationController.prototype.getEvents
+  )
+  assert.equal(method, 0) // GET
+  assert.equal(path, 'events')
+})
+
+it('integration-orchestration getEvents delegates to service', async () => {
+  const mockEnvelopes = [
     {
-      key: 'lyt:e1',
-      source: 'lyt',
-      eventId: 'a1',
-      eventType: 'test.event',
-      firstSeenAt: '2026-01-01T00:00:01Z',
-      envelopeId: 'e1',
-      status: 'accepted' as const,
-      payloadChecksum: 'abc'
-    }
-  ]
-  const service = { getIdempotencyRecords: (_s?: string) => Promise.resolve(mock) } as never
-  const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.getIdempotencyRecords({ source: 'lyt' })
-  assert.deepStrictEqual(result, mock)
-})
-
-// ── POST events ──
-it('publishEvent publishes and returns accepted status', async () => {
-  const mock = {
-    status: 'accepted' as const,
-    envelope: {
-      envelopeId: 'env-1',
+      envelopeId: 'evt-1',
       eventName: 'order.placed',
       source: 'lyt',
       aggregateId: 'agg-1',
       idempotencyKey: 'ik-1',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: { orderId: 'o1' },
+      occurredAt: '2026-06-27T00:00:00.000Z',
+      receivedAt: '2026-06-27T00:00:01.000Z',
+      payload: { orderId: 'ord-1' },
+      headers: { 'x-event-source': 'lyt' }
+    }
+  ]
+  const service = { getEventEnvelopes: (_s: string | undefined) => Promise.resolve(mockEnvelopes) } as never
+  const controller = new IntegrationOrchestrationController(service)
+  const result = await controller.getEvents({ source: 'lyt' })
+  assert.equal((result as any).length, 1)
+  assert.deepStrictEqual((result as any)[0].eventName, 'order.placed')
+})
+
+it('integration-orchestration getEvents calls service without source when query empty', async () => {
+  const mockEnvelopes = [
+    {
+      envelopeId: 'evt-2',
+      eventName: 'payment.received',
+      source: 'payment',
+      aggregateId: 'agg-2',
+      idempotencyKey: 'ik-2',
+      occurredAt: '2026-06-27T00:00:00.000Z',
+      receivedAt: '2026-06-27T00:00:01.000Z',
+      payload: { amount: 100 },
+      headers: { 'x-event-source': 'payment' }
+    }
+  ]
+  let passedSource: string | undefined = 'default'
+  const service = {
+    getEventEnvelopes: (s: string | undefined) => {
+      passedSource = s
+      return Promise.resolve(mockEnvelopes)
+    }
+  } as never
+  const controller = new IntegrationOrchestrationController(service)
+  await controller.getEvents({})
+  assert.equal(passedSource, undefined)
+})
+
+// ── idempotency-records (GET) ──
+
+it('integration-orchestration controller idempotency-records route has GET metadata', () => {
+  const method = Reflect.getMetadata(
+    'method',
+    IntegrationOrchestrationController.prototype.getIdempotencyRecords
+  )
+  const path = Reflect.getMetadata(
+    'path',
+    IntegrationOrchestrationController.prototype.getIdempotencyRecords
+  )
+  assert.equal(method, 0) // GET
+  assert.equal(path, 'idempotency-records')
+})
+
+it('integration-orchestration getIdempotencyRecords delegates to service', async () => {
+  const mockRecords = [
+    {
+      key: 'lyt:evt-1',
+      source: 'lyt',
+      eventId: 'agg-1',
+      eventType: 'order.placed',
+      firstSeenAt: '2026-06-27T00:00:01.000Z',
+      envelopeId: 'env-1',
+      status: 'accepted' as const,
+      payloadChecksum: 'abc123'
+    }
+  ]
+  const service = { getIdempotencyRecords: (_s: string | undefined) => Promise.resolve(mockRecords) } as never
+  const controller = new IntegrationOrchestrationController(service)
+  const result = await controller.getIdempotencyRecords({ source: 'lyt' })
+  assert.equal((result as any).length, 1)
+  assert.deepStrictEqual((result as any)[0].key, 'lyt:evt-1')
+})
+
+// ── events (POST) ──
+
+it('integration-orchestration controller publishEvent route has POST metadata', () => {
+  const method = Reflect.getMetadata(
+    'method',
+    IntegrationOrchestrationController.prototype.publishEvent
+  )
+  const path = Reflect.getMetadata(
+    'path',
+    IntegrationOrchestrationController.prototype.publishEvent
+  )
+  assert.equal(method, 1) // POST
+  assert.equal(path, 'events')
+})
+
+it('integration-orchestration publishEvent delegates to service', async () => {
+  const mockResult = {
+    status: 'accepted',
+    envelope: {
+      envelopeId: 'env-new',
+      eventName: 'order.placed',
+      source: 'lyt',
+      aggregateId: 'agg-1',
+      idempotencyKey: 'ik-new',
+      occurredAt: '2026-06-27T00:00:00.000Z',
+      receivedAt: '2026-06-27T00:00:01.000Z',
+      payload: { orderId: 'ord-1' },
       headers: {}
     },
-    persistedEventId: 'env-1',
+    persistedEventId: 'env-new',
     guarantees: ['signature-verified-before-accept', 'idempotency-recorded', 'retry-ready']
   }
   const service = {
     publishEvent: (
-      _ev: string,
+      _eventName: string,
       _payload: Record<string, unknown>,
       _opts: { source?: string; aggregateId?: string; idempotencyKey?: string }
-    ) => Promise.resolve(mock)
+    ) => Promise.resolve(mockResult)
   } as never
   const controller = new IntegrationOrchestrationController(service)
   const body = {
     eventName: 'order.placed',
-    payload: { orderId: 'o1' },
-    source: 'lyt'
+    payload: { orderId: 'ord-1' },
+    source: 'lyt',
+    aggregateId: 'agg-1',
+    idempotencyKey: 'ik-new'
   }
   const result = await controller.publishEvent(body)
   assert.deepStrictEqual((result as any).status, 'accepted')
+  assert.ok((result as any).persistedEventId)
 })
 
-it('publishEvent returns duplicate when idempotency key already exists', async () => {
-  const mock = {
-    status: 'duplicate' as const,
+it('integration-orchestration publishEvent handles duplicate gracefully', async () => {
+  const mockResult = {
+    status: 'duplicate',
     envelope: {
-      envelopeId: 'env-1',
+      envelopeId: 'env-existing',
       eventName: 'order.placed',
       source: 'lyt',
       aggregateId: 'agg-1',
       idempotencyKey: 'ik-dup',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: { orderId: 'o1' },
+      occurredAt: '2026-06-27T00:00:00.000Z',
+      receivedAt: '2026-06-27T00:00:01.000Z',
+      payload: { orderId: 'ord-1' },
       headers: {}
     },
-    persistedEventId: 'env-1',
+    persistedEventId: 'env-existing',
     guarantees: ['database-unique-idempotency-key', 'duplicate-detected-during-create']
   }
   const service = {
-    publishEvent: () => Promise.resolve(mock)
+    publishEvent: (
+      _eventName: string,
+      _payload: Record<string, unknown>,
+      _opts: { source?: string; aggregateId?: string; idempotencyKey?: string }
+    ) => Promise.resolve(mockResult)
   } as never
   const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.publishEvent({
+  const body = {
     eventName: 'order.placed',
-    payload: { orderId: 'o1' },
+    payload: { orderId: 'ord-1' },
+    source: 'lyt',
     idempotencyKey: 'ik-dup'
-  })
+  }
+  const result = await controller.publishEvent(body)
   assert.deepStrictEqual((result as any).status, 'duplicate')
+  assert.deepStrictEqual((result as any).persistedEventId, 'env-existing')
 })
 
-// ── POST webhooks/:source/ingest ──
-it('ingestWebhook accepts valid webhook and returns verified result', async () => {
-  const mock = {
+// ── webhooks/:source/ingest (POST) ──
+
+it('integration-orchestration controller webhooks/:source/ingest route has POST metadata', () => {
+  const method = Reflect.getMetadata(
+    'method',
+    IntegrationOrchestrationController.prototype.ingestWebhook
+  )
+  const path = Reflect.getMetadata(
+    'path',
+    IntegrationOrchestrationController.prototype.ingestWebhook
+  )
+  assert.equal(method, 1) // POST
+  assert.equal(path, 'webhooks/:source/ingest')
+})
+
+it('integration-orchestration ingestWebhook delegates to service', async () => {
+  const mockResult = {
     status: 'accepted' as const,
     source: 'lyt',
     signatureVerified: true,
     idempotency: {
-      key: 'lyt:ext-1',
+      key: 'lyt:evt-1',
       source: 'lyt',
       eventId: 'agg-1',
       eventType: 'lyt.webhook.received',
-      firstSeenAt: '2026-01-01T00:00:01Z',
+      firstSeenAt: '2026-06-27T00:00:01.000Z',
       envelopeId: 'env-1',
       status: 'accepted' as const,
-      payloadChecksum: 'abc'
+      payloadChecksum: 'abc123'
     },
     envelope: {
       envelopeId: 'env-1',
@@ -192,9 +284,9 @@ it('ingestWebhook accepts valid webhook and returns verified result', async () =
       source: 'lyt',
       aggregateId: 'agg-1',
       idempotencyKey: 'ik-1',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: { data: 'ok' },
+      occurredAt: '2026-06-27T00:00:00.000Z',
+      receivedAt: '2026-06-27T00:00:01.000Z',
+      payload: { result: 'ok' },
       headers: {
         'x-webhook-source': 'lyt',
         'x-webhook-signature': 'sha256=abc',
@@ -203,102 +295,54 @@ it('ingestWebhook accepts valid webhook and returns verified result', async () =
     },
     pipeline: ['signature-check', 'idempotency-check', 'event-envelope', 'audit-log']
   }
-  const service = { acceptWebhook: (_s: string, _i: unknown) => Promise.resolve(mock) } as never
+  const service = {
+    acceptWebhook: (_source: string, _input: unknown) => Promise.resolve(mockResult)
+  } as never
   const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.ingestWebhook('lyt', {
-    eventId: 'ext-1',
+  const body = {
+    eventId: 'ext-evt-1',
     eventType: 'lyt.webhook.received',
-    payload: { data: 'ok' },
+    payload: { result: 'ok' },
     signature: 'sha256=abc',
-    timestamp: '1719446400000'
-  })
+    timestamp: '1719446400000',
+    rawBody: '{"result":"ok"}'
+  }
+  const result = await controller.ingestWebhook('lyt', body)
   assert.deepStrictEqual((result as any).status, 'accepted')
+  assert.deepStrictEqual((result as any).source, 'lyt')
   assert.deepStrictEqual((result as any).signatureVerified, true)
 })
 
-it('ingestWebhook returns duplicate for replayed webhook event', async () => {
-  const mock = {
+it('integration-orchestration ingestWebhook returns duplicate for replayed webhook', async () => {
+  const mockResult = {
     status: 'duplicate' as const,
     source: 'lyt',
     signatureVerified: true,
     idempotency: {
-      key: 'lyt:ext-dup',
+      key: 'lyt:ext-evt-1',
       source: 'lyt',
       eventId: 'agg-1',
       eventType: 'lyt.webhook.received',
-      firstSeenAt: '2026-01-01T00:00:01Z',
-      envelopeId: 'env-dup',
+      firstSeenAt: '2026-06-27T00:00:01.000Z',
+      envelopeId: 'env-existing',
       status: 'accepted' as const,
-      payloadChecksum: 'abc'
+      payloadChecksum: 'abc123'
     },
     pipeline: ['signature-check', 'idempotency-check', 'audit-log', 'skip-duplicate']
   }
-  const service = { acceptWebhook: (_s: string, _i: unknown) => Promise.resolve(mock) } as never
-  const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.ingestWebhook('lyt', {
-    eventId: 'ext-dup',
-    eventType: 'lyt.webhook.received',
-    payload: { data: 'ok' },
-    signature: 'sha256=abc',
-    timestamp: '1719446400000'
-  })
-  assert.deepStrictEqual((result as any).status, 'duplicate')
-  assert.deepStrictEqual((result as any).pipeline?.includes('skip-duplicate'), true)
-})
-
-// ── edge case: empty payload ──
-it('publishEvent works with empty payload', async () => {
-  const mock = {
-    status: 'accepted' as const,
-    envelope: {
-      envelopeId: 'env-empty',
-      eventName: 'system.heartbeat',
-      source: 'foundation',
-      aggregateId: 'checksum',
-      idempotencyKey: 'ik-heartbeat',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: {},
-      headers: {}
-    },
-    persistedEventId: 'env-empty',
-    guarantees: ['idempotency-recorded']
-  }
   const service = {
-    publishEvent: () => Promise.resolve(mock)
+    acceptWebhook: (_source: string, _input: unknown) => Promise.resolve(mockResult)
   } as never
   const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.publishEvent({
-    eventName: 'system.heartbeat',
-    payload: {}
-  })
-  assert.deepStrictEqual((result as any).status, 'accepted')
-})
-
-// ── edge case: missing optional fields on publish ──
-it('publishEvent works with minimal fields', async () => {
-  const mock = {
-    status: 'accepted' as const,
-    envelope: {
-      envelopeId: 'env-min',
-      eventName: 'test.minimal',
-      source: 'foundation',
-      aggregateId: 'checksum',
-      idempotencyKey: 'ik-min',
-      occurredAt: '2026-01-01T00:00:00Z',
-      receivedAt: '2026-01-01T00:00:01Z',
-      payload: { minimal: true },
-      headers: {}
-    },
-    persistedEventId: 'env-min',
-    guarantees: ['idempotency-recorded']
+  const body = {
+    eventId: 'ext-evt-1',
+    eventType: 'lyt.webhook.received',
+    payload: { result: 'ok' },
+    signature: 'sha256=abc',
+    timestamp: '1719446400000'
   }
-  const service = { publishEvent: () => Promise.resolve(mock) } as never
-  const controller = new IntegrationOrchestrationController(service)
-  const result = await controller.publishEvent({
-    eventName: 'test.minimal',
-    payload: { minimal: true }
-  })
-  assert.deepStrictEqual((result as any).status, 'accepted')
-  assert.ok((result as any).persistedEventId)
+  const result = await controller.ingestWebhook('lyt', body)
+  assert.deepStrictEqual((result as any).status, 'duplicate')
+  assert.deepStrictEqual((result as any).source, 'lyt')
+  assert.deepStrictEqual((result as any).pipeline?.includes('skip-duplicate'), true)
 })

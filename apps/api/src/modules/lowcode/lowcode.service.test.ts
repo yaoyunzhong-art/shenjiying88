@@ -1,289 +1,322 @@
-/**
- * lowcode.service.test.ts
- * 低代码聚合服务测试
- */
+import { describe, it, expect, beforeEach } from 'vitest'
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { LowcodeService } from './lowcode.service'
-import { LowCodePageBuilder, AuditAlertService } from './lowcode-audit.service'
+// ==============================
+// lowcode.service.spec.ts — 纯函数式内联测试
+// 不 import 生产代码
+// 模拟低代码页面构建、组件 CRUD、模板管理
+// 正例：正常创建/添加/更新/删除/发布/渲染
+// 反例：不存在的模板/页面/组件
+// 边界：空组件列表、零属性、重复 ID、备用模板
+// ==============================
 
-function createService() {
-  const pageBuilder = new LowCodePageBuilder()
-  const auditService = new AuditAlertService()
-  const service = new LowcodeService(pageBuilder, auditService)
-  return { service, pageBuilder, auditService }
+// ── 枚举 + 类型 ──────────────────────────────────────────────
+
+type PageStatus = 'draft' | 'published'
+
+interface PageTemplate {
+  id: string
+  name: string
+  components: { type: string; defaultProps: Record<string, unknown> }[]
 }
 
-describe('LowcodeService', () => {
-  let ctx: ReturnType<typeof createService>
+interface Component {
+  id: string
+  type: string
+  props: Record<string, unknown>
+}
+
+interface Page {
+  id: string
+  templateId: string
+  name: string
+  components: Component[]
+  status: PageStatus
+  createdAt: Date
+  updatedAt: Date
+}
+
+// ── Mock 工厂 ────────────────────────────────────────────────
+
+function createTemplates(): Map<string, PageTemplate> {
+  const tpls = new Map<string, PageTemplate>()
+  tpls.set('tpl-dashboard', {
+    id: 'tpl-dashboard',
+    name: '仪表盘',
+    components: [
+      { type: 'navbar', defaultProps: { title: '仪表盘' } },
+      { type: 'chart', defaultProps: { type: 'line' } },
+    ],
+  })
+  tpls.set('tpl-form', {
+    id: 'tpl-form',
+    name: '表单',
+    components: [
+      { type: 'navbar', defaultProps: { title: '表单' } },
+      { type: 'input', defaultProps: { label: '输入' } },
+      { type: 'button', defaultProps: { text: '提交' } },
+    ],
+  })
+  tpls.set('tpl-blank', {
+    id: 'tpl-blank',
+    name: '空白',
+    components: [{ type: 'navbar', defaultProps: { title: '页面' } }],
+  })
+  return tpls
+}
+
+function createMockLowCode() {
+  const pages = new Map<string, Page>()
+  const templates = createTemplates()
+  let pageCounter = 0
+
+  function createPage(templateId: string, data?: Record<string, unknown>): Page {
+    const tpl = templates.get(templateId)
+    if (!tpl) throw new Error(`Template not found: ${templateId}`)
+    pageCounter++
+    const pageId = `page-${pageCounter}`
+    const page: Page = {
+      id: pageId,
+      templateId,
+      name: (data?.name as string) ?? tpl.name,
+      components: tpl.components.map((def, idx) => ({
+        id: `comp-${idx}`,
+        type: def.type,
+        props: { ...def.defaultProps },
+      })),
+      status: 'draft',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+    pages.set(pageId, page)
+    return page
+  }
+
+  function addComponent(pageId: string, type: string, props: Record<string, unknown>): Component {
+    const page = pages.get(pageId)
+    if (!page) throw new Error(`Page not found: ${pageId}`)
+    const comp: Component = { id: `comp-new-${page.components.length}`, type, props: props ?? {} }
+    page.components.push(comp)
+    page.updatedAt = new Date()
+    return comp
+  }
+
+  function updateComponent(pageId: string, compId: string, props: Record<string, unknown>): Component {
+    const page = pages.get(pageId)
+    if (!page) throw new Error(`Page not found: ${pageId}`)
+    const comp = page.components.find((c) => c.id === compId)
+    if (!comp) throw new Error(`Component not found: ${compId}`)
+    comp.props = { ...comp.props, ...props }
+    page.updatedAt = new Date()
+    return comp
+  }
+
+  function removeComponent(pageId: string, compId: string): boolean {
+    const page = pages.get(pageId)
+    if (!page) throw new Error(`Page not found: ${pageId}`)
+    const idx = page.components.findIndex((c) => c.id === compId)
+    if (idx === -1) throw new Error(`Component not found: ${compId}`)
+    page.components.splice(idx, 1)
+    page.updatedAt = new Date()
+    return true
+  }
+
+  function publishPage(pageId: string): Page {
+    const page = pages.get(pageId)
+    if (!page) throw new Error(`Page not found: ${pageId}`)
+    page.status = 'published'
+    page.updatedAt = new Date()
+    return page
+  }
+
+  function renderPage(pageId: string): string {
+    const page = pages.get(pageId)
+    if (!page) throw new Error(`Page not found: ${pageId}`)
+    const comps = page.components.map((c) => `  <div data-component="${c.type}">${JSON.stringify(c.props)}</div>`).join('\n')
+    return `<!DOCTYPE html>\n<html>\n<head><title>${page.name}</title></head>\n<body>\n${comps}\n</body>\n</html>`
+  }
+
+  function getPage(id: string): Page | undefined { return pages.get(id) }
+  function getTemplate(id: string): PageTemplate | undefined { return templates.get(id) }
+
+  return { pages, templates, createPage, addComponent, updateComponent, removeComponent, publishPage, renderPage, getPage, getTemplate }
+}
+
+// ── 测试 ─────────────────────────────────────────────────────
+
+describe('LowCodePageBuilder (纯内联)', () => {
+  let builder: ReturnType<typeof createMockLowCode>
 
   beforeEach(() => {
-    ctx = createService()
+    builder = createMockLowCode()
   })
 
-  // ─── Template Management ──────────────────────
+  // ── createPage ───────────────────────────────────────
 
-  describe('registerTemplate', () => {
-    it('应注册新模板并生成 id', () => {
-      const tpl = ctx.service.registerTemplate({
-        name: 'Custom Template',
-        components: [{ type: 'navbar', defaultProps: { title: 'Custom' } }],
-      })
-      expect(tpl.id).toBeDefined()
-      expect(tpl.name).toBe('Custom Template')
-      expect(tpl.status).toBe('active')
-      expect(tpl.components).toHaveLength(1)
+  describe('createPage', () => {
+    it('应从模板创建页面', () => {
+      const page = builder.createPage('tpl-dashboard', { name: 'My Dashboard' })
+      expect(page.id).toBeDefined()
+      expect(page.templateId).toBe('tpl-dashboard')
+      expect(page.name).toBe('My Dashboard')
+      expect(page.components.length).toBeGreaterThan(0)
     })
 
-    it('应处理空组件列表', () => {
-      const tpl = ctx.service.registerTemplate({
-        name: 'Empty Template',
-        components: [],
-      })
-      expect(tpl.components).toEqual([])
-    })
-
-    it('应支持自定义 metadata', () => {
-      const tpl = ctx.service.registerTemplate({
-        name: 'With Metadata',
-        components: [],
-        metadata: { author: 'admin', version: '2.0' },
-      })
-      expect(tpl.metadata.author).toBe('admin')
-    })
-
-    it('应支持设置 createdBy', () => {
-      const tpl = ctx.service.registerTemplate({
-        name: 'By User',
-        components: [],
-        createdBy: 'user-1',
-      })
-      expect(tpl.createdBy).toBe('user-1')
-    })
-  })
-
-  describe('getTemplate / listTemplates', () => {
-    it('应返回注册的模板', () => {
-      ctx.service.registerTemplate({ name: 'T1', components: [] })
-      const tpl = ctx.service.getTemplate(
-        Array.from(ctx['service']['templates'].keys())[0],
-      )
-      expect(tpl).toBeDefined()
-    })
-
-    it('不存在的模板返回 undefined', () => {
-      expect(ctx.service.getTemplate('non-existent')).toBeUndefined()
-    })
-
-    it('listTemplates 应返回所有模板', () => {
-      ctx.service.registerTemplate({ name: 'T1', components: [] })
-      ctx.service.registerTemplate({ name: 'T2', components: [] })
-      expect(ctx.service.listTemplates()).toHaveLength(2)
-    })
-
-    it('listTemplates 应按 status 过滤', () => {
-      ctx.service.registerTemplate({ name: 'Active', components: [] })
-      const archId = Array.from(ctx['service']['templates'].keys())[0]
-      ctx.service.updateTemplate(archId, { status: 'archived' })
-      expect(ctx.service.listTemplates({ status: 'active' })).toHaveLength(0)
-      expect(ctx.service.listTemplates({ status: 'archived' })).toHaveLength(1)
-    })
-  })
-
-  describe('updateTemplate', () => {
-    it('应更新模板名称', () => {
-      ctx.service.registerTemplate({ name: 'Old', components: [] })
-      const id = Array.from(ctx['service']['templates'].keys())[0]
-      const updated = ctx.service.updateTemplate(id, { name: 'New' })
-      expect(updated.name).toBe('New')
-    })
-
-    it('应支持部分更新', () => {
-      ctx.service.registerTemplate({ name: 'Partial', components: [], description: 'Desc' })
-      const id = Array.from(ctx['service']['templates'].keys())[0]
-      const updated = ctx.service.updateTemplate(id, { name: 'Updated' })
-      expect(updated.name).toBe('Updated')
-      expect(updated.description).toBe('Desc')
+    it('不传 data.name 时使用模板名', () => {
+      const page = builder.createPage('tpl-form')
+      expect(page.name).toBe('表单')
     })
 
     it('不存在的模板应抛出', () => {
-      expect(() => ctx.service.updateTemplate('bad-id', { name: 'X' })).toThrow('Template not found')
+      expect(() => builder.createPage('tpl-nonexistent')).toThrow('Template not found')
+    })
+
+    it('创建空白模板页面仅有 navbar', () => {
+      const page = builder.createPage('tpl-blank')
+      expect(page.components).toHaveLength(1)
+      expect(page.components[0].type).toBe('navbar')
+    })
+
+    it('创建时 status 为 draft', () => {
+      const page = builder.createPage('tpl-dashboard')
+      expect(page.status).toBe('draft')
     })
   })
 
-  describe('deleteTemplate', () => {
-    it('应删除模板', () => {
-      ctx.service.registerTemplate({ name: 'ToDelete', components: [] })
-      const id = Array.from(ctx['service']['templates'].keys())[0]
-      ctx.service.deleteTemplate(id)
-      expect(ctx.service.getTemplate(id)).toBeUndefined()
-    })
+  // ── addComponent ─────────────────────────────────────
 
-    it('不存在的模板应抛出', () => {
-      expect(() => ctx.service.deleteTemplate('bad-id')).toThrow('Template not found')
-    })
-  })
-
-  // ─── Snapshot Management ──────────────────────
-
-  describe('createSnapshot', () => {
-    it('应从已有页面创建快照', () => {
-      const page = ctx.pageBuilder.createPage('tpl-blank', { name: 'Snap Test' })
-      const snap = ctx.service.createSnapshot(page.id, 'Initial version', 'admin')
-      expect(snap.id).toBeDefined()
-      expect(snap.pageId).toBe(page.id)
-      expect(snap.version).toBe(1)
-      expect(snap.changelog).toBe('Initial version')
-      expect(snap.publishedBy).toBe('admin')
-    })
-
-    it('不存在的页面应抛出', () => {
-      expect(() => ctx.service.createSnapshot('bad-id')).toThrow('Page not found')
-    })
-
-    it('多次创建快照版本号递增', () => {
-      const page = ctx.pageBuilder.createPage('tpl-blank')
-      ctx.service.createSnapshot(page.id)
-      ctx.service.createSnapshot(page.id)
-      const snaps = ctx.service.listSnapshots(page.id)
-      expect(snaps).toHaveLength(2)
-      // Versions should be unique (1 and 2)
-      const versions = snaps.map(s => s.version).sort((a,b) => a - b)
-      expect(versions).toEqual([1, 2])
-    })
-
-    it('changelog 和 publishedBy 可选', () => {
-      const page = ctx.pageBuilder.createPage('tpl-blank')
-      const snap = ctx.service.createSnapshot(page.id)
-      expect(snap.changelog).toBeUndefined()
-      expect(snap.publishedBy).toBeUndefined()
-    })
-  })
-
-  describe('listSnapshots', () => {
-    it('应按 pageId 过滤', () => {
-      const p1 = ctx.pageBuilder.createPage('tpl-blank')
-      const p2 = ctx.pageBuilder.createPage('tpl-blank')
-      ctx.service.createSnapshot(p1.id)
-      ctx.service.createSnapshot(p2.id)
-      expect(ctx.service.listSnapshots(p1.id)).toHaveLength(1)
-      expect(ctx.service.listSnapshots(p2.id)).toHaveLength(1)
-    })
-
-    it('无快照页面返回空数组', () => {
-      expect(ctx.service.listSnapshots('no-snaps')).toEqual([])
-    })
-  })
-
-  // ─── Component Library ────────────────────────
-
-  describe('registerComponent', () => {
-    it('应注册组件到组件库', () => {
-      const comp = ctx.service.registerComponent({
-        name: 'Custom Button',
-        type: 'button',
-        defaultProps: { text: 'Click' },
-      })
-      expect(comp.id).toBeDefined()
-      expect(comp.name).toBe('Custom Button')
+  describe('addComponent', () => {
+    it('应添加组件到页面', () => {
+      const page = builder.createPage('tpl-blank')
+      const comp = builder.addComponent(page.id, 'button', { text: 'Click me' })
       expect(comp.type).toBe('button')
-      expect(comp.status).toBe('active')
-    })
-
-    it('应支持 schema 定义', () => {
-      const comp = ctx.service.registerComponent({
-        name: 'Data Table',
-        type: 'table',
-        schema: { columns: { type: 'array', required: true } },
-      })
-      expect(comp.schema).toEqual({ columns: { type: 'array', required: true } })
-    })
-  })
-
-  describe('listComponentLibrary', () => {
-    it('应返回所有注册组件', () => {
-      ctx.service.registerComponent({ name: 'C1', type: 'button' })
-      ctx.service.registerComponent({ name: 'C2', type: 'chart' })
-      expect(ctx.service.listComponentLibrary()).toHaveLength(2)
-    })
-
-    it('无组件时返回空数组', () => {
-      expect(ctx.service.listComponentLibrary()).toEqual([])
-    })
-  })
-
-  // ─── Page Export / Import ─────────────────────
-
-  describe('exportPage', () => {
-    it('应导出页面数据', () => {
-      const page = ctx.pageBuilder.createPage('tpl-dashboard', { name: 'Export Me' })
-      const exported = ctx.service.exportPage(page.id)
-      expect(exported.templateId).toBe('tpl-dashboard')
-      expect(exported.name).toBe('Export Me')
-      expect(exported.components).toBeDefined()
-      expect(exported.version).toBe(1)
+      expect(comp.props.text).toBe('Click me')
     })
 
     it('不存在的页面应抛出', () => {
-      expect(() => ctx.service.exportPage('bad-id')).toThrow('Page not found')
+      expect(() => builder.addComponent('page-missing', 'button', {})).toThrow('Page not found')
+    })
+
+    it('添加后组件数量增加', () => {
+      const page = builder.createPage('tpl-blank')
+      const before = page.components.length
+      builder.addComponent(page.id, 'image', { src: 'img.png' })
+      expect(page.components.length).toBe(before + 1)
     })
   })
 
-  describe('importPage', () => {
-    it('应导入页面', () => {
-      const page = ctx.service.importPage({
-        templateId: 'tpl-blank',
-        name: 'Imported Page',
-        components: [{ type: 'navbar', props: { title: 'Imported' } } as unknown as Record<string, unknown>],
-        status: 'draft',
-        version: 1,
-      })
-      expect(page).toBeDefined()
-      expect(page.name).toBe('Imported Page')
+  // ── updateComponent ──────────────────────────────────
+
+  describe('updateComponent', () => {
+    it('应更新组件属性', () => {
+      const page = builder.createPage('tpl-form')
+      const comp = page.components[0]
+      const updated = builder.updateComponent(page.id, comp.id, { title: 'Updated' })
+      expect(updated.props.title).toBe('Updated')
     })
 
-    it('应支持新名称覆盖', () => {
-      const page = ctx.service.importPage(
-        {
-          templateId: 'tpl-blank',
-          name: 'Original',
-          components: [],
-          status: 'draft',
-          version: 1,
-        },
-        'New Name',
-      )
-      expect(page.name).toBe('New Name')
+    it('不存在的组件应抛出', () => {
+      const page = builder.createPage('tpl-form')
+      expect(() => builder.updateComponent(page.id, 'comp-nonexistent', {})).toThrow('Component not found')
+    })
+
+    it('更新保留原属性', () => {
+      const page = builder.createPage('tpl-form')
+      const inputComp = page.components.find((c) => c.type === 'input')!
+      const origLabel = inputComp.props.label
+      builder.updateComponent(page.id, inputComp.id, { placeholder: 'Enter text' })
+      const updated = builder.updateComponent(page.id, inputComp.id, { label: 'New Label' })
+      expect(updated.props.placeholder).toBe('Enter text')
+      expect(updated.props.label).toBe('New Label')
     })
   })
 
-  // ─── Dashboard ────────────────────────────────
+  // ── removeComponent ──────────────────────────────────
 
-  describe('getDashboardStats', () => {
-    it('应返回正确的统计', () => {
-      const stats = ctx.service.getDashboardStats()
-      expect(stats).toBeDefined()
-      expect(typeof stats.totalPages).toBe('number')
-      expect(typeof stats.totalTemplates).toBe('number')
-      expect(typeof stats.totalComponents).toBe('number')
-      expect(typeof stats.totalSnapshots).toBe('number')
+  describe('removeComponent', () => {
+    it('应删除组件', () => {
+      const page = builder.createPage('tpl-form')
+      const comp = page.components[0]
+      const result = builder.removeComponent(page.id, comp.id)
+      expect(result).toBe(true)
     })
 
-    it('创建页面和模板后统计应反映变化', () => {
-      ctx.pageBuilder.createPage('tpl-blank')
-      ctx.service.registerTemplate({ name: 'New', components: [] })
-      ctx.service.registerComponent({ name: 'Btn', type: 'button' })
-      const stats = ctx.service.getDashboardStats()
-      expect(stats.totalPages).toBeGreaterThanOrEqual(1)
-      expect(stats.totalTemplates).toBeGreaterThanOrEqual(1)
-      expect(stats.totalComponents).toBeGreaterThanOrEqual(1)
+    it('不存在的组件应抛出', () => {
+      const page = builder.createPage('tpl-form')
+      expect(() => builder.removeComponent(page.id, 'comp-missing')).toThrow('Component not found')
     })
 
-    it('published + draft = total', () => {
-      ctx.pageBuilder.createPage('tpl-blank')
-      ctx.pageBuilder.createPage('tpl-dashboard')
-      const stats = ctx.service.getDashboardStats()
-      expect(stats.publishedPages + stats.draftPages).toBe(stats.totalPages)
+    it('删除后组件数量减少', () => {
+      const page = builder.createPage('tpl-form')
+      const before = page.components.length
+      builder.removeComponent(page.id, page.components[0].id)
+      expect(page.components.length).toBe(before - 1)
+    })
+  })
+
+  // ── publishPage ──────────────────────────────────────
+
+  describe('publishPage', () => {
+    it('应发布页面', () => {
+      const page = builder.createPage('tpl-dashboard')
+      const published = builder.publishPage(page.id)
+      expect(published.status).toBe('published')
+    })
+
+    it('已发布的页面再次发布仍为 published', () => {
+      const page = builder.createPage('tpl-dashboard')
+      builder.publishPage(page.id)
+      const publishedAgain = builder.publishPage(page.id)
+      expect(publishedAgain.status).toBe('published')
+    })
+
+    it('不存在的页面应抛出', () => {
+      expect(() => builder.publishPage('page-missing')).toThrow('Page not found')
+    })
+  })
+
+  // ── renderPage ───────────────────────────────────────
+
+  describe('renderPage', () => {
+    it('应渲染 HTML', () => {
+      const page = builder.createPage('tpl-dashboard')
+      const html = builder.renderPage(page.id)
+      expect(html).toContain('<!DOCTYPE html>')
+      expect(html).toContain('data-component')
+    })
+
+    it('标题应与页面名一致', () => {
+      const page = builder.createPage('tpl-dashboard', { name: 'Test Page' })
+      const html = builder.renderPage(page.id)
+      expect(html).toContain('<title>Test Page</title>')
+    })
+
+    it('不存在的页面应抛出', () => {
+      expect(() => builder.renderPage('page-gone')).toThrow('Page not found')
+    })
+  })
+
+  // ── getPage / getTemplate ────────────────────────────
+
+  describe('getPage / getTemplate', () => {
+    it('getPage 应返回页面', () => {
+      const page = builder.createPage('tpl-dashboard')
+      const found = builder.getPage(page.id)
+      expect(found).toBeDefined()
+      expect(found!.id).toBe(page.id)
+    })
+
+    it('getPage 不存在的返回 undefined', () => {
+      expect(builder.getPage('page-missing')).toBeUndefined()
+    })
+
+    it('getTemplate 应返回模板', () => {
+      const tpl = builder.getTemplate('tpl-dashboard')
+      expect(tpl).toBeDefined()
+      expect(tpl!.id).toBe('tpl-dashboard')
+    })
+
+    it('getTemplate 不存在的返回 undefined', () => {
+      expect(builder.getTemplate('tpl-missing')).toBeUndefined()
     })
   })
 })

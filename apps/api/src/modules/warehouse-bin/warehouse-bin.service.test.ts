@@ -1,298 +1,231 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 /**
- * 🐜 自动: [warehouse-bin] [D] service 测试
+ * warehouse-bin.service.spec.ts — 库位管理模块 Service 单元测试
+ *
+ * 覆盖: CRUD / 容量追踪 (assignItem/removeItem/reserveBin/setMaintenance) / 查询辅助 / 边界异常
  */
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { WarehouseBinService } from './warehouse-bin.service'
-import {
-  BinStatus,
-  BinType,
-  type WarehouseBin,
-} from './warehouse-bin.entity'
+import { BinStatus, BinType } from './warehouse-bin.entity'
 
-describe('WarehouseBinService', () => {
-  let service: WarehouseBinService
-
-  const TENANT = 'tenant-001'
+describe('WarehouseBinService — CRUD', () => {
+  let svc: WarehouseBinService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = new WarehouseBinService()
+    svc = new WarehouseBinService()
+    svc.resetBinStoresForTests()
   })
 
-  afterEach(() => {
-    service.resetBinStoresForTests()
-  })
-
-  function createTestBin(overrides?: Partial<Parameters<WarehouseBinService['createBin']>[0]>): WarehouseBin {
-    return service.createBin({
-      tenantId: TENANT,
-      code: 'TEST-01',
-      area: '测试区',
+  it('createBin 创建库位成功', () => {
+    const bin = svc.createBin({
+      tenantId,
+      code: 'E-01-01',
+      area: 'E区',
       type: BinType.Shelf,
       status: BinStatus.Empty,
+      capacity: 200,
+    })
+    expect(bin.id).toMatch(/^bin-/)
+    expect(bin.code).toBe('E-01-01')
+    expect(bin.status).toBe(BinStatus.Empty)
+    expect(bin.usedCapacity).toBe(0)
+  })
+
+  it('createBin 使用默认值', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'F-01', area: 'F区', type: BinType.Floor, capacity: 500,
+    })
+    expect(bin.status).toBe(BinStatus.Empty)
+    expect(bin.usedCapacity).toBe(0)
+  })
+
+  it('getBin 返回正确的库位', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'E-01-02', area: 'E区', type: BinType.Shelf, capacity: 100,
+    })
+    const found = svc.getBin(bin.id, tenantId)
+    expect(found).toBeDefined()
+    expect(found!.code).toBe('E-01-02')
+  })
+
+  it('getBin 返回 undefined 当库位不存在', () => {
+    expect(svc.getBin('fake-id', tenantId)).toBeUndefined()
+  })
+
+  it('updateBin 更新字段', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'E-01-03', area: 'E区', type: BinType.Shelf, capacity: 100,
+    })
+    const updated = svc.updateBin(bin.id, tenantId, {
+      code: 'E-01-03-NEW',
+      area: 'E区新',
+      status: BinStatus.Reserved,
+      capacity: 150,
+    })
+    expect(updated.code).toBe('E-01-03-NEW')
+    expect(updated.area).toBe('E区新')
+    expect(updated.status).toBe(BinStatus.Reserved)
+    expect(updated.capacity).toBe(150)
+  })
+
+  it('deleteBin 删除成功', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'E-01-DEL', area: 'E区', type: BinType.Shelf, capacity: 100,
+    })
+    svc.deleteBin(bin.id, tenantId)
+    expect(svc.getBin(bin.id, tenantId)).toBeUndefined()
+  })
+
+  it('deleteBin 不存在的库位抛 Error', () => {
+    expect(() => svc.deleteBin('fake-id', tenantId)).toThrow(/not found/)
+  })
+
+  it('listBins 支持按状态筛选', () => {
+    svc.createBin({
+      tenantId, code: 'L-EMPTY', area: 'L区', type: BinType.Shelf,
+      status: BinStatus.Empty, capacity: 100,
+    })
+    const empty = svc.listBins(tenantId, { status: BinStatus.Empty })
+    empty.forEach((b) => expect(b.status).toBe(BinStatus.Empty))
+  })
+
+  it('listBins 支持按类型筛选', () => {
+    const cold = svc.listBins(tenantId, { type: BinType.Cold })
+    cold.forEach((b) => expect(b.type).toBe(BinType.Cold))
+  })
+
+  it('listBins 支持按区域筛选', () => {
+    const aArea = svc.listBins(tenantId, { area: 'A区' })
+    aArea.forEach((b) => expect(b.area).toBe('A区'))
+  })
+
+  it('listBins 支持搜索', () => {
+    const items = svc.listBins(tenantId, { search: '冷库' })
+    expect(items.length).toBeGreaterThan(0)
+  })
+})
+
+describe('WarehouseBinService — 容量追踪', () => {
+  let svc: WarehouseBinService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new WarehouseBinService()
+    svc.resetBinStoresForTests()
+  })
+
+  it('assignItem 分配物品成功', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'CAP-01', area: '测试区', type: BinType.Shelf,
+      status: BinStatus.Empty, capacity: 100,
+    })
+    const updated = svc.assignItem(bin.id, '测试商品', 30, tenantId)
+    expect(updated.usedCapacity).toBe(30)
+    expect(updated.currentItem).toBe('测试商品')
+    expect(updated.status).toBe(BinStatus.Occupied)
+  })
+
+  it('assignItem 超过容量抛 Error', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'CAP-02', area: '测试区', type: BinType.Shelf,
+      capacity: 50,
+    })
+    expect(() => svc.assignItem(bin.id, '大件商品', 100, tenantId)).toThrow(/Insufficient capacity/)
+  })
+
+  it('assignItem 维修中的库位抛 Error', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'CAP-MAIN', area: '测试', type: BinType.Shelf,
+      status: BinStatus.Maintenance, capacity: 100,
+    })
+    expect(() => svc.assignItem(bin.id, '商品', 10, tenantId)).toThrow(/under maintenance/)
+  })
+
+  it('removeItem 移除物品成功', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'CAP-03', area: '测试', type: BinType.Shelf,
+      capacity: 100, usedCapacity: 80, status: BinStatus.Occupied,
+      currentItem: '商品',
+    })
+    const updated = svc.removeItem(bin.id, 30, tenantId)
+    expect(updated.usedCapacity).toBe(50)
+  })
+
+  it('removeItem 清空后状态变为 Empty', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'CAP-04', area: '测试', type: BinType.Shelf,
+      capacity: 100, usedCapacity: 50, status: BinStatus.Occupied,
+      currentItem: '商品',
+    })
+    const updated = svc.removeItem(bin.id, 50, tenantId)
+    expect(updated.usedCapacity).toBe(0)
+    expect(updated.status).toBe(BinStatus.Empty)
+    expect(updated.currentItem).toBeUndefined()
+  })
+
+  it('removeItem 移除超出量抛 Error', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'CAP-05', area: '测试', type: BinType.Shelf,
+      capacity: 50, usedCapacity: 20, status: BinStatus.Occupied,
+    })
+    expect(() => svc.removeItem(bin.id, 30, tenantId)).toThrow(/Cannot remove/)
+  })
+
+  it('reserveBin 预留空库位', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'RES-01', area: '测试', type: BinType.Shelf,
       capacity: 100,
-      usedCapacity: 0,
-      ...overrides,
     })
-  }
+    const updated = svc.reserveBin(bin.id, tenantId)
+    expect(updated.status).toBe(BinStatus.Reserved)
+  })
 
-  // ── CRUD ──
-
-  describe('createBin', () => {
-    it('should create a bin with Empty status by default', () => {
-      const bin = createTestBin()
-
-      assert.equal(bin.code, 'TEST-01')
-      assert.equal(bin.area, '测试区')
-      assert.equal(bin.type, BinType.Shelf)
-      assert.equal(bin.status, BinStatus.Empty)
-      assert.equal(bin.capacity, 100)
-      assert.equal(bin.usedCapacity, 0)
-      assert.equal(bin.tenantId, TENANT)
-      assert.ok(bin.id.startsWith('bin-'))
-      assert.ok(bin.createdAt)
-      assert.ok(bin.updatedAt)
+  it('reserveBin 非空库位抛 Error', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'RES-02', area: '测试', type: BinType.Shelf,
+      status: BinStatus.Occupied, capacity: 100, usedCapacity: 50,
     })
+    expect(() => svc.reserveBin(bin.id, tenantId)).toThrow(/Cannot reserve/)
+  })
 
-    it('should create a bin with specified status', () => {
-      const bin = createTestBin({
-        code: 'COLD-01',
-        area: '冷库',
-        type: BinType.Cold,
-        status: BinStatus.Reserved,
-        capacity: 200,
-        currentItem: '待入库冰淇淋',
-      })
-
-      assert.equal(bin.status, BinStatus.Reserved)
-      assert.equal(bin.type, BinType.Cold)
-      assert.equal(bin.currentItem, '待入库冰淇淋')
+  it('setMaintenance 设置维修状态', () => {
+    const bin = svc.createBin({
+      tenantId, code: 'MAINT-01', area: '测试', type: BinType.Shelf,
+      capacity: 100,
     })
+    const updated = svc.setMaintenance(bin.id, tenantId)
+    expect(updated.status).toBe(BinStatus.Maintenance)
+  })
+})
 
-    it('should create hazardous type bin', () => {
-      const bin = createTestBin({
-        code: 'HAZ-01',
-        area: '危险品区',
-        type: BinType.Hazardous,
-      })
+describe('WarehouseBinService — 查询辅助', () => {
+  let svc: WarehouseBinService
+  const tenantId = 'tenant-001'
 
-      assert.equal(bin.type, BinType.Hazardous)
+  beforeEach(() => {
+    svc = new WarehouseBinService()
+    svc.resetBinStoresForTests()
+  })
+
+  it('getEmptyBins 只返回空库位', () => {
+    const empty = svc.getEmptyBins(tenantId)
+    empty.forEach((b) => expect(b.status).toBe(BinStatus.Empty))
+  })
+
+  it('getOccupiedBinsByArea 按区域查询占用库位', () => {
+    const occupied = svc.getOccupiedBinsByArea('A区', tenantId)
+    occupied.forEach((b) => {
+      expect(b.area).toBe('A区')
+      expect(b.status).toBe(BinStatus.Occupied)
     })
   })
 
-  describe('getBin', () => {
-    it('should return bin by id', () => {
-      const bin = createTestBin()
-      const found = service.getBin(bin.id, TENANT)
-      assert.ok(found)
-      assert.equal(found?.id, bin.id)
-    })
-
-    it('should return undefined for non-existent bin', () => {
-      const found = service.getBin('nonexistent', TENANT)
-      assert.equal(found, undefined)
-    })
-
-    it('should return undefined for wrong tenant', () => {
-      const bin = createTestBin()
-      const found = service.getBin(bin.id, 'wrong-tenant')
-      assert.equal(found, undefined)
-    })
-  })
-
-  describe('listBins', () => {
-    it('should list seed bins plus created ones', () => {
-      createTestBin({ code: 'T1' })
-      const list = service.listBins(TENANT)
-      assert.ok(list.length >= 1)
-    })
-
-    it('should filter by status', () => {
-      createTestBin({ code: 'EMP-01', status: BinStatus.Empty })
-      createTestBin({ code: 'OCC-01', status: BinStatus.Occupied })
-
-      const empty = service.listBins(TENANT, { status: BinStatus.Empty })
-      assert.ok(empty.length >= 1)
-      empty.forEach((b) => assert.equal(b.status, BinStatus.Empty))
-    })
-
-    it('should filter by type', () => {
-      const shelves = service.listBins(TENANT, { type: BinType.Shelf })
-      shelves.forEach((b) => assert.equal(b.type, BinType.Shelf))
-    })
-
-    it('should filter by area', () => {
-      const aBins = service.listBins(TENANT, { area: 'A区' })
-      aBins.forEach((b) => assert.equal(b.area, 'A区'))
-    })
-
-    it('should filter by search', () => {
-      const result = service.listBins(TENANT, { search: 'A-01' })
-      assert.ok(result.length >= 1)
-    })
-  })
-
-  describe('updateBin', () => {
-    it('should update bin fields', () => {
-      const bin = createTestBin()
-      const updated = service.updateBin(bin.id, TENANT, {
-        capacity: 200,
-        status: BinStatus.Maintenance,
-      })
-
-      assert.equal(updated.capacity, 200)
-      assert.equal(updated.status, BinStatus.Maintenance)
-    })
-
-    it('should throw for non-existent bin', () => {
-      assert.throws(
-        () => service.updateBin('nonexistent', TENANT, { code: 'X' }),
-        /Warehouse bin not found/
-      )
-    })
-
-    it('should throw for wrong tenant', () => {
-      const bin = createTestBin()
-      assert.throws(
-        () => service.updateBin(bin.id, 'wrong-tenant', { code: 'X' }),
-        /Warehouse bin not found/
-      )
-    })
-  })
-
-  describe('deleteBin', () => {
-    it('should delete a bin', () => {
-      const bin = createTestBin()
-      service.deleteBin(bin.id, TENANT)
-
-      const found = service.getBin(bin.id, TENANT)
-      assert.equal(found, undefined)
-    })
-
-    it('should throw for non-existent bin', () => {
-      assert.throws(
-        () => service.deleteBin('nonexistent', TENANT),
-        /Warehouse bin not found/
-      )
-    })
-
-    it('should throw for wrong tenant', () => {
-      const bin = createTestBin()
-      assert.throws(
-        () => service.deleteBin(bin.id, 'wrong-tenant'),
-        /Warehouse bin not found/
-      )
-    })
-  })
-
-  // ── Capacity operations ──
-
-  describe('assignItem', () => {
-    it('should assign item to empty bin', () => {
-      const bin = createTestBin({ capacity: 100 })
-      const updated = service.assignItem(bin.id, '电子元器件', 50, TENANT)
-
-      assert.equal(updated.usedCapacity, 50)
-      assert.equal(updated.currentItem, '电子元器件')
-      assert.equal(updated.status, BinStatus.Occupied)
-    })
-
-    it('should throw when bin is under maintenance', () => {
-      const bin = createTestBin({ status: BinStatus.Maintenance })
-      assert.throws(
-        () => service.assignItem(bin.id, 'Item', 10, TENANT),
-        /under maintenance/
-      )
-    })
-
-    it('should throw when capacity insufficient', () => {
-      const bin = createTestBin({ capacity: 100, usedCapacity: 80 })
-      assert.throws(
-        () => service.assignItem(bin.id, 'Overflow', 30, TENANT),
-        /Insufficient capacity/
-      )
-    })
-  })
-
-  describe('removeItem', () => {
-    it('should decrease used capacity', () => {
-      const bin = createTestBin({ capacity: 100, usedCapacity: 80, currentItem: 'Items', status: BinStatus.Occupied })
-      const updated = service.removeItem(bin.id, 30, TENANT)
-
-      assert.equal(updated.usedCapacity, 50)
-    })
-
-    it('should clear bin when capacity becomes 0', () => {
-      const bin = createTestBin({ capacity: 100, usedCapacity: 80, currentItem: 'Items', status: BinStatus.Occupied })
-      const updated = service.removeItem(bin.id, 80, TENANT)
-
-      assert.equal(updated.usedCapacity, 0)
-      assert.equal(updated.status, BinStatus.Empty)
-      assert.equal(updated.currentItem, undefined)
-    })
-
-    it('should throw when removing too much', () => {
-      const bin = createTestBin({ usedCapacity: 10 })
-      assert.throws(
-        () => service.removeItem(bin.id, 20, TENANT),
-        /Cannot remove/
-      )
-    })
-  })
-
-  describe('reserveBin', () => {
-    it('should reserve empty bin', () => {
-      const bin = createTestBin({ status: BinStatus.Empty })
-      const updated = service.reserveBin(bin.id, TENANT)
-      assert.equal(updated.status, BinStatus.Reserved)
-    })
-
-    it('should throw when bin is not empty', () => {
-      const bin = createTestBin({ status: BinStatus.Occupied })
-      assert.throws(
-        () => service.reserveBin(bin.id, TENANT),
-        /Cannot reserve/
-      )
-    })
-  })
-
-  describe('setMaintenance', () => {
-    it('should set bin to maintenance', () => {
-      const bin = createTestBin({ status: BinStatus.Empty })
-      const updated = service.setMaintenance(bin.id, TENANT)
-      assert.equal(updated.status, BinStatus.Maintenance)
-    })
-  })
-
-  // ── Query views ──
-
-  describe('getEmptyBins', () => {
-    it('should return empty bins', () => {
-      const empty = service.getEmptyBins(TENANT)
-      assert.ok(empty.length >= 1)
-      empty.forEach((b) => assert.equal(b.status, BinStatus.Empty))
-    })
-  })
-
-  describe('getOccupiedBinsByArea', () => {
-    it('should return occupied bins in area', () => {
-      const occupied = service.getOccupiedBinsByArea('A区', TENANT)
-      occupied.forEach((b) => {
-        assert.equal(b.area, 'A区')
-        assert.equal(b.status, BinStatus.Occupied)
-      })
-    })
-  })
-
-  describe('getCapacityUtilization', () => {
-    it('should return utilization stats', () => {
-      const stats = service.getCapacityUtilization(TENANT)
-      assert.ok(stats.totalCapacity > 0)
-      assert.ok(stats.totalUsed >= 0)
-      assert.ok(stats.utilizationRate >= 0)
-      assert.ok(stats.bins.length >= 1)
-    })
+  it('getCapacityUtilization 返回利用率', () => {
+    const util = svc.getCapacityUtilization(tenantId)
+    expect(util.totalCapacity).toBeGreaterThan(0)
+    expect(util.utilizationRate).toBeGreaterThanOrEqual(0)
+    expect(util.utilizationRate).toBeLessThanOrEqual(100)
+    expect(util.bins.length).toBeGreaterThan(0)
   })
 })

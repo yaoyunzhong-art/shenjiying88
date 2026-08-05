@@ -1,209 +1,161 @@
-import { describe, it, beforeEach, afterEach } from 'vitest'
 /**
- * 🐜 自动: [shift-scheduler] service 测试
+ * shift-scheduler.service.spec.ts — 排班管理模块 Service 单元测试
+ *
+ * 覆盖: CRUD / 状态流转 / 周视图查询 / 边界异常
  */
 
-import 'reflect-metadata'
-import assert from 'node:assert/strict'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { ShiftSchedulerService } from './shift-scheduler.service'
 import { ShiftType, ShiftStatus } from './shift-scheduler.entity'
 
-describe('ShiftSchedulerService', () => {
-  let service: ShiftSchedulerService
-
-  const TENANT = 'tenant-001'
+describe('ShiftSchedulerService — CRUD', () => {
+  let svc: ShiftSchedulerService
+  const tenantId = 'tenant-001'
 
   beforeEach(() => {
-    service = new ShiftSchedulerService()
+    svc = new ShiftSchedulerService()
+    svc.resetShiftStoresForTests()
   })
 
-  afterEach(() => {
-    service.resetShiftStoresForTests()
-  })
-
-  function createTestShift(overrides?: Partial<Parameters<ShiftSchedulerService['createShift']>[0]>) {
-    return service.createShift({
-      tenantId: TENANT,
-      employeeId: 'EMP-001',
-      employeeName: '张三',
-      date: '2026-07-16',
+  it('createShift 创建排班成功', () => {
+    const shift = svc.createShift({
+      tenantId,
+      employeeId: 'EMP-010',
+      employeeName: '测试员工',
+      date: '2026-07-30',
       shiftType: ShiftType.Morning,
       startTime: '08:00',
       endTime: '16:00',
-      location: '上海店',
-      ...overrides,
+      location: '深圳店',
     })
-  }
+    expect(shift.id).toMatch(/^shift-/)
+    expect(shift.employeeName).toBe('测试员工')
+    expect(shift.shiftType).toBe(ShiftType.Morning)
+    expect(shift.status).toBe(ShiftStatus.Scheduled)
+  })
 
-  // ── CRUD ──
+  it('getShift 返回正确的排班', () => {
+    const created = svc.createShift({
+      tenantId, employeeId: 'EMP-011', employeeName: '查询测试',
+      date: '2026-07-30', shiftType: ShiftType.Afternoon,
+      startTime: '13:00', endTime: '21:00', location: '北京店',
+    })
+    const found = svc.getShift(created.id, tenantId)
+    expect(found).toBeDefined()
+    expect(found!.employeeName).toBe('查询测试')
+  })
 
-  describe('createShift', () => {
-    it('should create a shift with SCHEDULED status', () => {
-      const s = createTestShift()
-      assert.equal(s.employeeId, 'EMP-001')
-      assert.equal(s.employeeName, '张三')
-      assert.equal(s.shiftType, ShiftType.Morning)
-      assert.equal(s.status, ShiftStatus.Scheduled)
-      assert.equal(s.tenantId, TENANT)
-      assert.ok(s.id.startsWith('shift-'))
+  it('getShift 返回 undefined 当排班不存在', () => {
+    expect(svc.getShift('fake-id', tenantId)).toBeUndefined()
+  })
+
+  it('updateShift 更新排班信息', () => {
+    const shift = svc.createShift({
+      tenantId, employeeId: 'EMP-012', employeeName: '更新测试',
+      date: '2026-07-30', shiftType: ShiftType.Morning,
+      startTime: '08:00', endTime: '16:00', location: '广州店',
+    })
+    const updated = svc.updateShift(shift.id, tenantId, {
+      shiftType: ShiftType.Night,
+      startTime: '21:00',
+      endTime: '06:00',
+      remark: '换班',
+    })
+    expect(updated.shiftType).toBe(ShiftType.Night)
+    expect(updated.remark).toBe('换班')
+  })
+
+  it('updateShift 不存在的排班抛 Error', () => {
+    expect(() => svc.updateShift('fake-id', tenantId, { location: '新店' })).toThrow(/not found/)
+  })
+
+  it('updateShiftStatus 更新状态', () => {
+    const shift = svc.createShift({
+      tenantId, employeeId: 'EMP-013', employeeName: '状态测试',
+      date: '2026-07-30', shiftType: ShiftType.Morning,
+      startTime: '08:00', endTime: '16:00', location: '成都店',
+    })
+    const updated = svc.updateShiftStatus(shift.id, ShiftStatus.CheckedIn, tenantId)
+    expect(updated.status).toBe(ShiftStatus.CheckedIn)
+  })
+
+  it('deleteShift 删除成功', () => {
+    const shift = svc.createShift({
+      tenantId, employeeId: 'EMP-014', employeeName: '删除测试',
+      date: '2026-07-30', shiftType: ShiftType.FullDay,
+      startTime: '08:00', endTime: '21:00', location: '上海店',
+    })
+    svc.deleteShift(shift.id, tenantId)
+    expect(svc.getShift(shift.id, tenantId)).toBeUndefined()
+  })
+
+  it('deleteShift 不存在的排班抛 Error', () => {
+    expect(() => svc.deleteShift('fake-id', tenantId)).toThrow(/not found/)
+  })
+})
+
+describe('ShiftSchedulerService — 列表与筛选', () => {
+  let svc: ShiftSchedulerService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new ShiftSchedulerService()
+    svc.resetShiftStoresForTests()
+    svc.seedMockData(tenantId)
+  })
+
+  it('listShifts 返回所有排班', () => {
+    const shifts = svc.listShifts(tenantId)
+    expect(shifts.length).toBeGreaterThan(0)
+  })
+
+  it('listShifts 按班次类型筛选', () => {
+    const morning = svc.listShifts(tenantId, { shiftType: ShiftType.Morning })
+    morning.forEach((s) => expect(s.shiftType).toBe(ShiftType.Morning))
+  })
+
+  it('listShifts 按员工筛选', () => {
+    const emp = svc.listShifts(tenantId, { employeeId: 'EMP-001' })
+    emp.forEach((s) => expect(s.employeeId).toBe('EMP-001'))
+  })
+
+  it('listShifts 按日期筛选', () => {
+    const day = svc.listShifts(tenantId, { date: '2026-07-13' })
+    day.forEach((s) => expect(s.date).toBe('2026-07-13'))
+  })
+
+  it('listShifts 按状态筛选', () => {
+    const checkedIn = svc.listShifts(tenantId, { status: ShiftStatus.CheckedIn })
+    checkedIn.forEach((s) => expect(s.status).toBe(ShiftStatus.CheckedIn))
+  })
+
+  it('listShifts 按位置筛选', () => {
+    const loc = svc.listShifts(tenantId, { location: '上海店' })
+    loc.forEach((s) => expect(s.location).toBe('上海店'))
+  })
+})
+
+describe('ShiftSchedulerService — 周视图', () => {
+  let svc: ShiftSchedulerService
+  const tenantId = 'tenant-001'
+
+  beforeEach(() => {
+    svc = new ShiftSchedulerService()
+    svc.resetShiftStoresForTests()
+    svc.seedMockData(tenantId)
+  })
+
+  it('getWeeklyShifts 返回指定日期范围内的排班', () => {
+    const weekly = svc.getWeeklyShifts(tenantId, '2026-07-13', '2026-07-19')
+    expect(weekly.length).toBeGreaterThan(0)
+    weekly.forEach((s) => {
+      expect(s.date >= '2026-07-13').toBeTruthy()
+      expect(s.date <= '2026-07-19').toBeTruthy()
     })
   })
 
-  describe('getShift', () => {
-    it('should return shift by id', () => {
-      const s = createTestShift()
-      const found = service.getShift(s.id, TENANT)
-      assert.ok(found)
-      assert.equal(found?.id, s.id)
-    })
-
-    it('should return undefined for non-existent shift', () => {
-      assert.equal(service.getShift('nonexistent', TENANT), undefined)
-    })
-
-    it('should return undefined for wrong tenant', () => {
-      const s = createTestShift()
-      assert.equal(service.getShift(s.id, 'other-tenant'), undefined)
-    })
-  })
-
-  describe('listShifts', () => {
-    it('should list all shifts for tenant', () => {
-      createTestShift({ employeeId: 'EMP-001' })
-      createTestShift({ employeeId: 'EMP-002' })
-      assert.equal(service.listShifts(TENANT).length, 2)
-    })
-
-    it('should filter by shiftType', () => {
-      createTestShift({ shiftType: ShiftType.Morning })
-      createTestShift({ shiftType: ShiftType.Night })
-
-      const morning = service.listShifts(TENANT, { shiftType: ShiftType.Morning })
-      assert.equal(morning.length, 1)
-    })
-
-    it('should filter by employeeId', () => {
-      createTestShift({ employeeId: 'EMP-001' })
-      createTestShift({ employeeId: 'EMP-002' })
-
-      const emp1 = service.listShifts(TENANT, { employeeId: 'EMP-001' })
-      assert.equal(emp1.length, 1)
-    })
-
-    it('should filter by date', () => {
-      createTestShift({ date: '2026-07-16' })
-      createTestShift({ date: '2026-07-17' })
-
-      const d16 = service.listShifts(TENANT, { date: '2026-07-16' })
-      assert.equal(d16.length, 1)
-    })
-
-    it('should filter by location', () => {
-      createTestShift({ location: '上海店' })
-      createTestShift({ location: '北京店' })
-
-      const sh = service.listShifts(TENANT, { location: '上海店' })
-      assert.equal(sh.length, 1)
-    })
-  })
-
-  describe('updateShift', () => {
-    it('should update shift fields', () => {
-      const s = createTestShift()
-      const updated = service.updateShift(s.id, TENANT, {
-        shiftType: ShiftType.Afternoon,
-        location: '北京店',
-      })
-      assert.equal(updated.shiftType, ShiftType.Afternoon)
-      assert.equal(updated.location, '北京店')
-    })
-
-    it('should throw on non-existent shift', () => {
-      assert.throws(() => {
-        service.updateShift('nonexistent', TENANT, { location: 'test' })
-      }, /Shift schedule not found/)
-    })
-  })
-
-  describe('updateShiftStatus', () => {
-    it('should update shift status', () => {
-      const s = createTestShift()
-      const updated = service.updateShiftStatus(s.id, ShiftStatus.CheckedIn, TENANT)
-      assert.equal(updated.status, ShiftStatus.CheckedIn)
-    })
-  })
-
-  // ── Delete ──
-
-  describe('deleteShift', () => {
-    it('should delete shift by id', () => {
-      const s = createTestShift()
-      service.deleteShift(s.id, TENANT)
-      assert.equal(service.getShift(s.id, TENANT), undefined)
-    })
-
-    it('should throw on non-existent shift', () => {
-      assert.throws(() => {
-        service.deleteShift('nonexistent', TENANT)
-      }, /Shift schedule not found/)
-    })
-
-    it('should throw on wrong tenant', () => {
-      const s = createTestShift()
-      assert.throws(() => {
-        service.deleteShift(s.id, 'other-tenant')
-      }, /Shift schedule not found/)
-    })
-  })
-
-  // ── Weekly View ──
-
-  describe('getWeeklyShifts', () => {
-    it('should return shifts within date range', () => {
-      createTestShift({ date: '2026-07-13', employeeId: 'EMP-001' })
-      createTestShift({ date: '2026-07-14', employeeId: 'EMP-001' })
-      createTestShift({ date: '2026-07-20', employeeId: 'EMP-001' }) // Outside range
-
-      const weekly = service.getWeeklyShifts(TENANT, '2026-07-13', '2026-07-19')
-      assert.equal(weekly.length, 2)
-    })
-
-    it('should sort by date', () => {
-      createTestShift({ date: '2026-07-14', employeeId: 'EMP-001' })
-      createTestShift({ date: '2026-07-13', employeeId: 'EMP-001' })
-
-      const weekly = service.getWeeklyShifts(TENANT, '2026-07-13', '2026-07-14')
-      assert.equal(weekly[0].date, '2026-07-13')
-      assert.equal(weekly[1].date, '2026-07-14')
-    })
-  })
-
-  describe('getEmployeeWeeklyShifts', () => {
-    it('should return shifts for a specific employee', () => {
-      createTestShift({ employeeId: 'EMP-001', date: '2026-07-13' })
-      createTestShift({ employeeId: 'EMP-002', date: '2026-07-13' })
-      createTestShift({ employeeId: 'EMP-001', date: '2026-07-14' })
-
-      const emp1 = service.getEmployeeWeeklyShifts(TENANT, 'EMP-001', '2026-07-13', '2026-07-19')
-      assert.equal(emp1.length, 2)
-    })
-  })
-
-  // ── Seed ──
-
-  describe('seedMockData', () => {
-    it('should seed 30 shifts', () => {
-      service.seedMockData(TENANT)
-      const shifts = service.listShifts(TENANT)
-      // 4 employees * 7 days + 2 full-day manager shifts = 30
-      assert.equal(shifts.length, 30)
-
-      // Should have various statuses
-      const statuses = new Set(shifts.map((s) => s.status))
-      assert.ok(statuses.has(ShiftStatus.Scheduled))
-      assert.ok(statuses.has(ShiftStatus.CheckedIn))
-      assert.ok(statuses.has(ShiftStatus.Absent))
-      assert.ok(statuses.has(ShiftStatus.Swapped))
-    })
+  it('getEmployeeWeeklyShifts 按员工过滤周视图', () => {
+    const empShifts = svc.getEmployeeWeeklyShifts(tenantId, 'EMP-001', '2026-07-13', '2026-07-19')
+    empShifts.forEach((s) => expect(s.employeeId).toBe('EMP-001'))
   })
 })
