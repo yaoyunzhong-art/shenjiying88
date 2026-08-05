@@ -11,7 +11,7 @@ import {
 import { TokenService } from './token.service'
 import { SessionService } from './session.service'
 import { RedisService } from '../../infrastructure/redis/redis.module'
-import { AuditService } from '../audit/audit.service'
+import { AuditService } from '../audit'
 
 @Injectable()
 export class AuthService {

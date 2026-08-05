@@ -8,7 +8,7 @@ import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { SessionService } from './session.service'
 import { TokenService } from './token.service'
-import { AuditService } from '../audit/audit.service'
+import { AuditService } from '../audit'
 
 @Module({
   controllers: [AuthController],

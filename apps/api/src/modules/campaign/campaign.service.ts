@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable, Optional } from '@nestjs/common'
-import { LoyaltyService } from '../loyalty/loyalty.service'
+import { LoyaltyService } from '../loyalty'
 import { MarketingMetricsService } from '../marketing-metrics'
-import { MemberService } from '../member/member.service'
+import { MemberService } from '../member'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   CampaignActionKind,

@@ -11,9 +11,9 @@ import {
 } from '../cashier/cashier.entity'
 import { FinanceService } from '../finance/finance.service'
 import { LedgerType } from '../finance/finance.entity'
-import { MemberService } from '../member/member.service'
+import { MemberService } from '../member'
 import type { RequestTenantContext } from '../tenant/tenant.types'
-import { LoyaltyService } from '../loyalty/loyalty.service'
+import { LoyaltyService } from '../loyalty'
 import { PrismaService } from '../../prisma/prisma.service'
 import {
   BatchAssignTransactionRefundsDto,

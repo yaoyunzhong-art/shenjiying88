@@ -10,7 +10,7 @@
  *   - 工单管理
  */
 import { Injectable, Logger, NotFoundException, ConflictException, Optional } from '@nestjs/common'
-import { AuditService } from '../audit/audit.service'
+import { AuditService } from '../audit'
 import { randomUUID as uuid } from 'crypto'
 
 export type CrmCustomerStatus = 'active' | 'inactive' | 'churned' | 'lead'

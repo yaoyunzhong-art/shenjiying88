@@ -14,7 +14,7 @@
 
 import { Injectable, Logger, Optional } from '@nestjs/common'
 import { isRecordError } from '../../common/error-handler.utils'
-import { AuditService } from '../audit/audit.service'
+import { AuditService } from '../audit'
 import { AlliancePartner, PartnerGradingService, HealthScoreService } from './alliance-grade.service'
 import {
   CrossMerchantSettlementService,

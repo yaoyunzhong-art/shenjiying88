@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common'
 import type { RuntimeGovernanceReceipt, RuntimeGovernanceRiskLevel } from '@m5/types'
 import { FoundationService, IntegrationOrchestrationService, RuntimeGovernanceService, TrustGovernanceService } from '../foundation'
-import { LoyaltyService } from '../loyalty/loyalty.service'
-import { MemberService } from '../member/member.service'
+import { LoyaltyService } from '../loyalty'
+import { MemberService } from '../member'
 import { TransactionsService } from '../transactions/transactions.service'
 import { CampaignService } from '../campaign/campaign.service'
 import type {
