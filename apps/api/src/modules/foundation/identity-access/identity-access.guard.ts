@@ -85,6 +85,9 @@ export class IdentityAccessGuard implements CanActivate {
     // ────────────────────────────────────────────────────────────
     if (roles.length === 0 && permissions.length === 0 && !tenantScopeMetadata) {
       // TODO(Phase-next): 逐步收紧为默认拒绝 + 给所有 controller 补注解
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('[SECURITY] 端点无 RBAC 注解, 默认放行 — 需逐步补全 @Roles/@Permissions 注解')
+      }
       return true
     }
 

@@ -88,6 +88,8 @@ export function validatePasswordPolicy(password: string): { valid: boolean; mess
  *
  * todo: 生产环境替换为真实 SSO 配置
  *
+ * WARNING: 生产环境使用占位配置会导致 OAuth/OIDC/SAML 登录使用不安全临时密钥
+ *
  * 预期支持的 SSO 协议:
  *   - OAuth 2.0 / OIDC — 微信、Google、GitHub 等第三方登录
  *   - SAML 2.0         — 企业级 IdP 接入 (Azure AD / Okta)

@@ -357,6 +357,9 @@ export class AuthService {
     // 简化版验证 - 生产应验证Redis缓存的验证码
     // 开发模式下使用固定码,生产必须从Redis读取
     // TODO: 连接短信服务商, 实现真实OTP发送与验证
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[SECURITY] 生产环境使用硬编码 OTP 验证 — 需接入真实短信服务商')
+    }
     return code === '123456'
   }
 

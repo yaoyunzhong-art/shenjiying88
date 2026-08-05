@@ -204,6 +204,9 @@ function applyDelta(usage: TenantQuotaUsage, kind: QuotaResourceKind, delta: num
       return { ...usage, apiCallsToday: Math.max(0, usage.apiCallsToday + delta), recordedAt: new Date().toISOString() }
     case QuotaResourceKind.Coupon:
       // TODO(PHASE17): 月切逻辑 - 跨门店优惠券核销配额跨月清零
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('[QUOTA] 优惠券配额跨月清零未实现 — 配额可能累积导致超发')
+      }
       return {
         ...usage,
         couponRedemptionsThisMonth: Math.max(0, usage.couponRedemptionsThisMonth + delta),
