@@ -5,7 +5,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { Injectable, Logger, Optional } from '@nestjs/common';
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service';
+import { MarketingMetricsService } from '../marketing-metrics';
 import {
   type GenerateCodeInput,
   type ReferralCode,

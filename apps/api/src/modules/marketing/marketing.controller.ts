@@ -16,7 +16,7 @@ import { TenantOptional } from '../agent/tenant-guard.decorator'
 
 import type { Request } from 'express'
 import type { TenantAwareRequest } from '../tenant/tenant.types'
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
+import { MarketingMetricsService } from '../marketing-metrics'
 import { RFMCalculator } from './rfm-calculator'
 import { ABTestEngine } from './ab-test'
 import { CouponIssuer } from './coupon-issuer'

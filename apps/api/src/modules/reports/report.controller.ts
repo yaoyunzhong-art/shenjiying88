@@ -28,7 +28,7 @@ import { HourlyHeatmapService } from './reports/hourly-heatmap.service'
 import { ChannelFunnelService } from './reports/channel-funnel.service'
 import { InventoryAlertService } from './reports/inventory-alert.service'
 import { TenantGuard } from '../agent/tenant.guard'
-import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
+import { GovernanceApprovalService } from '../foundation'
 
 const REPORT_READ_PERMISSION = 'report:read'
 const REPORT_EXPORT_PERMISSION = 'report:export'

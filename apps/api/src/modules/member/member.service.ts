@@ -6,8 +6,8 @@ import {
   materializeGovernanceApproval,
   type GovernanceApprovalSnapshot
 } from '../foundation/governance-approval/governance-approval'
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
-import { RuntimeGovernanceService } from '../foundation/runtime-governance/runtime-governance.service'
+import { MarketingMetricsService } from '../marketing-metrics'
+import { RuntimeGovernanceService } from '../foundation'
 import type { RequestTenantContext } from '../tenant/tenant.types';
 import {
   MemberLevel,

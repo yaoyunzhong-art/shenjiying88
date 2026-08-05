@@ -24,9 +24,8 @@ import {
   toBootstrapFoundationMetadata,
   toRegionalLoginPolicyContract
 } from '../bootstrap/bootstrap.contract'
-import { FoundationService } from '../foundation/foundation.service'
+import { FoundationService, RuntimeGovernanceService } from '../foundation'
 import { type CurrentActorValue } from '../foundation/identity-access/identity-access.decorator'
-import { RuntimeGovernanceService } from '../foundation/runtime-governance/runtime-governance.service'
 import { MarketService } from '../market/market.service'
 import { toMarketProfileContract } from '../market/market.contract'
 import { PortalService } from '../portal/portal.service'

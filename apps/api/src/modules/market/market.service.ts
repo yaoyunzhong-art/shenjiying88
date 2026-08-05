@@ -14,7 +14,7 @@ import {
 } from '@m5/domain'
 import type { MarketBootstrapResponse } from '@m5/types'
 import { toBootstrapFoundationMetadata } from '../bootstrap/bootstrap.contract'
-import { FoundationService } from '../foundation/foundation.service'
+import { FoundationService } from '../foundation'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { toMarketProfileContract } from './market.contract'
 

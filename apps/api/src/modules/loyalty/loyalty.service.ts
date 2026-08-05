@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common'
 import { RedisService } from '../../infrastructure/redis/redis.module'
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
+import { MarketingMetricsService } from '../marketing-metrics'
 import { MemberService } from '../member/member.service'
 import type { CashierOrder, CashierPayment } from '../cashier/cashier.entity'
 import type { LytOrderSnapshot, LytPaymentSnapshot } from '../transactions/transactions.entity'

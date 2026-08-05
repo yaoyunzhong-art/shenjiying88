@@ -26,7 +26,7 @@ import {
   RequireTenantScope,
 } from '../foundation/identity-access/identity-access.decorator'
 import { BillingWall } from '../foundation/commercial-billing/billing-wall'
-import { BillingServiceImpl, InMemoryBillingMeter } from '../foundation/commercial-billing/billing.service'
+import { BillingServiceImpl, InMemoryBillingMeter } from '../foundation'
 import type { Bill, PricingPlan, Wallet } from '../foundation/commercial-billing/billing.port'
 
 const CASHIER_BILLING_FINANCE_READ_PERMISSION = 'finance:read'

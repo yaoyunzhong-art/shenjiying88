@@ -3,7 +3,7 @@
 // 关联: tasks.md T11 - afternoon-dev-jobs.sh 16:00-17:30
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service';
+import { MarketingMetricsService } from '../marketing-metrics';
 import type {
   LeadSource, LeadStage, LeadPriority,
   Lead, LeadFollowUpNote, LeadFunnelMetrics, AssignRule,

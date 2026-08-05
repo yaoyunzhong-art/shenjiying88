@@ -11,7 +11,7 @@ import {
 } from '@m5/domain'
 import type { PortalBootstrapResponse } from '@m5/types'
 import { toBootstrapFoundationMetadata } from '../bootstrap/bootstrap.contract'
-import { FoundationService } from '../foundation/foundation.service'
+import { FoundationService } from '../foundation'
 import { MarketService } from '../market/market.service'
 import { toMarketProfileContract, toRegionalConfigOverrideContract } from '../market/market.contract'
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'

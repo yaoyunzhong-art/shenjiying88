@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common'
 import { LoyaltyService } from '../loyalty/loyalty.service'
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
+import { MarketingMetricsService } from '../marketing-metrics'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import {
   AnalyticsScope,

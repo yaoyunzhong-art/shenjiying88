@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
-import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
+import { GovernanceApprovalService } from '../foundation'
 import { PrismaService } from '../../prisma/prisma.service'
 
 const RESOURCE_TYPE = 'member-profile'

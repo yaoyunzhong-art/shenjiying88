@@ -1,7 +1,7 @@
 // marketing.service.ts - Phase-42 T172
 // 用途: 智能营销主服务 - 提供高层聚合操作，协调 RFM / A/B / 优惠券 / 归因 / 渠道
 import { Injectable, Logger, Optional } from '@nestjs/common'
-import { MarketingMetricsService } from '../marketing-metrics/marketing-metrics.service'
+import { MarketingMetricsService } from '../marketing-metrics'
 import { RFMCalculator } from './rfm-calculator'
 import { ABTestEngine } from './ab-test'
 import { CouponIssuer } from './coupon-issuer'
