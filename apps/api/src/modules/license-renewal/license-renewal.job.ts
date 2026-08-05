@@ -9,7 +9,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common'
-import { NotificationService } from '../notification/notification.service'
+import { NotificationService } from '../notification'
 
 @Injectable()
 export class LicenseRenewalJob {

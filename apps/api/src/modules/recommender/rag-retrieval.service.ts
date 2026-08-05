@@ -2,7 +2,7 @@
 // 用途: 基于 Champion context 的多维度 RAG 召回 + 重排
 // 关联: phase-19-intelligence/spec.md §Phase 3
 import { Injectable } from '@nestjs/common';
-import { KnowledgeIndexerService, type QueryResponse } from '../knowledge/knowledge-indexer.service';
+import { KnowledgeIndexerService, type QueryResponse } from '../knowledge';
 import type { RecommendationContext } from './context-builder.service';
 
 export interface RankedResult {

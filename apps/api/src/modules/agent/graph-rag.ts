@@ -15,7 +15,7 @@
 import { Injectable } from '@nestjs/common';
 import { KnowledgeGraph, Entity, Relation, GraphQueryResult } from './knowledge-graph';
 import { HybridSearch, HybridSearchResult } from '../knowledge/hybrid-search';
-import { embedTextV2, cosineSimilarity } from '../knowledge/multimodal-embedding.service';
+import { embedTextV2, cosineSimilarity } from '../knowledge';
 
 // ── Types ──
 

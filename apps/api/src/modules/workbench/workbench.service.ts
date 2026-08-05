@@ -26,11 +26,11 @@ import {
 } from '../bootstrap/bootstrap.contract'
 import { FoundationService, RuntimeGovernanceService } from '../foundation'
 import { type CurrentActorValue } from '../foundation/identity-access/identity-access.decorator'
-import { MarketService } from '../market/market.service'
+import { MarketService } from '../market'
 import { toMarketProfileContract } from '../market/market.contract'
 import { PortalService } from '../portal/portal.service'
 import type { RequestTenantContext } from '../tenant/tenant.types'
-import { TenantConfigService } from '../tenant-config/tenant-config.service'
+import { TenantConfigService } from '../tenant-config'
 import {
   EVENT_BUS_SERVICE,
   type EventBusService

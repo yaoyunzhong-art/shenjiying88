@@ -15,7 +15,7 @@
 
 import { Injectable, Optional } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
-import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
+import { DomainResolutionService } from '../saas-advanced'
 
 const DEFAULT_TENANT_ID = 'tenant-demo'
 const DEFAULT_MARKET = 'us-default'

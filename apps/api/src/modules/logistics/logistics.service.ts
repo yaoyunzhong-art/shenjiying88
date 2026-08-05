@@ -4,7 +4,7 @@ import {
   FoundationScopeType,
   NotificationChannelType
 } from '../notification/notification.entity'
-import { NotificationService } from '../notification/notification.service'
+import { NotificationService } from '../notification'
 import type {
   CleanScheduleEntity,
   CleanScheduleStatus,

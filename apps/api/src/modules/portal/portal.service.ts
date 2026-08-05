@@ -12,12 +12,12 @@ import {
 import type { PortalBootstrapResponse } from '@m5/types'
 import { toBootstrapFoundationMetadata } from '../bootstrap/bootstrap.contract'
 import { FoundationService } from '../foundation'
-import { MarketService } from '../market/market.service'
+import { MarketService } from '../market'
 import { toMarketProfileContract, toRegionalConfigOverrideContract } from '../market/market.contract'
 import { toStorePortalContract, toTobPortalContract } from './portal.contract'
 import type { RequestTenantContext } from '../tenant/tenant.types'
-import { TenantConfigService } from '../tenant-config/tenant-config.service'
-import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
+import { TenantConfigService } from '../tenant-config'
+import { DomainResolutionService } from '../saas-advanced'
 
 const PORTAL_SUPPORTED_LANGUAGES = Object.values(LanguageCode)
 

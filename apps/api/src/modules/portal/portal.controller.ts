@@ -3,7 +3,7 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { TenantContext } from '../tenant/tenant.decorator'
 import type { RequestTenantContext } from '../tenant/tenant.types'
 import { PortalService } from './portal.service'
-import { CustomDomainService } from '../saas-advanced/custom-domain.service'
+import { CustomDomainService } from '../saas-advanced'
 import {
   PortalBootstrapResponseDto,
   PortalDomainGovernanceSummaryDto,
