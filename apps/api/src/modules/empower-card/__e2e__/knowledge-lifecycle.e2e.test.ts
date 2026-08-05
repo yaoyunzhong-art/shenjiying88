@@ -16,7 +16,7 @@ import assert from 'node:assert/strict'
  * 获取 EmpowerCardService 实例.
  * POSTGRES_URL 空 → 服务自动降级到内存模式 (Map-backed).
  */
-let service: ReturnType<typeof createService>
+let service: Awaited<ReturnType<typeof createService>>
 let cardId1: string
 let cardId2: string
 let cardId3: string
@@ -43,7 +43,7 @@ async function createService() {
   const origEnv = process.env.POSTGRES_URL
   delete process.env.POSTGRES_URL
 
-  const { EmpowerCardService } = await import('../empower-card.service.ts')
+  const { EmpowerCardService } = await import('../empower-card.service')
   const svc = new EmpowerCardService()
 
   // 恢复环境
@@ -89,7 +89,7 @@ async function createService() {
 //  链路 1: 知识注入
 // ──────────────────────────────────────────────────
 
-describe('E2E: 知识注入链路' () => {
+describe('E2E: 知识注入链路', () => {
   beforeAll(async () => {
     service = await createService()
   })
@@ -174,7 +174,7 @@ describe('E2E: 知识注入链路' () => {
 //  链路 2: 老化退化 (Freshness Decay)
 // ──────────────────────────────────────────────────
 
-describe('E2E: 老化退化链路' () => {
+describe('E2E: 老化退化链路', () => {
   beforeAll(async () => {
     service = await createService()
     // 注入测试用卡片
@@ -246,7 +246,7 @@ WHERE freshness_score > 20
   })
 
   it('[反例] 空数据库 decay 不抛错', async () => {
-    const emptyService = createService()
+    const emptyService = await createService()
     const result = await emptyService.applyDecay()
     assert.equal(result.decayed, 0, '空库 decayed = 0')
     assert.equal(result.archived, 0, '空库 archived = 0')
@@ -257,7 +257,7 @@ WHERE freshness_score > 20
 //  链路 3: 引用更新 (Quote Count)
 // ──────────────────────────────────────────────────
 
-describe('E2E: 引用更新链路' () => {
+describe('E2E: 引用更新链路', () => {
   beforeAll(async () => {
     service = await createService()
     // 注入测试卡片
@@ -326,7 +326,7 @@ describe('E2E: 引用更新链路' () => {
   })
 
   it('[边界] 引用 0 次的卡片 quoteCount = 0', async () => {
-    const freshSvc = createService()
+    const freshSvc = await createService()
     const card = await freshSvc.create({
       tag: '技术',
       summary: '全新未引用卡片',
@@ -341,7 +341,7 @@ describe('E2E: 引用更新链路' () => {
 //  跨链路整合验证
 // ──────────────────────────────────────────────────
 
-describe('E2E: 跨链路整合验证' () => {
+describe('E2E: 跨链路整合验证', () => {
   beforeAll(async () => {
     service = await createService()
   })
