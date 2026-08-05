@@ -14,7 +14,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
  */
 
 import { CouponService } from './coupon.service'
-import { CouponV2 } from './coupon.entity'  // eslint-disable-line
+import { CouponV2 } from './coupon.entity'   
 import type { Repository, DataSource } from 'typeorm'
 import { runWithTenant } from '../../common/context/tenant-context'
 

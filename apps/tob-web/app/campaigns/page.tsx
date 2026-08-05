@@ -213,7 +213,7 @@ export default function CampaignsPage() {
   const pagination = usePagination({ initialPageSize: 10, pageSizeOptions: [5, 10, 15, 20] });
   useEffect(() => {
     pagination.resetPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [searchTerm, statusFilter, typeFilter, channelFilter]);
   const pageItems = pagination.paginate(sortedItems);
 

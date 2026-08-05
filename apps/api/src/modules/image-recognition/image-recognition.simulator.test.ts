@@ -69,7 +69,7 @@ describe('ImageRecognitionService Simulator', () => {
       const taskTypes = ['object_detection', 'shelf_analysis', 'image_classification', 'visual_search', 'product_recognition', 'duplicate_detection', 'duplicate_detection'] as const
 
       for (let i = 0; i < engines.length; i++) {
-        // eslint-disable-next-line no-await-in-loop
+         
         const result = await runWithTenant(TENANT, () =>
           service.createRecognition({
             taskType: taskTypes[i],
@@ -105,7 +105,7 @@ describe('ImageRecognitionService Simulator', () => {
       // 创建多个资产
       const assetIds = ['asset-vs-a', 'asset-vs-b', 'asset-vs-c', 'asset-vs-d']
       for (const aid of assetIds) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await runWithTenant(TENANT, () =>
           service.createRecognition({
             taskType: 'product_recognition',
@@ -129,7 +129,7 @@ describe('ImageRecognitionService Simulator', () => {
     it('visualSearch 带 minSimilarity 过滤低分结果', async () => {
       const assetIds = ['asset-vs-f1', 'asset-vs-f2', 'asset-vs-f3']
       for (const aid of assetIds) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await runWithTenant(TENANT, () =>
           service.createRecognition({
             taskType: 'product_recognition',
@@ -165,7 +165,7 @@ describe('ImageRecognitionService Simulator', () => {
     it('高阈值下重复检测返回较少结果', async () => {
       const aids = ['asset-dup-a', 'asset-dup-b', 'asset-dup-c']
       for (const aid of aids) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await runWithTenant(TENANT, () =>
           service.createRecognition({ taskType: 'product_recognition', sourceAssetId: aid }),
         )
@@ -283,7 +283,7 @@ describe('ImageRecognitionService Simulator', () => {
 
     it('创建多个任务后统计累积', async () => {
       for (let i = 0; i < 3; i++) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await runWithTenant(TENANT, () =>
           service.createRecognition({
             taskType: 'product_recognition',
@@ -304,7 +304,7 @@ describe('ImageRecognitionService Simulator', () => {
     it('不同租户统计隔离', async () => {
       // tenant1 创建 2 个
       for (let i = 0; i < 2; i++) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await runWithTenant(TENANT, () =>
           service.createRecognition({
             taskType: 'product_recognition',
@@ -358,7 +358,7 @@ describe('ImageRecognitionService Simulator', () => {
     it('多次 duplicate 检测后 stats 的 duplicatesDetected 累积', async () => {
       const aids = ['asset-dup-c1', 'asset-dup-c2', 'asset-dup-c3', 'asset-dup-c4']
       for (const aid of aids) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await runWithTenant(TENANT, () =>
           service.createRecognition({ taskType: 'product_recognition', sourceAssetId: aid }),
         )

@@ -20658,6 +20658,13 @@ function StatCard({ label, value, trend, icon, variant, tone, accent: accentProp
 
 // src/components/KpiSummaryCard.tsx
 import { jsx as jsx80, jsxs as jsxs77 } from "react/jsx-runtime";
+var STATCARD_VARIANT_MAP = {
+  default: "default",
+  success: "success",
+  warning: "warning",
+  danger: "error",
+  info: "info"
+};
 var COLUMN_MAP = {
   1: "repeat(1, minmax(0, 1fr))",
   2: "repeat(2, minmax(0, 1fr))",
@@ -20715,7 +20722,7 @@ function KpiSummaryCard({
                 value: item.value,
                 trend: item.trend,
                 helper: item.helper,
-                variant: item.variant
+                variant: item.variant ? STATCARD_VARIANT_MAP[item.variant] : void 0
               },
               `${item.label}-${index}`
             ))
@@ -22169,8 +22176,7 @@ function ScrollArea({
     // Firefox
     msOverflowStyle: "none",
     // IE/Edge
-    // Hide native scrollbar in WebKit
-    ...{},
+    // 注：WebKit 隐藏原生滚动条需通过 ::-webkit-scrollbar 伪元素实现，无法在行内 style 中表达
     position: "relative"
   };
   const trackStyle = {
@@ -23916,8 +23922,8 @@ function joinRuntimeScopeSummary(parts, _opts) {
 function useRuntimePresetSelection(presets, defaultKey) {
   const [selectedAction, setSelectedAction] = React57.useState(defaultKey ?? "");
   const activePreset = React57.useMemo(() => {
-    if (!presets || !Array.isArray(presets)) return presets ?? null;
-    return presets.find((p) => p?.key === selectedAction) ?? presets?.[0] ?? null;
+    if (!presets || !Array.isArray(presets)) return null;
+    return presets.find((p) => p.key === selectedAction) ?? presets[0] ?? null;
   }, [presets, selectedAction]);
   return {
     selectedAction,
@@ -50603,7 +50609,7 @@ function ParamInput({
                 style: { accentColor: "#3b82f6" }
               }
             ),
-            /* @__PURE__ */ jsx194("span", { style: { fontSize: 12, color: "#94a3b8" }, children: Boolean(currentVal) ? "\u5DF2\u542F\u7528" : "\u672A\u542F\u7528" })
+            /* @__PURE__ */ jsx194("span", { style: { fontSize: 12, color: "#94a3b8" }, children: currentVal ? "\u5DF2\u542F\u7528" : "\u672A\u542F\u7528" })
           ]
         }
       );

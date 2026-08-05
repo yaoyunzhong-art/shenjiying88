@@ -163,7 +163,7 @@ export class TenantConfigService implements OnModuleInit {
       }
     } catch (err) {
       // 预热失败不阻塞启动, 仅记录
-      // eslint-disable-next-line no-console
+       
       console.warn('[TenantConfigService] warm-up failed:', (err as Error).message)
     } finally {
       if (SHOULD_LOG_INIT_DEBUG) {

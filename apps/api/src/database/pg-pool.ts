@@ -36,7 +36,7 @@ export function getPgPool(): Pool | null {
   })
 
   poolInstance.on('error', (err: any) => {
-    // eslint-disable-next-line no-console
+     
     console.error('[pg-pool] unexpected error on idle client', err)
   })
 

@@ -118,7 +118,7 @@ describe(`${ROLES.FrontDesk} performance 角色测试`, () => {
 
     const result = ctrl.getCache({ key: 'pos:membership:gold' })
     assert.ok(result.value)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const val = result.value as any
     assert.equal(val.discount, 0.85)
   })

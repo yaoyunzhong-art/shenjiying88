@@ -101,7 +101,7 @@ export interface CashFlowReport {
   openingBalanceCents: number
   closingBalanceCents: number
   dailyFlows: CashFlowEntry[]
-  /** 现金流分类 */// eslint-disable-next-line @typescript-eslint/no-unused-vars
+  /** 现金流分类 */ 
   categoryBreakdown: Array<{
     category: string
     inflowCents: number

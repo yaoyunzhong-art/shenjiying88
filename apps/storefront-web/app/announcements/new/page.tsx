@@ -179,7 +179,7 @@ const FIELDS: FormPageField<Record<string, unknown>>[] = [
         },
       },
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         validate: (v: unknown, values?: Record<string, any>) => {
           if (!v || v === '' || !values?.effectiveDate) return null;
           const expiry = new Date(v as string);

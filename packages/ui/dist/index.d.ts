@@ -4099,7 +4099,7 @@ declare function joinRuntimeScopeSummary(parts: string[], _opts?: any): string;
 declare function useRuntimePresetSelection<T>(presets?: readonly T[] | T[], defaultKey?: string): {
     selectedAction: string;
     setSelectedAction: React__default.Dispatch<React__default.SetStateAction<string>>;
-    activePreset: any;
+    activePreset: NonNullable<T> | null;
 };
 declare function useRuntimePanelState<T = any>(defaultMessage?: string): {
     receipt: T | null;

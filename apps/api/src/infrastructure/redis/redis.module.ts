@@ -115,7 +115,7 @@ export const redisClientProvider: Provider = {
 
     client.on('error', (err: Error) => {
       // swallow error event; callers await commands that reject.
-      // eslint-disable-next-line no-console
+       
       console.warn(`[RedisModule] connection error: ${err.message}`)
     })
 

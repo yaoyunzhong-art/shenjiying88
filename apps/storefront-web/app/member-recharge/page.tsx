@@ -387,7 +387,7 @@ function Input({ placeholder, value, onChange, className }: {
 
 // Next.js Link (lazy re-export to avoid import conflict)
 function Link({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const NextLink = require('next/link').default;
   return <NextLink href={href} className={className}>{children}</NextLink>;
 }

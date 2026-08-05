@@ -92,7 +92,7 @@ function generateNotifications(count: number): Notification[] {
 
     return {
       id: `NOTIF-${String(i + 1).padStart(4, '0')}`,
-      title: title!, // eslint-disable-line @typescript-eslint/no-non-null-assertion
+      title: title!,  
       content: `这是${CATEGORY_LABELS[category]}的详细内容。请根据通知类型进行相应处理。${i % 3 === 0 ? '如需了解更多信息，请点击查看详情按钮。' : ''}`,
       category,
       priority,

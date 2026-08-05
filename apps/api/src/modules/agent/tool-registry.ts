@@ -243,7 +243,7 @@ export class ToolRegistry {
       if (!/^[\d+\-*/().\s]+$/.test(expr)) {
         throw new Error('Invalid expression (only digits and + - * / ( ) allowed)');
       }
-      // eslint-disable-next-line no-new-func
+       
       return Function(`"use strict"; return (${expr})`)();
     });
 

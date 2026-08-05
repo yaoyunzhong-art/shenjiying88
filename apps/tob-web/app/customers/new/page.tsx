@@ -54,7 +54,7 @@ const REGION_OPTIONS = [
   { value: '东北', label: '东北' },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+ 
 export interface NewCustomerForm extends Record<string, string> {
   companyName: string;
   contactName: string;

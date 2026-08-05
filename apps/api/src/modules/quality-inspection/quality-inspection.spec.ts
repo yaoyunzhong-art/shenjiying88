@@ -673,7 +673,7 @@ describe('QualityInspection — Module Integration (.spec.ts)', () => {
     })
 
     it('正例: 9 个路由端点均已注册', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const proto = QualityInspectionController.prototype as any
       const routes = [
         'createInspection',

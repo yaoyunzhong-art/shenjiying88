@@ -157,7 +157,7 @@ async function fetchRecentOrders(memberId: string): Promise<RecentOrder[]> {
     const client = createBusinessClient(getDefaultApiBaseUrl());
     const raw = await client.orders.list({ memberId, limit: 5 });
     if (Array.isArray(raw)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       return raw.map((order: any) => ({
         id: `${order.id ?? order.orderId ?? ''}`,
         orderNo: `${order.orderNo ?? ''}`,

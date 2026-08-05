@@ -28,7 +28,7 @@ function setup() {
   const hb = new AdaptiveHeartbeatService()
   const hw = new IoTHardwareService(esp32, mqtt, hb)
   const ota = new OTAFirmwareService()
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+   
   const validator = new (DeviceStateValidator as any)(ota)
   const woa = new (WorkOrderAutoAssignService as any)(validator)
   return { esp32, mqtt, hb, hw, ota, validator, woa }

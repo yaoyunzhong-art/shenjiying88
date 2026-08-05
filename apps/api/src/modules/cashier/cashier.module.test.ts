@@ -183,7 +183,7 @@ describe('CashierModule', () => {
  * 通过 Function.prototype.toString 解析构造函数参数名称列表。
  * 不依赖 any / ts-nocheck, 纯字符串解析。
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function getConstructorParamNames(ctor: new (...args: any[]) => unknown): string[] {
   const src = ctor.toString()
   const match = src.match(/constructor\s*\(([^)]*)\)/)

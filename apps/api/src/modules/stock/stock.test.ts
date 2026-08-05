@@ -9,7 +9,7 @@ import { StockTransaction, StockTransactionType } from './stock-transaction.enti
 
 // ─── 辅助：构建 mock QueryRunner / Manager ───
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function mockManager() {
   return {
     getRepository: vi.fn(),

@@ -69,7 +69,7 @@ async function fetchTransactions(memberId: string): Promise<TransactionRecord[]>
       headers: buildStorefrontScopeHeaders(scope) as Record<string, string>,
     });
     if (Array.isArray(raw)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       return raw.map((txn: any) => {
         const txnType: TransactionRecord['type'] =
           txn.type === 'recharge' || txn.type === 'payment' || txn.type === 'refund' || txn.type === 'withdraw'

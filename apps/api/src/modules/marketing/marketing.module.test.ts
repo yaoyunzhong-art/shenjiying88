@@ -87,7 +87,7 @@ describe('MarketingModule', () => {
 
     for (const p of providers) {
       assert.ok(p.cls, `${p.name} class is defined`)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const Ctor = p.cls as any
       let instance: unknown
       switch (p.name) {

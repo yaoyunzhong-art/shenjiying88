@@ -66,7 +66,7 @@ export default function StockDetailPage(): React.ReactElement {
   const toast = useToast();
 
   const itemId = typeof params.id === 'string' ? params.id : '';
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   const item = useMemo(() => MOCK_ITEMS[itemId] ?? null, [itemId]);
 
   const [showEdit, setShowEdit] = useState(false);

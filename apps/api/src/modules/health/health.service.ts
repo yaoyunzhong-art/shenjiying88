@@ -243,7 +243,7 @@ export class HealthService {
    */
   private getVersion(): string {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const pkg = require('../../../../package.json')
       return pkg.version ?? '0.0.0'
     } catch {

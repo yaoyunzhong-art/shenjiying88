@@ -161,7 +161,7 @@ export default function AgentDashboardClient({
     const controllers = running.map((s) => subscribeStream(s));
 
     const sessionKey = running.map((s) => s.id).join(',');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
 
     return () => {
       // cleanup: 取消所有 stream
@@ -172,7 +172,7 @@ export default function AgentDashboardClient({
       }
       void Promise.all(controllers);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [sessions.map((s) => `${s.id}:${s.status}`).join(','), deliveryMode, paused]);
 
   const stats = useMemo(() => {

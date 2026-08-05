@@ -148,7 +148,7 @@ describe('POST /ops-manual/export — exportManual', () => {
 
   it('未知格式回退到 markdown', async () => {
     const { controller } = createController()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const result = await controller.exportManual({ role: 'store_manager', format: 'unknown' as any })
     assert.equal(result.format, 'unknown')
     assert.ok(result.content.includes('#'))
