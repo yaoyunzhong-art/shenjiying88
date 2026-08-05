@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test'
+import { describe, it, beforeAll, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -359,7 +359,7 @@ function flagSuspiciousSettlement(settlementId: string): { flagged: boolean; set
 // ═══════════════════════════════════════════════════════════════
 
 describe('E2E-53: 联盟营销全链', () => {
-  before(() => {
+  beforeAll(() => {
     partnerDb.clear()
     settlementDb.clear()
     anomalyDb.clear()
@@ -367,7 +367,7 @@ describe('E2E-53: 联盟营销全链', () => {
     initUnlinkedOrders()
   })
 
-  after(() => {
+  afterAll(() => {
     partnerDb.clear()
     settlementDb.clear()
     anomalyDb.clear()

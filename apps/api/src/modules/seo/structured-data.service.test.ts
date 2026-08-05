@@ -1,7 +1,7 @@
 /**
  * structured-data.service.test.ts — 结构化数据生成器测试 (node:test)
  */
-import { describe, it } from 'node:test'
+import { describe, it } from 'vitest'
 import assert from 'node:assert/strict'
 import { StructuredDataService } from './structured-data.service'
 import type { StoreForStructuredData, EventForStructuredData } from './structured-data.service'

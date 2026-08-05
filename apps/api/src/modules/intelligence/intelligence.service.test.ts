@@ -13,7 +13,7 @@
  *   - 装修全景财务报告
  *   - 边界+反例
  */
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { IntelligenceService } from './intelligence.service'
 import { IntelligenceAiService } from './intelligence-ai.service'

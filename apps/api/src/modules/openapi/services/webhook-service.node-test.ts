@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { WebhookService } from './webhook.service'
 import { WebhookDispatcher, type DeliveryAttemptResult } from '../webhook-dispatcher'

@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach, mock } from 'node:test'
+import { describe, it, beforeEach, afterEach, vi } from 'vitest'
 /**
  * VoiceProcessingController 单元测试 (node:test)
  *
@@ -61,7 +61,7 @@ class VoiceProcessingController {
 function makeMockService(overrides: Record<string, any> = {}) {
   return {
     // TTS
-    createTtsTask: mock.fn(async (dto: any) => ({
+    createTtsTask: vi.fn(async (dto: any) => ({
       id: 'tts-mock-001',
       tenantId: 'tenant-A',
       text: dto.text,
@@ -78,20 +78,20 @@ function makeMockService(overrides: Record<string, any> = {}) {
       createdAt: '2026-06-28T09:00:00.000Z',
       updatedAt: '2026-06-28T09:00:00.000Z',
     })),
-    listTtsTasks: mock.fn(async (query: any) => [
+    listTtsTasks: vi.fn(async (query: any) => [
       { id: 'tts-mock-001', text: '你好', engine: 'mock-azure-tts', voiceId: 'zh-female-xiaoxian', status: 'completed', createdAt: '2026-06-28T09:00:00.000Z' },
     ]),
-    getTtsTask: mock.fn(async (id: string) => {
+    getTtsTask: vi.fn(async (id: string) => {
       if (id === 'non-existent') throw new Error('TTS task not found')
       return { id, text: '你好', engine: 'mock-azure-tts', voiceId: 'zh-female-xiaoxian', status: 'completed' }
     }),
-    cancelTtsTask: mock.fn(async (id: string) => {
+    cancelTtsTask: vi.fn(async (id: string) => {
       if (id === 'non-existent') throw new Error('TTS task not found')
       return { id, status: 'cancelled' }
     }),
 
     // STT
-    createSttTask: mock.fn(async (dto: any) => ({
+    createSttTask: vi.fn(async (dto: any) => ({
       id: 'stt-mock-001',
       tenantId: 'tenant-A',
       sourceAssetId: dto.sourceAssetId,
@@ -103,27 +103,27 @@ function makeMockService(overrides: Record<string, any> = {}) {
       createdAt: '2026-06-28T09:00:00.000Z',
       updatedAt: '2026-06-28T09:00:00.000Z',
     })),
-    listSttTasks: mock.fn(async (query: any) => [
+    listSttTasks: vi.fn(async (query: any) => [
       { id: 'stt-mock-001', sourceAssetId: 'asset-001', filename: 'recording.wav', status: 'completed', createdAt: '2026-06-28T09:00:00.000Z' },
     ]),
-    getSttTask: mock.fn(async (id: string) => {
+    getSttTask: vi.fn(async (id: string) => {
       if (id === 'non-existent-stt') throw new Error('STT task not found')
       return { id, sourceAssetId: 'asset-001', status: 'completed', fullText: '你好世界' }
     }),
-    listSttSegments: mock.fn(async (taskId: string) => {
+    listSttSegments: vi.fn(async (taskId: string) => {
       if (taskId === 'empty-task') return []
       return [
         { id: 'seg-001', taskId, speakerId: 'speaker-1', startMs: 0, endMs: 1200, text: '你好', confidence: 0.95 },
         { id: 'seg-002', taskId, speakerId: 'speaker-1', startMs: 1200, endMs: 2500, text: '世界', confidence: 0.92 },
       ]
     }),
-    cancelSttTask: mock.fn(async (id: string) => {
+    cancelSttTask: vi.fn(async (id: string) => {
       if (id === 'non-existent-stt') throw new Error('STT task not found')
       return { id, status: 'cancelled' }
     }),
 
     // Voice Clone
-    cloneVoice: mock.fn(async (dto: any) => ({
+    cloneVoice: vi.fn(async (dto: any) => ({
       id: 'vc-mock-001',
       tenantId: 'tenant-A',
       name: dto.name,
@@ -136,15 +136,15 @@ function makeMockService(overrides: Record<string, any> = {}) {
       createdAt: '2026-06-28T09:00:00.000Z',
       updatedAt: '2026-06-28T09:00:00.000Z',
     })),
-    listVoiceClones: mock.fn(async () => [
+    listVoiceClones: vi.fn(async () => [
       { id: 'vc-mock-001', name: '我的声音克隆', engine: 'mock-minimax-voice', status: 'ready', similarityScore: 0.87 },
     ]),
-    deleteVoiceClone: mock.fn(async (id: string) => {
+    deleteVoiceClone: vi.fn(async (id: string) => {
       if (id === 'non-existent-clone') throw new Error('Voice clone not found')
     }),
 
     // Voiceprint
-    enrollVoiceprint: mock.fn(async (dto: any) => ({
+    enrollVoiceprint: vi.fn(async (dto: any) => ({
       id: 'vp-mock-001',
       tenantId: 'tenant-A',
       speakerName: dto.speakerName,
@@ -156,11 +156,11 @@ function makeMockService(overrides: Record<string, any> = {}) {
       createdAt: '2026-06-28T09:00:00.000Z',
       updatedAt: '2026-06-28T09:00:00.000Z',
     })),
-    listVoiceprints: mock.fn(async () => [
+    listVoiceprints: vi.fn(async () => [
       { id: 'vp-mock-001', speakerName: '张三', engine: 'mock-azure-stt', status: 'active' },
       { id: 'vp-mock-002', speakerName: '李四', engine: 'mock-whisper', status: 'enrolled' },
     ]),
-    identifySpeakers: mock.fn(async (dto: any) => {
+    identifySpeakers: vi.fn(async (dto: any) => {
       if (dto.segmentIds.length === 0) return []
       return [
         { voiceprintId: 'vp-mock-001', speakerName: '张三', similarity: 0.92, distance: 0.08 },
@@ -168,15 +168,15 @@ function makeMockService(overrides: Record<string, any> = {}) {
     }),
 
     // Engines & Voices
-    listTtsEngines: mock.fn(() => [
+    listTtsEngines: vi.fn(() => [
       { type: 'mock-azure-tts', displayName: 'Azure TTS (Neural)', freeQuotaPerMonth: 500000, unitPricePerCharCny: 0.000016 },
       { type: 'mock-google-tts', displayName: 'Google Cloud TTS', freeQuotaPerMonth: 4000000, unitPricePerCharCny: 0.000016 },
     ]),
-    listSttEngines: mock.fn(() => [
+    listSttEngines: vi.fn(() => [
       { type: 'mock-azure-stt', displayName: 'Azure Speech to Text', freeHoursPerMonth: 5, unitPricePerHourCny: 8 },
       { type: 'mock-whisper', displayName: 'OpenAI Whisper', freeHoursPerMonth: Infinity, unitPricePerHourCny: 0 },
     ]),
-    listVoices: mock.fn((engine?: string) => {
+    listVoices: vi.fn((engine?: string) => {
       const all = [
         { id: 'zh-female-xiaoxian', displayName: '晓娴', gender: 'female', language: 'zh-CN', engine: 'mock-azure-tts' },
         { id: 'zh-male-yunxi', displayName: '云希', gender: 'male', language: 'zh-CN', engine: 'mock-azure-tts' },
@@ -187,7 +187,7 @@ function makeMockService(overrides: Record<string, any> = {}) {
     }),
 
     // Stats
-    getVoiceStats: mock.fn(async () => ({
+    getVoiceStats: vi.fn(async () => ({
       totalTtsTasks: 10,
       totalSttTasks: 5,
       totalChars: 5000,
@@ -251,7 +251,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('returns total 0 when no TTS tasks exist', async () => {
       const service = makeMockService({
-        listTtsTasks: mock.fn(async () => []),
+        listTtsTasks: vi.fn(async () => []),
       })
       const ctrl = new VoiceProcessingController(service)
       const result = await ctrl.listTts({})
@@ -261,7 +261,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('filters by status when provided', async () => {
       const service = makeMockService({
-        listTtsTasks: mock.fn(async (query: any) => {
+        listTtsTasks: vi.fn(async (query: any) => {
           if (query.status === 'completed') return [{ id: 'tts-001', status: 'completed' }]
           return []
         }),
@@ -353,7 +353,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('returns empty list when no STT tasks', async () => {
       const service = makeMockService({
-        listSttTasks: mock.fn(async () => []),
+        listSttTasks: vi.fn(async () => []),
       })
       const ctrl = new VoiceProcessingController(service)
       const result = await ctrl.listStt({})
@@ -449,7 +449,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('returns empty array when no clones', async () => {
       const service = makeMockService({
-        listVoiceClones: mock.fn(async () => []),
+        listVoiceClones: vi.fn(async () => []),
       })
       const ctrl = new VoiceProcessingController(service)
       const result = await ctrl.listClones()
@@ -513,7 +513,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('returns empty when no voiceprints', async () => {
       const service = makeMockService({
-        listVoiceprints: mock.fn(async () => []),
+        listVoiceprints: vi.fn(async () => []),
       })
       const ctrl = new VoiceProcessingController(service)
       const result = await ctrl.listVoiceprints()
@@ -536,7 +536,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('returns empty result with no matching candidates', async () => {
       const service = makeMockService({
-        identifySpeakers: mock.fn(async () => []),
+        identifySpeakers: vi.fn(async () => []),
       })
       const ctrl = new VoiceProcessingController(service)
       const result = await ctrl.identify({
@@ -605,7 +605,7 @@ describe('VoiceProcessingController (Phase 102)', () => {
 
     it('returns zero stats when no activity', async () => {
       const service = makeMockService({
-        getVoiceStats: mock.fn(async () => ({
+        getVoiceStats: vi.fn(async () => ({
           totalTtsTasks: 0,
           totalSttTasks: 0,
           totalChars: 0,

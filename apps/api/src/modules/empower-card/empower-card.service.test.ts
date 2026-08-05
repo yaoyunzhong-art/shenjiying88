@@ -4,7 +4,7 @@
  * 使用降级内存模式测试（不依赖 PostgreSQL）
  */
 
-import { describe, it } from 'node:test'
+import { describe, it, beforeAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 // 清除环境变量使其走内存降级模式
@@ -12,10 +12,12 @@ process.env.POSTGRES_URL = ''
 
 let service: any
 
-describe('EmpowerCardService (降级·内存模式)', async () => {
-  // @ts-expect-error: node:test ESM 需要 .ts 扩展名
-  const { EmpowerCardService } = await import('./empower-card.service.ts')
-  service = new EmpowerCardService() as any
+describe('EmpowerCardService (降级·内存模式)', () => {
+  beforeAll(async () => {
+    // @ts-expect-error: ESM 需要 .ts 扩展名
+    const { EmpowerCardService } = await import('./empower-card.service.ts')
+    service = new EmpowerCardService() as any
+  })
 
   // 先植入几条数据
   let card1: any

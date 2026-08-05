@@ -5,14 +5,14 @@
  * mock:  无pg pool → 自动降级mock
  * 禁止:  as any · skip · only
  */
-import { describe, it, before, after } from 'node:test'
+import { describe, it, beforeAll, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 import { VenueDataService } from './venue-data.service'
 
 describe('VenueDataService', () => {
   let svc: VenueDataService
 
-  before(() => {
+  beforeAll(() => {
     // 确保无PG URL → 自动降级
     delete process.env.POSTGRES_URL
     svc = new VenueDataService()

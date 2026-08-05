@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test'
+import { describe, it, beforeAll, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -101,12 +101,12 @@ describe('E2E-51: 门店管理全链', () => {
     closingTime: '22:00',
   }
 
-  before(() => {
+  beforeAll(() => {
     // 清理测试数据
     storeDb.clear()
   })
 
-  after(() => {
+  afterAll(() => {
     storeDb.clear()
   })
 

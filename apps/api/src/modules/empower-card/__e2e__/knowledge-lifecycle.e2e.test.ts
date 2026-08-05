@@ -9,7 +9,7 @@
  * 使用 node:test 框架, 纯源码分析验证服务层逻辑.
  */
 
-import { describe, it, before } from 'node:test'
+import { describe, it, beforeAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -38,13 +38,12 @@ interface Entity {
   updatedAt: string
 }
 
-function createService() {
+async function createService() {
   // 确保降级到内存模式
   const origEnv = process.env.POSTGRES_URL
   delete process.env.POSTGRES_URL
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { EmpowerCardService } = require('../empower-card.service.ts')
+  const { EmpowerCardService } = await import('../empower-card.service.ts')
   const svc = new EmpowerCardService()
 
   // 恢复环境
@@ -90,9 +89,9 @@ function createService() {
 //  链路 1: 知识注入
 // ──────────────────────────────────────────────────
 
-describe('E2E: 知识注入链路', async () => {
-  before(async () => {
-    service = createService()
+describe('E2E: 知识注入链路' () => {
+  beforeAll(async () => {
+    service = await createService()
   })
 
   it('[正例] batchImport 应批量注入卡片并返回计数', async () => {
@@ -175,9 +174,9 @@ describe('E2E: 知识注入链路', async () => {
 //  链路 2: 老化退化 (Freshness Decay)
 // ──────────────────────────────────────────────────
 
-describe('E2E: 老化退化链路', async () => {
-  before(async () => {
-    service = createService()
+describe('E2E: 老化退化链路' () => {
+  beforeAll(async () => {
+    service = await createService()
     // 注入测试用卡片
     const result = await service.batchImport([
       {
@@ -258,9 +257,9 @@ WHERE freshness_score > 20
 //  链路 3: 引用更新 (Quote Count)
 // ──────────────────────────────────────────────────
 
-describe('E2E: 引用更新链路', async () => {
-  before(async () => {
-    service = createService()
+describe('E2E: 引用更新链路' () => {
+  beforeAll(async () => {
+    service = await createService()
     // 注入测试卡片
     const c1 = await service.create({
       tag: '运营',
@@ -342,9 +341,9 @@ describe('E2E: 引用更新链路', async () => {
 //  跨链路整合验证
 // ──────────────────────────────────────────────────
 
-describe('E2E: 跨链路整合验证', async () => {
-  before(async () => {
-    service = createService()
+describe('E2E: 跨链路整合验证' () => {
+  beforeAll(async () => {
+    service = await createService()
   })
 
   it('[正例] 完整生命周期: 注入 → 引用 → 退化 → 验证', async () => {

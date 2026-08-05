@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { UsageService } from './usage.service'
 import { RateLimiter } from '../rate-limiter'

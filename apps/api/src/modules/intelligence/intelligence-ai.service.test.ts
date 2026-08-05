@@ -6,14 +6,14 @@
  * 禁止:  as any · skip · only
  * mock: 无外部依赖
  */
-import { describe, it, before } from 'node:test'
+import { describe, it, beforeAll } from 'vitest'
 import assert from 'node:assert/strict'
 import { IntelligenceAiService } from './intelligence-ai.service'
 
 describe('IntelligenceAiService', () => {
   let svc: IntelligenceAiService
 
-  before(() => { svc = new IntelligenceAiService() })
+  beforeAll(() => { svc = new IntelligenceAiService() })
 
   // ─── 定价建议 (generatePricingAdvice) ─────────
 

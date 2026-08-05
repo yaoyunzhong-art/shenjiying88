@@ -1,4 +1,4 @@
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { SignValidator } from './sign-validator'
 import type { SignedRequest } from './openapi.entity'

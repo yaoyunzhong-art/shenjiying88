@@ -2,7 +2,7 @@
  * geo-search.service.test.ts — GEO搜索排名引擎测试 (node:test)
  * 覆盖: 搜索排名/去重/距离计算/GeoIP/空结果/边界
  */
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { SeoService } from './seo.service'
 import { GeoSearchService } from './geo-search.service'

@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test'
+import { describe, it, beforeAll, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -144,7 +144,7 @@ describe('E2E-56: 排班管理全链', () => {
     { id: 'EMP-056-003', name: '王五(排班E2E)' },
   ]
 
-  before(() => {
+  beforeAll(() => {
     shiftDb.clear()
     idCounter = 0
 
@@ -185,7 +185,7 @@ describe('E2E-56: 排班管理全链', () => {
     })
   })
 
-  after(() => {
+  afterAll(() => {
     shiftDb.clear()
   })
 

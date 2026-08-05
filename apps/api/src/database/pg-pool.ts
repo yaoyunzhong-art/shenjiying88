@@ -12,7 +12,6 @@
  *   const pool = getPgPool()
  *   const result = await pool.query('SELECT 1')
  */
-// @ts-ignore - pg types not installed
 import { Pool } from 'pg'
 
 let poolInstance: Pool | null = null

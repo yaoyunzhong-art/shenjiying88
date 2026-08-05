@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test'
+import { describe, it, beforeAll, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -153,11 +153,11 @@ const testCompetitorD: CreateCompetitorData = {
 // 测试主体
 // ═══════════════════════════════════════════════════════════════
 describe('E2E-52: 竞品跟踪全链', () => {
-  before(() => {
+  beforeAll(() => {
     competitorDb.clear()
   })
 
-  after(() => {
+  afterAll(() => {
     competitorDb.clear()
   })
 

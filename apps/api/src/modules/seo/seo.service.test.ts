@@ -4,7 +4,7 @@
  * 禁止: as any / describe.skip / it.only
  * 隔离: beforeEach 重置
  */
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { SeoService } from './seo.service'
 

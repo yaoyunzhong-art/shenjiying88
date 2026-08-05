@@ -1,4 +1,4 @@
-import { describe, it, before } from 'node:test'
+import { describe, it, beforeAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -276,7 +276,7 @@ describe('cross-module-e2e-57-giftcard', () => {
   const FUTURE = '2027-12-31T23:59:59Z'
   const PAST = '2020-01-01T00:00:00Z'
 
-  before(() => {
+  beforeAll(() => {
     svc = new GiftCardService()
   })
 

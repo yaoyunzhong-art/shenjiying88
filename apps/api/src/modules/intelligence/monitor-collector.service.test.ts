@@ -12,7 +12,7 @@
  *   - 增量/全量模式
  *   - 边界：空城市、无告警场景
  */
-import { describe, it, beforeEach } from 'node:test'
+import { describe, it, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { MonitorCollectorService } from './monitor-collector.service'
 import type { CompetitorAlert, MonitorScanResult } from './intelligence.entity'

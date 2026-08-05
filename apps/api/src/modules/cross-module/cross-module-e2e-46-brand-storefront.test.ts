@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test'
+import { describe, it, beforeAll, afterAll } from 'vitest'
 import assert from 'node:assert/strict'
 
 /**
@@ -24,11 +24,11 @@ describe('E2E-46: 品牌运营+商城全链', () => {
     { id: 'prod-46-2', campaignId: 'campaign-e2e-46', title: '联名徽章', price: 18, sold: 0 },
   ]
 
-  before(() => {
+  beforeAll(() => {
     brandCampaign.status = 'draft'
   })
 
-  after(() => {
+  afterAll(() => {
     brandCampaign.status = null
   })
 

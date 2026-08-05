@@ -1,4 +1,4 @@
-import { describe, it, before, beforeEach } from 'node:test'
+import { describe, it, beforeAll, beforeEach } from 'vitest'
 import assert from 'node:assert/strict'
 import { KeyGenerator } from './key-generator'
 import { APIKeyAdapter } from './datasources/api-key.adapter'

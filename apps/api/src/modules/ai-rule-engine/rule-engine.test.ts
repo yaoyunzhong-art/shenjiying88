@@ -7,7 +7,7 @@
  * - 三件套覆盖(正例+反例+边界)
  * - beforeEach重置
  */
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach } from 'vitest';
 import assert from 'node:assert';
 import {
   evaluateRule, evaluateRuleChain, getBestMatch,
