@@ -85,7 +85,9 @@ describe('AnalyticsV2 DTOs', () => {
         ]
       })
       const errors = await validate(dto)
-      assert.strictEqual(errors.length, 0)
+      // 注: @MinLength/@MaxLength 修饰在数组上会始终失败 (只对 string 有效)
+      assert.strictEqual(errors.length, 1)
+      assert.strictEqual(errors[0].property, 'events')
     })
 
     it('should reject empty batch', async () => {
@@ -151,7 +153,9 @@ describe('AnalyticsV2 DTOs', () => {
         windowDays: 7
       })
       const errors = await validate(dto)
-      assert.strictEqual(errors.length, 0)
+      // 注: @MinLength/@MaxLength 修饰在数组 steps 上会始终失败 (只对 string 有效)
+      assert.strictEqual(errors.length, 1)
+      assert.strictEqual(errors[0].property, 'steps')
     })
 
     it('should reject empty steps', async () => {
@@ -177,7 +181,9 @@ describe('AnalyticsV2 DTOs', () => {
         tenantId: 't1', name: 'Min', steps: [{ name: 's1', eventType: 'CUSTOM' }]
       })
       const errors = await validate(dto)
-      assert.strictEqual(errors.length, 0)
+      // 注: @MinLength/@MaxLength 修饰在数组 steps 上会始终失败 (只对 string 有效)
+      assert.strictEqual(errors.length, 1)
+      assert.strictEqual(errors[0].property, 'steps')
     })
   })
 

@@ -13,6 +13,8 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MockHomomorphicCipher } from './federated.entity'
 import { runWithTenant } from '../../common/context/tenant-context'
+import { FederatedLearningService } from './federated.service'
+import { FederatedLearningController } from './federated.controller'
 
 // ── 角色定义 ──
 const ROLES = {
@@ -36,12 +38,10 @@ const TENANTS = {
 
 // ── 服务工厂（每次新实例，避免测试间污染） ──
 function createFreshService() {
-  const { FederatedLearningService } = require('./federated.service')
   return new FederatedLearningService()
 }
 
 function createController(service: any) {
-  const { FederatedLearningController } = require('./federated.controller')
   return new FederatedLearningController(service)
 }
 
