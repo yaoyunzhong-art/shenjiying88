@@ -20,6 +20,7 @@ import { RealtimeController } from './realtime.controller'
 import { RealtimeService } from './realtime.service'
 import { CollaborativeEditor, PresenceService, ConflictResolver, CollabService } from './collab.service'
 import { CRDTDocument, WebSocketSessionManager, MultiDeviceSyncService } from './crdt.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 async function buildApp() {
   const collabEditor = new CollaborativeEditor()
@@ -43,7 +44,10 @@ async function buildApp() {
       { provide: MultiDeviceSyncService, useValue: syncService },
       { provide: RealtimeService, useValue: realtimeService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   await app.init()

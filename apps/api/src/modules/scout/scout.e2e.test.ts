@@ -32,6 +32,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { ScoutService } from './scout.service'
 import { ScoutController } from './scout.controller'
 
@@ -54,7 +55,10 @@ async function buildApp() {
     providers: [
       { provide: ScoutService, useValue: scoutService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -67,8 +71,8 @@ it('e2e: GET /scout/cities returns empty array', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/cities')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -79,7 +83,7 @@ it('e2e: GET /scout/cities?tier=1 applies tier filter', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/cities').query({ tier: '1' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -91,8 +95,8 @@ it('e2e: GET /scout/cities?tier=invalid gracefully handles bad tier value', asyn
     const res = await request(app.getHttpServer()).get('/scout/cities').query({ tier: 'not-a-tier' })
     // Should still return 200 with empty array — tier filter passes invalid value to raw SQL
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -103,7 +107,7 @@ it('e2e: GET /scout/venues returns venue list', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -114,7 +118,7 @@ it('e2e: GET /scout/venues?city=Beijing filters by city', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues').query({ city: 'Beijing', limit: '10', offset: '0' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -125,7 +129,7 @@ it('e2e: GET /scout/venues?category=VR filters by category', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues').query({ category: 'VR' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -136,7 +140,7 @@ it('e2e: GET /scout/venues with limit=5 and offset=2 applies pagination', async 
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues').query({ limit: '5', offset: '2' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -147,7 +151,7 @@ it('e2e: GET /scout/venues/search?q= searches venues', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/search').query({ q: 'arcade' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -158,7 +162,7 @@ it('e2e: GET /scout/venues/search with empty q returns empty result', async () =
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/search').query({ q: '' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -169,7 +173,7 @@ it('e2e: GET /scout/venues/search with special characters in q is handled', asyn
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/search').query({ q: '%_test_%' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -180,7 +184,7 @@ it('e2e: GET /scout/venues/:id/prices returns prices for venue', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/1/prices')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -192,7 +196,7 @@ it('e2e: GET /scout/venues/:id/prices with non-numeric id returns empty', async 
     const res = await request(app.getHttpServer()).get('/scout/venues/abc/prices')
     // Non-numeric id becomes NaN, which should still return empty array
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -203,7 +207,7 @@ it('e2e: GET /scout/venues/:id/devices returns device list', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/42/devices')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -214,7 +218,7 @@ it('e2e: GET /scout/venues/:id/membership returns membership data', async () => 
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/1/membership')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -225,7 +229,7 @@ it('e2e: GET /scout/venues/:id/reviews returns reviews', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/7/reviews')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -236,7 +240,7 @@ it('e2e: GET /scout/venues/:id/reviews?sentiment=positive filters by sentiment',
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/7/reviews').query({ sentiment: 'positive' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -247,7 +251,7 @@ it('e2e: GET /scout/venues/:id/reviews?sentiment=negative filters by negative se
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/7/reviews').query({ sentiment: 'negative' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -258,7 +262,7 @@ it('e2e: GET /scout/venues/:id/activities returns activities data', async () => 
   try {
     const res = await request(app.getHttpServer()).get('/scout/venues/3/activities')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -269,9 +273,9 @@ it('e2e: POST /scout/compare with empty venueIds returns empty comparison', asyn
   try {
     const res = await request(app.getHttpServer()).post('/scout/compare').send({ venueIds: [] })
     assert.equal(res.statusCode, 201)
-    assert.ok(res.body)
-    assert.ok(Array.isArray(res.body.prices))
-    assert.equal(res.body.summary.totalVenues, 0)
+    assert.ok(res.body.data)
+    assert.ok(Array.isArray(res.body.data.prices))
+    assert.equal(res.body.data.summary.totalVenues, 0)
   } finally {
     await app.close()
   }
@@ -282,13 +286,13 @@ it('e2e: POST /scout/compare with venueIds returns comparison structure', async 
   try {
     const res = await request(app.getHttpServer()).post('/scout/compare').send({ venueIds: [1, 2, 3] })
     assert.equal(res.statusCode, 201)
-    assert.ok(res.body)
-    assert.ok(Array.isArray(res.body.prices))
-    assert.ok(Array.isArray(res.body.devices))
-    assert.ok(Array.isArray(res.body.memberships))
-    assert.equal(res.body.summary.totalVenues, 3)
-    assert.equal(typeof res.body.summary.avgPriceItems, 'number')
-    assert.equal(typeof res.body.summary.avgDevices, 'number')
+    assert.ok(res.body.data)
+    assert.ok(Array.isArray(res.body.data.prices))
+    assert.ok(Array.isArray(res.body.data.devices))
+    assert.ok(Array.isArray(res.body.data.memberships))
+    assert.equal(res.body.data.summary.totalVenues, 3)
+    assert.equal(typeof res.body.data.summary.avgPriceItems, 'number')
+    assert.equal(typeof res.body.data.summary.avgDevices, 'number')
   } finally {
     await app.close()
   }
@@ -299,7 +303,7 @@ it('e2e: POST /scout/compare/summary returns summary only', async () => {
   try {
     const res = await request(app.getHttpServer()).post('/scout/compare/summary').send({ venueIds: [1, 2] })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.totalVenues, 2)
+    assert.equal(res.body.data.totalVenues, 2)
   } finally {
     await app.close()
   }
@@ -310,7 +314,7 @@ it('e2e: POST /scout/compare/summary with empty venueIds returns null summary', 
   try {
     const res = await request(app.getHttpServer()).post('/scout/compare/summary').send({ venueIds: [] })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body, null)
+    assert.equal(res.body.data, null)
   } finally {
     await app.close()
   }
@@ -321,9 +325,9 @@ it('e2e: POST /scout/snapshot with city returns snapshot data', async () => {
   try {
     const res = await request(app.getHttpServer()).post('/scout/snapshot').send({ city: 'Beijing' })
     assert.equal(res.statusCode, 201)
-    assert.ok(res.body)
-    assert.ok(Array.isArray(res.body.prices))
-    assert.equal(res.body.summary.totalVenues, 0)
+    assert.ok(res.body.data)
+    assert.ok(Array.isArray(res.body.data.prices))
+    assert.equal(res.body.data.summary.totalVenues, 0)
   } finally {
     await app.close()
   }
@@ -334,7 +338,7 @@ it('e2e: GET /scout/stats/region returns region stats structure', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/stats/region')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -345,7 +349,7 @@ it('e2e: GET /scout/stats/progress returns progress stats structure', async () =
   try {
     const res = await request(app.getHttpServer()).get('/scout/stats/progress')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -356,7 +360,7 @@ it('e2e: GET /scout/recent-updated returns recent updated venues', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/recent-updated')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -367,7 +371,7 @@ it('e2e: GET /scout/recent-updated?limit=5 applies limit parameter', async () =>
   try {
     const res = await request(app.getHttpServer()).get('/scout/recent-updated').query({ limit: '5' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -378,7 +382,7 @@ it('e2e: GET /scout/logs returns collection logs', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/logs')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }
@@ -389,7 +393,7 @@ it('e2e: GET /scout/logs?cityId=filter filters logs by city ID', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/scout/logs').query({ cityId: 'city-abc', limit: '10' })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
+    assert.ok(Array.isArray(res.body.data))
   } finally {
     await app.close()
   }

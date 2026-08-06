@@ -23,6 +23,7 @@ import {
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { VoiceProcessingService } from './voice-processing.service'
 import { runWithTenant } from '../../common/context/tenant-context'
 import type {
@@ -163,10 +164,17 @@ async function buildApp() {
     providers: [
       { provide: VoiceProcessingService, useValue: service },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
+  // Inject tenant context via ALS so service methods don't throw 401
+  app.use((_req: any, _res: any, next: any) => {
+    runWithTenant(TENANT_CTX, () => next())
+  })
   await app.init()
   return { app, service }
 }
@@ -189,16 +197,16 @@ it('voice e2e: TTS create + get returns completed task', async () => {
         voiceId: 'zh-female-xiaoxian',
       })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.id, res.body.id)
-    assert.equal(res.body.status, 'completed')
-    assert.equal(res.body.engine, 'mock-azure-tts')
-    assert.equal(res.body.voiceId, 'zh-female-xiaoxian')
-    assert.ok(res.body.audioDurationSec! > 0)
+    assert.equal(res.body.data.id, res.body.data.id)
+    assert.equal(res.body.data.status, 'completed')
+    assert.equal(res.body.data.engine, 'mock-azure-tts')
+    assert.equal(res.body.data.voiceId, 'zh-female-xiaoxian')
+    assert.ok(res.body.data.audioDurationSec! > 0)
 
     // get
-    const res2 = await request(app.getHttpServer()).get(`/voice/tts/tasks/${res.body.id}`)
+    const res2 = await request(app.getHttpServer()).get(`/voice/tts/tasks/${res.body.data.id}`)
     assert.equal(res2.statusCode, 200)
-    assert.equal(res2.body.id, res.body.id)
+    assert.equal(res2.body.data.id, res.body.data.id)
   } finally {
     await app.close()
   }
@@ -218,10 +226,10 @@ it('voice e2e: TTS create with explicit engine + emotion', async () => {
         pitchAdjustment: 5,
       })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.engine, 'mock-aliyun-tts')
-    assert.equal(res.body.emotion, 'happy')
-    assert.equal(res.body.speedAdjustment, 10)
-    assert.equal(res.body.pitchAdjustment, 5)
+    assert.equal(res.body.data.engine, 'mock-aliyun-tts')
+    assert.equal(res.body.data.emotion, 'happy')
+    assert.equal(res.body.data.speedAdjustment, 10)
+    assert.equal(res.body.data.pitchAdjustment, 5)
   } finally {
     await app.close()
   }
@@ -238,8 +246,8 @@ it('voice e2e: TTS list returns tasks', async () => {
 
     const res = await request(app.getHttpServer()).get('/voice/tts/tasks')
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.total, 2)
-    assert.equal(res.body.items.length, 2)
+    assert.equal(res.body.data.total, 2)
+    assert.equal(res.body.data.items.length, 2)
   } finally {
     await app.close()
   }
@@ -314,10 +322,10 @@ it('voice e2e: TTS cancel completed task returns 400', async () => {
   try {
     const createRes = await request(app.getHttpServer())
       .post('/voice/tts/tasks').send({ text: 'hello', voiceId: 'zh-female-xiaoxian' })
-    assert.equal(createRes.body.status, 'completed')
+    assert.equal(createRes.body.data.status, 'completed')
 
     const cancelRes = await request(app.getHttpServer())
-      .post(`/voice/tts/tasks/${createRes.body.id}/cancel`)
+      .post(`/voice/tts/tasks/${createRes.body.data.id}/cancel`)
     assert.equal(cancelRes.statusCode, 400)
   } finally {
     await app.close()
@@ -333,21 +341,21 @@ it('voice e2e: STT create + get + segments', async () => {
       .post('/voice/stt/tasks')
       .send({ sourceAssetId: 'asset-001' })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.status, 'completed')
-    assert.ok(res.body.fullText.length > 0)
-    assert.ok(res.body.speakerCount >= 1)
-    assert.ok(res.body.avgConfidence > 0)
+    assert.equal(res.body.data.status, 'completed')
+    assert.ok(res.body.data.fullText.length > 0)
+    assert.ok(res.body.data.speakerCount >= 1)
+    assert.ok(res.body.data.avgConfidence > 0)
 
     // get
-    const res2 = await request(app.getHttpServer()).get(`/voice/stt/tasks/${res.body.id}`)
+    const res2 = await request(app.getHttpServer()).get(`/voice/stt/tasks/${res.body.data.id}`)
     assert.equal(res2.statusCode, 200)
-    assert.equal(res2.body.id, res.body.id)
+    assert.equal(res2.body.data.id, res.body.data.id)
 
     // segments
-    const res3 = await request(app.getHttpServer()).get(`/voice/stt/tasks/${res.body.id}/segments`)
+    const res3 = await request(app.getHttpServer()).get(`/voice/stt/tasks/${res.body.data.id}/segments`)
     assert.equal(res3.statusCode, 200)
-    assert.ok(res3.body.total >= 1)
-    assert.ok(res3.body.items[0].text)
+    assert.ok(res3.body.data.total >= 1)
+    assert.ok(res3.body.data.items[0].text)
   } finally {
     await app.close()
   }
@@ -360,8 +368,8 @@ it('voice e2e: STT create with diarization returns multiple speakers', async () 
       .post('/voice/stt/tasks')
       .send({ sourceAssetId: 'asset-diar', enableDiarization: true })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.speakerCount, 2)
-    assert.ok(res.body.segmentCount >= 1)
+    assert.equal(res.body.data.speakerCount, 2)
+    assert.ok(res.body.data.segmentCount >= 1)
   } finally {
     await app.close()
   }
@@ -374,7 +382,7 @@ it('voice e2e: STT create with emotion recognition', async () => {
       .post('/voice/stt/tasks')
       .send({ sourceAssetId: 'asset-emotion', enableEmotionRecognition: true })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.status, 'completed')
+    assert.equal(res.body.data.status, 'completed')
   } finally {
     await app.close()
   }
@@ -390,7 +398,7 @@ it('voice e2e: STT list returns tasks', async () => {
 
     const res = await request(app.getHttpServer()).get('/voice/stt/tasks')
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.total, 2)
+    assert.equal(res.body.data.total, 2)
   } finally {
     await app.close()
   }
@@ -444,9 +452,9 @@ it('voice e2e: clone voice creates and returns ready clone', async () => {
         referenceDurationSec: 30,
       })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.name, 'e2e-voice')
-    assert.equal(res.body.status, 'ready')
-    assert.ok(res.body.similarityScore! > 0.8)
+    assert.equal(res.body.data.name, 'e2e-voice')
+    assert.equal(res.body.data.status, 'ready')
+    assert.ok(res.body.data.similarityScore! > 0.8)
   } finally {
     await app.close()
   }
@@ -501,9 +509,9 @@ it('voice e2e: list + delete clone', async () => {
 
     const listRes = await request(app.getHttpServer()).get('/voice/clones')
     assert.equal(listRes.statusCode, 200)
-    assert.ok(listRes.body.items.length >= 1)
+    assert.ok(listRes.body.data.items.length >= 1)
 
-    const deleteRes = await request(app.getHttpServer()).delete(`/voice/clones/${createRes.body.id}`)
+    const deleteRes = await request(app.getHttpServer()).delete(`/voice/clones/${createRes.body.data.id}`)
     assert.equal(deleteRes.statusCode, 204)
   } finally {
     await app.close()
@@ -522,13 +530,13 @@ it('voice e2e: enroll voiceprint + list', async () => {
         referenceAssetIds: ['ref-vp-1', 'ref-vp-2'],
       })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.speakerName, '陈总')
-    assert.equal(res.body.status, 'enrolled')
-    assert.ok(res.body.embedding.length > 0)
+    assert.equal(res.body.data.speakerName, '陈总')
+    assert.equal(res.body.data.status, 'enrolled')
+    assert.ok(res.body.data.embedding.length > 0)
 
     const listRes = await request(app.getHttpServer()).get('/voice/voiceprints')
     assert.equal(listRes.statusCode, 200)
-    assert.ok(listRes.body.items.length >= 1)
+    assert.ok(listRes.body.data.items.length >= 1)
   } finally {
     await app.close()
   }
@@ -557,9 +565,9 @@ it('voice e2e: identify speakers after enrollment', async () => {
 
     // Get segments
     const segRes = await request(app.getHttpServer())
-      .get(`/voice/stt/tasks/${sttRes.body.id}/segments`)
-    assert.ok(segRes.body.items.length >= 1)
-    const segmentId = segRes.body.items[0].id
+      .get(`/voice/stt/tasks/${sttRes.body.data.id}/segments`)
+    assert.ok(segRes.body.data.items.length >= 1)
+    const segmentId = segRes.body.data.items[0].id
 
     // Enroll a voiceprint
     const vpRes = await request(app.getHttpServer())
@@ -569,15 +577,15 @@ it('voice e2e: identify speakers after enrollment', async () => {
         referenceAssetIds: ['ref-ident-1'],
       })
     assert.equal(vpRes.statusCode, 201)
-    const vpId = vpRes.body.id
+    const vpId = vpRes.body.data.id
 
     // Identify
     const identRes = await request(app.getHttpServer())
       .post('/voice/voiceprints/identify')
       .send({ segmentIds: [segmentId], candidateVoiceprintIds: [vpId] })
     assert.equal(identRes.statusCode, 200)
-    assert.ok(identRes.body.items.length >= 1)
-    assert.equal(identRes.body.items[0].matches[0].voiceprintId, vpId)
+    assert.ok(identRes.body.data.items.length >= 1)
+    assert.equal(identRes.body.data.items[0].matches[0].voiceprintId, vpId)
   } finally {
     await app.close()
   }
@@ -590,8 +598,8 @@ it('voice e2e: list TTS engines returns metadata', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/voice/engines/tts')
     assert.equal(res.statusCode, 200)
-    assert.ok(res.body.items.length >= 6)
-    const azure = res.body.items.find((e: any) => e.type === 'mock-azure-tts')
+    assert.ok(res.body.data.items.length >= 6)
+    const azure = res.body.data.items.find((e: any) => e.type === 'mock-azure-tts')
     assert.ok(azure)
     assert.equal(azure.supportsEmotion, true)
   } finally {
@@ -604,8 +612,8 @@ it('voice e2e: list STT engines returns metadata', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/voice/engines/stt')
     assert.equal(res.statusCode, 200)
-    assert.ok(res.body.items.length >= 6)
-    const whisper = res.body.items.find((e: any) => e.type === 'mock-whisper')
+    assert.ok(res.body.data.items.length >= 6)
+    const whisper = res.body.data.items.find((e: any) => e.type === 'mock-whisper')
     assert.ok(whisper)
     assert.equal(whisper.supportsDiarization, false)
   } finally {
@@ -618,7 +626,7 @@ it('voice e2e: list voices returns all by default', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/voice/voices')
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.items.length, 6)
+    assert.equal(res.body.data.items.length, 6)
   } finally {
     await app.close()
   }
@@ -629,8 +637,8 @@ it('voice e2e: list voices filtered by engine', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/voice/voices?engine=mock-azure-tts')
     assert.equal(res.statusCode, 200)
-    assert.ok(res.body.items.length >= 3)
-    res.body.items.forEach((v: any) => {
+    assert.ok(res.body.data.items.length >= 3)
+    res.body.data.items.forEach((v: any) => {
       assert.equal(v.engine, 'mock-azure-tts')
     })
   } finally {
@@ -651,11 +659,11 @@ it('voice e2e: stats returns aggregated numbers', async () => {
 
     const res = await request(app.getHttpServer()).get('/voice/stats')
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.totalTtsTasks, 1)
-    assert.equal(res.body.totalSttTasks, 1)
-    assert.ok(res.body.totalChars > 0)
-    assert.ok(res.body.totalAudioSec > 0)
-    assert.ok(res.body.avgSttConfidence > 0)
+    assert.equal(res.body.data.totalTtsTasks, 1)
+    assert.equal(res.body.data.totalSttTasks, 1)
+    assert.ok(res.body.data.totalChars > 0)
+    assert.ok(res.body.data.totalAudioSec > 0)
+    assert.ok(res.body.data.avgSttConfidence > 0)
   } finally {
     await app.close()
   }
@@ -674,7 +682,7 @@ it('voice e2e: TTS tasks are isolated between tenants', async () => {
     // Now check list under same tenant - should see 1
     const r2 = await request(app.getHttpServer()).get('/voice/tts/tasks')
     assert.equal(r2.statusCode, 200)
-    assert.equal(r2.body.total, 1)
+    assert.equal(r2.body.data.total, 1)
 
     // List using a different tenant context via internal service call
     await runWithTenant({

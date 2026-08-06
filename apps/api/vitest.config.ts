@@ -17,7 +17,7 @@ export default defineConfig({
     forceExit: true,
     alias: {
       'pg': path.resolve(__dirname, 'src/__mocks__/pg.ts'),
-      '../../agent/tenant.guard': path.resolve(__dirname, 'src/__mocks__/tenant.guard.ts'),
+      [path.resolve(__dirname, 'src/agent/tenant.guard.ts')]: path.resolve(__dirname, 'src/__mocks__/tenant.guard.ts'),
     },
   },
   resolve: {

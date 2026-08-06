@@ -8,7 +8,7 @@ import {
   SecretKind,
   SecretProvider
 } from '@prisma/client'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, Optional } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import type { RequestTenantContext } from '../../tenant/tenant.types'
 import {
@@ -21,7 +21,7 @@ import {
   type GovernanceApprovalSnapshot,
   materializeGovernanceApproval
 } from '../governance-approval/governance-approval'
-import { TrustGovernanceService } from '..'
+import { TrustGovernanceService } from '../trust-governance/trust-governance.service'
 import type { FoundationGovernanceBaseline, FoundationModuleDescriptor } from '../foundation.types'
 
 interface LoginPolicyConfig {
@@ -171,7 +171,7 @@ interface SecretRegistrationInput {
 export class ConfigurationGovernanceService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly trustGovernanceService: TrustGovernanceService
+    @Optional() private readonly trustGovernanceService?: TrustGovernanceService
   ) {}
 
   private readonly configLayers: {
@@ -485,7 +485,7 @@ export class ConfigurationGovernanceService {
 
   async getGovernanceApprovalTimeline(approvalTicket: string, limit?: number): Promise<unknown> {
     const approval = await this.getGovernanceApprovalDetail(approvalTicket)
-    const audits = await this.trustGovernanceService.getAuditRecords({
+    const audits = await this.trustGovernanceService?.getAuditRecords({
       approvalTicket,
       limit: limit ?? 20
     })
@@ -507,7 +507,7 @@ export class ConfigurationGovernanceService {
     from?: string
     to?: string
   } = {}): Promise<unknown> {
-    return this.trustGovernanceService.getAuditRecords({
+    return this.trustGovernanceService?.getAuditRecords({
       ...filters,
       source: 'configuration-governance'
     })
@@ -524,7 +524,7 @@ export class ConfigurationGovernanceService {
     from?: string
     to?: string
   } = {}): Promise<unknown> {
-    return this.trustGovernanceService.summarizeAuditRecords({
+    return this.trustGovernanceService?.summarizeAuditRecords({
       ...filters,
       source: 'configuration-governance'
     })
@@ -2347,7 +2347,7 @@ export class ConfigurationGovernanceService {
       details: Record<string, unknown>
     }
   ) {
-    await this.trustGovernanceService.recordAudit(eventType, input.details, {
+    await this.trustGovernanceService?.recordAudit(eventType, input.details, {
       tenantId: input.tenantId,
       actorId: input.actorId,
       source: input.source ?? 'configuration-governance',

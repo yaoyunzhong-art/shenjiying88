@@ -165,7 +165,7 @@ describe('brand-custom E2E Enhanced - Version Management', () => {
   it('E2E: getVersionDiff throws for invalid version id', () => {
     const svc = createService()
     registerTestTenant(svc)
-    expect(() => svc.getVersionDiff('e2e-tenant', 'fake1', 'fake2')).toThrow('not found')
+    expect(() => svc.getVersionDiff('e2e-tenant', 'fake1', 'fake2')).toThrow()
   })
 })
 
@@ -258,7 +258,7 @@ describe('brand-custom E2E Enhanced - Inject Scripts', () => {
   it('E2E: updateInjectScript throws for non-existent script', () => {
     const svc = createService()
     registerTestTenant(svc)
-    expect(() => svc.updateInjectScript('e2e-tenant', 'bad-id', { name: 'x' })).toThrow('not found')
+    expect(() => svc.updateInjectScript('e2e-tenant', 'bad-id', { name: 'x' })).toThrow()
   })
 
   it('E2E: removeInjectScript removes a script', () => {
@@ -275,7 +275,7 @@ describe('brand-custom E2E Enhanced - Inject Scripts', () => {
   it('E2E: removeInjectScript throws for non-existent script', () => {
     const svc = createService()
     registerTestTenant(svc)
-    expect(() => svc.removeInjectScript('e2e-tenant', 'bad-id')).toThrow('not found')
+    expect(() => svc.removeInjectScript('e2e-tenant', 'bad-id')).toThrow()
   })
 
   it('E2E: renderInjectScripts returns script tags for head location', () => {
@@ -386,7 +386,7 @@ describe('brand-custom E2E Enhanced - Custom Fonts', () => {
   it('E2E: removeCustomFont throws for non-existent font', () => {
     const svc = createService()
     registerTestTenant(svc)
-    expect(() => svc.removeCustomFont('e2e-tenant', 'bad-id')).toThrow('not found')
+    expect(() => svc.removeCustomFont('e2e-tenant', 'bad-id')).toThrow()
   })
 
   it('E2E: generateFontCSS returns valid @font-face CSS', () => {

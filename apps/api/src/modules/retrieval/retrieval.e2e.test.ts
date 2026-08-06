@@ -20,6 +20,7 @@ import { ConfigModule } from '@nestjs/config'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { RetrievalService } from './retrieval.service'
 import { retrievalConfig } from './config/retrieval.config'
 import { QdrantClientWrapper } from './retrieval.client'
@@ -77,7 +78,10 @@ async function buildApp() {
       { provide: QdrantClientWrapper, useClass: QdrantClientWrapper },
       { provide: EmbeddingService, useClass: EmbeddingService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -92,12 +96,12 @@ it('e2e: POST /api/retrieval/query returns skeleton empty response', async () =>
       .post('/api/retrieval/query')
       .send({})
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body.results))
-    assert.equal(res.body.results.length, 0)
-    assert.equal(res.body.totalHits, 0)
-    assert.equal(res.body.latencyMs, 0)
-    assert.equal(res.body.cacheHit, false)
-    assert.deepStrictEqual(res.body.collections, ['code_chunks'])
+    assert.ok(Array.isArray(res.body.data.results))
+    assert.equal(res.body.data.results.length, 0)
+    assert.equal(res.body.data.totalHits, 0)
+    assert.ok(typeof res.body.data.latencyMs === 'number')
+    assert.equal(res.body.data.cacheHit, false)
+    assert.deepStrictEqual(res.body.data.collections, ['code_chunks'])
   } finally {
     await app.close()
   }
@@ -110,9 +114,9 @@ it('e2e: POST /api/retrieval/query/knowledge returns knowledge collection skelet
       .post('/api/retrieval/query/knowledge')
       .send({})
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body.results))
-    assert.equal(res.body.results.length, 0)
-    assert.deepStrictEqual(res.body.collections, ['knowledge_docs'])
+    assert.ok(Array.isArray(res.body.data.results))
+    assert.equal(res.body.data.results.length, 0)
+    assert.deepStrictEqual(res.body.data.collections, ['knowledge_docs'])
   } finally {
     await app.close()
   }
@@ -123,11 +127,11 @@ it('e2e: GET /api/retrieval/health returns component status', async () => {
   try {
     const res = await request(app.getHttpServer()).get('/api/retrieval/health')
     assert.equal(res.statusCode, 200)
-    assert.ok(['ok', 'degraded', 'unavailable'].includes(res.body.qdrant))
-    assert.ok(['ok', 'degraded', 'unavailable'].includes(res.body.embedder))
-    assert.equal(res.body.module, 'retrieval')
-    assert.equal(res.body.phase, 'phase-19')
-    assert.ok(typeof res.body.checkedAt === 'string')
+    assert.ok(['ok', 'degraded', 'unavailable'].includes(res.body.data.qdrant))
+    assert.ok(['ok', 'degraded', 'unavailable'].includes(res.body.data.embedder))
+    assert.equal(res.body.data.module, 'retrieval')
+    assert.equal(res.body.data.phase, 'phase-19')
+    assert.ok(typeof res.body.data.checkedAt === 'string')
   } finally {
     await app.close()
   }
@@ -137,7 +141,7 @@ it('e2e: health returned lastIndexAt is null when no index operation', async () 
   const { app } = await buildApp()
   try {
     const res = await request(app.getHttpServer()).get('/api/retrieval/health')
-    assert.equal(res.body.lastIndexAt, null)
+    assert.equal(res.body.data.lastIndexAt, null)
   } finally {
     await app.close()
   }
@@ -150,7 +154,7 @@ it('e2e: POST /api/retrieval/query with hybrid flag still returns skeleton', asy
       .post('/api/retrieval/query')
       .send({ hybrid: true })
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.totalHits, 0)
+    assert.equal(res.body.data.totalHits, 0)
   } finally {
     await app.close()
   }
@@ -163,7 +167,7 @@ it('e2e: POST /api/retrieval/query/knowledge returns 200 with empty results for 
       .post('/api/retrieval/query/knowledge')
       .send({ query: 'anything', topK: 100, threshold: 0.1 })
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.totalHits, 0)
+    assert.equal(res.body.data.totalHits, 0)
   } finally {
     await app.close()
   }

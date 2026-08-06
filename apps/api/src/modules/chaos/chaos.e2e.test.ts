@@ -17,6 +17,7 @@ import assert from 'node:assert/strict'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { ChaosEngineeringController } from './chaos-engineering.controller'
 import {
   ChaosExperimentService,
@@ -36,7 +37,10 @@ async function buildApp() {
       { provide: FaultInjectionService, useValue: faultService },
       { provide: ChaosAutoRollbackService, useValue: rollbackService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -61,25 +65,25 @@ it('e2e: 创建混沌实验→运行→暂停→查看结果全流程', async ()
         faultParams: { delayMs: 500 },
       })
     assert.equal(createRes.statusCode, 201)
-    experimentIdA = createRes.body.id
+    experimentIdA = createRes.body.data.id
     assert.ok(experimentIdA)
-    assert.equal(createRes.body.status, 'PENDING')
-    assert.equal(createRes.body.name, 'latency-test')
+    assert.equal(createRes.body.data.status, 'PENDING')
+    assert.equal(createRes.body.data.name, 'latency-test')
 
     // 2. 运行实验
     const runRes = await request(app.getHttpServer())
       .post(`/chaos/experiments/${experimentIdA}/run`)
     assert.equal(runRes.statusCode, 201)
-    assert.equal(runRes.body.status, 'RUNNING')
-    assert.ok(runRes.body.startedAt)
-    assert.equal(runRes.body.faultInjections[0].active, true)
+    assert.equal(runRes.body.data.status, 'RUNNING')
+    assert.ok(runRes.body.data.startedAt)
+    assert.equal(runRes.body.data.faultInjections[0].active, true)
 
     // 3. 暂停实验
     const pauseRes = await request(app.getHttpServer())
       .post(`/chaos/experiments/${experimentIdA}/pause`)
     assert.equal(pauseRes.statusCode, 201)
-    assert.equal(pauseRes.body.status, 'PAUSED')
-    assert.equal(pauseRes.body.faultInjections[0].active, false)
+    assert.equal(pauseRes.body.data.status, 'PAUSED')
+    assert.equal(pauseRes.body.data.faultInjections[0].active, false)
 
     // 4. 创建第二个实验用于结果查询
     const exp2Res = await request(app.getHttpServer())
@@ -91,11 +95,11 @@ it('e2e: 创建混沌实验→运行→暂停→查看结果全流程', async ()
         faultTarget: 'payment-service',
         faultParams: { errorRate: 30 },
       })
-    experimentIdB = exp2Res.body.id
+    experimentIdB = exp2Res.body.data.id
 
     // 运行并手动完成
     await request(app.getHttpServer()).post(`/chaos/experiments/${experimentIdB}/run`)
-    experimentIdB = exp2Res.body.id
+    experimentIdB = exp2Res.body.data.id
   } finally {
     await app.close()
   }
@@ -109,44 +113,44 @@ it('e2e: 故障注入(延迟/错误/超时/CPU)完整生命周期', async () => 
       .post('/chaos/faults/latency')
       .send({ target: 'api-gateway', paramValue: 300 })
     assert.equal(latencyRes.statusCode, 201)
-    assert.equal(latencyRes.body.type, 'LATENCY')
-    assert.equal(latencyRes.body.active, true)
+    assert.equal(latencyRes.body.data.type, 'LATENCY')
+    assert.equal(latencyRes.body.data.active, true)
 
     // 2. 注入错误故障
     const errorRes = await request(app.getHttpServer())
       .post('/chaos/faults/error')
       .send({ target: 'payment-api', paramValue: 50 })
     assert.equal(errorRes.statusCode, 201)
-    assert.equal(errorRes.body.type, 'ERROR')
-    assert.equal(errorRes.body.params.errorRate, 50)
+    assert.equal(errorRes.body.data.type, 'ERROR')
+    assert.equal(errorRes.body.data.params.errorRate, 50)
 
     // 3. 注入超时故障
     const timeoutRes = await request(app.getHttpServer())
       .post('/chaos/faults/timeout')
       .send({ target: 'auth-service', paramValue: 2000 })
     assert.equal(timeoutRes.statusCode, 201)
-    assert.equal(timeoutRes.body.type, 'TIMEOUT')
-    assert.equal(timeoutRes.body.active, true)
+    assert.equal(timeoutRes.body.data.type, 'TIMEOUT')
+    assert.equal(timeoutRes.body.data.active, true)
 
     // 4. 注入 CPU 燃烧故障
     const cpuRes = await request(app.getHttpServer())
       .post('/chaos/faults/cpu-burn')
       .send({ target: 'worker-node', paramValue: 80 })
     assert.equal(cpuRes.statusCode, 201)
-    assert.equal(cpuRes.body.type, 'CPU_BURN')
-    assert.equal(cpuRes.body.active, true)
+    assert.equal(cpuRes.body.data.type, 'CPU_BURN')
+    assert.equal(cpuRes.body.data.active, true)
 
     // 5. 获取所有活跃故障
     const allRes = await request(app.getHttpServer())
       .get('/chaos/faults')
     assert.equal(allRes.statusCode, 200)
-    assert.equal(allRes.body.length, 4)
+    assert.equal(allRes.body.data.length, 4)
 
     // 6. 停止故障注入
     const stopRes = await request(app.getHttpServer())
       .post('/chaos/faults/api-gateway/stop')
     assert.equal(stopRes.statusCode, 201)
-    assert.equal(stopRes.body.stopped, true)
+    assert.equal(stopRes.body.data.stopped, true)
 
     // 停止后活跃故障应为 3
     const afterStop = faultService.getAllActiveFaults()
@@ -178,15 +182,15 @@ it('e2e: 健康监控→连续失败→自动回滚', async () => {
     }
 
     // 第三次后 shouldRollback 应为 true
-    assert.equal(monitorRes!.body.shouldRollback, true)
-    assert.equal(monitorRes!.body.failureCount, 3)
+    assert.equal(monitorRes!.body.data.shouldRollback, true)
+    assert.equal(monitorRes!.body.data.failureCount, 3)
 
     // 触发自动回滚
     const rollbackRes = await request(app.getHttpServer())
       .post(`/chaos/health/rollback?experimentId=${experimentId}`)
       .send({ reason: 'Health threshold exceeded' })
     assert.equal(rollbackRes.statusCode, 201)
-    assert.equal(rollbackRes.body.triggered, true)
+    assert.equal(rollbackRes.body.data.triggered, true)
   } finally {
     await app.close()
   }
@@ -219,14 +223,14 @@ it('e2e: 回滚历史记录查询', async () => {
     const allRes = await request(app.getHttpServer())
       .get('/chaos/rollbacks')
     assert.equal(allRes.statusCode, 200)
-    assert.equal(allRes.body.length, 2)
+    assert.equal(allRes.body.data.length, 2)
 
     // 按实验查询
     const expRes = await request(app.getHttpServer())
       .get('/chaos/rollbacks/exp-hist-a')
     assert.equal(expRes.statusCode, 200)
-    assert.equal(expRes.body.length, 1)
-    assert.equal(expRes.body[0].experimentId, 'exp-hist-a')
+    assert.equal(expRes.body.data.length, 1)
+    assert.equal(expRes.body.data[0].experimentId, 'exp-hist-a')
   } finally {
     await app.close()
   }
@@ -255,16 +259,16 @@ it('e2e: 不同故障类型实验间隔离', async () => {
           faultParams: exp.faultParams,
         })
       assert.equal(res.statusCode, 201)
-      ids.push(res.body.id)
+      ids.push(res.body.data.id)
 
       // 运行
-      await request(app.getHttpServer()).post(`/chaos/experiments/${res.body.id}/run`)
+      await request(app.getHttpServer()).post(`/chaos/experiments/${res.body.data.id}/run`)
     }
 
     // 所有实验独立运行互不影响
     const allRes = await request(app.getHttpServer()).get('/chaos/experiments')
-    assert.equal(allRes.body.length, 4)
-    const runningCount = allRes.body.filter((e: Record<string, unknown>) => e.status === 'RUNNING').length
+    assert.equal(allRes.body.data.length, 4)
+    const runningCount = allRes.body.data.filter((e: Record<string, unknown>) => e.status === 'RUNNING').length
     assert.equal(runningCount, 4)
   } finally {
     await app.close()
@@ -288,9 +292,9 @@ it('e2e: 健康恢复后重置失败计数', async () => {
       .post(`/chaos/health/monitor?experimentId=${expId}`)
       .send({ cpuUsage: 40, memoryUsage: 50, errorRate: 0.01, latencyAvg: 80, healthy: true })
     assert.equal(recoverRes.statusCode, 201)
-    assert.equal(recoverRes.body.healthy, true)
-    assert.equal(recoverRes.body.failureCount, 0)
-    assert.equal(recoverRes.body.shouldRollback, false)
+    assert.equal(recoverRes.body.data.healthy, true)
+    assert.equal(recoverRes.body.data.failureCount, 0)
+    assert.equal(recoverRes.body.data.shouldRollback, false)
   } finally {
     await app.close()
   }

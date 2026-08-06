@@ -22,12 +22,16 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { AiRagController } from './ai-rag.controller'
 import { KnowledgeBaseManager, RAGPipeline, SalesScriptGenerator } from './ai-rag.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 function makeApp() {
   return Test.createTestingModule({
     controllers: [AiRagController],
     providers: [KnowledgeBaseManager, RAGPipeline, SalesScriptGenerator],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 }
 
 describe('[ai-rag] E2E: 文档 CRUD', () => {

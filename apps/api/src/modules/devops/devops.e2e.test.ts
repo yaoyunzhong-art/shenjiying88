@@ -15,6 +15,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
+import { TenantGuard } from '../agent/tenant.guard'
 import { DevopsController } from './devops.controller'
 import { DevopsService } from './devops.service'
 
@@ -25,7 +26,10 @@ async function buildApp() {
     providers: [
       { provide: DevopsService, useValue: service },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   await app.init()

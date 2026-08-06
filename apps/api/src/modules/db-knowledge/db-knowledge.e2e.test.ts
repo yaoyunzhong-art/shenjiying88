@@ -23,6 +23,7 @@ import assert from 'node:assert/strict'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { DbKnowledgeController } from './db-knowledge.controller'
 import { DbKnowledgeService } from './db-knowledge.service'
 
@@ -34,7 +35,10 @@ async function buildApp() {
     providers: [
       { provide: DbKnowledgeService, useValue: dbKnowledgeService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -49,7 +53,7 @@ it('e2e: 服务状态返回可用性标记', async () => {
       .get('/db-knowledge/status')
     assert.equal(res.statusCode, 200)
     // DB 不可用时不抛异常，返回 false
-    assert.equal(typeof res.body.available, 'boolean')
+    assert.equal(typeof res.body.data.available, 'boolean')
   } finally {
     await app.close()
   }
@@ -62,8 +66,8 @@ it('e2e: 全文搜索降级返回空数组（DB不可用时）', async () => {
       .get('/db-knowledge/search?query=test&kind=spec&limit=5')
     // DB 不可用时返回空数组而非抛异常
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -75,8 +79,8 @@ it('e2e: 按种类查询文档降级返回空数组', async () => {
     const res = await request(app.getHttpServer())
       .get('/db-knowledge/documents/spec')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -88,14 +92,14 @@ it('e2e: 专家查询降级返回空数组', async () => {
     const res = await request(app.getHttpServer())
       .get('/db-knowledge/experts')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
 
     // 带 groupId 过滤也正常工作
     const filtered = await request(app.getHttpServer())
       .get('/db-knowledge/experts?groupId=backend')
     assert.equal(filtered.statusCode, 200)
-    assert.ok(Array.isArray(filtered.body))
+    assert.ok(Array.isArray(filtered.body.data))
   } finally {
     await app.close()
   }
@@ -107,8 +111,8 @@ it('e2e: 验收脉冲查询降级返回空数组', async () => {
     const res = await request(app.getHttpServer())
       .get('/db-knowledge/pulses?limit=10')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -120,8 +124,8 @@ it('e2e: 活跃阶段查询降级返回空数组', async () => {
     const res = await request(app.getHttpServer())
       .get('/db-knowledge/phases')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -134,13 +138,13 @@ it('e2e: 模式查询支持类型过滤', async () => {
     const allRes = await request(app.getHttpServer())
       .get('/db-knowledge/patterns')
     assert.equal(allRes.statusCode, 200)
-    assert.ok(Array.isArray(allRes.body))
+    assert.ok(Array.isArray(allRes.body.data))
 
     // 按 type 过滤
     const antiRes = await request(app.getHttpServer())
       .get('/db-knowledge/patterns?type=anti-pattern')
     assert.equal(antiRes.statusCode, 200)
-    assert.ok(Array.isArray(antiRes.body))
+    assert.ok(Array.isArray(antiRes.body.data))
   } finally {
     await app.close()
   }
@@ -152,8 +156,8 @@ it('e2e: 竞品场馆按城市查询降级返回空数组', async () => {
     const res = await request(app.getHttpServer())
       .get('/db-knowledge/venues?city=深圳')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 0)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 0)
   } finally {
     await app.close()
   }
@@ -166,7 +170,7 @@ it('e2e: 今日简报降级提示无数据', async () => {
       .get('/db-knowledge/brief/today')
     assert.equal(res.statusCode, 200)
     // DB 不可用返回 { message: ... }
-    assert.ok(typeof res.body.message === 'string')
+    assert.ok(typeof res.body.data.message === 'string')
   } finally {
     await app.close()
   }
@@ -179,7 +183,7 @@ it('e2e: 搜索日志静默降级', async () => {
       .post('/db-knowledge/search/log')
       .send({ query: 'test query', count: 5, durationMs: 100 })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.logged, true)
+    assert.equal(res.body.data.logged, true)
   } finally {
     await app.close()
   }

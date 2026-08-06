@@ -20,6 +20,7 @@ import { CouponV2 } from '../coupon/coupon.entity'
 import { CouponRedemptionLog } from '../coupon/coupon-redemption-log.entity'
 import { AllExceptionsFilter } from '../../common/filters/all-exceptions.filter'
 import { TrafficGovernanceGuard } from '../../common/guards/traffic-governance.guard'
+import { RateLimitGuard } from '../../common/guards/rate-limit.guard'
 import { RequestAuditInterceptor } from '../../common/interceptors/request-audit.interceptor'
 import { ReportCacheService } from './report-cache.service'
 import { ReportController } from './report.controller'
@@ -29,15 +30,44 @@ import { PrismaService } from '../../prisma/prisma.service'
 import { RequestGovernanceService } from '../../common/governance/request-governance.service'
 import { GovernanceApprovalService } from '../foundation/governance-approval/governance-approval.service'
 import { IdentityAccessGuard } from '../foundation/identity-access/identity-access.guard'
+import { CsrfMiddleware } from '../security/csrf.middleware'
 import { MemberApprovalOutcomeRecorder } from '../member/member-approval-recorder'
 import { AgentModule } from '../agent/agent.module'
 
-const { AppModule } = require('../../app.module')
-const mockPrismaService = {
-  $connect: async () => undefined,
-  $disconnect: async () => undefined,
-  $queryRaw: async () => [],
-} as unknown as PrismaService
+const AppModuleModule = await import('../../app.module')
+const { AppModule } = AppModuleModule
+function createPrismaMock(): PrismaService {
+  const handler: ProxyHandler<object> = {
+    get(_target, prop) {
+      if (prop === '$connect' || prop === '$disconnect') return async () => undefined
+      if (typeof prop === 'string' && prop.startsWith('$')) return async () => undefined
+      // Return a nested proxy that returns empty arrays / null for model methods
+      return new Proxy({}, {
+        get(_innerTarget, method) {
+          if (method === 'then') return undefined
+          return async () => {
+            if (method === 'findMany') return []
+            if (method === 'findFirst' || method === 'findUnique' || method === 'findFirstOrThrow') return null
+            if (method === 'count') return 0
+            if (method === 'create' || method === 'update' || method === 'upsert') return {}
+            if (method === 'delete' || method === 'deleteMany') return { count: 0 }
+            return undefined
+          }
+        },
+      }) as any
+    },
+  }
+  return new Proxy({}, handler) as unknown as PrismaService
+}
+const mockPrismaService = createPrismaMock()
+const mockDataSource = {
+  entityMetadatas: [],
+  getMetadata: () => undefined,
+  getRepository: () => ({ find: async () => [], findOne: async () => null, create: (e: any) => e, save: async (e: any) => e, delete: async () => ({ affected: 1 }), count: async () => 0 }),
+  options: { entities: [], synchronize: false },
+  query: async () => [],
+  createQueryBuilder: () => ({ where: () => ({ getMany: async () => [] }) }),
+} as unknown as DataSource
 const mockGovernanceApprovalService = {
   registerApprovalOutcomeHook: () => () => undefined,
 } as unknown as GovernanceApprovalService
@@ -60,8 +90,11 @@ const mockRequestGovernanceService = {
 // 避免 AppModule 在测试环境里被无关 provider 阻塞。
 MemberApprovalOutcomeRecorder.prototype.onModuleInit = function noopOnModuleInit() {}
 AgentModule.prototype.onModuleInit = function noopOnModuleInit() {}
+const { ReferralTrackingService } = await import('../storefront/referral-tracking.service')
+ReferralTrackingService.prototype.onModuleInit = function noopReferralSeed() {}
 TrafficGovernanceGuard.prototype.canActivate = async function allowTrafficGuard() { return true }
 IdentityAccessGuard.prototype.canActivate = function allowIdentityGuard() { return true }
+CsrfMiddleware.prototype.use = function bypassCsrfGuard(_req, _res, next) { next() }
 RequestAuditInterceptor.prototype.intercept = function bypassRequestAudit(_context, next) {
   return next.handle()
 }
@@ -131,7 +164,7 @@ describe('Reports App HTTP E2E', () => {
       imports: [AppModule],
     })
       .overrideProvider(DataSource)
-      .useValue({} as DataSource)
+      .useValue(mockDataSource)
       .overrideProvider(getRepositoryToken(CouponV2))
       .useValue({} as Repository<CouponV2>)
       .overrideProvider(getRepositoryToken(CouponRedemptionLog))
@@ -142,6 +175,12 @@ describe('Reports App HTTP E2E', () => {
       .useValue(mockRequestGovernanceService)
       .overrideProvider(GovernanceApprovalService)
       .useValue(mockGovernanceApprovalService)
+      .overrideGuard(IdentityAccessGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(TrafficGovernanceGuard)
+      .useValue({ canActivate: async () => true })
+      .overrideGuard(RateLimitGuard)
+      .useValue({ canActivate: async () => true })
       .compile()
 
     app = moduleRef.createNestApplication()
@@ -205,6 +244,7 @@ describe('Reports App HTTP E2E', () => {
       const taskRes = await request(app.getHttpServer())
         .get(`/api/reports/exports/${taskId}`)
         .query({ tenantId: TENANT })
+        .set('x-tenant-id', TENANT)
 
       assert.equal(taskRes.status, 200)
       assert.equal(taskRes.body.success, true)
@@ -221,6 +261,7 @@ describe('Reports App HTTP E2E', () => {
   async function createExportTask(tenantId: string = TENANT, format: 'csv' | 'json' | 'html' = 'csv') {
     const createRes = await request(app.getHttpServer())
       .post('/api/reports/exports')
+      .set('x-tenant-id', tenantId)
       .send({
         tenantId,
         from: '2025-06-01',
@@ -241,6 +282,7 @@ describe('Reports App HTTP E2E', () => {
   ) {
     const createRes = await request(app.getHttpServer())
       .post('/api/reports/exports')
+      .set('x-tenant-id', tenantId)
       .send({
         tenantId,
         from: '2025-06-01',
@@ -257,6 +299,7 @@ describe('Reports App HTTP E2E', () => {
   async function createDefinition(name: string, tenantId: string = TENANT) {
     const createRes = await request(app.getHttpServer())
       .post('/api/reports/definitions')
+      .set('x-tenant-id', tenantId)
       .send({
         tenantId,
         name,
@@ -336,6 +379,7 @@ describe('Reports App HTTP E2E', () => {
 
     const updateRes = await request(app.getHttpServer())
       .put(`/api/reports/definitions/${created.id}`)
+      .set('x-tenant-id', TENANT)
       .query({ tenantId: TENANT, version: String(created.version) })
       .send({
         name: 'HTTP 周销售报表',
@@ -378,6 +422,7 @@ describe('Reports App HTTP E2E', () => {
 
     const crossTenantDeleteRes = await request(app.getHttpServer())
       .delete(`/api/reports/definitions/${created.id}`)
+      .set('x-tenant-id', OTHER_TENANT)
       .query({ tenantId: OTHER_TENANT })
 
     assert.equal(crossTenantDeleteRes.status, 200)
@@ -386,6 +431,7 @@ describe('Reports App HTTP E2E', () => {
 
     const staleVersionRes = await request(app.getHttpServer())
       .put(`/api/reports/definitions/${created.id}`)
+      .set('x-tenant-id', TENANT)
       .query({ tenantId: TENANT, version: '999' })
       .send({ name: 'stale-version' })
 
@@ -431,6 +477,7 @@ describe('Reports App HTTP E2E', () => {
 
     const statsBeforeRes = await request(app.getHttpServer())
       .get('/api/reports/cache/stats')
+      .set('x-tenant-id', TENANT)
 
     assert.equal(statsBeforeRes.status, 200)
     assert.equal(statsBeforeRes.body.success, true)
@@ -440,6 +487,7 @@ describe('Reports App HTTP E2E', () => {
 
     const invalidateRes = await request(app.getHttpServer())
       .post('/api/reports/cache/invalidate')
+      .set('x-tenant-id', TENANT)
       .send({ tenantId: TENANT, type: 'revenue' })
 
     assert.equal(invalidateRes.status, 201)
@@ -448,6 +496,7 @@ describe('Reports App HTTP E2E', () => {
 
     const statsAfterRes = await request(app.getHttpServer())
       .get('/api/reports/cache/stats')
+      .set('x-tenant-id', TENANT)
 
     assert.equal(statsAfterRes.status, 200)
     assert.equal(statsAfterRes.body.success, true)
@@ -458,6 +507,7 @@ describe('Reports App HTTP E2E', () => {
   it('POST + GET /api/reports/exports completes smoke flow', async () => {
     const createRes = await request(app.getHttpServer())
       .post('/api/reports/exports')
+      .set('x-tenant-id', TENANT)
       .send({
         tenantId: TENANT,
         from: '2025-06-01',
@@ -511,6 +561,7 @@ describe('Reports App HTTP E2E', () => {
 
     const deleteRes = await request(app.getHttpServer())
       .delete(`/api/reports/exports/${taskId}`)
+      .set('x-tenant-id', TENANT)
       .query({ tenantId: TENANT })
 
     assert.equal(deleteRes.status, 200)
@@ -589,6 +640,7 @@ describe('Reports App HTTP E2E', () => {
 
     const emptyTenantRes = await request(app.getHttpServer())
       .get('/api/reports/exports')
+      .set('x-tenant-id', 'empty-tenant')
 
     assert.equal(emptyTenantRes.status, 200)
     assert.equal(emptyTenantRes.body.success, true)
@@ -620,6 +672,7 @@ describe('Reports App HTTP E2E', () => {
 
     const deleteRes = await request(app.getHttpServer())
       .delete(`/api/reports/exports/${taskId}`)
+      .set('x-tenant-id', TENANT)
       .query({ tenantId: TENANT })
 
     assert.equal(deleteRes.status, 200)
@@ -662,6 +715,7 @@ describe('Reports App HTTP E2E', () => {
 
     const deleteRes = await request(app.getHttpServer())
       .delete(`/api/reports/exports/${taskId}`)
+      .set('x-tenant-id', OTHER_TENANT)
       .query({ tenantId: OTHER_TENANT })
     assert.equal(deleteRes.status, 200)
     assert.equal(deleteRes.body.success, true)
@@ -686,6 +740,7 @@ describe('Reports App HTTP E2E', () => {
   it('POST /api/reports/exports rejects missing tenantId in AppModule route', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/reports/exports')
+      .set('x-tenant-id', 'any-tenant')
       .send({
         from: '2025-06-01',
         to: '2025-06-30',
@@ -700,6 +755,7 @@ describe('Reports App HTTP E2E', () => {
   it('POST /api/reports/exports rejects unsupported format in AppModule route', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/reports/exports')
+      .set('x-tenant-id', TENANT)
       .send({
         tenantId: TENANT,
         from: '2025-06-01',

@@ -159,6 +159,7 @@ export class GateOpenDto {
 /** 闸机访问日志查询 */
 export class GateAccessLogQueryDto {
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   @Max(1000)

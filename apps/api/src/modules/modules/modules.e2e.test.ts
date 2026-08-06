@@ -22,11 +22,13 @@ import {
   Inject,
   Param,
   Post,
+  Body,
 } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 
 // ─── 类型定义 ───────────────────────────────────────────────────────
 
@@ -118,7 +120,7 @@ class ModulesService {
     }
 
     dfs(moduleName, this.registry)
-    return { order: order.reverse(), circular: isCircular }
+    return { order, circular: isCircular }
   }
 
   checkVersionCompatibility(moduleName: string, targetVersion: string): { compatible: boolean; reason?: string } {
@@ -176,7 +178,7 @@ class TestModulesController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(body: { name: string; version: string; description?: string; dependencies?: string[] }) {
+  async register(@Body() body: { name: string; version: string; description?: string; dependencies?: string[] }) {
     return this.modulesService.register(
       body.name,
       body.version,
@@ -232,7 +234,9 @@ async function buildApp() {
     providers: [
       { provide: ModulesService, useValue: modulesService },
     ],
-  }).compile()
+  })
+  .overrideGuard(TenantGuard).useValue({ canActivate: () => true })
+  .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -249,9 +253,9 @@ it('e2e: POST /api/modules/register creates a new module entry', async () => {
       .post('/api/modules/register')
       .send({ name: 'auth', version: '1.0.0', description: 'Authentication module' })
     assert.equal(res.statusCode, 201)
-    assert.equal(res.body.name, 'auth')
-    assert.equal(res.body.version, '1.0.0')
-    assert.equal(res.body.status, 'registered')
+    assert.equal(res.body.data.name, 'auth')
+    assert.equal(res.body.data.version, '1.0.0')
+    assert.equal(res.body.data.status, 'registered')
   } finally {
     await app.close()
   }
@@ -265,10 +269,10 @@ it('e2e: GET /api/modules returns registered modules', async () => {
 
     const res = await request(app.getHttpServer()).get('/api/modules')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 2)
-    assert.ok(res.body.some((m: ModuleDescriptor) => m.name === 'core'))
-    assert.ok(res.body.some((m: ModuleDescriptor) => m.name === 'tenant'))
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 2)
+    assert.ok(res.body.data.some((m: ModuleDescriptor) => m.name === 'core'))
+    assert.ok(res.body.data.some((m: ModuleDescriptor) => m.name === 'tenant'))
   } finally {
     await app.close()
   }
@@ -350,8 +354,8 @@ it('e2e: GET /api/modules/:name returns 200 with module info', async () => {
 
     const res = await request(app.getHttpServer()).get('/api/modules/scheduler')
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.name, 'scheduler')
-    assert.equal(res.body.version, '1.0.0')
+    assert.equal(res.body.data.name, 'scheduler')
+    assert.equal(res.body.data.version, '1.0.0')
   } finally {
     await app.close()
   }
@@ -364,7 +368,7 @@ it('e2e: POST /api/modules/:name/activate transitions to active', async () => {
 
     const res = await request(app.getHttpServer()).post('/api/modules/events/activate')
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.status, 'active')
+    assert.equal(res.body.data.status, 'active')
   } finally {
     await app.close()
   }

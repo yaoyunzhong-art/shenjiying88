@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { Body, Controller, Get, Inject, Param, Post, Query, ValidationPipe } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
+import { TenantGuard } from '../../agent/tenant.guard'
 import { PrismaService } from '../../../prisma/prisma.service'
 import { decideGovernanceApproval } from '../governance-approval/governance-approval'
 import { ApprovalQueryDto, ApprovalTimelineQueryDto, AuditQueryDto } from '../trust-governance/trust-governance.dto'
@@ -655,7 +656,10 @@ it('e2e: manages config entries and secret rotation with audit linkage', async (
         inject: [PrismaService, TrustGovernanceService]
       }
     ]
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -1157,7 +1161,10 @@ it('e2e: configuration governance approval queries only expose configuration app
         inject: [PrismaService, TrustGovernanceService]
       }
     ]
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))

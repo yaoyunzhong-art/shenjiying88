@@ -147,16 +147,16 @@ describe('ai-marketing E2E enhanced — 30 tests', () => {
 
   it('T14: ROI预测 — performance类型预估范围合理', () => {
     const res = controller.projectROI({ type: CampaignTypeEnum.PERFORMANCE, budget: 100000 })
-    expect(res.data.minROI).toBe(0.5)
-    expect(res.data.maxROI).toBe(2.0)
-    expect(res.data.expectedROI).toBeGreaterThanOrEqual(0.5)
-    expect(res.data.expectedROI).toBeLessThanOrEqual(2.0)
+    expect(res.data.minROI).toBe(50)
+    expect(res.data.maxROI).toBe(200)
+    expect(res.data.expectedROI).toBeGreaterThanOrEqual(50)
+    expect(res.data.expectedROI).toBeLessThanOrEqual(200)
   })
 
   it('T15: ROI预测 — brand类型returns低范围', () => {
     const res = controller.projectROI({ type: CampaignTypeEnum.BRAND, budget: 100000 })
-    expect(res.data.minROI).toBe(-0.2)
-    expect(res.data.maxROI).toBe(0.5)
+    expect(res.data.minROI).toBe(-20)
+    expect(res.data.maxROI).toBe(50)
   })
 
   it('T16: 模块统计 — 5个活动总计指标', () => {

@@ -18,6 +18,7 @@ import assert from 'node:assert/strict'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { LineageController } from './lineage.controller'
 import { DataLineageTracker, ImpactAnalyzer } from './data-lineage.service'
 import {
@@ -42,7 +43,9 @@ async function buildApp() {
       { provide: DataFlowMonitor, useValue: flowMonitor },
       { provide: ComplianceReporter, useValue: complianceReporter },
     ],
-  }).compile()
+  })
+  .overrideGuard(TenantGuard).useValue({ canActivate: () => true })
+  .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -62,7 +65,7 @@ it('e2e: 字段注册→血缘边创建→上游查询→下游查询→全图',
       .post('/lineage/fields/register')
       .send({ tableName: 'orders', fieldName: 'customer_id' })
     assert.equal(regRes.statusCode, 201)
-    assert.equal(regRes.body.success, true)
+    assert.equal(regRes.body.data.success, true)
 
     // 2. 注册血缘边: customers.id -> orders.customer_id
     const edgeRes = await request(app.getHttpServer())
@@ -73,7 +76,7 @@ it('e2e: 字段注册→血缘边创建→上游查询→下游查询→全图',
         to: { tableName: 'orders', fieldName: 'customer_id' },
       })
     assert.equal(edgeRes.statusCode, 201)
-    assert.equal(edgeRes.body.success, true)
+    assert.equal(edgeRes.body.data.success, true)
 
     // 3. 注册第二层: orders.customer_id -> reports.customer_name
     await request(app.getHttpServer())
@@ -89,20 +92,20 @@ it('e2e: 字段注册→血缘边创建→上游查询→下游查询→全图',
     const upstreamRes = await request(app.getHttpServer())
       .get('/lineage/lineage/reports/customer_name')
     assert.equal(upstreamRes.statusCode, 200)
-    assert.equal(upstreamRes.body.success, true)
-    assert.ok(upstreamRes.body.data.length >= 1)
+    assert.equal(upstreamRes.body.data.success, true)
+    assert.ok(upstreamRes.body.data.data.length >= 1)
 
     // 5. 下游查询: customers.id 的下游应是 orders.customer_id
     const downstreamRes = await request(app.getHttpServer())
       .get('/lineage/downstream/customers/id')
     assert.equal(downstreamRes.statusCode, 200)
-    assert.ok(downstreamRes.body.data.length >= 1)
+    assert.ok(downstreamRes.body.data.data.length >= 1)
 
     // 6. 获取血缘全图
     const graphRes = await request(app.getHttpServer())
       .get('/lineage/graph')
     assert.equal(graphRes.statusCode, 200)
-    assert.ok(graphRes.body.data.nodeCount >= 3)
+    assert.ok(graphRes.body.data.data.nodeCount >= 3)
   } finally {
     await app.close()
   }
@@ -132,10 +135,10 @@ it('e2e: 影响分析评估字段变更风险', async () => {
       .post('/lineage/impact')
       .send({ field: { tableName: 'source', fieldName: 'sensitive_field' } })
     assert.equal(impactRes.statusCode, 201)
-    assert.equal(impactRes.body.success, true)
-    assert.ok(impactRes.body.data.downstreamFields.length >= 1)
-    assert.ok(impactRes.body.data.upstreamFields.length >= 0)
-    assert.equal(typeof impactRes.body.data.riskLevel, 'string')
+    assert.equal(impactRes.body.data.success, true)
+    assert.ok(impactRes.body.data.data.downstreamFields.length >= 1)
+    assert.ok(impactRes.body.data.data.upstreamFields.length >= 0)
+    assert.equal(typeof impactRes.body.data.data.riskLevel, 'string')
   } finally {
     await app.close()
   }
@@ -149,16 +152,16 @@ it('e2e: 敏感数据自动分类与批量分类', async () => {
       .post('/lineage/classify')
       .send({ tableName: 'users', fieldName: 'phone_number' })
     assert.equal(classifyRes.statusCode, 201)
-    assert.equal(classifyRes.body.data.category, 'PII')
-    assert.equal(classifyRes.body.data.level, 'restricted')
-    assert.equal(classifyRes.body.data.autoClassified, true)
+    assert.equal(classifyRes.body.data.data.category, 'PII')
+    assert.equal(classifyRes.body.data.data.level, 'restricted')
+    assert.equal(classifyRes.body.data.data.autoClassified, true)
 
     // 2. 按样本数据分类
     const sampleRes = await request(app.getHttpServer())
       .post('/lineage/classify')
       .send({ tableName: 'contacts', fieldName: 'mobile', sampleData: '13800138000' })
     assert.equal(sampleRes.statusCode, 201)
-    assert.equal(sampleRes.body.data.level, 'confidential')
+    assert.equal(sampleRes.body.data.data.level, 'confidential')
 
     // 3. 批量分类
     const batchRes = await request(app.getHttpServer())
@@ -169,15 +172,15 @@ it('e2e: 敏感数据自动分类与批量分类', async () => {
         { tableName: 'users', fieldName: 'name' },
       ])
     assert.equal(batchRes.statusCode, 201)
-    assert.equal(batchRes.body.data.length, 3)
-    assert.equal(batchRes.body.data[0].category, 'PII')
-    assert.equal(batchRes.body.data[1].category, 'FINANCIAL')
+    assert.equal(batchRes.body.data.data.length, 3)
+    assert.equal(batchRes.body.data.data[0].category, 'PII')
+    assert.equal(batchRes.body.data.data[1].category, 'FINANCIAL')
 
     // 4. 查询分类结果
     const getRes = await request(app.getHttpServer())
       .get('/lineage/classify/users/phone_number')
     assert.equal(getRes.statusCode, 200)
-    assert.equal(getRes.body.data.category, 'PII')
+    assert.equal(getRes.body.data.data.category, 'PII')
   } finally {
     await app.close()
   }
@@ -229,19 +232,19 @@ it('e2e: 数据流追踪与暴露风险检测', async () => {
         via: 'foreign_key',
       })
     assert.equal(flowRes.statusCode, 201)
-    assert.equal(flowRes.body.success, true)
+    assert.equal(flowRes.body.data.success, true)
 
     // 获取报告
     const reportRes = await request(app.getHttpServer())
       .get('/lineage/flows/report')
     assert.equal(reportRes.statusCode, 200)
-    assert.ok(reportRes.body.data.edges.length >= 1)
+    assert.ok(reportRes.body.data.data.edges.length >= 1)
 
     // 暴露风险
     const riskRes = await request(app.getHttpServer())
       .get('/lineage/flows/risks')
     assert.equal(riskRes.statusCode, 200)
-    assert.ok(Array.isArray(riskRes.body.data))
+    assert.ok(Array.isArray(riskRes.body.data.data))
   } finally {
     await app.close()
   }
@@ -262,26 +265,26 @@ it('e2e: 合规报告与合规分数', async () => {
     const reportRes = await request(app.getHttpServer())
       .get('/lineage/compliance/report')
     assert.equal(reportRes.statusCode, 200)
-    assert.ok(typeof reportRes.body.data.compliant === 'boolean')
-    assert.equal(typeof reportRes.body.data.reportId, 'string')
+    assert.ok(typeof reportRes.body.data.data.compliant === 'boolean')
+    assert.equal(typeof reportRes.body.data.data.reportId, 'string')
 
     // 合规分数
     const scoreRes = await request(app.getHttpServer())
       .get('/lineage/compliance/score')
     assert.equal(scoreRes.statusCode, 200)
-    assert.ok(typeof scoreRes.body.data.score === 'number')
+    assert.ok(typeof scoreRes.body.data.data.score === 'number')
 
     // 违规列表
     const violRes = await request(app.getHttpServer())
       .get('/lineage/compliance/violations')
     assert.equal(violRes.statusCode, 200)
-    assert.ok(Array.isArray(violRes.body.data))
+    assert.ok(Array.isArray(violRes.body.data.data))
 
     // 按 ID 查询报告
     const idRes = await request(app.getHttpServer())
       .get('/lineage/compliance/report/report-001')
     assert.equal(idRes.statusCode, 200)
-    assert.equal(idRes.body.data.requestedReportId, 'report-001')
+    assert.equal(idRes.body.data.data.requestedReportId, 'report-001')
   } finally {
     await app.close()
   }

@@ -18,6 +18,7 @@ import assert from 'node:assert/strict'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { DeviceAdapterController } from './device-adapter.controller'
 import { DeviceAdapterService } from './device-adapter.service'
 
@@ -29,7 +30,10 @@ async function buildApp() {
     providers: [
       { provide: DeviceAdapterService, useValue: deviceAdapterService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -85,36 +89,36 @@ it('e2e: 设备注册→连接→POS交易→断开全流程', async () => {
       .post('/device-adapter/devices')
       .send(POS_DEVICE)
     assert.equal(regRes.statusCode, 201)
-    assert.equal(regRes.body.deviceId, 'pos-001')
-    assert.equal(regRes.body.brand, 'huawei')
+    assert.equal(regRes.body.data.deviceId, 'pos-001')
+    assert.equal(regRes.body.data.brand, 'huawei')
 
     // 2. 连接设备
     const connRes = await request(app.getHttpServer())
       .post('/device-adapter/devices/pos-001/connect')
     assert.equal(connRes.statusCode, 201)
-    assert.equal(connRes.body.success, true)
+    assert.equal(connRes.body.data.success, true)
 
     // 3. POS 交易
     const txRes = await request(app.getHttpServer())
       .post('/device-adapter/devices/pos-001/pos/transaction')
       .send({ amount: 99.99, currency: 'CNY' })
     assert.equal(txRes.statusCode, 201)
-    assert.equal(txRes.body.success, true)
-    assert.ok(txRes.body.data.transactionId)
-    assert.equal(txRes.body.data.status, 'approved')
+    assert.equal(txRes.body.data.success, true)
+    assert.ok(txRes.body.data.data.transactionId)
+    assert.equal(txRes.body.data.data.status, 'approved')
 
     // 4. POS 读卡
     const cardRes = await request(app.getHttpServer())
       .post('/device-adapter/devices/pos-001/pos/read-card')
     assert.equal(cardRes.statusCode, 201)
-    assert.equal(cardRes.body.success, true)
-    assert.equal(cardRes.body.data.cardType, 'VISA')
+    assert.equal(cardRes.body.data.success, true)
+    assert.equal(cardRes.body.data.data.cardType, 'VISA')
 
     // 5. 断开设备
     const discRes = await request(app.getHttpServer())
       .post('/device-adapter/devices/pos-001/disconnect')
     assert.equal(discRes.statusCode, 201)
-    assert.equal(discRes.body.success, true)
+    assert.equal(discRes.body.data.success, true)
   } finally {
     await app.close()
   }
@@ -135,21 +139,21 @@ it('e2e: 闸机设备开门→访问日志→命令历史', async () => {
       .post('/device-adapter/devices/gate-001/gate/open')
       .send({ direction: 'in' })
     assert.equal(openRes.statusCode, 201)
-    assert.equal(openRes.body.success, true)
-    assert.equal(openRes.body.data.direction, 'in')
+    assert.equal(openRes.body.data.success, true)
+    assert.equal(openRes.body.data.data.direction, 'in')
 
     // 查询访问日志
     const logRes = await request(app.getHttpServer())
       .get('/device-adapter/devices/gate-001/gate/access-log?limit=5')
-    assert.equal(logRes.statusCode, 201)
-    assert.equal(logRes.body.success, true)
-    assert.ok(Array.isArray(logRes.body.data.logs))
+    assert.equal(logRes.statusCode, 200)
+    assert.equal(logRes.body.data.success, true)
+    assert.ok(Array.isArray(logRes.body.data.data.logs))
 
     // 查询命令历史
     const cmdRes = await request(app.getHttpServer())
       .get('/device-adapter/devices/gate-001/commands')
     assert.equal(cmdRes.statusCode, 200)
-    assert.ok(cmdRes.body.length >= 2)
+    assert.ok(cmdRes.body.data.length >= 2)
   } finally {
     await app.close()
   }
@@ -169,27 +173,27 @@ it('e2e: 扫描仪设备扫描+解析协议转换', async () => {
     const scanRes = await request(app.getHttpServer())
       .post('/device-adapter/devices/scanner-001/scanner/scan')
     assert.equal(scanRes.statusCode, 201)
-    assert.equal(scanRes.body.success, true)
-    assert.equal(scanRes.body.data.format, 'code128')
+    assert.equal(scanRes.body.data.success, true)
+    assert.equal(scanRes.body.data.data.format, 'code128')
 
     // 解析多种格式
     const qrRes = await request(app.getHttpServer())
       .post('/device-adapter/scanner/parse')
       .send({ data: 'https://example.com/qr' })
     assert.equal(qrRes.statusCode, 201)
-    assert.equal(qrRes.body.format, 'qr')
+    assert.equal(qrRes.body.data.format, 'qr')
 
     const eanRes = await request(app.getHttpServer())
       .post('/device-adapter/scanner/parse')
       .send({ data: '6901234567890' })
     assert.equal(eanRes.statusCode, 201)
-    assert.equal(eanRes.body.format, 'ean13')
+    assert.equal(eanRes.body.data.format, 'ean13')
 
     const upcRes = await request(app.getHttpServer())
       .post('/device-adapter/scanner/parse')
       .send({ data: '123456789012' })
     assert.equal(upcRes.statusCode, 201)
-    assert.equal(upcRes.body.format, 'upc')
+    assert.equal(upcRes.body.data.format, 'upc')
   } finally {
     await app.close()
   }
@@ -210,16 +214,16 @@ it('e2e: 打印机设备打印+打印二维码', async () => {
       .post('/device-adapter/devices/printer-001/printer/print')
       .send({ content: 'Receipt #123\nItems: 3\nTotal: ¥45.00' })
     assert.equal(printRes.statusCode, 201)
-    assert.equal(printRes.body.success, true)
-    assert.ok(printRes.body.data.jobId)
+    assert.equal(printRes.body.data.success, true)
+    assert.ok(printRes.body.data.data.jobId)
 
     // 打印二维码
     const qrRes = await request(app.getHttpServer())
       .post('/device-adapter/devices/printer-001/printer/print-qr')
       .send({ data: 'https://example.com/receipt/123' })
     assert.equal(qrRes.statusCode, 201)
-    assert.equal(qrRes.body.success, true)
-    assert.equal(qrRes.body.data.format, 'qr')
+    assert.equal(qrRes.body.data.success, true)
+    assert.equal(qrRes.body.data.data.format, 'qr')
   } finally {
     await app.close()
   }
@@ -268,14 +272,14 @@ it('e2e: 批量连接同类设备与状态概览', async () => {
       .send({ deviceType: 'pos' })
     assert.equal(batchRes.statusCode, 201)
     for (const id of devices) {
-      assert.equal(batchRes.body[id], true)
+      assert.equal(batchRes.body.data[id], true)
     }
 
     // 状态概览
     const statusRes = await request(app.getHttpServer())
       .get('/device-adapter/status')
     assert.equal(statusRes.statusCode, 200)
-    assert.ok(typeof statusRes.body['batch-pos-1'] === 'string')
+    assert.ok(typeof statusRes.body.data['batch-pos-1'] === 'string')
   } finally {
     await app.close()
   }
@@ -294,8 +298,8 @@ it('e2e: 离线设备操作返回设备离线错误', async () => {
       .post('/device-adapter/devices/pos-001/pos/transaction')
       .send({ amount: 10, currency: 'CNY' })
     assert.equal(txRes.statusCode, 201)
-    assert.equal(txRes.body.success, false)
-    assert.equal(txRes.body.error, 'device_offline')
+    assert.equal(txRes.body.data.success, false)
+    assert.equal(txRes.body.data.error, 'device_offline')
   } finally {
     await app.close()
   }

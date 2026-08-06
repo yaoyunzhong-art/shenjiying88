@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { AIOpsModule } from './aiops.module'
+import { TenantGuard } from '../agent/tenant.guard'
 
 describe('AIOps E2E', () => {
   let app: INestApplication
@@ -10,7 +11,10 @@ describe('AIOps E2E', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AIOpsModule],
-    }).compile()
+    })
+      .overrideGuard(TenantGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     app = moduleRef.createNestApplication()
     await app.init()

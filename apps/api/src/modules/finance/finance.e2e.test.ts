@@ -1045,7 +1045,7 @@ it('e2e: 跨租户隔离 — Tenant A 数据不被 Tenant B 看到', async () =>
     const getErr = await request(app.getHttpServer())
       .get(`/finance/ledgers/${ledgerIdA}`)
       .set(TENANT_B);
-    assert.equal(getErr.statusCode, 500);
+    assert.equal(getErr.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1291,11 +1291,11 @@ it('e2e: DELETE /finance/ledgers/:id — 删除流水后查询404', async () => 
     assert.equal(delRes.statusCode, 200);
     assert.ok(delRes.body.data.success);
 
-    // 删除后查询应 500 (not found)
+    // 删除后查询应 404 (not found)
     const getRes = await request(app.getHttpServer())
       .get(`/finance/ledgers/${ledgerId}`)
       .set(TENANT_A);
-    assert.equal(getRes.statusCode, 500);
+    assert.equal(getRes.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1307,7 +1307,7 @@ it('e2e: DELETE /finance/ledgers/:id — 删除不存在的流水', async () => 
     const delRes = await request(app.getHttpServer())
       .delete('/finance/ledgers/ledger-nonexistent-id')
       .set(TENANT_A);
-    assert.equal(delRes.statusCode, 500);
+    assert.equal(delRes.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1326,7 +1326,7 @@ it('e2e: DELETE /finance/ledgers/:id — 跨租户隔离（B不能删A的流水�
     const delRes = await request(app.getHttpServer())
       .delete(`/finance/ledgers/${ledgerId}`)
       .set(TENANT_B);
-    assert.equal(delRes.statusCode, 500);
+    assert.equal(delRes.statusCode, 404);
 
     // A 的流水仍然存在
     const getRes = await request(app.getHttpServer())
@@ -1342,13 +1342,13 @@ it('e2e: DELETE /finance/ledgers/:id — 跨租户隔离（B不能删A的流水�
 // 错误路径 — Error Paths
 // ═══════════════════════════════════════════════════════
 
-it('e2e: GET /finance/ledgers/:id — 查询不存在的流水返回500', async () => {
+it('e2e: GET /finance/ledgers/:id — 查询不存在的流水返回404', async () => {
   const { app } = await buildApp();
   try {
     const res = await request(app.getHttpServer())
       .get('/finance/ledgers/ledger-non-existent')
       .set(TENANT_A);
-    assert.equal(res.statusCode, 500);
+    assert.equal(res.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1370,11 +1370,11 @@ it('e2e: POST /finance/accounts/:id/freeze — 冻结已冻结的账户', async 
     assert.equal(freeze1.statusCode, 201);
     assert.equal(freeze1.body.data.status, AccountStatus.Frozen);
 
-    // 再次冻结同一账户 → 500 (not active)
+    // 再次冻结同一账户 → 409 (not active)
     const freeze2 = await request(app.getHttpServer())
       .post(`/finance/accounts/${acctId}/freeze`)
       .set(TENANT_A);
-    assert.equal(freeze2.statusCode, 500);
+    assert.equal(freeze2.statusCode, 409);
   } finally {
     await app.close();
   }
@@ -1386,7 +1386,7 @@ it('e2e: POST /finance/accounts/:id/close — 关闭不存在的账户', async (
     const res = await request(app.getHttpServer())
       .post('/finance/accounts/acct-nonexistent/close')
       .set(TENANT_A);
-    assert.equal(res.statusCode, 500);
+    assert.equal(res.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1398,7 +1398,7 @@ it('e2e: POST /finance/settlements/:id/confirm — 确认不存在的结算', as
     const res = await request(app.getHttpServer())
       .post('/finance/settlements/stl-nonexistent/confirm')
       .set(TENANT_A);
-    assert.equal(res.statusCode, 500);
+    assert.equal(res.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1419,11 +1419,11 @@ it('e2e: POST /finance/settlements/:id/confirm — 确认已确认的结算', as
       .set(TENANT_A);
     assert.equal(confirm1.statusCode, 201);
 
-    // 再次确认 → 500 (not pending)
+    // 再次确认 → 409 (not pending)
     const confirm2 = await request(app.getHttpServer())
       .post(`/finance/settlements/${stlId}/confirm`)
       .set(TENANT_A);
-    assert.equal(confirm2.statusCode, 500);
+    assert.equal(confirm2.statusCode, 409);
   } finally {
     await app.close();
   }
@@ -1435,7 +1435,7 @@ it('e2e: POST /finance/invoices/:id/issue — 签发不存在的发票', async (
     const res = await request(app.getHttpServer())
       .post('/finance/invoices/inv-nonexistent/issue')
       .set(TENANT_A);
-    assert.equal(res.statusCode, 500);
+    assert.equal(res.statusCode, 404);
   } finally {
     await app.close();
   }
@@ -1456,11 +1456,11 @@ it('e2e: POST /finance/invoices/:id/cancel — 取消已取消的发票', async 
       .set(TENANT_A);
     assert.equal(cancel1.statusCode, 201);
 
-    // 再次取消 → 500 (already cancelled)
+    // 再次取消 → 409 (already cancelled)
     const cancel2 = await request(app.getHttpServer())
       .post(`/finance/invoices/${invId}/cancel`)
       .set(TENANT_A);
-    assert.equal(cancel2.statusCode, 500);
+    assert.equal(cancel2.statusCode, 409);
   } finally {
     await app.close();
   }
@@ -3263,17 +3263,17 @@ it('e2e: permission — 非admin不能确认跨租户结算', async () => {
     assert.equal(createRes.status, 201);
     const stlId = createRes.body.data.id;
 
-    // Tenant B (非admin/不同租户) 确认 A 的结算 → 应失败 (500)
+    // Tenant B (非admin/不同租户) 确认 A 的结算 → 应失败 (404)
     const confirmByB = await request(app.getHttpServer())
       .post(`/finance/settlements/${stlId}/confirm`)
       .set(TENANT_B);
-    assert.equal(confirmByB.status, 500);
+    assert.equal(confirmByB.status, 404);
 
     // Tenant B 争议 A 的结算 → 也应失败
     const disputeByB = await request(app.getHttpServer())
       .post(`/finance/settlements/${stlId}/dispute`)
       .set(TENANT_B);
-    assert.equal(disputeByB.status, 500);
+    assert.equal(disputeByB.status, 404);
   } finally {
     await app.close();
   }
@@ -3289,11 +3289,11 @@ it('e2e: permission — 非admin不能查看对方发票详情', async () => {
       .send({ orderId: 'private-inv', amount: 9999, type: InvoiceType.Regular });
     const invId = createRes.body.data.id;
 
-    // Tenant B 试图查看 A 的发票 → 应失败 (500)
+    // Tenant B 试图查看 A 的发票 → 应失败 (404)
     const getByB = await request(app.getHttpServer())
       .get(`/finance/invoices/${invId}`)
       .set(TENANT_B);
-    assert.equal(getByB.status, 500);
+    assert.equal(getByB.status, 404);
   } finally {
     await app.close();
   }
@@ -3310,11 +3310,11 @@ it('e2e: permission — 非admin不能删除对方流水', async () => {
     assert.equal(createRes.status, 201);
     const ledgerId = createRes.body.data.id;
 
-    // Tenant B (非admin) 删除 → 应失败 (500)
+    // Tenant B (非admin) 删除 → 应失败 (404)
     const delByB = await request(app.getHttpServer())
       .delete(`/finance/ledgers/${ledgerId}`)
       .set(TENANT_B);
-    assert.equal(delByB.status, 500);
+    assert.equal(delByB.status, 404);
 
     // A 的流水仍然存在
     const stillExists = await request(app.getHttpServer())

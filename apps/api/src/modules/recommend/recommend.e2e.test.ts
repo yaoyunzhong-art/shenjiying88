@@ -35,6 +35,7 @@ import { SimilarityMatrixService } from './similarity-matrix.service'
 import { TimeDecayService } from './time-decay.service'
 import { ImplicitFeedbackService } from './implicit-feedback.service'
 import { OfflineEvaluationService } from './offline-evaluation.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 async function buildApp() {
   // Create all dependencies needed by RecommendModule
@@ -91,7 +92,10 @@ async function buildApp() {
       { provide: MemberPreferenceAdapter, useValue: prefAdapter },
       { provide: RecommendService, useValue: recommendService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   await app.init()

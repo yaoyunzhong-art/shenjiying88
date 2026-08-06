@@ -15,8 +15,8 @@ import { OutboxModule } from './outbox/outbox.module'
   imports: [
     IdentityAccessModule,
     ConfigurationGovernanceModule,
-    IntegrationOrchestrationModule,
     TrustGovernanceModule,
+    IntegrationOrchestrationModule,
     ResilienceOperationsModule,
     RuntimeGovernanceModule,
     GovernanceApprovalModule,

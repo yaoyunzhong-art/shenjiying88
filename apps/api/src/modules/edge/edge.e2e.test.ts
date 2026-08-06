@@ -22,6 +22,7 @@ import request from 'supertest'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
 import { EdgeService, type EdgeServiceHealth } from './edge.service'
 import { EdgeInferenceService, EdgeModelCache, EdgeNodeService, OfflineRecognitionService } from './edge-ai.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 @Controller('test/edge')
 class TestEdgeController {
@@ -150,7 +151,9 @@ async function buildApp() {
       { provide: EdgeNodeService, useValue: nodeService },
       { provide: OfflineRecognitionService, useValue: offlineService },
     ],
-  }).compile()
+  })
+  .overrideGuard(TenantGuard).useValue({ canActivate: () => true })
+  .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())

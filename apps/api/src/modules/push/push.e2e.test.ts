@@ -24,6 +24,7 @@ import { PushPriorityGuard } from './push-priority.guard'
 import { DualChannelRouter, EmailPushChannel, SmsPushChannel } from './channels'
 import { PushPreferenceService } from './push-preference.service'
 import { PushStatsService } from './push-stats.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 /**
  * 在测试请求中注入 tenant 上下文到 request 对象
@@ -72,7 +73,10 @@ async function buildApp() {
       { provide: PushPreferenceService, useValue: new PushPreferenceService() },
       { provide: PushStatsService, useValue: new PushStatsService() },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   useTenantMiddleware(app)

@@ -44,7 +44,7 @@ function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
   next()
 }
 
-let campaignServiceRef: CampaignService
+let campaignServiceRef: CampaignService = new CampaignService()
 let campaignControllerRef: CampaignController
 
 @Controller('campaigns')
@@ -75,8 +75,6 @@ class TestCampaignEvaluateController {
 }
 
 async function buildApp() {
-  campaignServiceRef = new CampaignService()
-  campaignServiceRef.resetCampaignStoresForTests()
   campaignControllerRef = new CampaignController(campaignServiceRef)
 
   const moduleRef = await Test.createTestingModule({

@@ -29,6 +29,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { CrossModuleService } from './cross-module.service'
 import type { CrossModuleValidationResult } from './cross-module.entity'
 import { ChainStatus } from './cross-module.entity'
@@ -81,7 +82,7 @@ class TestCrossModuleController {
     results: CrossModuleValidationResult[]
     summary: { total: number; passed: number; failed: number }
   }> {
-    const chainNames = body.chainNames ?? (chainName ? [chainName] : undefined)
+    const chainNames = body?.chainNames ?? (chainName ? [chainName] : undefined)
     const results = await this.crossModuleService.validate(chainNames)
     const passed = results.filter((r) => r.passed).length
     return {
@@ -131,7 +132,10 @@ async function buildApp() {
     providers: [
       { provide: CrossModuleService, useValue: crossModuleService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.use(attachTenantContext)

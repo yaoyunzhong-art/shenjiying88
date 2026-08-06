@@ -24,6 +24,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { VenueService, CreateVenueInput, UpdateVenueInput } from './venue.service'
 import { VenueController } from './venue.controller'
 import { VenueType, VenueStatus } from './venue.entity'
@@ -37,7 +38,10 @@ async function buildApp() {
     providers: [
       { provide: VenueService, useValue: venueService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())
@@ -59,11 +63,11 @@ it('e2e: POST /venue creates a venue', async () => {
         description: 'Main event hall',
       })
     assert.equal(res.statusCode, 201)
-    assert.ok(res.body.id)
-    assert.equal(res.body.name, 'Main Hall')
-    assert.equal(res.body.status, VenueStatus.IDLE)
-    assert.equal(res.body.capacity, 200)
-    assert.equal(res.body.priceCents, 50000)
+    assert.ok(res.body.data.id)
+    assert.equal(res.body.data.name, 'Main Hall')
+    assert.equal(res.body.data.status, VenueStatus.IDLE)
+    assert.equal(res.body.data.capacity, 200)
+    assert.equal(res.body.data.priceCents, 50000)
   } finally {
     await app.close()
   }
@@ -88,8 +92,8 @@ it('e2e: GET /venue lists all venues', async () => {
 
     const res = await request(app.getHttpServer()).get('/venue')
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 2)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 2)
   } finally {
     await app.close()
   }
@@ -113,9 +117,9 @@ it('e2e: GET /venue filters by type and status', async () => {
 
     const res = await request(app.getHttpServer()).get('/venue').query({ type: VenueType.BOOTH })
     assert.equal(res.statusCode, 200)
-    assert.ok(Array.isArray(res.body))
-    assert.equal(res.body.length, 1)
-    assert.equal(res.body[0].type, VenueType.BOOTH)
+    assert.ok(Array.isArray(res.body.data))
+    assert.equal(res.body.data.length, 1)
+    assert.equal(res.body.data.data[0].type, VenueType.BOOTH)
   } finally {
     await app.close()
   }
@@ -132,8 +136,8 @@ it('e2e: GET /venue/:id returns venue details', async () => {
     })
     const res = await request(app.getHttpServer()).get(`/venue/${created.id}`)
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.name, 'Concert Hall')
-    assert.equal(res.body.capacity, 500)
+    assert.equal(res.body.data.name, 'Concert Hall')
+    assert.equal(res.body.data.capacity, 500)
   } finally {
     await app.close()
   }
@@ -152,9 +156,9 @@ it('e2e: PUT /venue/:id updates venue fields', async () => {
       .put(`/venue/${created.id}`)
       .send({ name: 'Premium Dining', capacity: 120, priceCents: 60000 })
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.name, 'Premium Dining')
-    assert.equal(res.body.capacity, 120)
-    assert.equal(res.body.priceCents, 60000)
+    assert.equal(res.body.data.name, 'Premium Dining')
+    assert.equal(res.body.data.capacity, 120)
+    assert.equal(res.body.data.priceCents, 60000)
   } finally {
     await app.close()
   }
@@ -174,14 +178,14 @@ it('e2e: PUT /venue/:id transitions status correctly', async () => {
       .put(`/venue/${created.id}`)
       .send({ status: VenueStatus.MAINTENANCE })
     assert.equal(res1.statusCode, 200)
-    assert.equal(res1.body.status, VenueStatus.MAINTENANCE)
+    assert.equal(res1.body.data.status, VenueStatus.MAINTENANCE)
 
     // maintenance → idle
     const res2 = await request(app.getHttpServer())
       .put(`/venue/${created.id}`)
       .send({ status: VenueStatus.IDLE })
     assert.equal(res2.statusCode, 200)
-    assert.equal(res2.body.status, VenueStatus.IDLE)
+    assert.equal(res2.body.data.status, VenueStatus.IDLE)
   } finally {
     await app.close()
   }
@@ -201,7 +205,7 @@ it('e2e: PUT /venue/:id rejects invalid status transition', async () => {
       .put(`/venue/${created.id}`)
       .send({ status: VenueStatus.OCCUPIED })
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.status, VenueStatus.OCCUPIED)
+    assert.equal(res.body.data.status, VenueStatus.OCCUPIED)
   } finally {
     await app.close()
   }
@@ -218,7 +222,7 @@ it('e2e: DELETE /venue/:id deletes venue', async () => {
     })
     const res = await request(app.getHttpServer()).delete(`/venue/${created.id}`)
     assert.equal(res.statusCode, 200)
-    assert.equal(res.body.success, true)
+    assert.equal(res.body.data.success, true)
 
     // Verify deletion
     assert.throws(() => venueService.getById(created.id), /不存在/)

@@ -20,6 +20,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { Request } from 'express'
 import { OpenApiService } from './open-api.service'
+import { TenantGuard } from '../agent/tenant.guard'
 
 // ─── Test controller mirroring OpenApiController for isolated e2e ──
 
@@ -88,7 +89,10 @@ async function buildApp() {
   const moduleRef = await Test.createTestingModule({
     controllers: [TestOpenApiController],
     providers: [OpenApiService],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   await app.init()

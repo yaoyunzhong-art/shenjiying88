@@ -17,6 +17,7 @@ import assert from 'node:assert/strict'
 import { Controller, Get, Inject, Post, Body, Delete, Param, HttpCode, HttpStatus } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
+import { TenantGuard } from '../agent/tenant.guard'
 import { LowcodeService } from './lowcode.service'
 import { LowCodePageBuilder, AuditAlertService } from './lowcode-audit.service'
 import { LowcodeController } from './lowcode.controller'
@@ -78,7 +79,9 @@ async function buildApp() {
       { provide: LowCodePageBuilder, useValue: pageBuilder },
       { provide: AuditAlertService, useValue: auditService },
     ],
-  }).compile()
+  })
+  .overrideGuard(TenantGuard).useValue({ canActivate: () => true })
+  .compile()
 
   const app = moduleRef.createNestApplication()
   await app.init()

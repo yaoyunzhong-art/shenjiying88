@@ -32,6 +32,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import type { NextFunction, Request, Response } from 'express'
 import { ResponseInterceptor } from '../../common/interceptors/response.interceptor'
+import { TenantGuard } from '../agent/tenant.guard'
 import { runWithTenant } from '../../common/context/tenant-context'
 import { CustomDomainService } from './custom-domain.service'
 import { SsoService } from './sso.service'
@@ -57,7 +58,10 @@ async function buildApp() {
       { provide: CustomDomainService, useValue: customDomainService },
       { provide: SsoService, useValue: ssoService },
     ],
-  }).compile()
+  })
+    .overrideGuard(TenantGuard)
+    .useValue({ canActivate: () => true })
+    .compile()
 
   const app = moduleRef.createNestApplication()
   app.useGlobalInterceptors(new ResponseInterceptor())

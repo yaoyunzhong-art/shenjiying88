@@ -18,10 +18,10 @@ import {
   type RuntimeGovernanceSyncRequest,
   type RuntimeGovernanceTicket
 } from '@m5/types'
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, Optional, Inject } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
-import { IntegrationOrchestrationService } from '..'
-import { TrustGovernanceService } from '..'
+import { IntegrationOrchestrationService } from '../integration-orchestration/integration-orchestration.service'
+import { TrustGovernanceService } from '../trust-governance/trust-governance.service'
 import type { FoundationModuleDescriptor } from '../foundation.types'
 
 type PersistedRuntimeEvent = {
@@ -64,7 +64,7 @@ export class RuntimeGovernanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly integrationOrchestrationService: IntegrationOrchestrationService,
-    private readonly trustGovernanceService: TrustGovernanceService
+    @Optional() @Inject(TrustGovernanceService) private readonly trustGovernanceService?: TrustGovernanceService
   ) {}
 
   async submitAction(input: RuntimeGovernanceScopedSubmitRequest): Promise<RuntimeGovernanceReceipt> {
@@ -108,7 +108,7 @@ export class RuntimeGovernanceService {
         }
       })
     } else {
-      await this.trustGovernanceService.recordAudit(
+      await this.trustGovernanceService?.recordAudit(
         'foundation.runtime-governance.submit',
         {
           receiptCode,
@@ -217,7 +217,7 @@ export class RuntimeGovernanceService {
         }
       })
     } else {
-      await this.trustGovernanceService.recordAudit(
+      await this.trustGovernanceService?.recordAudit(
         'foundation.runtime-governance.sync',
         {
           receiptCode,
@@ -303,7 +303,7 @@ export class RuntimeGovernanceService {
         }
       })
     } else {
-      await this.trustGovernanceService.recordAudit(
+      await this.trustGovernanceService?.recordAudit(
         'foundation.runtime-governance.callback',
         {
           receiptCode,
@@ -375,7 +375,7 @@ export class RuntimeGovernanceService {
         }
       })
     } else {
-      await this.trustGovernanceService.recordAudit(
+      await this.trustGovernanceService?.recordAudit(
         'foundation.runtime-governance.replay',
         {
           receiptCode,
@@ -466,12 +466,14 @@ export class RuntimeGovernanceService {
 
   private async buildRateLimitDecision(input: RuntimeGovernanceScopedSubmitRequest): Promise<RuntimeGovernanceRateLimitDecision> {
     const scopeKey = `${input.app}:${input.action}:${input.tenantId ?? 'tenant-demo'}`
-    const decision = await this.trustGovernanceService.evaluateRateLimit({
-      scopeKey,
-      limit: 12,
-      windowSeconds: 60,
-      blockSeconds: 60
-    })
+    const decision = this.trustGovernanceService
+      ? await this.trustGovernanceService.evaluateRateLimit({
+          scopeKey,
+          limit: 12,
+          windowSeconds: 60,
+          blockSeconds: 60
+        })
+      : { allowed: true, limit: 12, remaining: 12, retryAfterSeconds: 0 }
 
     return {
       allowed: decision.allowed,
@@ -716,7 +718,7 @@ export class RuntimeGovernanceService {
       }
     )
 
-    await this.trustGovernanceService.recordAudit(
+    await this.trustGovernanceService?.recordAudit(
       input.auditEventType,
       {
         ...input.details,

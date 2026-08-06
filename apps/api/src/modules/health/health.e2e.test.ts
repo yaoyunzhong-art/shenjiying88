@@ -35,6 +35,7 @@ import { LytService } from '../lyt/lyt.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'
 import { HealthQueryDto } from './health.dto'
 import { FoundationScopeType } from '@m5/domain'
+import { TenantGuard } from '../agent/tenant.guard'
 
 function attachTenantContext(req: Request, _res: Response, next: NextFunction) {
   const ctx = req as unknown as TenantAwareRequest
@@ -138,7 +139,9 @@ async function buildApp() {
       { provide: LytService, useValue: mockLytService },
       { provide: PrismaService, useValue: mockPrismaService }
     ]
-  }).compile()
+  })
+  .overrideGuard(TenantGuard).useValue({ canActivate: () => true })
+  .compile()
 
   const app = moduleRef.createNestApplication()
   app.use(attachTenantContext)

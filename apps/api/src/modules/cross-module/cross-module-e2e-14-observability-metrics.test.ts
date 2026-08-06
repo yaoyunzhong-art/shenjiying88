@@ -31,6 +31,7 @@ import request from 'supertest'
 import { MetricsService } from '../observability'
 import { MetricsController } from '../observability/metrics.controller'
 import { MetricsInterceptor } from '../observability/metrics.interceptor'
+import { ObservabilityService } from '../observability/observability.service'
 import { buildCrossModuleTestApp, type BuiltCrossModuleTestApp } from './test-helpers'
 
 @Controller()
@@ -56,10 +57,12 @@ class DemoController {
 async function buildApp(): Promise<BuiltCrossModuleTestApp & { metricsService: MetricsService }> {
   // 直接构造,完全控制依赖 (测试场景下 @Global 模块有 DI 边界问题)
   const metricsService = new MetricsService()
+  const observabilityService = new ObservabilityService(metricsService)
   const { app, moduleRef } = await buildCrossModuleTestApp({
     controllers: [DemoController, MetricsController],
     providers: [
       { provide: MetricsService, useValue: metricsService },
+      { provide: ObservabilityService, useValue: observabilityService },
       MetricsInterceptor,
     ],
     extraGlobalInterceptors: [new MetricsInterceptor(metricsService)],

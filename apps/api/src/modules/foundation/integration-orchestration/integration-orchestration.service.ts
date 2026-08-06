@@ -1,6 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { EventStatus, FoundationScopeType, Prisma } from '@prisma/client'
-import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException, Optional, UnauthorizedException } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
 import { TrustGovernanceService } from '..'
 import type { FoundationModuleDescriptor } from '../foundation.types'
@@ -38,7 +38,7 @@ interface AcceptWebhookInput {
 export class IntegrationOrchestrationService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(TrustGovernanceService) private readonly trustGovernanceService: TrustGovernanceService
+    @Optional() @Inject(TrustGovernanceService) private readonly trustGovernanceService?: TrustGovernanceService
   ) {}
 
   private readonly webhookSources: WebhookSource[] = [
@@ -108,7 +108,7 @@ export class IntegrationOrchestrationService {
       throw error
     }
 
-    await this.trustGovernanceService.recordAudit(
+    await this.trustGovernanceService?.recordAudit(
       'foundation.domain-event.published',
       {
         eventType: eventName,
@@ -172,7 +172,7 @@ export class IntegrationOrchestrationService {
     })
     if (existingEvent) {
       const existingRecord = this.toIdempotencyRecord(existingEvent, source)
-      await this.trustGovernanceService.recordAudit(
+      await this.trustGovernanceService?.recordAudit(
         'foundation.webhook.duplicate',
         {
           source,
@@ -211,7 +211,7 @@ export class IntegrationOrchestrationService {
       })
 
       if (persistedEvent) {
-        await this.trustGovernanceService.recordAudit(
+        await this.trustGovernanceService?.recordAudit(
           'foundation.webhook.duplicate-race',
           {
             source,
@@ -234,7 +234,7 @@ export class IntegrationOrchestrationService {
       }
     }
 
-    await this.trustGovernanceService.recordAudit(
+    await this.trustGovernanceService?.recordAudit(
       'foundation.webhook.accepted',
       {
         source,
