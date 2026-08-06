@@ -54,8 +54,8 @@ describe('RequestAuditInterceptor', () => {
     })
 
     assert.strictEqual(mockAudit.log.mock.calls.length, 1)
-    const callArg = mockAudit.log.mock.calls[0][0]
-    assert.strictEqual(callArg.eventType, 'api.request')
+    const calls = mockAudit.log.mock.calls as any[]
+    assert.strictEqual(calls[0][0].eventType, 'api.request')
   })
 
   it('should call audit.log with api.error eventType on error', async () => {
@@ -72,8 +72,8 @@ describe('RequestAuditInterceptor', () => {
     })
 
     assert.strictEqual(mockAudit.log.mock.calls.length, 1)
-    const callArg = mockAudit.log.mock.calls[0][0]
-    assert.strictEqual(callArg.eventType, 'api.error')
+    const errCalls = mockAudit.log.mock.calls as any[]
+    assert.strictEqual(errCalls[0][0].eventType, 'api.error')
   })
 
   it('should skip audit for GET requests', async () => {
