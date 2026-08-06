@@ -1,17 +1,24 @@
 import { describe, it } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 import assert from 'node:assert/strict'
+import { AuditLogEntity } from '../audit/audit.entity'
 import { PortalModule } from './portal.module'
 import { PortalController } from './portal.controller'
 import { PortalService } from './portal.service'
 import { DomainResolutionService } from '../saas-advanced/domain-resolution.service'
+import { MarketService } from '../market/market.service'
+import { FoundationService } from '../foundation/foundation.service'
 import { CircuitBreaker } from '../foundation/resilience-operations/circuit-breaker'
 import { TokenBucket } from '../foundation/resilience-operations/rate-limiter'
 import { HeterogeneousChannelRouter } from '../foundation/resilience-operations/heterogeneous-router'
 import { OutboxRelay } from '../foundation/outbox/outbox.relay'
 import { OutboxReplayService } from '../foundation/outbox/outbox-replay.service'
 import { InMemoryOutboxStore } from '../foundation/outbox/in-memory-outbox.store'
+import { TrustGovernanceService } from '../foundation/trust-governance/trust-governance.service'
+import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
+import { RuntimeGovernanceService } from '../foundation/runtime-governance/runtime-governance.service'
 
 const stubCircuitBreaker = {
   exec: async (fn: () => Promise<any>) => fn(),
@@ -76,6 +83,34 @@ const stubFoundationService = {
   getDependencySummary: () => ({}),
 }
 
+const stubTrustGovernanceService = {
+  evaluateTrust: async () => ({}),
+  verifyToken: async () => ({}),
+  signPayload: async () => ({}),
+} as unknown as TrustGovernanceService
+
+const stubIntegrationOrchestrationService = {
+  receive: async () => ({}),
+  registerHandler: () => {},
+  invokeWebhook: async () => ({}),
+} as unknown as IntegrationOrchestrationService
+
+const stubRuntimeGovernanceService = {
+  submitAction: async () => ({ receiptCode: 'REC-001', state: 'submitted' }),
+  getActionReceipt: async () => ({ receiptCode: 'REC-001', state: 'submitted' }),
+  syncAction: async () => ({ receiptCode: 'REC-001', state: 'submitted' }),
+  recordCallback: async () => ({ receiptCode: 'REC-001', state: 'callback-recorded' }),
+  replayAction: async () => ({ receiptCode: 'REC-001', state: 'replay-scheduled' }),
+} as unknown as RuntimeGovernanceService
+
+const stubPrismaService = {
+  domainEvent: { create: async () => ({}), findUnique: async () => null, findMany: async () => [] },
+  governanceApproval: { create: async () => ({}), findUnique: async () => null, findMany: async () => [] },
+  featureFlag: { create: async () => ({}), findUnique: async () => null, findMany: async () => [] },
+  trustedAudit: { create: async () => ({}), findUnique: async () => null, findMany: async () => [] },
+  runtimePolicy: { create: async () => ({}), findUnique: async () => null, findMany: async () => [] },
+}
+
 describe('PortalModule', () => {
   let moduleRef: TestingModule
 
@@ -83,10 +118,20 @@ describe('PortalModule', () => {
     Test.createTestingModule({
       imports: [PortalModule],
     })
-      .overrideProvider('MarketService')
+      .overrideProvider(getRepositoryToken(AuditLogEntity))
+      .useValue({})
+      .overrideProvider(MarketService)
       .useValue(stubMarketService)
-      .overrideProvider('FoundationService')
+      .overrideProvider(FoundationService)
       .useValue(stubFoundationService)
+      .overrideProvider(TrustGovernanceService)
+      .useValue(stubTrustGovernanceService)
+      .overrideProvider(IntegrationOrchestrationService)
+      .useValue(stubIntegrationOrchestrationService)
+      .overrideProvider(RuntimeGovernanceService)
+      .useValue(stubRuntimeGovernanceService)
+      .overrideProvider('PrismaService')
+      .useValue(stubPrismaService)
       .overrideProvider(CircuitBreaker)
       .useValue(stubCircuitBreaker)
       .overrideProvider(TokenBucket)

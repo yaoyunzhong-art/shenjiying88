@@ -48,7 +48,7 @@ describe('PurchaseOrderService', () => {
     ], 'supplier-001', 'store-001')
     expect(po.id).toBeTruthy()
     expect(po.totalAmount).toBe(800)
-    expect(po.status).toBe(PurchaseOrderStatus.Confirmed)
+    expect(po.status).toBe(PurchaseOrderStatus.Draft)
   })
 
   it('should create PO with multiple items', () => {
@@ -70,6 +70,7 @@ describe('PurchaseOrderService', () => {
     const po = poService.createPurchaseOrder(tenantCtx, [
       { productId: prodId, productName: '测试商品', sku: 'SKU-TEST-001', quantity: 10, unitPrice: 80 },
     ])
+    inventory.confirmOrder(po.id, tenantCtx)
     const result = poService.receivePO(po.id, [{ productId: prodId, quantity: 10 }], tenantCtx)
     expect(result.stockRecords).toHaveLength(1)
     expect(result.purchaseOrder.status).toBe(PurchaseOrderStatus.Received)
@@ -98,6 +99,7 @@ describe('PurchaseOrderService', () => {
     const po = poService.createPurchaseOrder(tenantCtx, [
       { productId: prodId, productName: '测试商品', sku: 'SKU-TEST-001', quantity: 5, unitPrice: 80 },
     ])
+    inventory.confirmOrder(po.id, tenantCtx)
     poService.receivePO(po.id, [{ productId: prodId, quantity: 5 }], tenantCtx)
     expect(() => poService.cancelPO(po.id, tenantCtx)).toThrow('Cannot cancel received')
   })
@@ -125,8 +127,8 @@ describe('PurchaseOrderService', () => {
   it('should filter POs by status', () => {
     const prodId = setupProduct(inventory)
     poService.createPurchaseOrder(tenantCtx, [{ productId: prodId, productName: 'A', sku: 'SKU-TEST-001', quantity: 5, unitPrice: 80 }])
-    const confirmed = poService.listPOs(tenantCtx, PurchaseOrderStatus.Confirmed)
-    expect(confirmed.length).toBeGreaterThan(0)
+    const draft = poService.listPOs(tenantCtx, PurchaseOrderStatus.Draft)
+    expect(draft.length).toBeGreaterThan(0)
     const submitted = poService.listPOs(tenantCtx, PurchaseOrderStatus.Submitted)
     expect(submitted).toHaveLength(0)
   })

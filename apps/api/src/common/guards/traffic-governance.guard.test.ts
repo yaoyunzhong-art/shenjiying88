@@ -159,7 +159,7 @@ describe('TrafficGovernanceGuard', () => {
       await guard.canActivate(context)
 
       assert.equal(svc.applyRateLimitHeaders.mock.calls.length, 1)
-      const calledWith = svc.applyRateLimitHeaders.mock.calls[0].arguments
+      const calledWith = svc.applyRateLimitHeaders.mock.calls[0]
       assert.equal(calledWith[0], res)
       assert.equal(calledWith[1].allowed, true)
       assert.equal(calledWith[1].limit, 50)
@@ -184,7 +184,7 @@ describe('TrafficGovernanceGuard', () => {
       await assert.rejects(() => guard.canActivate(context))
 
       assert.equal(svc.applyRateLimitHeaders.mock.calls.length, 1)
-      const calledWith = svc.applyRateLimitHeaders.mock.calls[0].arguments
+      const calledWith = svc.applyRateLimitHeaders.mock.calls[0]
       assert.equal(calledWith[0], res)
       assert.equal(calledWith[1].allowed, false)
       assert.equal(calledWith[1].retryAfterSeconds, 60)
@@ -208,7 +208,7 @@ describe('TrafficGovernanceGuard', () => {
       await guard.canActivate(context)
 
       assert.equal(svc.evaluateRateLimit.mock.calls.length, 1)
-      const callArgs = svc.evaluateRateLimit.mock.calls[0].arguments
+      const callArgs = svc.evaluateRateLimit.mock.calls[0]
       assert.equal(callArgs[0], req)
       assert.deepStrictEqual(callArgs[1], metadata)
     })
@@ -236,7 +236,7 @@ describe('TrafficGovernanceGuard', () => {
       await guard.canActivate(context)
 
       assert.equal(reflector.getAllAndOverride.mock.calls.length, 1)
-      const reflectorArgs = reflector.getAllAndOverride.mock.calls[0].arguments
+      const reflectorArgs = reflector.getAllAndOverride.mock.calls[0]
       assert.equal(reflectorArgs[0], RATE_LIMIT_METADATA_KEY)
       assert.deepStrictEqual(reflectorArgs[1], [handler, klass])
     })

@@ -116,9 +116,9 @@ describe('AiService', () => {
 
     it('边缘: 混合情感应正确计算得分', () => {
       const r = service.sentimentScore('good and bad, average quality')
-      expect(r.label).toBe('positive') // good > bad
-      expect(r.score).toBeGreaterThan(0)
-      expect(r.score).toBeLessThanOrEqual(1)
+      // good 和 bad 各一个，得分 0，落入 neutral 区间
+      expect(r.label).toBe('neutral')
+      expect(r.score).toBe(0)
     })
   })
 

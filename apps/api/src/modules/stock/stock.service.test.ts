@@ -172,6 +172,8 @@ describe('StockService — adjustStock 出入库', () => {
       getRepository: vi.fn(() => ({
         findOne: vi.fn().mockResolvedValue({ id: 'item-1', quantity: 10, storeId: 'S1' }),
         update: vi.fn().mockResolvedValue({ affected: 1 }),
+        create: vi.fn((dto: any) => dto),
+        save: vi.fn((entity: any) => entity),
       })),
     }
     dataSource.transaction.mockImplementation((fn: any) => fn(manager))
@@ -185,6 +187,8 @@ describe('StockService — adjustStock 出入库', () => {
       getRepository: vi.fn(() => ({
         findOne: vi.fn().mockResolvedValue({ id: 'item-1', quantity: 10, storeId: 'S1' }),
         update: vi.fn().mockResolvedValue({ affected: 1 }),
+        create: vi.fn((dto: any) => dto),
+        save: vi.fn((entity: any) => entity),
       })),
     }
     dataSource.transaction.mockImplementation((fn: any) => fn(manager))

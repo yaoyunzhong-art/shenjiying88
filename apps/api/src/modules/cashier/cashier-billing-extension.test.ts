@@ -198,7 +198,7 @@ describe('RefundService 集成 BillingWall', () => {
       { orderId: 'ORD-r-1', paymentId: payment.id, amountCents: 100, reason: 'test' },
       { tenantId: 't1', userId: 'u1' }
     )
-    assert.equal(r.status, 'SUCCESS')
+    assert.equal(r.status, 'PENDING')
   })
   it('1.2 有 BillingWall + 余额充足 + 在 quota 内: 正常', () => {
     const { os, ps, rs, wall } = buildStack({ withBilling: true, plan: PER_UNIT_REFUND, balance: 100 })

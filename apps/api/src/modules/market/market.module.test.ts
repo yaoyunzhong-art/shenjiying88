@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 import assert from 'node:assert/strict'
+import { AuditLogEntity } from '../audit/audit.entity'
 import { MarketModule } from './market.module'
 import { MarketController } from './market.controller'
 import { MarketService } from './market.service'
 import { FoundationService } from '../foundation/foundation.service'
+import { TrustGovernanceService } from '../foundation/trust-governance/trust-governance.service'
+import { IntegrationOrchestrationService } from '../foundation/integration-orchestration/integration-orchestration.service'
+import { RuntimeGovernanceService } from '../foundation/runtime-governance/runtime-governance.service'
+import { PrismaService } from '../../prisma/prisma.service'
 import { CircuitBreaker } from '../foundation/resilience-operations/circuit-breaker'
 import { TokenBucket } from '../foundation/resilience-operations/rate-limiter'
 import { HeterogeneousChannelRouter } from '../foundation/resilience-operations/heterogeneous-router'
@@ -76,6 +82,26 @@ const stubPrismaService = {
   runtimePolicy: { create: async () => ({}), findUnique: async () => null, findMany: async () => [] },
 }
 
+const stubTrustGovernanceService = {
+  evaluateTrust: async () => ({}),
+  verifyToken: async () => ({}),
+  signPayload: async () => ({}),
+} as unknown as TrustGovernanceService
+
+const stubIntegrationOrchestrationService = {
+  receive: async () => ({}),
+  registerHandler: () => {},
+  invokeWebhook: async () => ({}),
+} as unknown as IntegrationOrchestrationService
+
+const stubRuntimeGovernanceService = {
+  submitAction: async () => ({ receiptCode: 'REC-001', state: 'submitted' }),
+  getActionReceipt: async () => ({ receiptCode: 'REC-001', state: 'submitted' }),
+  syncAction: async () => ({ receiptCode: 'REC-001', state: 'submitted' }),
+  recordCallback: async () => ({ receiptCode: 'REC-001', state: 'callback-recorded' }),
+  replayAction: async () => ({ receiptCode: 'REC-001', state: 'replay-scheduled' }),
+} as unknown as RuntimeGovernanceService
+
 describe('MarketModule', () => {
   let moduleRef: TestingModule
 
@@ -83,10 +109,18 @@ describe('MarketModule', () => {
     Test.createTestingModule({
       imports: [MarketModule],
     })
+      .overrideProvider(getRepositoryToken(AuditLogEntity))
+      .useValue({})
       .overrideProvider(FoundationService)
       .useValue(stubFoundationService)
-      .overrideProvider('PrismaService')
+      .overrideProvider(PrismaService)
       .useValue(stubPrismaService)
+      .overrideProvider(TrustGovernanceService)
+      .useValue(stubTrustGovernanceService)
+      .overrideProvider(IntegrationOrchestrationService)
+      .useValue(stubIntegrationOrchestrationService)
+      .overrideProvider(RuntimeGovernanceService)
+      .useValue(stubRuntimeGovernanceService)
       .overrideProvider(CircuitBreaker)
       .useValue(stubCircuitBreaker)
       .overrideProvider(TokenBucket)

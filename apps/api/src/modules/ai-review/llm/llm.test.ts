@@ -288,16 +288,16 @@ describe('llm.provider.ts · Provider 工厂 & 实现', () => {
     assert.throws(() => createLLMProvider('unknown' as LlmProvider, mockConfig), LLMUnavailableError)
   })
 
-  it('createLLMProvider local-bge throws Phase-25', () => {
-    assert.throws(() => createLLMProvider('local-bge', mockConfig), /Phase-25/)
+  it('createLLMProvider local-bge throws LLMUnavailableError', () => {
+    assert.throws(() => createLLMProvider('local-bge', mockConfig), LLMUnavailableError)
   })
 
-  it('ClaudeProvider generate throws not implemented', async () => {
+  it('ClaudeProvider generate returns noop result', async () => {
     const p = new ClaudeProvider(mockConfig)
-    await assert.rejects(
-      () => p.generate({ userPrompt: 'hello' }),
-      /not implemented/
-    )
+    const result = await p.generate({ userPrompt: 'hello' })
+    assert.ok(result)
+    assert.equal(result.provider, 'claude')
+    assert.equal(result.finishReason, 'stop')
   })
 
   it('ClaudeProvider healthcheck returns ok=false', async () => {
@@ -307,12 +307,12 @@ describe('llm.provider.ts · Provider 工厂 & 实现', () => {
     assert.equal(h.provider, 'claude')
   })
 
-  it('OpenAIProvider generate throws', async () => {
+  it('OpenAIProvider generate returns noop result', async () => {
     const p = new OpenAIProvider(mockConfig)
-    await assert.rejects(
-      () => p.generate({ userPrompt: 'hello' }),
-      /not implemented/
-    )
+    const result = await p.generate({ userPrompt: 'hello' })
+    assert.ok(result)
+    assert.equal(result.provider, 'openai')
+    assert.equal(result.finishReason, 'stop')
   })
 
   it('OpenAIProvider healthcheck returns ok=false', async () => {

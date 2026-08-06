@@ -1,18 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import assert from 'node:assert/strict'
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 import { RequestAuditInterceptor } from './request-audit.interceptor'
 
 describe('RequestAuditInterceptor', () => {
-  // Helper to create a mock RequestGovernanceService
-  function createMockService() {
+  // Helper to create a mock AuditService
+  function createMockAuditService() {
     return {
-      ensureRequestContext: vi.fn((_req: any) => ({
-        requestId: 'mock-request-id',
-        startedAt: Date.now(),
-      })),
-      recordRequestSuccess: vi.fn(),
-      recordRequestFailure: vi.fn(),
+      log: vi.fn(() => Promise.resolve()),
     }
   }
 
@@ -22,7 +17,9 @@ describe('RequestAuditInterceptor', () => {
       method: 'GET',
       url: '/api/test',
       originalUrl: '/api/test',
+      path: '/api/test',
       header: () => undefined,
+      tenantContext: { tenantId: 'tenant-1' },
       ...reqOverrides,
     }
     const res = {
@@ -43,10 +40,10 @@ describe('RequestAuditInterceptor', () => {
     return { handle: () => of(data) }
   }
 
-  it('should call ensureRequestContext on HTTP request', async () => {
-    const mockService = createMockService()
-    const interceptor = new RequestAuditInterceptor(mockService as any)
-    const ctx = createHttpContext()
+  it('should call audit.log for POST request on success', async () => {
+    const mockAudit = createMockAuditService()
+    const interceptor = new RequestAuditInterceptor(mockAudit as any)
+    const ctx = createHttpContext({ method: 'POST' })
     const handler = createCallHandler()
 
     await new Promise<void>((resolve) => {
@@ -56,14 +53,34 @@ describe('RequestAuditInterceptor', () => {
       })
     })
 
-    assert.strictEqual(mockService.ensureRequestContext.mock.calls.length, 1)
+    assert.strictEqual(mockAudit.log.mock.calls.length, 1)
+    const callArg = mockAudit.log.mock.calls[0][0]
+    assert.strictEqual(callArg.eventType, 'api.request')
   })
 
-  it('should call recordRequestSuccess after successful response', async () => {
-    const mockService = createMockService()
-    const interceptor = new RequestAuditInterceptor(mockService as any)
-    const ctx = createHttpContext()
-    const handler = createCallHandler({ result: 'ok' })
+  it('should call audit.log with api.error eventType on error', async () => {
+    const mockAudit = createMockAuditService()
+    const interceptor = new RequestAuditInterceptor(mockAudit as any)
+    const ctx = createHttpContext({ method: 'POST' })
+    const errorHandler = { handle: () => throwError(() => ({ status: 400, message: 'bad request' })) }
+
+    await new Promise<void>((resolve) => {
+      (interceptor.intercept(ctx as any, errorHandler as any) as any).subscribe({
+        next: () => resolve(),
+        error: () => resolve(),
+      })
+    })
+
+    assert.strictEqual(mockAudit.log.mock.calls.length, 1)
+    const callArg = mockAudit.log.mock.calls[0][0]
+    assert.strictEqual(callArg.eventType, 'api.error')
+  })
+
+  it('should skip audit for GET requests', async () => {
+    const mockAudit = createMockAuditService()
+    const interceptor = new RequestAuditInterceptor(mockAudit as any)
+    const ctx = createHttpContext({ method: 'GET' })
+    const handler = createCallHandler()
 
     await new Promise<void>((resolve) => {
       interceptor.intercept(ctx as any, handler).subscribe({
@@ -72,12 +89,13 @@ describe('RequestAuditInterceptor', () => {
       })
     })
 
-    assert.strictEqual(mockService.recordRequestSuccess.mock.calls.length, 1)
+    // GET requests should skip audit entirely
+    assert.strictEqual(mockAudit.log.mock.calls.length, 0)
   })
 
-  it('should not call recordRequestSuccess on non-HTTP context', async () => {
-    const mockService = createMockService()
-    const interceptor = new RequestAuditInterceptor(mockService as any)
+  it('should skip audit for non-HTTP context', async () => {
+    const mockAudit = createMockAuditService()
+    const interceptor = new RequestAuditInterceptor(mockAudit as any)
     const ctx = {
       getType: () => 'rpc',
       switchToHttp: () => {
@@ -93,14 +111,12 @@ describe('RequestAuditInterceptor', () => {
       })
     })
 
-    // For non-HTTP, neither ensureRequestContext nor recordRequestSuccess should be called
-    assert.strictEqual(mockService.ensureRequestContext.mock.calls.length, 0)
-    assert.strictEqual(mockService.recordRequestSuccess.mock.calls.length, 0)
+    assert.strictEqual(mockAudit.log.mock.calls.length, 0)
   })
 
   it('should pass HTTP response data through unchanged', async () => {
-    const mockService = createMockService()
-    const interceptor = new RequestAuditInterceptor(mockService as any)
+    const mockAudit = createMockAuditService()
+    const interceptor = new RequestAuditInterceptor(mockAudit as any)
     const ctx = createHttpContext()
     const responseData = { id: 1, name: 'test-result' }
     const handler = createCallHandler(responseData)
@@ -116,8 +132,8 @@ describe('RequestAuditInterceptor', () => {
   })
 
   it('should pass null through unchanged', async () => {
-    const mockService = createMockService()
-    const interceptor = new RequestAuditInterceptor(mockService as any)
+    const mockAudit = createMockAuditService()
+    const interceptor = new RequestAuditInterceptor(mockAudit as any)
     const ctx = createHttpContext()
     const handler = createCallHandler(null)
 
@@ -129,30 +145,5 @@ describe('RequestAuditInterceptor', () => {
     })
 
     assert.strictEqual(result, null)
-  })
-
-  it('should call ensureRequestContext before recordRequestSuccess', async () => {
-    const callOrder: string[] = []
-    const mockService = {
-      ensureRequestContext: vi.fn(() => {
-        callOrder.push('ensureRequestContext')
-        return { requestId: 'ordered-test', startedAt: Date.now() }
-      }),
-      recordRequestSuccess: vi.fn(() => {
-        callOrder.push('recordRequestSuccess')
-      }),
-    }
-    const interceptor = new RequestAuditInterceptor(mockService as any)
-    const ctx = createHttpContext()
-    const handler = createCallHandler()
-
-    await new Promise<void>((resolve) => {
-      interceptor.intercept(ctx as any, handler).subscribe({
-        next: () => resolve(),
-        error: () => resolve(),
-      })
-    })
-
-    assert.deepStrictEqual(callOrder, ['ensureRequestContext', 'recordRequestSuccess'])
   })
 })

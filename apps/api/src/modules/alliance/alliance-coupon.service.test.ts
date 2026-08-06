@@ -66,7 +66,7 @@ describe('AllianceCouponService — 联盟券互推 (BS-0220~BS-0221)', () => {
         denomination: 5000,
         minSpend: 10000,
         validFrom: '2026-07-01T00:00:00Z',
-        validTo: '2026-08-01T00:00:00Z',
+        validTo: '2027-12-31T00:00:00Z',
         acceptedPartnerIds: ['partner-B'],
         description: 'Test coupon',
       })
@@ -93,7 +93,7 @@ describe('AllianceCouponService — 联盟券互推 (BS-0220~BS-0221)', () => {
         denomination: 5000,
         minSpend: 0,
         validFrom: '2026-07-01T00:00:00Z',
-        validTo: '2026-08-01T00:00:00Z',
+        validTo: '2027-12-31T00:00:00Z',
         acceptedPartnerIds: ['partner-B'],
         description: 'Test coupon',
       })
@@ -112,7 +112,7 @@ describe('AllianceCouponService — 联盟券互推 (BS-0220~BS-0221)', () => {
         denomination: 5000,
         minSpend: 50000,
         validFrom: '2026-07-01T00:00:00Z',
-        validTo: '2026-08-01T00:00:00Z',
+        validTo: '2027-12-31T00:00:00Z',
         acceptedPartnerIds: ['partner-B'],
         description: 'High min spend',
       })
@@ -135,7 +135,7 @@ describe('AllianceCouponService — 联盟券互推 (BS-0220~BS-0221)', () => {
         denomination: 10000, // 10元
         minSpend: 0,
         validFrom: '2026-07-01T00:00:00Z',
-        validTo: '2026-08-01T00:00:00Z',
+        validTo: '2027-12-31T00:00:00Z',
         acceptedPartnerIds: ['partner-B'],
         description: 'Settle test',
       })
@@ -163,7 +163,7 @@ describe('AllianceCouponService — 联盟券互推 (BS-0220~BS-0221)', () => {
         denomination: 5000,
         minSpend: 0,
         validFrom: '2026-07-01T00:00:00Z',
-        validTo: '2026-08-01T00:00:00Z',
+        validTo: '2027-12-31T00:00:00Z',
         acceptedPartnerIds: ['partner-B'],
         description: 'Double settle',
       })
@@ -184,7 +184,7 @@ describe('AllianceCouponService — 联盟券互推 (BS-0220~BS-0221)', () => {
         denomination: 5000,
         minSpend: 0,
         validFrom: '2026-07-01T00:00:00Z',
-        validTo: '2026-08-01T00:00:00Z',
+        validTo: '2027-12-31T00:00:00Z',
         acceptedPartnerIds: ['partner-B'],
         description: 'Stats test',
       })

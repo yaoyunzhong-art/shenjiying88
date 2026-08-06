@@ -41,8 +41,8 @@ describe('AllExceptionsFilter', () => {
     filter.catch(new Error('boom'), host as any)
     const res = (host as any)._response
 
-    assert.equal(res.status.mock.calls[0]?.arguments[0], 500)
-    const jsonArg = res.json.mock.calls[0]?.arguments[0]
+    assert.equal(res.status.mock.calls[0]?.[0], 500)
+    const jsonArg = res.json.mock.calls[0]?.[0]
     assert.equal(jsonArg.success, false)
     assert.equal(jsonArg.message, 'boom')
     assert.equal(jsonArg.data, null)
@@ -54,8 +54,8 @@ describe('AllExceptionsFilter', () => {
     filter.catch(new HttpException('not found', 404), host as any)
     const res = (host as any)._response
 
-    assert.equal(res.status.mock.calls[0]?.arguments[0], 404)
-    const jsonArg = res.json.mock.calls[0]?.arguments[0]
+    assert.equal(res.status.mock.calls[0]?.[0], 404)
+    const jsonArg = res.json.mock.calls[0]?.[0]
     assert.equal(jsonArg.success, false)
     assert.equal(jsonArg.message, 'not found')
   })
@@ -65,8 +65,8 @@ describe('AllExceptionsFilter', () => {
     filter.catch('string exception', host as any)
     const res = (host as any)._response
 
-    assert.equal(res.status.mock.calls[0]?.arguments[0], 500)
-    const jsonArg = res.json.mock.calls[0]?.arguments[0]
+    assert.equal(res.status.mock.calls[0]?.[0], 500)
+    const jsonArg = res.json.mock.calls[0]?.[0]
     assert.equal(jsonArg.message, 'Internal server error')
   })
 
@@ -88,7 +88,7 @@ describe('AllExceptionsFilter', () => {
     filter.catch(new Error('boom'), host as any)
     const res = (host as any)._response
 
-    const call = res.json.mock.calls[0]?.arguments[0]
+    const call = res.json.mock.calls[0]?.[0]
     assert.ok(typeof call.timestamp === 'string')
     assert.ok(new Date(call.timestamp).getTime() >= new Date(before).getTime())
   })
