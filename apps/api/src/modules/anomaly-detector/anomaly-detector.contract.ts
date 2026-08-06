@@ -5,7 +5,7 @@
  * 定义 anomaly-detector 模块对外暴露的稳定合约接口，
  * 供其他模块（ai-diagnosis, ai-rule-engine, observability, notifications 等）消费。
  */
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 import type {
   AnomalySeverity,
   ThreeSigmaResult,

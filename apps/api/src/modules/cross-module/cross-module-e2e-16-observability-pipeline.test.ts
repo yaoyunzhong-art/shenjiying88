@@ -28,7 +28,7 @@ import {
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import { LoggerService } from '../observability/logger/logger.service';
 import { TracingService } from '../observability/tracing/tracing.service';
-import { MetricsService } from '../observability/metrics.service';
+import { MetricsService } from '../observability';
 import { MetricsController } from '../observability/metrics.controller';
 import { buildCrossModuleTestApp } from './test-helpers';
 

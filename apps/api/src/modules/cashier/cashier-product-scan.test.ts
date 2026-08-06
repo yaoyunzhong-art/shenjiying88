@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { CashierController } from './cashier.controller'
 import { CashierService } from './cashier.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
-import { InventoryItemService } from '../inventory/inventory-item.service'
+import { InventoryItemService } from '../inventory'
 import type { Order, Payment, Refund, CreateOrderInput, CreatePaymentInput, CreateRefundInput, OrderItem } from '@m5/types'
 
 // ── Mock helpers ──

@@ -1,6 +1,6 @@
 // anomaly-detector.entity.ts - Phase-19 T26
 // 用途: 异常检测实体类型定义
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 
 export type AnomalySeverity = 'NORMAL' | 'WARNING' | 'CRITICAL'
 

@@ -12,7 +12,7 @@
  */
 
 import { Injectable, Optional, Inject, Logger } from '@nestjs/common'
-import { MemberLevelService } from '../member-level/member-level.service'
+import { MemberLevelService } from '../member-level'
 import type { LevelEvaluationInput, LevelInfo, MemberLevelKey } from '../member-level/member-level.entity'
 import {
   resolveBenefits,

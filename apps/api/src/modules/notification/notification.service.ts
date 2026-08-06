@@ -20,7 +20,7 @@ import {
   type NotificationTemplate
 } from './notification.entity'
 import { PushBusinessPriority } from '../push/push-priority.enum'
-import { MetricsService } from '../observability/metrics.service'
+import { MetricsService } from '../observability'
 
 const templateStore = new Map<string, NotificationTemplate>()
 const dispatchStore = new Map<string, NotificationDispatch>()

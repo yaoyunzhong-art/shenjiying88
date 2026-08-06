@@ -14,7 +14,7 @@ import { describe, it, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MemberTierBridgeService } from './member-tier-bridge.service'
-import { MemberLevelService } from '../member-level/member-level.service'
+import { MemberLevelService } from '../member-level'
 import { MemberLevel, MemberStatus, type MemberProfile } from './member.entity'
 import {
   MemberLevelTier,

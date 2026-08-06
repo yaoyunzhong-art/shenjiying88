@@ -17,7 +17,7 @@ import { OrderService } from './order.service'
 import { PaymentService } from './payment.service'
 import { RefundService } from './refund.service'
 import { CashierService } from './cashier.service'
-import { InventoryItemService } from '../inventory/inventory-item.service'
+import { InventoryItemService } from '../inventory'
 import { TenantGuard } from '../agent/tenant.guard'
 import {
   RequirePermissions,

@@ -1,6 +1,6 @@
 import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { AnomalyDetectorService } from './anomaly-detector.service';
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service';
+import type { TimeSeriesPoint } from '../time-series';
 
 function makeHistory(values: number[]): TimeSeriesPoint[] {
   return values.map((v, i) => ({

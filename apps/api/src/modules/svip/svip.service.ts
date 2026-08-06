@@ -1,7 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { SVIPPlan, SVIPSubscription, SVIPBenefit, SVIPStatus, SVIPBenefitType, RenewalTierDiscount, RenewalDiscountResult } from './svip.entity';
-import { PushNotificationScheduler } from '../push/push.service';
+import { PushNotificationScheduler } from '../push';
 
 interface CreatePlanInput {
   name: string;

@@ -33,8 +33,8 @@ import {
 import { getTemplate, buildLLMRequest } from './insight.prompt'
 import {
   AiModelConfigService,
-} from '../ai-model-config/ai-model-config.service'
-import type { StoreConfigResponse } from '../ai-model-config/ai-model-config.service'
+} from '../ai-model-config'
+import type { StoreConfigResponse } from '../ai-model-config'
 
 /**
  * LLM Provider 接口 (与 ai-cs/providers 类似)

@@ -25,7 +25,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
  */
 
 import { AnomalyDetectorService } from './anomaly-detector.service'
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 
 type AnomalyLevel = 'INFO' | 'WARNING' | 'CRITICAL'
 

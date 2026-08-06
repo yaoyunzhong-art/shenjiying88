@@ -11,7 +11,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
 import 'reflect-metadata'
 import { AnomalyDetectorController } from './anomaly-detector.controller'
 import { AnomalyDetectorService } from './anomaly-detector.service'
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 
 // ── 角色定义 ──
 const ROLES = {

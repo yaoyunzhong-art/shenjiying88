@@ -15,7 +15,7 @@ import {
   InsightService,
   type LLMProvider,
 } from './insight.service'
-import { AiModelConfigService } from '../ai-model-config/ai-model-config.service'
+import { AiModelConfigService } from '../ai-model-config'
 import { requireTenantContext } from '../../common/context/tenant-context'
 import type { GenerateInsightRequest, InsightResponse } from './insight.dto'
 import type { InsightTemplateType, InsightStatus } from './insight.entity'

@@ -2,7 +2,7 @@
 // 用途: 异常检测 - 3σ / IQR / EWMA 三种算法
 // 关联: phase-19-intelligence/spec.md §Phase 1
 import { Injectable, Logger } from '@nestjs/common';
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service';
+import type { TimeSeriesPoint } from '../time-series';
 
 export type AnomalySeverity = 'NORMAL' | 'WARNING' | 'CRITICAL';
 

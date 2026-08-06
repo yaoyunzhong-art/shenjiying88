@@ -20,7 +20,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
 import { VenueDataService } from './venue-data.service'
-import { EmpowerCardService } from '../empower-card/empower-card.service'
+import { EmpowerCardService } from '../empower-card'
 import type {
   FeasibilityReport,
   OperationAdviceChoice,

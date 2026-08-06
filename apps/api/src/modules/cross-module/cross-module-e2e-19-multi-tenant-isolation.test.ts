@@ -27,7 +27,7 @@ import { MemberService, resetMemberServiceTestState } from '../member/member.ser
 import { CashierService } from '../cashier/cashier.service';
 import { InventoryService, resetInventoryServiceTestState } from '../inventory/inventory.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
-import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service';
+import { FinanceService, resetFinanceServiceTestState } from '../finance';
 import { LedgerType, AccountType } from '../finance/finance.entity';
 import { CouponDiscountType, LoyaltyPlanStatus } from '../loyalty/loyalty.entity';
 import { MemberStatus } from '../member/member.entity';

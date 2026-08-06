@@ -1,6 +1,6 @@
 import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest'
 import { TimeSeriesCollectorService } from './time-series-collector.service';
-import type { PerfSample } from '../perf-monitor/perf-monitor.service';
+import type { PerfSample } from '../perf-monitor';
 
 describe('TimeSeriesCollectorService · Phase-19 T25', () => {
   let service: TimeSeriesCollectorService;

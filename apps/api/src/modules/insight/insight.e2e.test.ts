@@ -9,8 +9,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, b
 import assert from 'node:assert/strict'
 import { InsightService } from './insight.service'
 import type { LLMProvider } from './insight.service'
-import { AiModelConfigService } from '../ai-model-config/ai-model-config.service'
-import type { StoreConfigResponse } from '../ai-model-config/ai-model-config.service'
+import { AiModelConfigService } from '../ai-model-config'
+import type { StoreConfigResponse } from '../ai-model-config'
 import { listTemplates as listPromptTemplates } from './insight.prompt'
 import type { InsightTemplate } from './insight.entity'
 

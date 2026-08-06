@@ -27,7 +27,7 @@ import {
   FoundationScopeType,
   NotificationStatus,
 } from '../notification/notification.entity';
-import { MetricsService } from '../observability/metrics.service';
+import { MetricsService } from '../observability';
 import { buildCrossModuleTestApp } from './test-helpers';
 
 @Controller()

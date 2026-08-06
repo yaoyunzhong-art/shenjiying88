@@ -1,11 +1,9 @@
 import { Injectable, ForbiddenException } from '@nestjs/common'
-import { AgentService } from '../agent/agent.service'
-import { EventStoreService } from '../agent/event-store.service'
-import { EventBufferService } from '../agent/event-buffer.service'
+import { AgentService, EventStoreService, EventBufferService } from '../agent'
 import { AuditService } from './audit.service'
 import { assertTenantId, isCrossTenant } from './tenant-validator'
 import type { AgentConfig, AgentSession, QualityEvaluation } from '../agent/agent.entity'
-import type { BufferedEvent } from '../agent/event-buffer.service'
+import type { BufferedEvent } from '../agent'
 
 /**
  * Phase-34: ViewModelService - 统一跨表数据访问入口

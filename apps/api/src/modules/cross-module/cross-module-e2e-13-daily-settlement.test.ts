@@ -35,7 +35,7 @@ import {
 } from '@nestjs/common'
 import request from 'supertest'
 import type { Request } from 'express'
-import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
+import { FinanceService, resetFinanceServiceTestState } from '../finance'
 import {
   LedgerType,
   SettlementStatus,

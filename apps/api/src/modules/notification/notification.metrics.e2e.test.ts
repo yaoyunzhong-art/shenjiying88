@@ -23,7 +23,7 @@ import {
   NotificationChannelType,
   NotificationStatus
 } from './notification.entity'
-import { MetricsService } from '../observability/metrics.service'
+import { MetricsService } from '../observability'
 
 async function buildApp(): Promise<{
   moduleRef: TestingModule

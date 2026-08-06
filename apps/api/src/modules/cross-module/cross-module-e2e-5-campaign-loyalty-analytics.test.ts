@@ -25,7 +25,7 @@ import {
 import request from 'supertest'
 import type { Request } from 'express'
 import { AnalyticsService } from '../analytics/analytics.service'
-import { CampaignService } from '../campaign/campaign.service'
+import { CampaignService } from '../campaign'
 import { LoyaltyService } from '../loyalty/loyalty.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'

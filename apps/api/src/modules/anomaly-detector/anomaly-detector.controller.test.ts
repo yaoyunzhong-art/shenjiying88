@@ -3,7 +3,7 @@ import { describe, it, expect, test, beforeEach, afterEach, beforeAll, afterAll,
 import { Test, TestingModule } from '@nestjs/testing'
 import { AnomalyDetectorController } from './anomaly-detector.controller'
 import { AnomalyDetectorService } from './anomaly-detector.service'
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 import type { AnomalyResult, AnomalyEngineStatus } from './anomaly-detector.entity'
 
 function makeHistory(values: number[]): TimeSeriesPoint[] {

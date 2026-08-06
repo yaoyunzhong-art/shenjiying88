@@ -37,7 +37,7 @@ import {
 import request from 'supertest'
 import type { Request } from 'express'
 import { AiRecommendService } from '../ai-recommend/ai-recommend.service'
-import { CampaignService } from '../campaign/campaign.service'
+import { CampaignService } from '../campaign'
 import { CashierService } from '../cashier/cashier.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'

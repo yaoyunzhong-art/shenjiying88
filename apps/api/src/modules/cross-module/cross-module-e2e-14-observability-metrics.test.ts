@@ -28,7 +28,7 @@ import {
   Post
 } from '@nestjs/common'
 import request from 'supertest'
-import { MetricsService } from '../observability/metrics.service'
+import { MetricsService } from '../observability'
 import { MetricsController } from '../observability/metrics.controller'
 import { MetricsInterceptor } from '../observability/metrics.interceptor'
 import { buildCrossModuleTestApp, type BuiltCrossModuleTestApp } from './test-helpers'

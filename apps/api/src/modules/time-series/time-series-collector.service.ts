@@ -2,7 +2,7 @@
 // 用途: 时序指标采集 + 滚动窗口 + 季节性识别
 // 关联: phase-19-intelligence/spec.md §Phase 1
 import { Injectable, Logger } from '@nestjs/common';
-import type { PerfSample } from '../perf-monitor/perf-monitor.service';
+import type { PerfSample } from '../perf-monitor';
 
 export type WindowSize = '1h' | '6h' | '24h' | '7d' | '30d';
 

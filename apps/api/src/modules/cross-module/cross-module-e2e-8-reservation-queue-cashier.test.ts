@@ -27,7 +27,7 @@ import type { Request } from 'express'
 import { CashierService } from '../cashier/cashier.service'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import { LoyaltyService } from '../loyalty/loyalty.service'
-import { QueueService } from '../queue/queue.service'
+import { QueueService } from '../queue'
 import { QueueType, QueueStatus } from '../queue/queue.entity'
 import {
   ReservationService,

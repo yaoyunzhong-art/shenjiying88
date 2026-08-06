@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { QualityService } from './quality.service'
-import { QualityInspectionService } from '../quality-inspection/quality-inspection.service'
+import { QualityInspectionService } from '../quality-inspection'
 import {
   PatrolTaskStatus,
   PatrolTaskPriority,

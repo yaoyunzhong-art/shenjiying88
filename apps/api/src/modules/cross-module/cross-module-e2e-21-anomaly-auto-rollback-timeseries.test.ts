@@ -36,7 +36,7 @@ import {
 } from '@nestjs/common'
 import request from 'supertest'
 import type { Request } from 'express'
-import { TimeSeriesCollectorService } from '../time-series/time-series-collector.service'
+import { TimeSeriesCollectorService } from '../time-series'
 import { AnomalyDetectorService } from '../anomaly-detector/anomaly-detector.service'
 import { AutoRollbackService } from '../auto-rollback/auto-rollback.service'
 import type { RequestTenantContext, TenantAwareRequest } from '../tenant/tenant.types'

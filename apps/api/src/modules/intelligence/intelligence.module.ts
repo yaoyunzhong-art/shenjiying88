@@ -6,7 +6,7 @@ import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
 import { MonitorScheduler } from './monitor-scheduler'
 import { VenueDataService } from './venue-data.service'
-import { EmpowerCardService } from '../empower-card/empower-card.service'
+import { EmpowerCardService } from '../empower-card'
 
 @Module({
   imports: [ScheduleModule.forRoot()],

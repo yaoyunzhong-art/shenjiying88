@@ -23,7 +23,7 @@ import assert from 'node:assert/strict'
 import { Body, Controller, Inject, Param, Post, Req } from '@nestjs/common'
 import request from 'supertest'
 import type { Request } from 'express'
-import { FinanceService, resetFinanceServiceTestState } from '../finance/finance.service'
+import { FinanceService, resetFinanceServiceTestState } from '../finance'
 import { LedgerType } from '../finance/finance.entity'
 import {
   InventoryService,

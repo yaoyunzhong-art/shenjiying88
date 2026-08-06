@@ -18,7 +18,7 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest'
 import { AnomalyDetectorController } from './anomaly-detector.controller'
 import { AnomalyDetectorService } from './anomaly-detector.service'
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 
 /**
  * 辅助函数：生成时间序列历史数据

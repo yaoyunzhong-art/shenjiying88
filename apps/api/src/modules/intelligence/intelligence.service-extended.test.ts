@@ -16,7 +16,7 @@ import { IntelligenceService } from './intelligence.service'
 import { IntelligenceAiService } from './intelligence-ai.service'
 import { MonitorCollectorService } from './monitor-collector.service'
 import { VenueDataService } from './venue-data.service'
-import { EmpowerCardService } from '../empower-card/empower-card.service'
+import { EmpowerCardService } from '../empower-card'
 
 function createService(): IntelligenceService {
   const aiService = new IntelligenceAiService()

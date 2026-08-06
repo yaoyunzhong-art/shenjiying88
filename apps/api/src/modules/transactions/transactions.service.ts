@@ -9,7 +9,7 @@ import {
   type CashierOrder,
   type CashierPayment
 } from '../cashier/cashier.entity'
-import { FinanceService } from '../finance/finance.service'
+import { FinanceService } from '../finance'
 import { LedgerType } from '../finance/finance.entity'
 import { MemberService } from '../member'
 import type { RequestTenantContext } from '../tenant/tenant.types'

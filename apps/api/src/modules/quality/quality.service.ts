@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
-import { QualityInspectionService } from '../quality-inspection/quality-inspection.service'
+import { QualityInspectionService } from '../quality-inspection'
 import {
   PatrolTask,
   PatrolTaskStatus,

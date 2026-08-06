@@ -4,7 +4,7 @@ import { FoundationService, IntegrationOrchestrationService, RuntimeGovernanceSe
 import { LoyaltyService } from '../loyalty'
 import { MemberService } from '../member'
 import { TransactionsService } from '../transactions/transactions.service'
-import { CampaignService } from '../campaign/campaign.service'
+import { CampaignService } from '../campaign'
 import type {
   LytFixtureCompareDto,
   LytFixtureImportPlanDto,

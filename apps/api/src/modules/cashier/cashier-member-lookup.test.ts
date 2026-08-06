@@ -3,7 +3,7 @@ import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { CashierController } from './cashier.controller'
 import { CashierService } from './cashier.service'
-import { InventoryItemService } from '../inventory/inventory-item.service'
+import { InventoryItemService } from '../inventory'
 import { MemberService, resetMemberServiceTestState } from '../member/member.service'
 import type { Order, Payment, Refund, CreateOrderInput, CreatePaymentInput, CreateRefundInput, OrderItem } from '@m5/types'
 

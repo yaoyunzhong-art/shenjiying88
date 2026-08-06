@@ -18,7 +18,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import assert from 'node:assert/strict'
 import { AnomalyDetectorController } from './anomaly-detector.controller'
 import { AnomalyDetectorService } from './anomaly-detector.service'
-import type { TimeSeriesPoint } from '../time-series/time-series-collector.service'
+import type { TimeSeriesPoint } from '../time-series'
 
 const ROLES = {
   StoreManager: '👔店长',

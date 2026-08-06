@@ -9,7 +9,7 @@ import { describe, it, beforeEach } from 'vitest'
 import 'reflect-metadata'
 import assert from 'node:assert/strict'
 import { MemberService, resetMemberServiceTestState } from './member.service'
-import { MemberLevelService } from '../member-level/member-level.service'
+import { MemberLevelService } from '../member-level'
 import { MemberTierBridgeService } from './member-tier-bridge.service'
 import type { MemberProfile } from './member.entity'
 
