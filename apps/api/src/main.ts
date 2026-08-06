@@ -172,6 +172,8 @@ async function bootstrap() {
       'x-brand-id',
       'x-store-id',
       'x-market-code',
+      'x-request-id',
+      'traceparent',
     ],
   });
 

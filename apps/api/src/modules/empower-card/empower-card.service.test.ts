@@ -10,8 +10,13 @@
  *   - batchImport
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { EmpowerCardService } from './empower-card.service'
+
+vi.mock('../../database/pg-pool', () => ({
+  getPgPool: () => null,
+  closePgPool: vi.fn(),
+}))
 
 describe('EmpowerCardService', () => {
   let service: EmpowerCardService

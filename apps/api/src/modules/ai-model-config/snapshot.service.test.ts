@@ -336,7 +336,7 @@ describe('SnapshotService', () => {
       const headersDiff = diffs.find((d) => d.field === 'customHeaders');
 
       expect(headersDiff!.changed).toBe(true);
-      expect(headersDiff!.before).toBeNull();
+      expect(headersDiff!.before).toBeUndefined();
       expect(headersDiff!.after).toEqual({ Authorization: 'Bearer xxx' });
     });
 

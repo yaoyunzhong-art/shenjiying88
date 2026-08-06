@@ -112,7 +112,7 @@ describe('RequestGovernanceService', () => {
     assert.strictEqual(decision.remaining, 99)
     assert.strictEqual(decision.retryAfterSeconds, 0)
 
-    const callArgs = trustGov.evaluateRateLimit.mock.calls[0]?.arguments[0]
+    const callArgs = trustGov.evaluateRateLimit.mock.calls[0]?.[0]
     assert.ok(callArgs.scopeKey.includes('tenant:tenant-1'))
     assert.ok(callArgs.scopeKey.includes('ip:10.0.0.1'))
     assert.strictEqual(callArgs.limit, 100)
@@ -188,7 +188,7 @@ describe('RequestGovernanceService', () => {
 
     service.recordRequestSuccess(req, res)
 
-    const callArgs = trustGov.recordAudit.mock.calls[0]?.arguments
+    const callArgs = trustGov.recordAudit.mock.calls[0]
     assert.strictEqual(callArgs[0], 'http.request.completed')
     assert.deepStrictEqual(callArgs[2], {
       tenantId: 'tenant-1',
@@ -204,7 +204,7 @@ describe('RequestGovernanceService', () => {
 
     service.recordRequestFailure(req, 429, 'Rate limit exceeded')
 
-    const callArgs = trustGov.recordAudit.mock.calls[0]?.arguments
+    const callArgs = trustGov.recordAudit.mock.calls[0]
     assert.strictEqual(callArgs[0], 'http.request.rate-limited')
     assert.strictEqual(callArgs[1].errorName, 'UnhandledException')
     assert.strictEqual(callArgs[1].errorMessage, 'Rate limit exceeded')
@@ -217,7 +217,7 @@ describe('RequestGovernanceService', () => {
 
     service.recordRequestFailure(req, 401, 'Unauthorized', 'UnauthorizedException')
 
-    const callArgs = trustGov.recordAudit.mock.calls[0]?.arguments
+    const callArgs = trustGov.recordAudit.mock.calls[0]
     assert.strictEqual(callArgs[0], 'http.request.denied')
     assert.strictEqual(callArgs[1].errorName, 'UnauthorizedException')
     assert.strictEqual(callArgs[2].riskLevel, 'medium')
@@ -229,7 +229,7 @@ describe('RequestGovernanceService', () => {
 
     service.recordRequestFailure(req, 500, 'Internal error')
 
-    const callArgs = trustGov.recordAudit.mock.calls[0]?.arguments
+    const callArgs = trustGov.recordAudit.mock.calls[0]
     assert.strictEqual(callArgs[0], 'http.request.failed')
     assert.strictEqual(callArgs[2].riskLevel, 'high')
   })
@@ -240,7 +240,7 @@ describe('RequestGovernanceService', () => {
 
     await service.evaluateRateLimit(req, metadata)
 
-    const callArgs = trustGov.evaluateRateLimit.mock.calls[0]?.arguments[0]
+    const callArgs = trustGov.evaluateRateLimit.mock.calls[0]?.[0]
     assert.ok(callArgs.scopeKey.includes('route:'))
     assert.ok(callArgs.scopeKey.includes('tenant:'))
     assert.ok(callArgs.scopeKey.includes('actor:'))

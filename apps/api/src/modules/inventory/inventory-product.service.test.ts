@@ -11,6 +11,7 @@ describe('ProductService', () => {
 
   beforeEach(() => {
     service = new ProductService()
+    service.reset()
   })
 
   it('should create a product with generated id', () => {
@@ -97,6 +98,7 @@ describe('SKUService', () => {
 
   beforeEach(() => {
     productService = new ProductService()
+    productService.reset()
     skuService = new SKUService(productService)
   })
 

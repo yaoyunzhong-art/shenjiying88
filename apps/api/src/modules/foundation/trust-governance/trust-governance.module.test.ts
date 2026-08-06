@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi, beforeAll as _ba, beforeEach as _be, afterEach as _ae, afterAll as _aa } from 'vitest'
 import 'reflect-metadata'
 import { Test, TestingModule } from '@nestjs/testing'
+import { Global, Module } from '@nestjs/common'
 import assert from 'node:assert/strict'
+import { PrismaService } from '../../../prisma/prisma.service'
 import { TrustGovernanceModule } from './trust-governance.module'
 import { TrustGovernanceController } from './trust-governance.controller'
 import { TrustGovernanceService } from './trust-governance.service'
@@ -35,16 +37,20 @@ const stubPrismaService = {
   $transaction: async <T>(fn: (tx: unknown) => Promise<T>) => fn(stubPrismaService)
 }
 
+@Global()
+@Module({
+  providers: [{ provide: PrismaService, useValue: stubPrismaService }],
+  exports: [PrismaService]
+})
+class MockPrismaModule {}
+
 describe('TrustGovernanceModule', () => {
   let moduleRef: TestingModule
 
   it('should compile and instantiate module', async () => {
     moduleRef = await Test.createTestingModule({
-      imports: [TrustGovernanceModule]
-    })
-      .overrideProvider('PrismaService')
-      .useValue(stubPrismaService)
-      .compile()
+      imports: [MockPrismaModule, TrustGovernanceModule]
+    }).compile()
 
     assert.ok(moduleRef)
   })
@@ -54,7 +60,7 @@ describe('TrustGovernanceModule', () => {
       controllers: [TrustGovernanceController],
       providers: [
         TrustGovernanceService,
-        { provide: 'PrismaService', useValue: stubPrismaService }
+        { provide: PrismaService, useValue: stubPrismaService }
       ]
     }).compile()
 
@@ -68,7 +74,7 @@ describe('TrustGovernanceModule', () => {
       controllers: [TrustGovernanceController],
       providers: [
         TrustGovernanceService,
-        { provide: 'PrismaService', useValue: stubPrismaService }
+        { provide: PrismaService, useValue: stubPrismaService }
       ]
     }).compile()
 
@@ -103,7 +109,7 @@ describe('TrustGovernanceModule', () => {
       controllers: [TrustGovernanceController],
       providers: [
         TrustGovernanceService,
-        { provide: 'PrismaService', useValue: stubPrismaService }
+        { provide: PrismaService, useValue: stubPrismaService }
       ]
     }).compile()
 
@@ -136,7 +142,7 @@ describe('TrustGovernanceModule', () => {
       controllers: [TrustGovernanceController],
       providers: [
         TrustGovernanceService,
-        { provide: 'PrismaService', useValue: stubPrismaService }
+        { provide: PrismaService, useValue: stubPrismaService }
       ]
     }).compile()
 
@@ -153,7 +159,7 @@ describe('TrustGovernanceModule', () => {
       controllers: [TrustGovernanceController],
       providers: [
         TrustGovernanceService,
-        { provide: 'PrismaService', useValue: stubPrismaService }
+        { provide: PrismaService, useValue: stubPrismaService }
       ]
     }).compile()
 

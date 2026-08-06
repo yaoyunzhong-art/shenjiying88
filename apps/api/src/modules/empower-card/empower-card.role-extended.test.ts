@@ -7,8 +7,13 @@
  * 每个至少 3 个场景测试 = 8×3 = 24 tests
  * 使用实际 EmpowerCardService + fallback memory store
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { EmpowerCardService } from './empower-card.service'
+
+vi.mock('../../database/pg-pool', () => ({
+  getPgPool: () => null,
+  closePgPool: vi.fn(),
+}))
 
 // ── 角色权限矩阵 ──
 

@@ -405,11 +405,20 @@ describe('cross-module-e2e-57-giftcard', () => {
       expiresAt: PAST,
     })
     assert.equal(expired.status, 'pending')
+    // 验证过期卡无法激活
     assert.throws(() => svc.activate(expired.cardId), /无法激活/)
+    // 创建另一张过期 pending 卡用于清理测试
+    const expired2 = svc.create({
+      templateId: 'T002-CLEAN',
+      denomination: 10000,
+      holderName: '待清理过期卡',
+      holderPhone: '13800000001',
+      expiresAt: PAST,
+    })
     // Both pending and active with past date get cleaned
     const cleaned = svc.cleanupExpired()
     assert.ok(cleaned >= 1)
-    const after = svc.getById(expired.cardId)!
+    const after = svc.getById(expired2.cardId)!
     assert.equal(after.status, 'expired')
   })
 

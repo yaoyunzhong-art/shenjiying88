@@ -9,8 +9,13 @@
  * 使用 node:test 框架, 纯源码分析验证服务层逻辑.
  */
 
-import { describe, it, beforeAll } from 'vitest'
+import { describe, it, beforeAll, vi } from 'vitest'
 import assert from 'node:assert/strict'
+
+vi.mock('../../database/pg-pool', () => ({
+  getPgPool: () => null,
+  closePgPool: vi.fn(),
+}))
 
 /**
  * 获取 EmpowerCardService 实例.

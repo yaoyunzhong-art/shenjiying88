@@ -59,46 +59,52 @@ async function setupServiceWithLedgers(): Promise<{
 
   const financeService = new FinanceService()
 
-  // 记多笔不同种类的账
+  // 记多笔不同种类的账 (recordedAt 必须在报表期间内)
   // 收入: 50000 + 30000 = 80000
   await financeService.recordLedger(TENANT_A, {
     type: LedgerType.Revenue,
     amount: 50000,
     description: '商品销售收入',
-    category: 'main_revenue'
+    category: 'main_revenue',
+    recordedAt: '2026-07-15T12:00:00.000Z'
   })
   await financeService.recordLedger(TENANT_A, {
     type: LedgerType.Revenue,
     amount: 30000,
     description: '服务费收入',
-    category: 'service_revenue'
+    category: 'service_revenue',
+    recordedAt: '2026-07-15T12:00:00.000Z'
   })
   // 支出: 10000 + 5000 = 15000
   await financeService.recordLedger(TENANT_A, {
     type: LedgerType.Expense,
     amount: 10000,
     description: '采购成本',
-    category: 'cost'
+    category: 'cost',
+    recordedAt: '2026-07-15T12:00:00.000Z'
   })
   await financeService.recordLedger(TENANT_A, {
     type: LedgerType.Expense,
     amount: 5000,
     description: '运营费用',
-    category: 'operation'
+    category: 'operation',
+    recordedAt: '2026-07-15T12:00:00.000Z'
   })
   // 退款: 2000
   await financeService.recordLedger(TENANT_A, {
     type: LedgerType.Refund,
     amount: 2000,
     description: '客户退款',
-    category: 'refund'
+    category: 'refund',
+    recordedAt: '2026-07-15T12:00:00.000Z'
   })
   // 调整: 1000 (增加余额)
   await financeService.recordLedger(TENANT_A, {
     type: LedgerType.Adjustment,
     amount: 1000,
     description: '汇兑调整',
-    category: 'adjustment'
+    category: 'adjustment',
+    recordedAt: '2026-07-15T12:00:00.000Z'
   })
 
   const reportService = new FinanceReportService(financeService)
@@ -222,7 +228,8 @@ describe('[finance-report-data] 资产负债表数据聚合', () => {
     await financeService.recordLedger(TENANT_A, {
       type: LedgerType.Revenue,
       amount: 100000,
-      description: '测试收入'
+      description: '测试收入',
+      recordedAt: '2026-07-15T12:00:00.000Z'
     })
 
     const reportService = new FinanceReportService(financeService)
@@ -350,7 +357,8 @@ describe('[finance-report-data] 复杂多 ledger 场景', () => {
     await financeService.recordLedger(TENANT_A, {
       type: LedgerType.Revenue,
       amount: 99999,
-      description: '大额收入'
+      description: '大额收入',
+      recordedAt: '2026-07-15T12:00:00.000Z'
     })
     const reportService = new FinanceReportService(financeService)
 
@@ -373,12 +381,14 @@ describe('[finance-report-data] 复杂多 ledger 场景', () => {
     await financeService.recordLedger(storeA, {
       type: LedgerType.Revenue,
       amount: 1000,
-      description: 'A 店收入'
+      description: 'A 店收入',
+      recordedAt: '2026-07-15T12:00:00.000Z'
     })
     await financeService.recordLedger(storeB, {
       type: LedgerType.Revenue,
       amount: 5000,
-      description: 'B 店收入'
+      description: 'B 店收入',
+      recordedAt: '2026-07-15T12:00:00.000Z'
     })
 
     const reportService = new FinanceReportService(financeService)
@@ -455,7 +465,8 @@ describe('[finance-report-data] resolved 聚合主链', () => {
       type: LedgerType.Revenue,
       amount: 10000,
       description: '新增收入',
-      category: 'growth'
+      category: 'growth',
+      recordedAt: '2026-07-15T12:00:00.000Z'
     })
 
     const regenerated = await reportService.regenerateReportResolved(created.id, TENANT_A)
