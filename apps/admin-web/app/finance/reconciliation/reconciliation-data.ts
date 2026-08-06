@@ -148,6 +148,8 @@ export const defaultSummary: SummaryResponse = {
   totalRuns: 5,
 }
 
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 function ensureTrailingSlash(value: string): string {
@@ -187,60 +189,25 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchStatus(): Promise<ReconciliationStatus> {
   const upstreamUrl = new URL('finance/reconciliation/status', resolveReconciliationApiBaseUrl())
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`reconciliation status upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<ReconciliationStatus>(payload)
+  return apiFetchJson<ReconciliationStatus>(upstreamUrl.toString())
 }
 
 async function fetchDiffs(): Promise<DiffRecord[]> {
   const upstreamUrl = new URL('finance/reconciliation/diffs', resolveReconciliationApiBaseUrl())
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`reconciliation diffs upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ diffs: DiffRecord[] }>(payload)
+  const data = await apiFetchJson<{ diffs: DiffRecord[] }>(upstreamUrl.toString())
   return data.diffs
 }
 
 async function fetchDetails(): Promise<DiffDetailRecord[]> {
   const upstreamUrl = new URL('finance/reconciliation/details', resolveReconciliationApiBaseUrl())
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`reconciliation details upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ details: DiffDetailRecord[] }>(payload)
+  const data = await apiFetchJson<{ details: DiffDetailRecord[] }>(upstreamUrl.toString())
   return data.details
 }
 
 async function fetchSummary(date: string): Promise<SummaryResponse | null> {
   const upstreamUrl = new URL('finance/reconciliation/summary', resolveReconciliationApiBaseUrl())
   upstreamUrl.searchParams.set('date', date)
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`reconciliation summary upstream failed: ${response.status}`)
-  }
-  const payload = (await response.json()) as { success?: boolean; data?: SummaryResponse | null }
-  if (!payload.success) {
-    return null
-  }
-  return payload.data ?? null
+  return apiFetchJson<SummaryResponse | null>(upstreamUrl.toString())
 }
 
 export async function loadReconciliationSnapshot(): Promise<ReconciliationSnapshotDelivery> {

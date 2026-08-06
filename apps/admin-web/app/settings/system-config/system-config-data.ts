@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export interface SystemConfigItem {
@@ -262,25 +264,13 @@ async function fetchSystemConfigRecords(): Promise<{
   const settingsUrl = new URL('system-config', resolveSystemConfigApiBaseUrl()).toString()
   const categoriesUrl = new URL('system-config/meta/categories', resolveSystemConfigApiBaseUrl()).toString()
 
-  const [settingsResponse, categoriesResponse] = await Promise.all([
-    fetch(settingsUrl, { method: 'GET', cache: 'no-store' }),
-    fetch(categoriesUrl, { method: 'GET', cache: 'no-store' }),
+  const [settingsData, categoriesData] = await Promise.all([
+    apiFetchJson<{
+      items?: SystemConfigApiRecord[]
+      settings?: SystemConfigApiRecord[]
+    }>(settingsUrl),
+    apiFetchJson<{ categories?: string[] }>(categoriesUrl),
   ])
-
-  if (!settingsResponse.ok) {
-    throw new Error(`system-config upstream failed: ${settingsResponse.status}`)
-  }
-  if (!categoriesResponse.ok) {
-    throw new Error(`system-config categories upstream failed: ${categoriesResponse.status}`)
-  }
-
-  const settingsPayload = await settingsResponse.json()
-  const categoriesPayload = await categoriesResponse.json()
-  const settingsData = unwrapApiPayload<{
-    items?: SystemConfigApiRecord[]
-    settings?: SystemConfigApiRecord[]
-  }>(settingsPayload)
-  const categoriesData = unwrapApiPayload<{ categories?: string[] }>(categoriesPayload)
 
   return {
     records: settingsData.items ?? settingsData.settings ?? [],

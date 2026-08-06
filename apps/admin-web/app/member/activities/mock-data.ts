@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 /**
  * member/activities/mock-data.ts
  * 会员活动历史快照加载器与 fallback 样本
@@ -114,15 +116,7 @@ async function fetchMemberActivities(): Promise<ActivityItem[]> {
     'members/activities',
     resolveMemberActivitiesApiBaseUrl(),
   ).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`member activities upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ activities: ActivityItem[] }>(payload)
+  const data = await apiFetchJson<{ activities: ActivityItem[] }>(upstreamUrl)
   return data.activities
 }
 

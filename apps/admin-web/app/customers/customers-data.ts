@@ -4,6 +4,8 @@
  * 门店视角客户管理：会员/散客区分、消费行为、画像标签
  */
 
+import { apiFetchJson } from '../api/_client'
+
 export type CustomerStatus = 'active' | 'inactive' | 'blocked' | 'churned'
 export type CustomerSource = 'walkin' | 'referral' | 'social' | 'online' | 'partner'
 export type CustomerGender = 'male' | 'female' | 'unknown'
@@ -236,15 +238,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchCustomersPart<T>(path: string): Promise<T> {
   const upstreamUrl = new URL(path, resolveCustomersApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`customers upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<T>(payload)
+  return apiFetchJson<T>(upstreamUrl)
 }
 
 function normalizeDate(value: string | undefined, fallback: string): string {

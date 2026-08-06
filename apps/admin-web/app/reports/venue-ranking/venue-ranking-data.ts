@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 export type VenueRankingSortKey = 'revenue' | 'orders' | 'rating'
 
 export interface VenueRecord {
@@ -87,9 +89,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchVenueRankingPayload(): Promise<VenueRankingApiPayload> {
   const upstreamUrl = new URL('reports/venue-ranking', resolveVenueRankingApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, { method: 'GET', cache: 'no-store' })
-  if (!response.ok) throw new Error(`venue-ranking upstream failed: ${response.status}`)
-  return unwrapApiPayload<VenueRankingApiPayload>(await response.json())
+  return apiFetchJson<VenueRankingApiPayload>(upstreamUrl)
 }
 
 function extractVenueRecords(payload: VenueRankingApiPayload): VenueRecord[] {

@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type HrEmployeeStatus = 'active' | 'probation' | 'resigned'
@@ -248,16 +250,7 @@ function getLatestHrTimestamp(items: HrEmployee[]): string {
 
 async function fetchHrPart<T>(path: string): Promise<T> {
   const upstreamUrl = new URL(path, resolveHrApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-
-  if (!response.ok) {
-    throw new Error(`hr upstream failed: ${response.status}`)
-  }
-
-  return unwrapApiPayload<T>(await response.json())
+  return apiFetchJson<T>(upstreamUrl)
 }
 
 export async function loadHrSnapshot(): Promise<HrSnapshotDelivery> {

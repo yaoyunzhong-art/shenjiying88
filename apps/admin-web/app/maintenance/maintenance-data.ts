@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type MaintenanceTaskType =
@@ -272,16 +274,7 @@ async function fetchMaintenanceTasksFromApi(): Promise<MaintenanceTask[]> {
     ensureTrailingSlash(resolveMaintenanceApiBaseUrl())
   ).toString()
 
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-
-  if (!response.ok) {
-    throw new Error(`maintenance upstream failed: ${response.status}`)
-  }
-
-  const payload = unwrapApiPayload<unknown[]>(await response.json())
+  const payload = await apiFetchJson<unknown[]>(upstreamUrl)
   return Array.isArray(payload) ? payload.map(normalizeMaintenanceTask) : []
 }
 

@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export interface MemberConfig {
@@ -200,14 +202,7 @@ function extractHistoryRecords(payload: unknown): MemberConfigHistoryRecord[] {
 
 async function fetchMemberConfigPart<T>(path: string): Promise<T> {
   const upstreamUrl = new URL(path, resolveMemberConfigApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`member config upstream failed: ${response.status}`)
-  }
-  return unwrapApiPayload<T>(await response.json())
+  return apiFetchJson<T>(upstreamUrl)
 }
 
 function getLatestHistoryRecord(history: MemberConfigHistoryRecord[]): MemberConfigHistoryRecord {

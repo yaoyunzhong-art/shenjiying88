@@ -1,4 +1,5 @@
 import { adminWebBootstrap } from '../bootstrap'
+import { apiFetch, apiFetchJson } from '../api/_client'
 
 export interface LoginResult {
   token: string
@@ -185,10 +186,7 @@ async function fetchAuthPart<T>(path: string, init: RequestInit = {}): Promise<T
   const upstreamUrl = new URL(path, resolveLoginApiBaseUrl()).toString()
   let response: Response
   try {
-    response = await fetch(upstreamUrl, {
-      ...init,
-      cache: 'no-store',
-    })
+    response = await apiFetch(upstreamUrl, init)
   } catch (error) {
     throw new LoginApiError(
       error instanceof Error ? error.message : 'auth request failed'

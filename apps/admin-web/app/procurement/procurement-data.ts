@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export interface ProcurementOrder {
@@ -226,15 +228,7 @@ function mapToFrontendOrder(order: BackendOrder): ProcurementOrder {
 
 async function fetchProcurementOrders(): Promise<ProcurementOrder[]> {
   const upstreamUrl = new URL('procurement-orders', resolveProcurementApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`procurement upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<BackendOrder[] | { orders?: BackendOrder[] }>(payload)
+  const data = await apiFetchJson<BackendOrder[] | { orders?: BackendOrder[] }>(upstreamUrl)
   const orders = Array.isArray(data) ? data : Array.isArray(data.orders) ? data.orders : []
   return orders.map(mapToFrontendOrder)
 }

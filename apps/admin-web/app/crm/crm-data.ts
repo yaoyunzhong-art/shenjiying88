@@ -8,8 +8,9 @@
  *
  * 后端端点: GET /api/crm/customers, GET /api/crm/stats
  *           GET /api/crm/customers/:id, GET /api/crm/customers/:id/interactions
- *           GET /api/crm/customers/:id/tickets
  */
+
+import { apiFetchJson } from '../api/_client'
 
 export type CrmCustomerStatus = 'active' | 'inactive' | 'churned' | 'lead'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
@@ -349,15 +350,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchCrmPart<T>(path: string): Promise<T> {
   const upstreamUrl = new URL(path, resolveCrmApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`crm upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<T>(payload)
+  return apiFetchJson<T>(upstreamUrl)
 }
 
 function getFallbackGeneratedAt(customers: CustomerProfile[]): string {

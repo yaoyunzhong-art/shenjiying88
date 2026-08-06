@@ -1,4 +1,5 @@
-import { buildActorHeaders } from '@m5/sdk';
+import { buildActorHeaders } from '@m5/sdk'
+import { apiFetch } from '../../../api/_client';
 
 export interface InspectionItem {
   id: string;
@@ -136,7 +137,7 @@ function normalizeInspectionItem(item: unknown, index: number, storeId: string):
 
 async function fetchInspectionItems(storeId: string, tenantId: string): Promise<InspectionItem[]> {
   const url = `${resolveAppBaseUrl()}/api/logistics/inspections`;
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'GET',
     cache: 'no-store',
     headers: buildActorHeaders({

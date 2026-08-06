@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 export type PromotionAdjustmentStatus = 'active' | 'ended' | 'scheduled'
 
 export interface PromotionAdjustmentRecord {
@@ -89,9 +91,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchPromotionsAdjustmentsPayload(): Promise<PromotionsAdjustmentsApiPayload> {
   const upstreamUrl = new URL('reports/promotions-adjustments', resolvePromotionsAdjustmentsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, { method: 'GET', cache: 'no-store' })
-  if (!response.ok) throw new Error(`promotions-adjustments upstream failed: ${response.status}`)
-  return unwrapApiPayload<PromotionsAdjustmentsApiPayload>(await response.json())
+  return apiFetchJson<PromotionsAdjustmentsApiPayload>(upstreamUrl)
 }
 
 function extractPromotionAdjustmentRecords(payload: PromotionsAdjustmentsApiPayload): PromotionAdjustmentRecord[] {

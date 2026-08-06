@@ -1,3 +1,5 @@
+import { apiFetchJson, apiFetch } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type ContractType = 'sales' | 'procurement' | 'service' | 'lease'
@@ -192,14 +194,7 @@ function extractContracts(payload: unknown): ContractRecord[] {
 
 async function fetchContractsUpstream(): Promise<ContractRecord[]> {
   const upstreamUrl = new URL('contracts', resolveContractsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`contracts upstream failed: ${response.status}`)
-  }
-  const payload = unwrapApiPayload<unknown>(await response.json())
+  const payload = await apiFetchJson<unknown>(upstreamUrl)
   const contracts = extractContracts(payload)
   if (!contracts.length) {
     throw new Error('contracts upstream returned empty list')
@@ -245,7 +240,7 @@ function mapSingleContract(payload: unknown): ContractRecord {
 }
 
 async function callContractsApi<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await apiFetch(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',

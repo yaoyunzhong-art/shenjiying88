@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 const DEFAULT_TENANT_ID = 'tenant-p30'
 
@@ -187,19 +189,11 @@ function getLatestSchedulingTimestamp(schedules: CleanScheduleItem[]): string {
 async function fetchSchedulesFromApi(storeId: string): Promise<CleanScheduleItem[]> {
   const upstreamUrl = new URL('logistics/clean-schedules', ensureTrailingSlash(resolveLogisticsApiBaseUrl()))
 
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
+  const payload = await apiFetchJson<unknown[]>(upstreamUrl.toString(), {
     headers: {
       'x-tenant-id': DEFAULT_TENANT_ID,
     },
   })
-
-  if (!response.ok) {
-    throw new Error(`clean schedules upstream failed: ${response.status}`)
-  }
-
-  const payload = unwrapApiPayload<unknown[]>(await response.json())
   return Array.isArray(payload)
     ? payload.map(normalizeScheduleItem).filter((item) => item.storeId === storeId)
     : []

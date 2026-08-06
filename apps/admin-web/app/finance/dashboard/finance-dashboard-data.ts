@@ -127,6 +127,8 @@ export const defaultFinanceDashboard: DashboardData = {
   },
 }
 
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 function ensureTrailingSlash(value: string): string {
@@ -166,15 +168,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchFinanceDashboard(): Promise<DashboardData> {
   const upstreamUrl = new URL('finance/dashboard', resolveFinanceDashboardApiBaseUrl())
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`finance dashboard upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<DashboardData>(payload)
+  return apiFetchJson<DashboardData>(upstreamUrl.toString())
 }
 
 export async function loadFinanceDashboardSnapshot(): Promise<FinanceDashboardSnapshotDelivery> {

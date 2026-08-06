@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type NotifType = 'announcement' | 'marketing' | 'alert' | 'activity'
@@ -188,15 +190,7 @@ function mapApiNotification(record: Partial<Notification>, index: number): Notif
 
 async function fetchNotifications(): Promise<Notification[]> {
   const upstreamUrl = new URL('notifications', resolveNotificationsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`notifications upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ items?: Partial<Notification>[]; notifications?: Partial<Notification>[] } | Partial<Notification>[]>(payload)
+  const data = await apiFetchJson<{ items?: Partial<Notification>[]; notifications?: Partial<Notification>[] } | Partial<Notification>[]>(upstreamUrl)
   const items = Array.isArray(data) ? data : data.notifications ?? data.items ?? []
   return items.map(mapApiNotification)
 }

@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type RenovationTier = 'economy' | 'standard' | 'luxury'
@@ -388,17 +390,11 @@ function buildBudgetComparison(request: FeasibilityRequest): BudgetComparisonRow
 
 async function postIntelligenceData<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const upstreamUrl = new URL(path, resolveIntelligenceApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
+  return apiFetchJson<T>(upstreamUrl, {
     method: 'POST',
-    cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  if (!response.ok) {
-    throw new Error(`intelligence upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<T>(payload)
 }
 
 export async function loadFeasibilitySnapshot(

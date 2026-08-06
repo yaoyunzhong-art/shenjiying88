@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 export interface ActivityRecord {
   date: string
   activeUsers: number
@@ -75,9 +77,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchUserActivityPayload(): Promise<UserActivityApiPayload> {
   const upstreamUrl = new URL('reports/user-activity', resolveUserActivityApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, { method: 'GET', cache: 'no-store' })
-  if (!response.ok) throw new Error(`user-activity upstream failed: ${response.status}`)
-  return unwrapApiPayload<UserActivityApiPayload>(await response.json())
+  return apiFetchJson<UserActivityApiPayload>(upstreamUrl)
 }
 
 function extractActivityRecords(payload: UserActivityApiPayload): ActivityRecord[] {

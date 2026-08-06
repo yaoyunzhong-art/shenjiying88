@@ -1,3 +1,5 @@
+import { apiFetchJson } from './api/_client'
+
 export interface TenantItem {
   id: string
   code: string
@@ -178,27 +180,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function fetchTenantLifecycleStatus(tenantId: string): Promise<string> {
   const upstreamUrl = new URL(`tenant/lifecycle/${tenantId}/status`, resolveTenantsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`tenant lifecycle upstream failed: ${response.status}`)
-  }
-  const payload = unwrapApiPayload<{ status?: string } | null>(await response.json())
+  const payload = await apiFetchJson<{ status?: string } | null>(upstreamUrl)
   return payload?.status ?? ''
 }
 
 async function fetchTenantQuota(tenantId: string): Promise<Record<string, unknown> | null> {
   const upstreamUrl = new URL(`tenant/quota/${tenantId}`, resolveTenantsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`tenant quota upstream failed: ${response.status}`)
-  }
-  const payload = unwrapApiPayload<Record<string, unknown> | null>(await response.json())
+  const payload = await apiFetchJson<Record<string, unknown> | null>(upstreamUrl)
   return isRecord(payload) ? payload : null
 }
 

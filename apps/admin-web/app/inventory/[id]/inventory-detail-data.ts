@@ -3,6 +3,7 @@ import {
   INVENTORY_API_BASE,
   type InventoryItem,
 } from '../inventory-data'
+import { apiFetch } from '../../api/_client'
 
 export interface StockMovement {
   id: string
@@ -146,8 +147,8 @@ export async function loadInventoryDetailSnapshot(
 
   try {
     const [detailResponse, movementResponse] = await Promise.all([
-      fetch(detailUrl, { cache: 'no-store' }),
-      fetch(movementUrl, { cache: 'no-store' }),
+      apiFetch(detailUrl),
+      apiFetch(movementUrl),
     ])
 
     if (!detailResponse.ok) {

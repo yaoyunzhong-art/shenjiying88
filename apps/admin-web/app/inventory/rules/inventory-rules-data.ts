@@ -1,3 +1,5 @@
+import { apiFetch } from '../../api/_client'
+
 export type RuleType = 'ALERT' | 'REORDER'
 export type RuleStatus = 'ENABLED' | 'DISABLED'
 
@@ -169,7 +171,7 @@ export async function loadInventoryRulesSnapshot(
   const normalizedTenantId = tenantId.trim() || 'demo-tenant'
 
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${resolveAppBaseUrl()}${INVENTORY_RULES_API_BASE}?tenantId=${encodeURIComponent(
         normalizedTenantId
       )}`,

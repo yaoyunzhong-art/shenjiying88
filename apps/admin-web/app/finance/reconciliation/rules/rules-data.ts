@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../../api/_client'
+
 export interface ReconciliationRule {
   id: string
   name: string
@@ -123,15 +125,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchReconciliationRules(): Promise<ReconciliationRule[]> {
   const upstreamUrl = new URL('finance/reconciliation/rules', resolveReconciliationRulesApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`reconciliation rules upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ rules: ReconciliationRule[] }>(payload)
+  const data = await apiFetchJson<{ rules: ReconciliationRule[] }>(upstreamUrl)
   return data.rules
 }
 

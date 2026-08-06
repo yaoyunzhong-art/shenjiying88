@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type PartnerGrade = 'S' | 'A' | 'B' | 'C'
@@ -227,15 +229,7 @@ function mapToAlliancePartner(partner: ApiAlliancePartner): AlliancePartner {
 
 async function fetchAlliancePartners(): Promise<AlliancePartner[]> {
   const upstreamUrl = new URL('alliance/partner', resolveAlliancesApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`alliances upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<ApiAlliancePartner[] | { partners?: ApiAlliancePartner[] }>(payload)
+  const data = await apiFetchJson<ApiAlliancePartner[] | { partners?: ApiAlliancePartner[] }>(upstreamUrl)
   const partners = Array.isArray(data) ? data : Array.isArray(data.partners) ? data.partners : []
   if (partners.length === 0) {
     throw new Error('alliances upstream empty')

@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 export type PaymentMethod = 'WECHAT' | 'ALIPAY' | 'CARD' | 'CASH' | 'BALANCE'
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED'
 export type RefundStatus = 'REQUESTED' | 'APPROVED' | 'COMPLETED' | 'REJECTED'
@@ -170,30 +172,14 @@ function getLatestFinanceTimestamp(payments: Payment[], refunds: Refund[]): stri
 async function fetchPayments(tenantId: string): Promise<Payment[]> {
   const upstreamUrl = new URL('api/finance/payments', resolveFinanceApiBaseUrl())
   upstreamUrl.searchParams.set('tenantId', tenantId)
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`finance payments upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<FinanceListResponse<Payment>>(payload)
+  const data = await apiFetchJson<FinanceListResponse<Payment>>(upstreamUrl.toString())
   return data.items ?? []
 }
 
 async function fetchRefunds(tenantId: string): Promise<Refund[]> {
   const upstreamUrl = new URL('api/finance/refunds', resolveFinanceApiBaseUrl())
   upstreamUrl.searchParams.set('tenantId', tenantId)
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`finance refunds upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<FinanceListResponse<Refund>>(payload)
+  const data = await apiFetchJson<FinanceListResponse<Refund>>(upstreamUrl.toString())
   return data.items ?? []
 }
 

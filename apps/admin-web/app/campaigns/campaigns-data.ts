@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 export interface Campaign {
   id: string
   name: string
@@ -118,15 +120,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchCampaigns(): Promise<Campaign[]> {
   const upstreamUrl = new URL('brand/campaigns', resolveCampaignsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`campaigns upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ campaigns: Campaign[] }>(payload)
+  const data = await apiFetchJson<{ campaigns: Campaign[] }>(upstreamUrl)
   return data.campaigns
 }
 

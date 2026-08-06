@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 export interface UserRecord {
   name: string
   phone: string
@@ -80,9 +82,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchUserPortraitPayload(): Promise<UserPortraitApiPayload> {
   const upstreamUrl = new URL('reports/user-portrait', resolveUserPortraitApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, { method: 'GET', cache: 'no-store' })
-  if (!response.ok) throw new Error(`user-portrait upstream failed: ${response.status}`)
-  return unwrapApiPayload<UserPortraitApiPayload>(await response.json())
+  return apiFetchJson<UserPortraitApiPayload>(upstreamUrl)
 }
 
 function extractUserRecords(payload: UserPortraitApiPayload): UserRecord[] {

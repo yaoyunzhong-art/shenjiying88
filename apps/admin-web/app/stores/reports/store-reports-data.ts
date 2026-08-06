@@ -1,3 +1,5 @@
+import { apiFetch } from '../../api/_client'
+
 export interface StoreReportRow {
   storeId: string;
   storeName: string;
@@ -150,10 +152,7 @@ function getGeneratedAt(rows: StoreReportRow[]): string {
 }
 
 async function fetchStoreReports(): Promise<StoreReportRow[]> {
-  const response = await fetch(`${resolveAppBaseUrl()}${API_PATH}`, {
-    method: 'GET',
-    cache: 'no-store',
-  });
+  const response = await apiFetch(`${resolveAppBaseUrl()}${API_PATH}`);
 
   if (!response.ok) {
     throw new Error(`store reports upstream failed: ${response.status}`);

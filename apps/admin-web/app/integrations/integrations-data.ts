@@ -31,6 +31,8 @@ export const defaultIntegrations: Integration[] = [
   { id: 'int-5', name: '自建CRM', provider: 'custom', type: 'crm', description: '自建客户系统对接', status: 'inactive', configFields: [{ key: 'apiKey', label: 'API Key', value: 'ak_****7890' }], endpoints: [{ name: '客户同步', url: 'https://crm.example.com/api/sync', method: 'POST' }], tenantId: 't1', createdAt: '2026-06-01T00:00:00Z', updatedAt: '2026-06-01T00:00:00Z' },
 ]
 
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 function ensureTrailingSlash(value: string): string {
@@ -70,15 +72,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchIntegrations(): Promise<Integration[]> {
   const upstreamUrl = new URL('openapi/integrations', resolveIntegrationsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`integrations upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ integrations: Integration[] }>(payload)
+  const data = await apiFetchJson<{ integrations: Integration[] }>(upstreamUrl)
   return data.integrations
 }
 

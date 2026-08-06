@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 export type TaxRecordStatus = 'paid' | 'pending' | 'overdue'
 
 export interface TaxRecord {
@@ -85,9 +87,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchTaxReportPayload(): Promise<TaxReportApiPayload> {
   const upstreamUrl = new URL('reports/tax-report', resolveTaxReportApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, { method: 'GET', cache: 'no-store' })
-  if (!response.ok) throw new Error(`tax-report upstream failed: ${response.status}`)
-  return unwrapApiPayload<TaxReportApiPayload>(await response.json())
+  return apiFetchJson<TaxReportApiPayload>(upstreamUrl)
 }
 
 function extractTaxRecords(payload: TaxReportApiPayload): TaxRecord[] {

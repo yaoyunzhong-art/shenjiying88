@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export interface SystemMetric {
@@ -99,15 +101,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchSystemMonitorPart<T>(path: string): Promise<T> {
   const upstreamUrl = new URL(path, resolveSystemMonitorApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`system monitor upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<T>(payload)
+  return apiFetchJson<T>(upstreamUrl)
 }
 
 export async function loadSystemMonitorSnapshot(): Promise<SystemMonitorSnapshotDelivery> {

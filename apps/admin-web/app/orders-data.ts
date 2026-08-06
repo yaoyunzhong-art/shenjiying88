@@ -1,3 +1,5 @@
+import { apiFetchJson } from './api/_client'
+
 export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
 export type OrderChannel = 'online' | 'offline' | 'miniapp' | 'phone'
 
@@ -438,14 +440,7 @@ export function mapApiOrderToOrderItem(apiOrder: Record<string, unknown>): Order
 
 async function fetchOrders(): Promise<OrderItem[]> {
   const upstreamUrl = new URL('transactions?type=order', resolveOrdersApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`orders upstream failed: ${response.status}`)
-  }
-  const payload = unwrapApiPayload<unknown>(await response.json())
+  const payload = await apiFetchJson<unknown>(upstreamUrl)
   const records = extractOrderRecords(payload)
   if (records.length === 0) {
     throw new Error('orders upstream returned no items')

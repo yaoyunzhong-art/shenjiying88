@@ -31,6 +31,8 @@ export const defaultChannels: PaymentChannel[] = [
   { id: 'ch-4', name: '现金', provider: 'cash', type: 'offline', enabled: true, feeRate: 0, dailyLimitCents: 50000000, singleLimitCents: 1000000, supportedStoreIds: [], todayAmountCents: 1850000, todayCount: 156, status: 'normal', config: [], createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
 ]
 
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 function ensureTrailingSlash(value: string): string {
@@ -70,15 +72,7 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchPaymentChannels(): Promise<PaymentChannel[]> {
   const upstreamUrl = new URL('cashier/channels', resolvePaymentChannelsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`payment channels upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ channels: PaymentChannel[] }>(payload)
+  const data = await apiFetchJson<{ channels: PaymentChannel[] }>(upstreamUrl)
   return data.channels
 }
 

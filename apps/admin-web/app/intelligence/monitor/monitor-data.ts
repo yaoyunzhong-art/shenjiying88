@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export interface Alert {
@@ -136,21 +138,13 @@ async function fetchMonitorSummary(): Promise<{
   freshnessMinutes: number
 }> {
   const upstreamUrl = new URL('intelligence/monitor/summary', resolveIntelligenceApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`intelligence monitor upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<{
+  return apiFetchJson<{
     alerts: Alert[]
     trend: TrendPoint[]
     scanTimestamp: string
     scanMode: 'incremental' | 'full'
     freshnessMinutes: number
-  }>(payload)
+  }>(upstreamUrl)
 }
 
 export async function loadMonitorSnapshot(): Promise<MonitorSnapshotDelivery> {

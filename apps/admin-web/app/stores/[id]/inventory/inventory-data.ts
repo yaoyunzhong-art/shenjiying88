@@ -1,4 +1,5 @@
-import { buildActorHeaders } from '@m5/sdk';
+import { buildActorHeaders } from '@m5/sdk'
+import { apiFetch } from '../../../api/_client';
 
 export interface Item extends Record<string, unknown> {
   id: string;
@@ -181,7 +182,7 @@ function normalizeMaterialRequest(item: unknown, index: number, tenantId: string
 }
 
 async function fetchMaterialRequests(storeId: string, tenantId: string): Promise<MaterialRequestRecord[]> {
-  const response = await fetch(`${resolveAppBaseUrl()}${REQUEST_API_BASE}`, {
+  const response = await apiFetch(`${resolveAppBaseUrl()}${REQUEST_API_BASE}`, {
     method: 'GET',
     cache: 'no-store',
     headers: buildActorHeaders({

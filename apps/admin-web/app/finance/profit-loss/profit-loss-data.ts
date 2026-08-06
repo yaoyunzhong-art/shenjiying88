@@ -526,6 +526,8 @@ export const periodDataMap: PeriodDataMap = {
   },
 }
 
+import { apiFetchJson } from '../../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 function ensureTrailingSlash(value: string): string {
@@ -584,17 +586,7 @@ export function getDefaultProfitLossReport(period: PeriodKey): PnLReport {
 async function fetchProfitLossReport(period: PeriodKey): Promise<PnLReport> {
   const upstreamUrl = new URL('finance/pnl', resolveProfitLossApiBaseUrl())
   upstreamUrl.searchParams.set('period', period)
-
-  const response = await fetch(upstreamUrl.toString(), {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`profit-loss upstream failed: ${response.status}`)
-  }
-
-  const payload = await response.json()
-  return unwrapApiPayload<PnLReport>(payload)
+  return apiFetchJson<PnLReport>(upstreamUrl.toString())
 }
 
 export async function loadProfitLossSnapshot(period?: string): Promise<ProfitLossSnapshotDelivery> {

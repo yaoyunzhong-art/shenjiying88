@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 export interface PointsRule {
   id: string
   name: string
@@ -188,29 +190,13 @@ function unwrapApiPayload<T>(payload: unknown): T {
 
 async function fetchPointsRules(): Promise<PointsRule[]> {
   const upstreamUrl = new URL('member/points-rules', resolvePointsRulesApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`points rules upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ rules: PointsRule[] }>(payload)
+  const data = await apiFetchJson<{ rules: PointsRule[] }>(upstreamUrl)
   return data.rules
 }
 
 async function fetchPointsSummary(): Promise<PointsSummary> {
   const upstreamUrl = new URL('member/points-summary', resolvePointsRulesApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`points summary upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  return unwrapApiPayload<PointsSummary>(payload)
+  return apiFetchJson<PointsSummary>(upstreamUrl)
 }
 
 function getLatestPointsRuleTimestamp(rules: PointsRule[]): string {

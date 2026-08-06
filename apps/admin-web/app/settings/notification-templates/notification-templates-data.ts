@@ -2,6 +2,7 @@ import {
   resolveServerRequestContext,
   type ServerRequestContextEvidence,
 } from '../../lib/server-request-context'
+import { apiFetchJson } from '../../api/_client'
 
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 const NOTIFICATION_TEMPLATES_ACTOR = {
@@ -290,18 +291,9 @@ async function fetchNotificationTemplates(init: RequestInit = {}): Promise<Notif
     'notifications/templates',
     resolveNotificationTemplatesApiBaseUrl()
   ).toString()
-  const response = await fetch(upstreamUrl, {
-    ...init,
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`notification templates upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<
+  const data = await apiFetchJson<
     { items?: NotificationTemplateApiRecord[]; templates?: NotificationTemplateApiRecord[] } | NotificationTemplateApiRecord[]
-  >(payload)
+  >(upstreamUrl)
   const items = Array.isArray(data) ? data : data.templates ?? data.items ?? []
   return items.map(mapApiTemplate)
 }

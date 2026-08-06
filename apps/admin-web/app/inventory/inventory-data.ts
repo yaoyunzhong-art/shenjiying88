@@ -1,3 +1,5 @@
+import { apiFetch } from '../api/_client'
+
 export interface InventoryItem {
   id: string
   tenantId: string
@@ -156,7 +158,7 @@ export async function loadInventoryPageSnapshot(
   const normalizedTenantId = tenantId.trim() || 'demo-tenant'
 
   try {
-    const response = await fetch(
+    const response = await apiFetch(
       `${resolveAppBaseUrl()}${INVENTORY_API_BASE}?tenantId=${encodeURIComponent(normalizedTenantId)}`,
       {
         cache: 'no-store',

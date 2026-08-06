@@ -1,3 +1,5 @@
+import { apiFetchJson } from './api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export interface MarketItem {
@@ -199,15 +201,7 @@ function mapApiMarket(record: Partial<MarketItem>, index: number): MarketItem {
 
 async function fetchMarkets(): Promise<MarketItem[]> {
   const upstreamUrl = new URL('markets', resolveMarketsApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`markets upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ items?: Partial<MarketItem>[]; markets?: Partial<MarketItem>[] } | Partial<MarketItem>[]>(payload)
+  const data = await apiFetchJson<{ items?: Partial<MarketItem>[]; markets?: Partial<MarketItem>[] } | Partial<MarketItem>[]>(upstreamUrl)
   const items = Array.isArray(data) ? data : data.markets ?? data.items ?? []
   return items.map(mapApiMarket)
 }

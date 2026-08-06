@@ -1,3 +1,5 @@
+import { apiFetchJson } from '../api/_client'
+
 const DEFAULT_API_ORIGIN = 'http://localhost:3001'
 
 export type UserRole =
@@ -7,6 +9,7 @@ export type UserRole =
   | 'finance'
   | 'marketing'
   | 'ops'
+
 export type UserStatus = 'active' | 'inactive' | 'suspended'
 
 export interface User {
@@ -125,15 +128,7 @@ function mapApiUser(record: Partial<User>, index: number): User {
 
 async function fetchUsers(): Promise<User[]> {
   const upstreamUrl = new URL('identity-access/users', resolveUsersApiBaseUrl()).toString()
-  const response = await fetch(upstreamUrl, {
-    method: 'GET',
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    throw new Error(`users upstream failed: ${response.status}`)
-  }
-  const payload = await response.json()
-  const data = unwrapApiPayload<{ items?: Partial<User>[]; users?: Partial<User>[] } | Partial<User>[]>(payload)
+  const data = await apiFetchJson<{ items?: Partial<User>[]; users?: Partial<User>[] } | Partial<User>[]>(upstreamUrl)
   const items = Array.isArray(data) ? data : data.users ?? data.items ?? []
   return items.map(mapApiUser)
 }
