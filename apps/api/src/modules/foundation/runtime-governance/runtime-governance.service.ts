@@ -20,8 +20,8 @@ import {
 } from '@m5/types'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
-import { IntegrationOrchestrationService } from '../integration-orchestration/integration-orchestration.service'
-import { TrustGovernanceService } from '../trust-governance/trust-governance.service'
+import { IntegrationOrchestrationService } from '..'
+import { TrustGovernanceService } from '..'
 import type { FoundationModuleDescriptor } from '../foundation.types'
 
 type PersistedRuntimeEvent = {

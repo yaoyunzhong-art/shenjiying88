@@ -17,7 +17,7 @@ import {
   PartnerStatus,
   Grade,
 } from '../alliance/alliance.entity'
-import { SettlementType } from '../alliance/alliance-settlement.service'
+import { SettlementType } from '../alliance'
 
 export class RegisterPartnerDto {
   @IsString()

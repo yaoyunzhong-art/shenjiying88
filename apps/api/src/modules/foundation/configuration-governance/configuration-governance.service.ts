@@ -21,7 +21,7 @@ import {
   type GovernanceApprovalSnapshot,
   materializeGovernanceApproval
 } from '../governance-approval/governance-approval'
-import { TrustGovernanceService } from '../trust-governance/trust-governance.service'
+import { TrustGovernanceService } from '..'
 import type { FoundationGovernanceBaseline, FoundationModuleDescriptor } from '../foundation.types'
 
 interface LoginPolicyConfig {

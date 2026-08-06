@@ -2,7 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { EventStatus, FoundationScopeType, Prisma } from '@prisma/client'
 import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { PrismaService } from '../../../prisma/prisma.service'
-import { TrustGovernanceService } from '../trust-governance/trust-governance.service'
+import { TrustGovernanceService } from '..'
 import type { FoundationModuleDescriptor } from '../foundation.types'
 
 interface EventEnvelope {
